@@ -9,6 +9,8 @@ depends_on:
   - docs/adr/001-node-type-splitting.md
   - docs/adr/002-folder-as-namespace.md
   - docs/adr/003-name-resolution-rules.md
+  - docs/adr/004-sequence-diagram-participants.md
+  - docs/adr/005-class-diagram-as-endpoint-view.md
 open_issues:
   - eventノードのスキーマ未定
   - Edgeの別管理 vs Node内adjacency list未決
@@ -38,6 +40,29 @@ brewprintは**人間とLLMの共通設計言語**。
 | `procedure` | 処理。インライン記述またはrefで別ファイル参照 |
 | `artifact` | 成果物。`scalar` / `struct` / `list` / `dict` |
 | `state` | DB・グローバル変数・session_stateなど永続化されるもの |
+| `actor` | 人間・外部システム。sequence diagramのエントリーポイントとして使用 |
+
+### procedureのendpointフラグ
+
+`endpoint: true` を付与したprocedureはバックエンドエンドポイントとして扱われ、class diagram viewに出力される。
+
+```yaml
+- id: login
+  type: procedure
+  endpoint: true
+  method: POST
+  path: /auth/login
+  input: login_request    # artifactのID
+  output: auth_token      # artifactのID
+```
+
+| フィールド | 必須 | 内容 |
+|---|---|---|
+| `endpoint` | ✓ | `true` のとき class diagram viewに出力 |
+| `method` | ✓ | HTTP method（GET / POST / PUT / DELETE / PATCH） |
+| `path` | ✓ | URLパス |
+| `input` | 任意 | リクエストbodyのartifact ID |
+| `output` | 任意 | レスポンスbodyのartifact ID |
 
 ### classについて
 
@@ -132,6 +157,30 @@ dogfoodしながら必要なものだけ昇格させる運用。候補：`retry`
 **スコープ外：**
 - 具体的なstyle・視覚的な配置
 - 並列・競合・ロールバック・双方向同期（ハッピーパス外）
+
+---
+
+## 書ける図の一覧
+
+| 図 | renderの元となる要素 | 備考 |
+|---|---|---|
+| DAG | `procedure` ノード＋エッジ | 制御フロー・データフロー |
+| ER | `state`（kind=db）＋フィールド定義 | テーブル構造 |
+| state diagram | `state` ノード＋遷移エッジ | 状態遷移 |
+| class diagram | `endpoint: true` なprocedureをモジュール単位でグルーピング | APIのI/Oシグネチャ |
+| sequence diagram | Actor / UI / API / DB の4種のparticipantとそのやりとり | レイヤー間の粗い粒度の流れ |
+
+### sequence diagramのparticipant対応
+
+| participant | brewprintの実体 | 他の図へのリンク |
+|---|---|---|
+| Actor | `actor` ノード | なし |
+| UI | `event`（source=ui） | なし |
+| API | `procedure`（endpoint=true）のグループ | class diagram |
+| DB | `state`（kind=db） | ER diagram |
+
+矢印のラベルにはprocedure IDを記載する（例：`auth.procedure.login`）。
+リンクにはならないが、IDがあればMCP経由で詳細を参照できる。
 
 ---
 
