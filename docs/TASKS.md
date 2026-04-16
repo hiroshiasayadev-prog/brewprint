@@ -33,8 +33,8 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
 ## spec整備
 
 - [ ] **spec/nodes.md を新規作成**
-  - 各ノード種別（procedure / artifact / state / actor）のフィールド定義を網羅
-  - endpointフラグ含む
+  - 各ノード種別（task / asset / store / actor）のフィールド定義を網羅
+  - endpointフラグ含む（ADR 006-008に基づく）
 
 - [ ] **spec/views.md を新規作成**
   - 各図（DAG / ER / state / class / sequence）のrenderルールを定義

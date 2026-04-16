@@ -35,25 +35,27 @@ brewprintは**人間とLLMの共通設計言語**。
 
 ## ノード種別
 
+> 命名の根拠は `docs/adr/006-node-type-renaming.md` を参照。
+
 | 種別 | 内容 |
 |------|------|
-| `procedure` | 処理。インライン記述またはrefで別ファイル参照 |
-| `artifact` | 成果物。`scalar` / `struct` / `list` / `dict` |
-| `state` | DB・グローバル変数・session_stateなど永続化されるもの |
+| `task` | 処理。インライン記述またはrefで別ファイル参照 |
+| `asset` | 型定義。`scalar` / `struct` / `list` / `dict` |
+| `store` | 実行時にデータを保持する実体。DB・session_state・context・collectionなど |
 | `actor` | 人間・外部システム。sequence diagramのエントリーポイントとして使用 |
 
-### procedureのendpointフラグ
+### taskのendpointフラグ
 
-`endpoint: true` を付与したprocedureはバックエンドエンドポイントとして扱われ、class diagram viewに出力される。
+`endpoint: true` を付与したtaskはバックエンドエンドポイントとして扱われ、class diagram viewに出力される。
 
 ```yaml
 - id: login
-  type: procedure
+  type: task
   endpoint: true
   method: POST
   path: /auth/login
-  input: login_request    # artifactのID
-  output: auth_token      # artifactのID
+  input: login_request    # assetのID
+  output: auth_token      # assetのID
 ```
 
 | フィールド | 必須 | 内容 |
@@ -68,13 +70,13 @@ brewprintは**人間とLLMの共通設計言語**。
 
 classは独立したノード種別として持たない。
 
-> **「structのmethodsはnoteで明示できる程度のもの。それを超えるものはドメインロジックであり、procedureとしてDAGに出す」**
+> **「structのmethodsはnoteで明示できる程度のもの。それを超えるものはドメインロジックであり、taskとしてDAGに出す」**
 
 これはクリーンアーキテクチャのentity vs use caseの境界線とほぼ一致する。
 
 ```yaml
 - id: voltage_result
-  type: artifact
+  type: asset
   kind: struct
   fields:
     - name: value
