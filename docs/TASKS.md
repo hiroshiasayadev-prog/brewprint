@@ -12,30 +12,44 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
 
 ---
 
-- [ ] **YAMLの階層構造とディレクトリ構造の1:1対応設計 → ADR 010**
-  - 「設計と実装の乖離を構造的に防ぐ」ための仕組み
-  - YAMLの階層がそのままディレクトリ構造に対応するスキーマ設計が必要
-  - スキーマ設計に大きく影響するため独立したセッションで議論
+- [x] **YAMLの階層構造とディレクトリ構造の1:1対応設計 → ADR-010**
+  - CA強制・1ファイル=1ノード・model/asset分離・ビュー自動導出を確定
+  - ADR-007（asset定義）・ADR-002（ビュー別ファイル分け）を部分supersede
 
+- [x] **1ファイル=1メインノード + サブノード構造 → ADR-011**
+  - `main: true` フラグ・サブノードのprivateスコープを確定
+  - ADR-010の「1ファイル=1ノード」を「1ファイル=1メインノード」に改訂
 
+- [ ] **foreach / cond / initializes の設計 → ADR-012**
+  - `cond`：エッジの分岐点（ノードでない）。条件はnoteに書くcontract
+  - `foreach`：first-class化。外スコープ参照はparams明示強制。apply = 同ファイル内sub task ID参照
+  - `initializes`：taskの作業変数（空箱）の明示フィールド
+  - `for`：brewprintスコープ外。noteに押し込む
 
-- [ ] **UC-001: login flowのユースケースを書く**
-  - `docs/uc/001-login-flow.md` を新規作成
-  - sequence → DAG → ER が全部繋がるのを1ユースケースで通しで確認する
-  - actor / endpoint / state(kind=db) の実際のYAML記述を確認する
+- [ ] **ファイル内edgeの記述構造（control / data section） → ADR-013**
+  - 同一ファイル内のノード間edgeをどう書くか
+  - 制御線・データ線のsection構造
 
-- [ ] **eventノードのスキーマを決める → ADR 011**
+- [ ] **eventノードのスキーマを決める → ADR-014**
   - 制御フローの起点として `event` ノードをDAGに導入する方向は確定
   - `source` 属性（ui / time / external / er）でタグ付け
   - 具体的なスキーマが未定（spec/overview.md `open_issues` より）
 
-- [ ] **Edgeの管理方式を決める → ADR 012**
+- [ ] **Edgeの管理方式を決める → ADR-015**
   - クロスエッジに `kind` 属性が必要なため、Nodeのadjacency listではなく別管理が有力
   - 未決（spec/overview.md `open_issues` より）
 
 ---
 
-## spec整備
+## ユースケース
+
+- [ ] **UC-001: login flowのユースケースを書く**
+  - `docs/uc/001-login-flow.md` を新規作成
+  - sequence → DAG → ER が全部繋がるのを1ユースケースで通しで確認する
+  - actor / endpoint / store(kind=db) の実際のYAML記述を確認する（store=旧state）
+  - ADR-012/013（foreach/cond/edge）確定後に着手推奨
+
+---
 
 - [ ] **spec/nodes.md を新規作成**
   - 各ノード種別（task / asset / store / actor）のフィールド定義を網羅

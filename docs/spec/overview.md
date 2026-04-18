@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/overview.md
 status: draft
-last_updated: 2026-04-17
+last_updated: 2026-04-19
 summary: >
   brewprintの全体概要。コンセプト・ノード種別・クロスエッジ・伝搬方向・
   責務分離方針・未解決課題を定義する。
@@ -11,6 +11,11 @@ depends_on:
   - docs/adr/003-name-resolution-rules.md
   - docs/adr/004-sequence-diagram-participants.md
   - docs/adr/005-class-diagram-as-endpoint-view.md
+  - docs/adr/007-asset-store-boundary.md
+  - docs/adr/008-dag-dataflow-and-field-validation.md
+  - docs/adr/009-task-io-design.md
+  - docs/adr/010-ca-enforcement-directory-structure-model-asset-split.md
+  - docs/adr/011-file-main-node-and-sub-nodes.md
 open_issues:
   - eventノードのスキーマ未定
   - Edgeの別管理 vs Node内adjacency list未決
@@ -76,11 +81,13 @@ brewprintの**実装者はほぼAIを想定**している。この前提から�
 ## ノード種別
 
 > 命名の根拠は `docs/adr/006-node-type-renaming.md` を参照。
+> model/asset 分離の根拠は `docs/adr/010-ca-enforcement-directory-structure-model-asset-split.md` を参照。
 
 | 種別 | 内容 |
 |------|------|
-| `task` | 処理。インライン記述またはrefで別ファイル参照 |
-| `asset` | 型定義。`scalar` / `struct` / `list` / `dict` |
+| `task` | 処理。`returns` 宣言によって `asset` ノードを暗黙的に生成する |
+| `model` | 型定義。`scalar` / `struct` / `list` / `dict`。`model/` サブディレクトリに1ファイル=1定義 |
+| `asset` | フロー上の存在。`task` の `returns` から暗黙的に生まれる。独立ファイルは持たない |
 | `store` | 実行時にデータを保持する実体。DB・session_state・context・collectionなど |
 | `actor` | 人間・外部システム。sequence diagramのエントリーポイントとして使用 |
 
@@ -96,8 +103,10 @@ brewprintの**実装者はほぼAIを想定**している。この前提から�
   path: /auth/login
   params:
     - name: request
-      type: login_request    # assetのID
-  returns: auth_token        # assetのID
+      model: login_request    # modelのID
+  returns:
+    name: auth_token
+    model: token              # このassetノードがDAG上に暗黙的に生える
 ```
 
 | フィールド | 必須 | 内容 |
@@ -105,8 +114,8 @@ brewprintの**実装者はほぼAIを想定**している。この前提から�
 | `endpoint` | ✓ | `true` のとき class diagram viewに出力 |
 | `method` | ✓ | HTTP method（GET / POST / PUT / DELETE / PATCH） |
 | `path` | ✓ | URLパス |
-| `params` | 任意 | リクエストbodyのasset ID |
-| `returns` | 任意 | レスポンスbodyのasset ID |
+| `params` | 任意 | リクエストbodyのmodel ID |
+| `returns` | 任意 | レスポンスbodyのmodel IDと生成されるasset名 |
 
 ### classについて
 
@@ -118,7 +127,7 @@ classは独立したノード種別として持たない。
 
 ```yaml
 - id: voltage_result
-  type: asset
+  type: model
   kind: struct
   fields:
     - name: value
@@ -233,7 +242,7 @@ dogfoodしながら必要なものだけ昇格させる運用。候補：`retry`
 | 図 | renderの元となる要素 | 備考 |
 |---|---|---|
 | DAG | `task` ノード＋エッジ | 制御フロー・データフロー |
-| ER | `state`（kind=db）＋フィールド定義 | テーブル構造 |
+| ER | `store`（kind=db）＋フィールド定義 | テーブル構造 |
 | state diagram | `state` ノード＋遷移エッジ | 状態遷移 |
 | class diagram | `endpoint: true` なtaskをモジュール単位でグルーピング | APIのI/Oシグネチャ |
 | sequence diagram | Actor / UI / API / DB の4種のparticipantとそのやりとり | レイヤー間の粗い粒度の流れ |
@@ -245,7 +254,7 @@ dogfoodしながら必要なものだけ昇格させる運用。候補：`retry`
 | Actor | `actor` ノード | なし |
 | UI | `event`（source=ui） | なし |
 | API | `task`（endpoint=true）のグループ | class diagram |
-| DB | `state`（kind=db） | ER diagram |
+| DB | `store`（kind=db） | ER diagram |
 
 矢印のラベルにはtask IDを記載する（例：`auth.task.login`）。
 リンクにはならないが、IDがあればMCP経由で詳細を参照できる。
