@@ -1,7 +1,8 @@
 # 002: フォルダ階層=モジュール階層=名前空間
 
-- **status**: accepted
+- **status**: accepted（一部superseded）
 - **date**: 2026-04-17
+- **partial supersede**: ADR-010により `dag.yaml` / `er.yaml` のビュー別ファイル分けは廃止。名前空間ルール（フォルダ = モジュール）は継続有効
 
 ## 背景
 

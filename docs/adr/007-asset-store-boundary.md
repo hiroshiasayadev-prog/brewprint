@@ -1,7 +1,8 @@
 # 007: assetとstoreの境界定義
 
-- **status**: accepted
+- **status**: superseded
 - **date**: 2026-04-17
+- **superseded by**: ADR-010（asset = 型定義の定義をmodelに移管）
 
 ## 背景
 
