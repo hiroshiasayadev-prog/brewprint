@@ -12,7 +12,7 @@ taskのI/Oとして何を参照するか、およびassetのフィールド定�
 ### 1. assetはDAG上の共有ノード
 
 assetはDAGにおいて独立したノードとして定義され、複数のtaskから参照される。
-taskはassetノードのIDを `input` / `output` に指定することで接続を宣言する。
+taskはassetノードのIDを `input` / `outputs` に指定することで接続を宣言する。
 
 ```
 [task: login] --produces--> (auth_token) --consumed_by--> [task: dashboard]

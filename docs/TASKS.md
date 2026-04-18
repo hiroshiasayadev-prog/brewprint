@@ -12,19 +12,24 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
 
 ---
 
-## 仕様策定
+- [ ] **YAMLの階層構造とディレクトリ構造の1:1対応設計 → ADR 010**
+  - 「設計と実装の乖離を構造的に防ぐ」ための仕組み
+  - YAMLの階層がそのままディレクトリ構造に対応するスキーマ設計が必要
+  - スキーマ設計に大きく影響するため独立したセッションで議論
+
+
 
 - [ ] **UC-001: login flowのユースケースを書く**
   - `docs/uc/001-login-flow.md` を新規作成
   - sequence → DAG → ER が全部繋がるのを1ユースケースで通しで確認する
   - actor / endpoint / state(kind=db) の実際のYAML記述を確認する
 
-- [ ] **eventノードのスキーマを決める → ADR 006**
+- [ ] **eventノードのスキーマを決める → ADR 009**
   - 制御フローの起点として `event` ノードをDAGに導入する方向は確定
   - `source` 属性（ui / time / external / er）でタグ付け
   - 具体的なスキーマが未定（spec/overview.md `open_issues` より）
 
-- [ ] **Edgeの管理方式を決める → ADR 007**
+- [ ] **Edgeの管理方式を決める → ADR 010**
   - クロスエッジに `kind` 属性が必要なため、Nodeのadjacency listではなく別管理が有力
   - 未決（spec/overview.md `open_issues` より）
 

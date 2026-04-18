@@ -37,10 +37,41 @@ DAGのノード種別として `asset`（旧: artifact）と `store`（旧: stat
 | `collection` | 特定のassetを保持しクエリを持つリポジトリ（`of: <asset_id>`） |
 | `context` | React Context・DIコンテナ |
 
-### collection の制約
+### collectionの制約
 
 `store.kind: collection` の `of:` に指定できるのは **assetのIDのみ**。
 storeのネストは禁止。storeのネストが必要に見えるケースは `task` でつなぐ設計に切り出す。
+
+### collectionのnoteクエリ設計
+
+`collection` には `note` フィールドで自然言語のクエリ仕様を記述できる。
+
+```yaml
+- id: user_store
+  type: store
+  kind: collection
+  of: user
+  note: |
+    - active_users: is_active = true のもの
+    - find_by_email: email が一致するもの
+```
+
+**noteに書くべきもの（collection内で完結するもの）**
+- 単一collectionのフィールドに対するフィルタ・検索
+- 「言葉で書ける程度」の条件（等値・範囲・真偽フラグ等）
+
+**taskに切り出すべきもの（noteに書かないもの）**
+- 複数storeにまたがる結合
+- 集計・変換・ソートを伴う複雑なクエリ
+- 結果を別のassetに変換する処理
+
+この境界は `spec/overview.md` の「structのmethodsはnoteで書ける程度のもの、それを超えたらtaskに切り出す」という原則と同じ思想を `collection` に適用したもの。
+
+**noteの二重の役割**（ADR 008と同じ位置づけ）
+- 人間にとって: クエリ仕様のdocstring
+- LLMにとって: `inspect` ツールがsemantic validationの根拠として使用するcontract
+
+noteに書かれた内容は機械的validationの対象外だが、brewprintのMCPツールがLLMに渡すことで意味的整合性のチェックに使われる。
 
 ## 理由
 

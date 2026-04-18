@@ -31,6 +31,46 @@ brewprintは**人間とLLMの共通設計言語**。
 
 同一YAMLから複数の図をrenderする。ER・class diagram・DAG・state diagramは**同じシステムの別の切り口**であり、図はviewであって実体はひとつ。
 
+### YAMLはsingle source of truth
+
+YAMLがシステム設計の唯一の真実であり、実装・図・MCPレスポンスはすべてそこから導出される。
+
+- 「YAMLに存在しない実装」は原理的に生まれない
+- 「実装だけ追加」はYAMLを先に書かないと始まらない
+- 設計とドキュメントの乖離を構造的に防ぐ
+
+参照した公知概念：Terraform（infrastructure as code）・Prisma（schema as single source of truth）
+
+### brewprintのスコープ
+
+brewprintは**設計言語とMCPによるコンテキスト供給**までを責務とする。コード生成はbrewprintのスコープ外。
+
+```
+brewprint（設計言語 + MCP）
+    ↓ 設計コンテキストを供給
+Claude Code（CLAUDE.mdに従い実装）
+    ↓ 曖昧な点は実装を止める
+impl_tasks.md（未解決実装項目の積み場）
+```
+
+Claude CodeはbrewprintのMCPツールで設計を参照しながら実装する。CLAUDE.mdには以下を記述する：
+- YAMLのディレクトリ構造に従ってファイルを作ること
+- 設計上曖昧な点があれば即座に実装を停止し `impl_tasks.md` に記録すること
+- brewprintのMCPツールで設計コンテキストを参照すること
+
+### AI実装前提の設計哲学
+
+brewprintの**実装者はほぼAIを想定**している。この前提から導かれる設計方針：
+
+> **「人間が書きやすい」より「AIが迷わない」を優先する**
+
+具体的には：
+- **静的検証性に極振り** — IDによる参照の一意性を最優先にする
+- **インライン定義禁止** — 使い捨てstructであっても名前付き定義を強制する（ADR 009）
+- **曖昧な記法を排除** — 複数の解釈が生まれうる記法は採用しない
+
+人間向けの「書きやすさ」はUIやツールで補う。YAML自体は厳密さを優先する。
+
 ---
 
 ## ノード種別
@@ -54,8 +94,10 @@ brewprintは**人間とLLMの共通設計言語**。
   endpoint: true
   method: POST
   path: /auth/login
-  input: login_request    # assetのID
-  output: auth_token      # assetのID
+  params:
+    - name: request
+      type: login_request    # assetのID
+  returns: auth_token        # assetのID
 ```
 
 | フィールド | 必須 | 内容 |
