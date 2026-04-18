@@ -6,7 +6,7 @@
 ## 背景
 
 sequence diagramを書くには「登場人物（participant）」が必要。
-しかしbrewprintの既存ノード種別（procedure / artifact / state）にはparticipantの概念がなく、
+しかしbrewprintの既存ノード種別（task / asset / store）にはparticipantの概念がなく、
 sequence diagramをどう表現するかが未定だった。
 
 ## 決定
@@ -17,8 +17,8 @@ sequence diagramのparticipantは以下の4種とする。
 |---|---|---|
 | Actor | 人間・外部システム | 新規：`actor` ノード |
 | UI | イベント発火点 | 既存：`event`（source=ui） |
-| API | バックエンドエンドポイント単位 | 既存：`procedure`（endpoint=true） |
-| DB | 永続化層 | 既存：`state`（kind=db） |
+| API | バックエンドエンドポイント単位 | 既存：`task`（endpoint=true） |
+| DB | 永続化層 | 既存：`store`（kind=db） |
 
 ### participantのリンク
 
@@ -26,12 +26,12 @@ Mermaidのsequence diagramでは矢印にリンクを貼ることができない
 リンクはparticipant単位で付与する。
 
 - `API` participant → class diagram（endpoint viewのURL）
-- `DB` participant → ER diagram（stateのURL）
+- `DB` participant → ER diagram（storeのURL）
 - `Actor` / `UI` → リンク不要
 
 ### 矢印のラベル
 
-矢印のラベルにはprocedure IDを記載する（`auth.procedure.login` など）。
+矢印のラベルにはtask IDを記載する（`auth.task.login` など）。
 リンクにはならないが、IDがあればMCP経由で詳細を参照できる。
 
 ### 粒度の方針
@@ -41,7 +41,7 @@ sequence diagramは**レイヤー間の粗い粒度の流れ**を表現する。
 
 ```
 粗い粒度 → sequence diagram（Actor/UI/API/DB間のやりとり）
-細かい粒度 → DAG（procedure内部の処理フロー）
+細かい粒度 → DAG（task内部の処理フロー）
 ```
 
 ## 理由
@@ -56,7 +56,7 @@ sequence diagramは**レイヤー間の粗い粒度の流れ**を表現する。
 
 ## 影響
 
-- `procedure` に `endpoint` フラグが追加される（ADR 005で詳細定義）
+- `task` に `endpoint` フラグが追加される（ADR 005で詳細定義）
 - `actor` ノードが新規追加される（軽量な定義で良い）
 - sequence diagram viewのrenderロジックは、4種のparticipantをレイヤー順に並べる
 - spec/overview.md の「書ける図の一覧」を更新する必要がある

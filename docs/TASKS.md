@@ -24,12 +24,12 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
   - sequence → DAG → ER が全部繋がるのを1ユースケースで通しで確認する
   - actor / endpoint / state(kind=db) の実際のYAML記述を確認する
 
-- [ ] **eventノードのスキーマを決める → ADR 009**
+- [ ] **eventノードのスキーマを決める → ADR 011**
   - 制御フローの起点として `event` ノードをDAGに導入する方向は確定
   - `source` 属性（ui / time / external / er）でタグ付け
   - 具体的なスキーマが未定（spec/overview.md `open_issues` より）
 
-- [ ] **Edgeの管理方式を決める → ADR 010**
+- [ ] **Edgeの管理方式を決める → ADR 012**
   - クロスエッジに `kind` 属性が必要なため、Nodeのadjacency listではなく別管理が有力
   - 未決（spec/overview.md `open_issues` より）
 

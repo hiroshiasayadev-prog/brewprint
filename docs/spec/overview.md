@@ -105,8 +105,8 @@ brewprintの**実装者はほぼAIを想定**している。この前提から�
 | `endpoint` | ✓ | `true` のとき class diagram viewに出力 |
 | `method` | ✓ | HTTP method（GET / POST / PUT / DELETE / PATCH） |
 | `path` | ✓ | URLパス |
-| `input` | 任意 | リクエストbodyのartifact ID |
-| `output` | 任意 | レスポンスbodyのartifact ID |
+| `params` | 任意 | リクエストbodyのasset ID |
+| `returns` | 任意 | レスポンスbodyのasset ID |
 
 ### classについて
 
@@ -134,10 +134,10 @@ classは独立したノード種別として持たない。
 
 | エッジ | 意味 |
 |--------|------|
-| DAG procedure → ER table | `write` |
-| ER table → DAG artifact | `read` |
-| state transition → DAG procedure | `trigger` |
-| DAG artifact → state | `reflect` |
+| DAG task → ER table | `write` |
+| ER table → DAG asset | `read` |
+| state transition → DAG task | `trigger` |
+| DAG asset → state | `reflect` |
 | state → ER table | `hydrate` |
 
 ### クロスエッジの連鎖
@@ -145,15 +145,15 @@ classは独立したノード種別として持たない。
 クロスエッジは連鎖することがある。例：`write`の副作用としてER変化が発生し、別の`trigger`が発火する。
 
 ```
-procedure → (write) → ER table → (trigger) → 別のprocedure
+task → (write) → ER table → (trigger) → 別のtask
 ```
 
 この連鎖はスコープ内だが、**ハッピーパスの範囲で記述できる連鎖のみ**を対象とする。
 無限ループや競合が生じる連鎖はハッピーパス外としてスコープ外。
 
-### procedure間の参照（refクロスエッジ）
+### task間の参照（refクロスエッジ）
 
-別モジュールのprocedureをrefで呼ぶ場合、DAG内部のエッジではなくクロスエッジ的に振る舞う。
+別モジュールのtaskをrefで呼ぶ場合、DAG内部のエッジではなくクロスエッジ的に振る舞う。
 フルパス参照（ADR 003）で記述し、依存関係として扱う。
 
 ---
@@ -165,8 +165,8 @@ procedure → (write) → ER table → (trigger) → 別のprocedure
 ```
 trigger発生
   → state transition (state diagram)
-    → procedure発動 (DAG)
-      → artifact変形 (DAG)
+    → task発動 (DAG)
+      → asset変形 (DAG)
         → storage書き込み (ER)
 ```
 
@@ -174,7 +174,7 @@ trigger発生
 
 ```
 ER変化
-  → state反映
+  → store反映
     → UI更新
 ```
 
@@ -232,10 +232,10 @@ dogfoodしながら必要なものだけ昇格させる運用。候補：`retry`
 
 | 図 | renderの元となる要素 | 備考 |
 |---|---|---|
-| DAG | `procedure` ノード＋エッジ | 制御フロー・データフロー |
+| DAG | `task` ノード＋エッジ | 制御フロー・データフロー |
 | ER | `state`（kind=db）＋フィールド定義 | テーブル構造 |
 | state diagram | `state` ノード＋遷移エッジ | 状態遷移 |
-| class diagram | `endpoint: true` なprocedureをモジュール単位でグルーピング | APIのI/Oシグネチャ |
+| class diagram | `endpoint: true` なtaskをモジュール単位でグルーピング | APIのI/Oシグネチャ |
 | sequence diagram | Actor / UI / API / DB の4種のparticipantとそのやりとり | レイヤー間の粗い粒度の流れ |
 
 ### sequence diagramのparticipant対応
@@ -244,10 +244,10 @@ dogfoodしながら必要なものだけ昇格させる運用。候補：`retry`
 |---|---|---|
 | Actor | `actor` ノード | なし |
 | UI | `event`（source=ui） | なし |
-| API | `procedure`（endpoint=true）のグループ | class diagram |
+| API | `task`（endpoint=true）のグループ | class diagram |
 | DB | `state`（kind=db） | ER diagram |
 
-矢印のラベルにはprocedure IDを記載する（例：`auth.procedure.login`）。
+矢印のラベルにはtask IDを記載する（例：`auth.task.login`）。
 リンクにはならないが、IDがあればMCP経由で詳細を参照できる。
 
 ---
