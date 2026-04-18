@@ -72,7 +72,19 @@ NNNは3桁ゼロ埋めの連番。
 ## 影響
 
 この決定が他の仕様・実装に与える影響。
+
+## Evidence
+- commit: <ADR起票時のcommit hash>
+- impl commit: <実装反映時のcommit hash。未着手なら "tbd">
+- 参考: <"dagsterのassets参考" / "Goのinterface慣習" 程度の軽い記述。なければ省略>
 ```
+
+### Evidenceの書き方
+
+- **commit / impl commit**: git logから拾う。ADR起票と実装反映が同コミットなら1行でOK
+- **参考**: OSS名・言語慣習名のレベル。URL/取得日は書かない
+  - ✅ `dagsterのsoftware-defined assets参考` / `Goのinterface慣習` / `特になし`
+  - ❌ `https://docs.dagster.io/... (retrieved 2026-04-19)` ← 不要
 
 ### statusの基準
 
@@ -191,3 +203,25 @@ md-section:read_section
 2. `md-section:list_headings` で構造把握
 3. `md-section:read_section` で必要なセクションだけ取得
 4. それでも足りない場合のみ全文取得
+
+---
+
+## 10. 既存ADRへの遡及対応方針
+
+ADR 001〜011は作成時点でEvidenceセクションが存在しない。別sessionで以下を追記する：
+
+- `commit`: git logから拾って付与
+- `impl commit`: 実装反映コミットがあれば付与、未着手なら "tbd"
+- `参考`: 思い出せる範囲で記載。思い出せなければ省略
+
+フォーマット変更は「追記のみ」。既存セクション（背景/決定/理由/影響）は変更しない。
+
+---
+
+## 11. 未解決事項
+
+以下は方針未定。議論が進み次第このdocを更新すること。
+
+- **ADR-010の複数論点混在**: 「CA強制 / ディレクトリ構造 / model-asset分離」が1 ADRに混在。ADR-011で部分的に上書きされている。分割するか追記のみにするかは未定
+- **DISCLAIMER的な文書の要否**: 「業務時間外開発」「会社リソース不使用」「公知技術の組合せ」を明示するプロジェクトルート文書を作るかどうか未定
+- **Release snapshots運用**: 節目ごとにADR群＋実装をGitタグで凍結する運用の要否未定
