@@ -15,6 +15,7 @@ depends_on:
   - docs/adr/017-diagram-layers-and-scope.md
   - docs/adr/020-cross-edge-management.md
   - docs/adr/022-dag-node-shapes-and-edge-types.md
+  - docs/adr/023-control-flow-scope-and-branch-entry.md
 ---
 
 # DAG renderルール
@@ -34,21 +35,61 @@ depends_on:
 ```markdown
 # {メインノードID}
 
+**API**: [{method} {path}](../views/api-table.md)
+
 {メインノードのnote}
 
 ​```mermaid
 flowchart TD
   ...
 ​```
+
+## Tasks
+
+### {task_id}
+...
 ```
 
 - H1 = メインノードの `id`
-- 説明文 = メインノードの `note`。`note` がない場合は説明文を省略する
+- **API行** = メインノードが `endpoint: true` の場合のみ出力。`note` の前に置く
+- 説明文 = メインノードの `note`。`note` がない場合は省略
 - Mermaid記法: `flowchart TD`（上から下）
+- **Tasks詳細セクション** = Mermaid図の後に続く。各taskのsignature・reads/writes・noteを一覧する
+
+### Tasks詳細セクションのフォーマット
+
+```markdown
+## Tasks
+
+### login
+**params**: credentials (credential)
+**returns**: auth_token (token)
+**reads**: session_store
+**writes**: session_store
+**note**: 認証情報を検証しトークンを発行する
+
+### other_task
+**外部参照**: [auth.task.validate](../../auth/task/validate.md)
+```
+
+- 同ファイル内のtask: signature（params/returns）・reads/writes・noteを列挙
+- 外部参照taskのみ: `**外部参照**:` でリンクを示し詳細は省略
+- `reads` / `writes` がない場合は該当行を省略
+- `note` がない場合は該当行を省略
 
 ---
 
 ## ノードのrender
+
+### start / end
+
+```
+([Start])
+([End])
+```
+
+形状: スタジアム（Mermaid `([label])`）。ISO 5807:1985 Terminal記号に対応（ADR-022）。
+DAGの先頭に `([Start])`、末尾に `([End])` を置く。`([End])` はfloatingノード（ADR-023）も含む全終端に接続する。
 
 ### task
 
@@ -115,6 +156,31 @@ process_item["↻ process_item"]
 
 apply先が外部参照ノードの場合は外部ノードのclassDefと組み合わせる。
 
+### ノードの色付け
+
+種別ごとにclassDefで色分けする。WCAG 2.1 Level AA（コントラスト比4.5:1以上）に準拠（ADR-022）。
+
+```
+classDef taskNode     fill:#4A90D9,stroke:#2C5F8A,color:#fff
+classDef assetNode    fill:#5BA55B,stroke:#3A6B3A,color:#fff
+classDef storeNode    fill:#E8A838,stroke:#B07820,color:#fff
+classDef branchNode   fill:#9B6BBD,stroke:#6B3D8F,color:#fff
+classDef forkNode     fill:#8A8A8A,stroke:#5A5A5A,color:#fff
+classDef terminalNode fill:#2C2C2C,stroke:#000,color:#fff
+classDef external     fill:#E0E0E0,stroke:#999,color:#555
+```
+
+各ノードに対応するclassを付与する。
+
+```
+class login taskNode
+class auth_token assetNode
+class session_store storeNode
+class route_by_role branchNode
+class fan_out,aggregate forkNode
+class Start,End terminalNode
+```
+
 ---
 
 ## エッジのrender
@@ -136,10 +202,12 @@ raw --> transform
 ```
 
 store の reads / writes も同じデータ線で描く。方向で reads / writes を区別する。
+reads と writes が両方ある場合は双方向エッジ `<-->` を使う。
 
 ```
-session_store[(session_store)] --> login
-login --> session_store[(session_store)]
+session_store[(session_store)] --> login    %% reads のみ
+login --> audit_log[(audit_log)]            %% writes のみ
+login <--> session_store[(session_store)]   %% reads + writes 両方
 ```
 
 ### 制御線（`==>`）
@@ -216,9 +284,26 @@ flow:
 Mermaid出力:
 ```mermaid
 flowchart TD
-  process_report[process_report] --> raw([raw])
+  subgraph params
+    config([config])
+  end
+  subgraph returns
+    result([result])
+  end
+
+  ([Start]) ==> process_report
+  config --> process_report[process_report]
+  process_report --> raw([raw])
   raw --> transform[transform]
-  transform --> result([result])
+  transform --> result
+  result ==> ([End])
+
+  classDef taskNode  fill:#4A90D9,stroke:#2C5F8A,color:#fff
+  classDef assetNode fill:#5BA55B,stroke:#3A6B3A,color:#fff
+  classDef terminalNode fill:#2C2C2C,stroke:#000,color:#fff
+  class process_report,transform taskNode
+  class raw assetNode
+  class Start,End terminalNode
 ```
 
 ### fork / join を含むDAG

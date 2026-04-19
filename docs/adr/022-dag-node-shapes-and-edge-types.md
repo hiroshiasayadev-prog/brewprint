@@ -21,6 +21,7 @@ brewprintの設計が既存の標準・公知技術の組み合わせである�
 | `store` | シリンダー | `[(label)]` | ISO 5807:1985 Stored Data記号 / BPMN 2.0 Data Store（OMG） |
 | `branch` | ひし形 | `{label}` | ISO 5807:1985 Decision記号 / UML Activity Diagram Decision Node（OMG UML 2.x） / BPMN 2.0 Exclusive Gateway（OMG） |
 | `fork` / `join` | 六角形 | `{{label}}` | **Mermaid制約による代替形状**（後述） |
+| `start` / `end` | スタジアム | `([Start])` / `([End])` | ISO 5807:1985 Terminal記号 |
 
 ### fork / join の形状について
 
@@ -44,7 +45,20 @@ Mermaid flowchartはこのバー記号を再現できないため、視覚的に
 | `"parallel"` | forkの各ブランチへのエッジ | BPMN 2.0 Parallel Gateway（OMG） |
 | `"foreach"` | foreachのapply先taskへのエッジ | BPMN 2.0 Multi-Instance Activity（OMG） |
 
-## 理由
+### ノードの色付け
+
+種別ごとにclassDefで色分けする。配色はWCAG 2.1（W3C）Level AAのコントラスト比基準（4.5:1以上）に準拠する。
+色の意味づけはbrewprintのrender実装上の選択であり、国際標準の規定外。
+
+| ノード種別 | classDef名 | fill | stroke | color |
+|-----------|-----------|------|--------|-------|
+| `task` | `taskNode` | `#4A90D9` | `#2C5F8A` | `#fff` |
+| `asset` | `assetNode` | `#5BA55B` | `#3A6B3A` | `#fff` |
+| `store` | `storeNode` | `#E8A838` | `#B07820` | `#fff` |
+| `branch` | `branchNode` | `#9B6BBD` | `#6B3D8F` | `#fff` |
+| `fork` / `join` | `forkNode` | `#8A8A8A` | `#5A5A5A` | `#fff` |
+| `start` / `end` | `terminalNode` | `#2C2C2C` | `#000` | `#fff` |
+| 外部参照 | `external` | `#E0E0E0` | `#999` | `#555` |
 
 ### 公知技術を根拠とする
 
@@ -58,7 +72,7 @@ Mermaid flowchartはこのバー記号を再現できないため、視覚的に
 
 ## 影響
 
-- `spec/views/dag.md` のノード形状・エッジ種別の根拠として本ADRを参照する
+- `spec/views/dag.md` のノード形状・エッジ種別・色付けの根拠として本ADRを参照する
 - fork/joinの六角形がUML標準と異なることを `spec/views/dag.md` に注記する
 - 制御線ラベルの根拠として本ADRを `spec/views/dag.md` から参照する
 
