@@ -68,6 +68,6 @@ apply task内で副作用としてstoreを更新するパターン（return None
 - storeへの参照・更新のedge表現はADR-015（ファイル内edge記述構造）に委譲
 
 ## Evidence
-- commit: tbd
+- commit: 643a302
 - impl commit: tbd
 - 参考: 特になし

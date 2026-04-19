@@ -73,6 +73,6 @@ element型をforeach側で明示すると、listのmodel定義とforeachで型�
 - ADR-015の`$`シジルテーブルに`$item`を追記する
 
 ## Evidence
-- commit: tbd
+- commit: 86be72f
 - impl commit: tbd
 - 参考: 特になし
