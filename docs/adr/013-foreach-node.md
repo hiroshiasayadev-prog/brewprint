@@ -1,7 +1,8 @@
 # 013: foreachノード設計
 
-- **status**: accepted
+- **status**: superseded
 - **date**: 2026-04-19
+- **superseded by**: 016
 
 ## 背景
 
