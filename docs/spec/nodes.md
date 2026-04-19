@@ -421,7 +421,7 @@ Applicationレイヤー。FSMの状態ノード。State Diagramで使用。`stor
 
 ## branch
 
-> 出典: ADR-012
+> 出典: ADR-012, ADR-023
 
 Processingレイヤー。排他分岐。条件に応じて後続パスを**1本だけ**選ぶ。
 
@@ -441,6 +441,10 @@ Processingレイヤー。排他分岐。条件に応じて後続パスを**1本�
 | `params` | 任意 | list\<param\> | 分岐判断に使う入力 | ADR-012 |
 
 合流点は明示しない。後続taskがedge構造上で複数パスから受け取る形になる場合、それを暗黙の合流点として読む（ADR-012）。
+
+**スコープルール**: branch内部で生成されたassetはbranch外から直接参照不可。スコープ外にデータを渡す場合は `initializes` + `writes`/`reads` を使う。各パスが独立して終端する場合、後続から参照されないtask（floatingノード）はDAGでENDに直行する形でrenderされる（ADR-023）。
+
+flow:内での記法は `spec/edges.md` の `1-4. branchエントリ` を参照。
 
 ---
 

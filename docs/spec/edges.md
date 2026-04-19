@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/edges.md
 status: wip
-last_updated: 2026-04-19
+last_updated: 2026-04-20
 summary: >
   brewprintのエッジ記法の定義。
   ファイル内データフロー（flow:セクション）・状態遷移（transitions:セクション）・
@@ -16,6 +16,7 @@ depends_on:
   - docs/adr/018-event-node.md
   - docs/adr/019-state-node.md
   - docs/adr/020-cross-edge-management.md
+  - docs/adr/023-control-flow-scope-and-branch-entry.md
 ---
 
 # エッジ定義仕様
@@ -40,6 +41,32 @@ brewprintのエッジは記述場所によって3種に分かれる。
 ノード間のwiring（どの出力がどの入力になるか）はすべて `flow:` セクションに集約する（ADR-015）。
 
 参照: Airflow（`@task` + `>>`）、Prefect（`@task` + `@flow`）、Temporal（activity + workflow）と同じ構造。
+
+### 制御フロースコープ
+
+> 出典: ADR-023
+
+**制御フロー構文（`branch` / `fork` / `foreach`）の内部で生成されたassetは、その構文のスコープ外から直接参照不可。**
+
+スコープ外にデータを渡す必要がある場合は、`initializes` で事前宣言したstoreに `writes` で格納し、後続taskが `reads` で参照する。
+
+```yaml
+# NG: 分岐内のassetを外部wiringで直接参照
+- step: finalize
+  params:
+    result: admin_flow     # admin_flowはbranchスコープ内のため参照不可
+
+# OK: storeを介して分岐外にデータを渡す
+- id: admin_flow
+  type: task
+  writes: [role_result_store]
+
+- id: finalize
+  type: task
+  reads: [role_result_store]
+```
+
+収束不要なケース（各パスが独立して終端する）はstoreも不要。その場合、分岐後のtaskはfloatingノードとなりDAGでENDに直行する形でrenderされる（ADR-023）。
 
 ### 1-1. stepエントリ（通常のtask）
 
@@ -115,7 +142,40 @@ flow:
 
 `fork` と `join` は必ずペアで使う。`fork` 単体・`join` 単体は不正（ADR-012）。
 
-### 1-3. foreachエントリ（ループ実行）
+### 1-4. branchエントリ（排他分岐）
+
+> 出典: ADR-012, ADR-023
+
+```yaml
+flow:
+  - branch: route_by_role
+    params:
+      user: fetch_user
+    cases:
+      - label: admin
+        step: admin_flow
+      - label: user
+        step: user_flow
+```
+
+#### branchエントリのフィールド
+
+| フィールド | 必須 | 内容 | 出典 |
+|-----------|------|------|------|
+| `branch` | ✓ | branch node ID | ADR-012 |
+| `params` | 任意 | 分岐判断に使う入力のwiring（stepエントリと同じルール） | ADR-023 |
+| `cases` | ✓ | 各パスのエントリポイントのリスト | ADR-023 |
+
+#### casesエントリのフィールド
+
+| フィールド | 必須 | 内容 | 出典 |
+|-----------|------|------|------|
+| `label` | ✓ | 条件ラベル。人間とLLMへの意味記述。評価はbrewprintのスコープ外 | ADR-023 |
+| `step` | ✓ | このケースのエントリポイントとなるtask ID（単一） | ADR-023 |
+
+`step` は単一のnode IDのみ。エントリポイント以降の後続stepはwiring（`params`参照）から導出されるDAG構造によって決まるため、cases内での列挙は不要。`fork` の `branches` がstep列を持つのは並列ブランチの帰属を示す必要があるため。`branch` は1パスしか実行されないためエントリポイントのみで十分（ADR-023）。
+
+### 1-5. foreachエントリ（ループ実行）
 
 > 出典: ADR-013（superseded）, ADR-016
 
@@ -155,7 +215,7 @@ flow:
 
 DAGレンダリングではforeachはapply先taskのboxに ↻ アイコンを装飾する形で表現。foreachが独立したboxとして描画されることはない（ADR-016）。
 
-### 1-4. $シジル体系まとめ
+### 1-6. $シジル体系まとめ
 
 > 出典: ADR-015, ADR-016
 
