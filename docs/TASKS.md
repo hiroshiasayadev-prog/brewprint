@@ -55,17 +55,19 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
 
 ---
 
-- [ ] **spec/nodes.md を新規作成**
-  - 各ノード種別（task / asset / store / actor）のフィールド定義を網羅
-  - endpointフラグ含む（ADR 006-008に基づく）
+- [x] **spec/nodes.md を新規作成**
+  - 全ノード種別のフィールド定義を網羅（ADR-001〜021に基づく）
 
-- [ ] **spec/views.md を新規作成**
-  - 各図（DAG / ER / state / class / sequence）のrenderルールを定義
-  - どのノード・エッジをどの図に出力するかのマッピング
+- [x] **spec/edges.md を新規作成**
+  - flow: / transitions: / reads/writes / $シジル体系を定義（ADR-015, 016, 019, 020に基づく）
 
-- [ ] **spec/edges.md を新規作成**
-  - クロスエッジの種類（write / read / trigger / reflect / hydrate）の定義
-  - Edgeの管理方式が決まり次第着手（ADR 007に依存）
+- [ ] **spec/views/ ディレクトリを作成し図ごとにspecを書く**
+  - `spec/views/dag.md` — DAGのrenderルール（ノード・エッジのマッピング）
+  - `spec/views/er.md` — ER図のrenderルール
+  - `spec/views/state.md` — State Diagramのrenderルール
+  - `spec/views/sequence.md` — Sequence Diagramのrenderルール
+  - `spec/views/api-table.md` — API Table（list_endpoints MCPツール出力）のルール
+  - 1ファイル = 1図。各ファイルにFront Matter（doc-policy準拠）
 
 ---
 

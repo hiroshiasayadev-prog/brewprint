@@ -75,4 +75,4 @@ element型をforeach側で明示すると、listのmodel定義とforeachで型�
 ## Evidence
 - commit: 86be72f
 - impl commit: tbd
-- 参考: 特になし
+- 参考: BPMN 2.0 Multi-Instance Activity（sequential / parallel モード、OMG）

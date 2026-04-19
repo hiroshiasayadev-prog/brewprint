@@ -191,6 +191,6 @@ ADR-004の「軽量な定義でよい」方針を踏襲。noteで意味付けで
 - ADR-008の `fields[].comment` 言及は本ADRにより `fields[].note` に改名済みと注記する
 
 ## Evidence
-- commit: tbd
+- commit: 66e3c1a
 - impl commit: tbd
 - 参考: 特になし

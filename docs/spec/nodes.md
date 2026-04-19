@@ -21,6 +21,7 @@ depends_on:
   - docs/adr/019-state-node.md
   - docs/adr/020-cross-edge-management.md
   - docs/adr/021-model-field-structure.md
+  - docs/adr/023-control-flow-scope-and-branch-entry.md
 ---
 
 # ノード定義仕様
