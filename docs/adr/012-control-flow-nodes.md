@@ -91,6 +91,6 @@ Unix/並列計算全般で「並列実行の起点」として定着している
 - ファイル内edgeの記述構造（`fork`-`join` の紐付け方法を含む）は ADR-015 へ委譲
 
 ## Evidence
-- commit: tbd
+- commit: e11491a
 - impl commit: tbd
 - 参考: Airflow BranchPythonOperator参考、BPMN Exclusive Gateway / Parallel Gateway参考

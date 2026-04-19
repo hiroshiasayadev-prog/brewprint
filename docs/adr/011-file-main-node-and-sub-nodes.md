@@ -98,7 +98,7 @@ end
 - ADR-010のその他の決定（CA強制・ビュー自動導出・model/asset分離・ディレクトリ構造）は継続有効
 - `spec/nodes.md`（未作成）にてメインノード・サブノードのフィールド定義を詳細化する
 - `branch`（旧仮称 `cond`）/ `fork` / `join` の設計はADR-012に委譲
-- `foreach` の設計はADR-013に委譲
+- `foreach` の設計はADR-013にて確定
 - `initializes` の設計はADR-014に委譲
 - ファイル内edgeの記述構造（control/data section）はADR-015に委譲
 

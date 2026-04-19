@@ -90,6 +90,7 @@ brewprintの**実装者はほぼAIを想定**している。この前提から�
 | `asset` | フロー上の存在。`task` の `returns` から暗黙的に生まれる。独立ファイルは持たない |
 | `store` | 実行時にデータを保持する実体。DB・session_state・context・collectionなど |
 | `actor` | 人間・外部システム。sequence diagramのエントリーポイントとして使用 |
+| `foreach` | ループ。list型assetの各要素にtaskを適用し、結果をcollectして返す。`mode: sequential`（デフォルト）/ `map`（並列） |
 | `branch` | 排他分岐。条件に応じて後続パスを1本だけ選ぶ。合流点は暗黙（edge構造から読む） |
 | `fork` | 並列分岐。後続パスをすべて並列実行する。必ず `join` とペアで使う |
 | `join` | 合流。対応する `fork` の全ブランチが揃うまで待つ。必ず `fork` とペアで使う |
