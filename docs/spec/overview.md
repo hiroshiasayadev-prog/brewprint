@@ -10,14 +10,15 @@ depends_on:
   - docs/adr/002-folder-as-namespace.md
   - docs/adr/003-name-resolution-rules.md
   - docs/adr/004-sequence-diagram-participants.md
-  - docs/adr/005-class-diagram-as-endpoint-view.md
   - docs/adr/007-asset-store-boundary.md
   - docs/adr/008-dag-dataflow-and-field-validation.md
   - docs/adr/009-task-io-design.md
   - docs/adr/010-ca-enforcement-directory-structure-model-asset-split.md
   - docs/adr/011-file-main-node-and-sub-nodes.md
+  - docs/adr/017-diagram-layers-and-scope.md
+  - docs/adr/018-event-node.md
 open_issues:
-  - eventノードのスキーマ未定
+  - stateノード（FSM）のスキーマ未定（ADR-019）
   - Edgeの別管理 vs Node内adjacency list未決
   - non-functional属性（retry/idempotent/async）のfirst-class化はdogfood後に判断
 ---
@@ -83,21 +84,24 @@ brewprintの**実装者はほぼAIを想定**している。この前提から�
 > 命名の根拠は `docs/adr/006-node-type-renaming.md` を参照。
 > model/asset 分離の根拠は `docs/adr/010-ca-enforcement-directory-structure-model-asset-split.md` を参照。
 
-| 種別 | 内容 |
-|------|------|
-| `task` | 処理。`returns` 宣言によって `asset` ノードを暗黙的に生成する |
-| `model` | 型定義。`scalar` / `struct` / `list` / `dict`。`model/` サブディレクトリに1ファイル=1定義 |
-| `asset` | フロー上の存在。`task` の `returns` から暗黙的に生まれる。独立ファイルは持たない |
-| `store` | 実行時にデータを保持する実体。DB・session_state・context・collectionなど |
-| `actor` | 人間・外部システム。sequence diagramのエントリーポイントとして使用 |
-| `foreach` | ループ。list型assetの各要素にtaskを適用し、結果をcollectして返す。`mode: sequential`（デフォルト）/ `map`（並列） |
-| `branch` | 排他分岐。条件に応じて後続パスを1本だけ選ぶ。合流点は暗黙（edge構造から読む） |
-| `fork` | 並列分岐。後続パスをすべて並列実行する。必ず `join` とペアで使う |
-| `join` | 合流。対応する `fork` の全ブランチが揃うまで待つ。必ず `fork` とペアで使う |
+| 種別 | レイヤー | 内容 |
+|------|---------|------|
+| `task` | Processing | 処理。`returns` 宣言によって `asset` ノードを暗黙的に生成する |
+| `model` | Data | 型定義。`scalar` / `struct` / `list` / `dict`。`model/` サブディレクトリに1ファイル=1定義 |
+| `asset` | Processing | フロー上の存在。`task` の `returns` から暗黙的に生まれる。独立ファイルは持たない |
+| `store` | Processing / Data | 実行時にデータを保持する実体。DB・session_state・context・collectionなど |
+| `actor` | Application | 人間・外部システム。sequence diagramのエントリーポイントとして使用 |
+| `event` | Application | 制御フローの起点。`source`（ui/time/external/er）でタグ付け。DAGには登場しない |
+| `state` | Application | FSMの状態ノード。State Diagramで使用。`store`（データ保持）とは別概念（ADR-019参照） |
+| `branch` | Processing | 排他分岐。条件に応じて後続パスを1本だけ選ぶ。合流点は暗黙（edge構造から読む） |
+| `fork` | Processing | 並列分岐。後続パスをすべて並列実行する。必ず `join` とペアで使う |
+| `join` | Processing | 合流。対応する `fork` の全ブランチが揃うまで待つ。必ず `fork` とペアで使う |
+
+> `foreach` はADR-016にてnode typeから廃止。`flow:` セクションの制御構文として記述する。
 
 ### taskのendpointフラグ
 
-`endpoint: true` を付与したtaskはバックエンドエンドポイントとして扱われ、class diagram viewに出力される。
+`endpoint: true` を付与したtaskはバックエンドエンドポイントとして扱われ、`list_endpoints` MCPツールで出力される。class diagram viewには出力しない（ADR-017）。
 
 ```yaml
 - id: login
@@ -115,7 +119,7 @@ brewprintの**実装者はほぼAIを想定**している。この前提から�
 
 | フィールド | 必須 | 内容 |
 |---|---|---|
-| `endpoint` | ✓ | `true` のとき class diagram viewに出力 |
+| `endpoint` | ✓ | `true` のとき `list_endpoints` MCPツールで出力 |
 | `method` | ✓ | HTTP method（GET / POST / PUT / DELETE / PATCH） |
 | `path` | ✓ | URLパス |
 | `params` | 任意 | リクエストbodyのmodel ID |
@@ -193,12 +197,14 @@ ER変化
 
 ### triggerの発生源（4種）
 
+> eventノードの詳細設計は `docs/adr/018-event-node.md` を参照。
+
 | 発生源 | 例 |
 |--------|----|
 | `ui` | ボタンクリック、フォーム送信 |
 | `time` | cron、scheduled batch |
 | `external` | webhook、message queue、WebSocket |
-| `er` | テーブル変化による派生データ再計算 |
+| `er` | storeの値が変化したことによって発火 |
 
 ---
 
@@ -243,13 +249,36 @@ dogfoodしながら必要なものだけ昇格させる運用。候補：`retry`
 
 ## 書ける図の一覧
 
+> 図レイヤーとスコープの根拠は `docs/adr/017-diagram-layers-and-scope.md` を参照。
+
+### Applicationレイヤー
+
 | 図 | renderの元となる要素 | 備考 |
 |---|---|---|
-| DAG | `task` ノード＋エッジ | 制御フロー・データフロー |
-| ER | `store`（kind=db）＋フィールド定義 | テーブル構造 |
-| state diagram | `state` ノード＋遷移エッジ | 状態遷移 |
-| class diagram | `endpoint: true` なtaskをモジュール単位でグルーピング | APIのI/Oシグネチャ |
-| sequence diagram | Actor / UI / API / DB の4種のparticipantとそのやりとり | レイヤー間の粗い粒度の流れ |
+| Sequence Diagram | `actor` / `event` / `task`（endpoint=true）/ `store`（kind=db） | 誰が・何をいつやるか |
+| State Diagram | `state`（FSM）/ `event` / `store` | 何がどんな状態を持ち、どう遷移するか（ADR-019） |
+| API Table | `task`（endpoint=true） | `list_endpoints` MCPツールで出力。Mermaid描画なし |
+
+### Processingレイヤー
+
+| 図 | renderの元となる要素 | 備考 |
+|---|---|---|
+| DAG | `task` / `asset` / `branch` / `fork` / `join` ＋ flow:エッジ | 処理の中身はどうなっているか |
+
+### Dataレイヤー
+
+| 図 | renderの元となる要素 | 備考 |
+|---|---|---|
+| ER Diagram | `store`（kind=db）＋フィールド定義 | データはどんな構造か |
+
+### レイヤー間の依存方向
+
+```
+Application → Processing → Data
+```
+
+- ApplicationレイヤーはProcessingレイヤーのノード（task等）を参照できる
+- ProcessingレイヤーはApplicationレイヤーのノード（event / state等）を参照しない
 
 ### sequence diagramのparticipant対応
 
@@ -257,8 +286,8 @@ dogfoodしながら必要なものだけ昇格させる運用。候補：`retry`
 |---|---|---|
 | Actor | `actor` ノード | なし |
 | UI | `event`（source=ui） | なし |
-| API | `task`（endpoint=true）のグループ | class diagram |
-| DB | `store`（kind=db） | ER diagram |
+| API | `task`（endpoint=true）のグループ | API Table（MCPツール） |
+| DB | `store`（kind=db） | ER Diagram |
 
 矢印のラベルにはtask IDを記載する（例：`auth.task.login`）。
 リンクにはならないが、IDがあればMCP経由で詳細を参照できる。
@@ -267,10 +296,9 @@ dogfoodしながら必要なものだけ昇格させる運用。候補：`retry`
 
 ## 未解決課題
 
-### eventノードの設計（最優先）
+### stateノード（FSM）の設計
 
-制御フローの起点として`event`ノードをDAGに導入する方向。
-`source`属性（ui/time/external/er）でタグ付けする。具体的なスキーマは未定。
+State Diagram用のFSM状態ノード。`store`（データ保持）とは別概念。ADR-019で設計予定。
 
 ### Edgeの管理方式
 
