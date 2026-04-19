@@ -43,7 +43,7 @@ nodes:
 flow:
   - step: fetch_data
     params:
-      config: $params
+      config: $params.config
 
   - step: transform
     params:
@@ -58,23 +58,18 @@ flow:
 
 ```yaml
 params:
-  name: source_node            # source_nodeのreturnsから型・name一致で解決
+  raw: source_node             # source_nodeのreturns全体を参照
 ```
 
-同一modelを持つフィールドが複数あり型・nameだけでは一意に解決できない場合のみ、`.field` で明示する。
+**wiringの単位は常にtaskのreturns全体**。node IDはファイル内でユニークであるため、`source_node` だけで参照先は一意に決まる。`source_node.field` 記法は存在しない。
 
-```yaml
-params:
-  raw: fetch_data.rawa         # 曖昧性解消が必要な場合のみ
-```
-
-**wiringの単位は常にtaskのreturns全体**。`.field`記法は曖昧性解消のためにのみ使い、「taskのreturnsの一部フィールドを取り出してwiring先taskに渡す」用途では使わない。返り値の一部だけが必要な場合は、extract taskをノードとして明示的に定義する。
+返り値の一部だけが必要な場合は、extract taskをノードとして明示的に定義する。
 
 ```yaml
 # NG: returnsの一部フィールドをwiringで直接引く
 - step: static_analysis
   params:
-    raw: fetch_data.rawa       # fetch_dataのreturns(raw_data)のフィールドをwiring
+    raw: fetch_data.rawa       # 無効な記法
 
 # OK: extract taskを明示的に挟む
 - step: extract_rawa
@@ -87,126 +82,26 @@ params:
 
 ### 3. main paramsの参照
 
-ファイルへの外部入力はmain nodeの `params` のみ。flow内からは `$params` シジルで参照する。
+ファイルへの外部入力はmain nodeの `params` のみ。flow内からは `$params.field` シジルでフィールドを指定して参照する。
 
 ```yaml
 flow:
   - step: fetch_data
     params:
-      config: $params          # main nodeのparamsからname一致で解決
+      config: $params.config   # main nodeのparams内の"config"フィールドを参照
 
   - step: transform
     params:
-      config: $params.config   # 曖昧性解消が必要な場合はフィールド指定
+      source: $params.input    # param名が異なる場合も明示的に指定
 ```
 
-`# 015: ファイル内edge記述構造（flow:セクション）
-
-- **status**: accepted
-- **date**: 2026-04-19
-
-## 背景
-
-ADR-011〜014にて以下がADR-015に委譲されていた。
-
-- ファイル内ノード間のデータフローedge記述方法（ADR-011）
-- fork/joinの対応関係の記述方法（ADR-012）
-- foreachのapply先sub taskとのedge記述（ADR-013）
-- storeの参照・更新のedge表現（ADR-014）
-
-また、task nodeのYAML定義（`params`/`returns`）がsignatureのみを担うべきか、wiring情報も持つべきかが未確定だった。
-
-## 決定
-
-### 1. tasks = signatureのみ。wiringは`flow:`セクションに分離
-
-`nodes:`内の各taskは `params`/`returns` によるsignature定義のみを担う。ノード間のwiring（どのnodeの出力がどのnodeの入力になるか）はすべて `flow:` セクションに記述する。
-
-```yaml
-nodes:
-  - id: fetch_data
-    type: task
-    params:
-      - name: config
-        model: app_config
-    returns:
-      name: raw
-      model: raw_data
-
-  - id: transform
-    type: task
-    params:
-      - name: raw
-        model: raw_data
-    returns:
-      name: result
-      model: result_data
-
-flow:
-  - step: fetch_data
-    params:
-      config: $params
-
-  - step: transform
-    params:
-      raw: fetch_data
-```
-
-この分離はAirflow（`@task` + `>>`）、Prefect（`@task` + `@flow`）、Temporal（activity + workflow）と同じ構造。
-
-### 2. flow内のデータwiring記法
-
-`params` のvalueに**参照元node ID**を書く。
-
-```yaml
-params:
-  name: source_node            # source_nodeのreturnsから型・name一致で解決
-```
-
-同一modelを持つフィールドが複数あり型・nameだけでは一意に解決できない場合のみ、`.field` で明示する。
-
-```yaml
-params:
-  raw: fetch_data.rawa         # 曖昧性解消が必要な場合のみ
-```
-
-**wiringの単位は常にtaskのreturns全体**。`.field`記法は曖昧性解消のためにのみ使い、「taskのreturnsの一部フィールドを取り出してwiring先taskに渡す」用途では使わない。返り値の一部だけが必要な場合は、extract taskをノードとして明示的に定義する。
-
-```yaml
-# NG: returnsの一部フィールドをwiringで直接引く
-- step: static_analysis
-  params:
-    raw: fetch_data.rawa       # fetch_dataのreturns(raw_data)のフィールドをwiring
-
-# OK: extract taskを明示的に挟む
-- step: extract_rawa
-  params:
-    raw: fetch_data
-- step: static_analysis
-  params:
-    raw: extract_rawa
-```
-
-### 3. main paramsの参照
-
-ファイルへの外部入力はmain nodeの `params` のみ。flow内からは `$params` シジルで参照する。
-
-```yaml
-flow:
-  - step: fetch_data
-    params:
-      config: $params          # main nodeのparamsからname一致で解決
-
-  - step: transform
-    params:
-      config: $params.config   # 曖昧性解消が必要な場合はフィールド指定
-```
+`$params` bare（フィールド指定なし）は使用しない。外部taskのparam名とmain nodeのparam名が一致する保証はなく、name一致による暗黙解決は記法の安定性を損なうため。
 
 シジルは「境界をまたいで注入される値」を意味する。
 
 | シジル | 意味 |
 |--------|------|
-| `$params` | ファイル境界からの入力（main nodeのparams） |
+| `$params.field` | ファイル境界からの入力（main nodeのparams）の特定フィールドを参照 |
 | `$item` | ループ境界からの入力（foreachの現在のイテレーション要素）。ADR-016参照 |
 
 ### 4. fork/joinの記法
@@ -269,6 +164,14 @@ Airflow/Prefect/Temporalの「task定義とorchestrationの分離」と同じ構
 
 ADR-009でも「returns単一強制」と「フィールドレベルの分岐はsubgraphで視覚的に表現」という同じ判断をしている。extract taskを明示することで責務が明確になり、LLMによる追跡性も向上する。
 
+### `source_node.field` 記法を持たない理由
+
+node IDはファイル内でユニークであるため、`source_node` だけで参照先は一意に決まる。「曖昧性解消」が必要になるシナリオが存在しない。かつwiringの単位はreturns全体であるため、フィールドアクセス記法そのものが設計原則と矛盾する。
+
+### `$params.field` を必須にする理由
+
+外部taskを呼ぶ場合など、flow内のparam名とmain nodeのparam名が一致する保証はない。`$params` bareによるname一致解決は暗黙の依存を生み、リネーム時に検証が困難になる。フィールド指定を必須にすることで、wiringが常に明示的になる。
+
 ### fork側にまとめる
 
 branchesとjoinの対応関係をfork側に書くことで、「このforkは何を並列実行し、どこで合流するか」が1箇所で読める。join側に`fork:`参照を置く逆方向の設計だと、forkとjoinを別々に読まないと全体像が分からない。
@@ -279,6 +182,7 @@ branchesとjoinの対応関係をfork側に書くことで、「このforkは何
 
 ## 影響
 
+- `spec/edges.md` のwiring記法表を本ADRに合わせて更新する（`source_node.field` 削除・`$params.field` 必須化）
 - `spec/nodes.md`（未作成）にてtask/foreach/branch/fork/joinの`flow:`内での記法を詳細化する
 - `spec/views.md`（未作成）にてflow:セクションからDAG図を導出するrender規則を定義する
 - foreachの `flow:` 内での記法はADR-016にて確定（foreachはnode typeから廃止しflow:制御構文に統合。ADR-013はsuperseded）

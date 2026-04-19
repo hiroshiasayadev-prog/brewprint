@@ -47,7 +47,7 @@ brewprintのエッジは記述場所によって3種に分かれる。
 flow:
   - step: fetch_data
     params:
-      config: $params           # main nodeのparamsから注入
+      config: $params.config     # main nodeのparams内の"config"フィールドを参照
 
   - step: transform
     params:
@@ -65,14 +65,13 @@ flow:
 
 | 記法 | 意味 |
 |------|------|
-| `source_node` | source_nodeの `returns` 全体を参照。型・name一致で解決 |
-| `source_node.field` | 曖昧性解消が必要な場合のみ使用 |
-| `$params` | ファイル境界からの入力（main nodeのparams）を参照。name一致で解決 |
-| `$params.field` | main nodeのparams内の特定フィールドを指定 |
+| `source_node` | source_nodeの `returns` 全体を参照 |
+| `$params.field` | ファイル境界からの入力（main nodeのparams）の特定フィールドを参照 |
 | `$item` | foreachのループ境界からの入力（現在のイテレーション要素） |
 
-**wiringの単位は常にtaskのreturns全体**（ADR-015）。
-`.field` 記法は曖昧性解消のためにのみ使う。returnsの一部フィールドを取り出すためには使わない。
+**wiringの単位は常にtaskのreturns全体**（ADR-015）。`source_node.field` 記法は存在しない。node IDはファイル内でユニークなため曖昧性が生じないこと、およびreturns内部への部分アクセスはNG（extract taskで対応）のため。
+
+`$params.field` のフィールド指定は必須。外部taskのparam名とmain nodeのparam名が一致する保証はなく、`$params` bareによる暗黙のname一致解決は使わない（ADR-015）。
 
 ```yaml
 # NG: returnsの一部フィールドを直接wiring
@@ -129,7 +128,7 @@ flow:
     over: fetch_items           # iterateするlistの参照元node ID
     params:
       item: $item               # 現在のイテレーション要素
-      config: $params           # 補助入力（任意）
+      config: $params.config    # 補助入力（任意）
     returns: results            # applyの結果をcollectしたasset名
 ```
 
@@ -162,7 +161,7 @@ DAGレンダリングではforeachはapply先taskのboxに ↻ アイコンを�
 
 | シジル | 意味 | 利用場所 |
 |--------|------|---------|
-| `$params` | ファイル境界からの入力（main nodeのparams） | flow:内のwiring |
+| `$params.field` | ファイル境界からの入力（main nodeのparams）の特定フィールドを参照。フィールド指定必須 | flow:内のwiring |
 | `$item` | ループ境界からの入力（foreachの現在のイテレーション要素） | foreach.params内 |
 
 シジルはnode IDと記法レベルで区別され、「外部からの注入」であることを明示する（ADR-015）。
