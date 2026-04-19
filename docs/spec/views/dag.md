@@ -16,6 +16,7 @@ depends_on:
   - docs/adr/020-cross-edge-management.md
   - docs/adr/022-dag-node-shapes-and-edge-types.md
   - docs/adr/023-control-flow-scope-and-branch-entry.md
+  - docs/adr/024-dag-boundary-nodes.md
 ---
 
 # DAG renderルール
@@ -84,12 +85,13 @@ flowchart TD
 ### start / end
 
 ```
-([Start])
-([End])
+_start([Start])
+_end([End])
 ```
 
 形状: スタジアム（Mermaid `([label])`）。ISO 5807:1985 Terminal記号に対応（ADR-022）。
-DAGの先頭に `([Start])`、末尾に `([End])` を置く。`([End])` はfloatingノード（ADR-023）も含む全終端に接続する。
+Mermaid ID は `_start` / `_end`（キーワード衝突回避のためアンダースコアプレフィックス付与）（ADR-024）。
+DAGの先頭に `_start([Start])` を置き、最後のtaskから `_end([End])` へ制御線（`==>`）を引く。floatingノード（ADR-023）も `_end` へ接続する。
 
 ### task
 
@@ -167,8 +169,11 @@ classDef storeNode    fill:#E8A838,stroke:#B07820,color:#fff
 classDef branchNode   fill:#9B6BBD,stroke:#6B3D8F,color:#fff
 classDef forkNode     fill:#8A8A8A,stroke:#5A5A5A,color:#fff
 classDef terminalNode fill:#2C2C2C,stroke:#000,color:#fff
+classDef boundaryNode fill:#2D7D9A,stroke:#1A5068,color:#fff
 classDef external     fill:#E0E0E0,stroke:#999,color:#555
 ```
+
+`boundaryNode` は `subgraph params` / `subgraph returns` 内の境界assetに適用する（ADR-024）。
 
 各ノードに対応するclassを付与する。
 
@@ -178,7 +183,8 @@ class auth_token assetNode
 class session_store storeNode
 class route_by_role branchNode
 class fan_out,aggregate forkNode
-class Start,End terminalNode
+class _start,_end terminalNode
+class config,result boundaryNode
 ```
 
 ---
@@ -190,7 +196,9 @@ class Start,End terminalNode
 | 種別 | UML対応 | Mermaid記法 | 用途 |
 |------|---------|------------|------|
 | データ線 | ObjectFlow | `-->` | データの受け渡し |
+| ラベル付きデータ線 | ObjectFlow | `--"label"-->` | foreach等、意味を付与するデータの受け渡し |
 | 制御線 | ControlFlow | `==>` | 実行順序の制御 |
+| ラベル付き制御線 | ControlFlow | `== "label" ==>` | branch・forkの条件付き制御フロー |
 
 ### データ線（`-->`）
 
@@ -238,10 +246,12 @@ dep_check ==> aggregate{{aggregate}}
 
 **foreach**
 
-apply先taskへのエッジに `"foreach"` ラベルを付ける（BPMN 2.0 Multi-Instance Activity準拠 / ADR-022）。
+「foreach」はデータがどう流れるか（1件ずつ）の意味なので、データ線（ObjectFlow）にラベルとして乗せる。
+タスク間の実行順序は制御線（ControlFlow）で示す（BPMN 2.0 Multi-Instance Activity準拠 / ADR-022）。
 
 ```
-items([items]) == "foreach" ==> process_item["↻ process_item"]
+fetch_items ==> process_item["↻ process_item"]    %% 制御線（実行順序）
+items --"foreach"--> process_item                 %% データ線（foreachラベル付きObjectFlow）
 ```
 
 ---
@@ -291,19 +301,21 @@ flowchart TD
     result([result])
   end
 
-  ([Start]) ==> process_report
+  _start([Start]) ==> process_report
   config --> process_report[process_report]
   process_report --> raw([raw])
   raw --> transform[transform]
   transform --> result
-  result ==> ([End])
+  transform ==> _end([End])
 
-  classDef taskNode  fill:#4A90D9,stroke:#2C5F8A,color:#fff
-  classDef assetNode fill:#5BA55B,stroke:#3A6B3A,color:#fff
+  classDef taskNode     fill:#4A90D9,stroke:#2C5F8A,color:#fff
+  classDef assetNode    fill:#5BA55B,stroke:#3A6B3A,color:#fff
   classDef terminalNode fill:#2C2C2C,stroke:#000,color:#fff
+  classDef boundaryNode fill:#2D7D9A,stroke:#1A5068,color:#fff
   class process_report,transform taskNode
   class raw assetNode
-  class Start,End terminalNode
+  class _start,_end terminalNode
+  class config,result boundaryNode
 ```
 
 ### fork / join を含むDAG
@@ -336,6 +348,7 @@ flowchart TD
 ```mermaid
 flowchart TD
   fetch_items[fetch_items] --> items([items])
-  items == "foreach" ==> process_item["↻ process_item"]
+  fetch_items ==> process_item["↻ process_item"]
+  items --"foreach"--> process_item
   process_item --> results([results])
 ```

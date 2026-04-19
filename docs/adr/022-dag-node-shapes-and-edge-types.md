@@ -37,13 +37,13 @@ Mermaid flowchartはこのバー記号を再現できないため、視覚的に
 | データ線 | `-->` | UML Activity Diagram ObjectFlow（OMG UML 2.x） |
 | 制御線 | `==>` | UML Activity Diagram ControlFlow（OMG UML 2.x） |
 
-### 制御線ラベル
+### エッジラベル
 
-| ラベル | 用途 | 根拠 |
-|--------|------|------|
-| `"<label>"` | branchのcases[].label | ADR-023 |
-| `"parallel"` | forkの各ブランチへのエッジ | BPMN 2.0 Parallel Gateway（OMG） |
-| `"foreach"` | foreachのapply先taskへのエッジ | BPMN 2.0 Multi-Instance Activity（OMG） |
+| ラベル | エッジ種別 | 用途 | 根拠 |
+|--------|-----------|------|------|
+| `"<label>"` | 制御線 | branchのcases[].label | ADR-023 |
+| `"parallel"` | 制御線 | forkの各ブランチへのエッジ | BPMN 2.0 Parallel Gateway（OMG） |
+| `"foreach"` | データ線 | foreachのitemsアセット→apply先taskへのエッジ | BPMN 2.0 Multi-Instance Activity（OMG） |
 
 ### ノードの色付け
 
@@ -58,6 +58,7 @@ Mermaid flowchartはこのバー記号を再現できないため、視覚的に
 | `branch` | `branchNode` | `#9B6BBD` | `#6B3D8F` | `#fff` |
 | `fork` / `join` | `forkNode` | `#8A8A8A` | `#5A5A5A` | `#fff` |
 | `start` / `end` | `terminalNode` | `#2C2C2C` | `#000` | `#fff` |
+| 境界asset（params/returns） | `boundaryNode` | `#2D7D9A` | `#1A5068` | `#fff` |
 | 外部参照 | `external` | `#E0E0E0` | `#999` | `#555` |
 
 ### 公知技術を根拠とする
