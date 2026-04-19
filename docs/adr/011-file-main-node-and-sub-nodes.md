@@ -99,7 +99,7 @@ end
 - `spec/nodes.md`（未作成）にてメインノード・サブノードのフィールド定義を詳細化する
 - `branch`（旧仮称 `cond`）/ `fork` / `join` の設計はADR-012に委譲
 - `foreach` の設計はADR-013にて確定
-- `initializes` の設計はADR-014に委譲
+- `initializes` の設計はADR-014にて確定
 - ファイル内edgeの記述構造（control/data section）はADR-015に委譲
 
 ## Evidence

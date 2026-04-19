@@ -95,6 +95,6 @@ storeの特定フィールドへの蓄積をforeach側で解決しようとす�
 - `apply` 先のsub taskとのedge記述はADR-015（ファイル内edge記述構造）に委譲
 
 ## Evidence
-- commit: tbd
+- commit: b22cec3
 - impl commit: tbd
 - 参考: Python ProcessPoolExecutor / asyncio.gather参考
