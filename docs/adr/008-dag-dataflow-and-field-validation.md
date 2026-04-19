@@ -64,6 +64,7 @@ fields:
 ## 影響
 
 - `spec/nodes.md` のfield定義は `type / name / comment` の3要素とする
+- ※ `comment` は ADR-021 にて `note` に改名済み
 - MCPの `inspect` ツールはcommentをLLMに渡してsemantic validationを行う
 - assetのIDは参照の一致をもって型チェックの根拠とするため、alias・rename系の機能を導入する場合は別途ADRで決定する
 

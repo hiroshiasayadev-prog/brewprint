@@ -1,11 +1,10 @@
 ---
 scope: docs/spec/nodes.md
 status: wip
-last_updated: 2026-04-19
+last_updated: 2026-04-20
 summary: >
   brewprintの全ノード種別のフィールド定義。
   各フィールドの必須/任意・型・意味・出典ADRを記載する。
-  未定項目は ⚠️ 未定 として明示し、次sessionで詳細化する。
 depends_on:
   - docs/adr/001-node-type-splitting.md
   - docs/adr/006-node-type-renaming.md
@@ -21,6 +20,7 @@ depends_on:
   - docs/adr/018-event-node.md
   - docs/adr/019-state-node.md
   - docs/adr/020-cross-edge-management.md
+  - docs/adr/021-model-field-structure.md
 ---
 
 # ノード定義仕様
@@ -135,7 +135,7 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 
 ## model
 
-> 出典: ADR-007（superseded・内容はADR-010に継承）, ADR-008, ADR-010
+> 出典: ADR-007（superseded・内容はADR-010に継承）, ADR-008, ADR-010, ADR-021
 
 Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` サブディレクトリに1ファイル=1定義で置く。
 
@@ -147,42 +147,80 @@ Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` �
   fields:
     - name: id
       type: str
-      comment: "ユーザーID"
+      pk: true
+      note: "ユーザーID（PK）"
     - name: email
       type: str
-      comment: "メールアドレス"
+      note: "メールアドレス"
+    - name: role_id
+      type: str
+      fk: role.id
+      note: "ロールID（FK → role.id）"
     - name: profile
-      type: user_profile    # 別model IDを型として参照
-      comment: "プロフィール情報"
+      type: user_profile    # 別model IDを型として参照（fkなし → JSON埋め込み扱い）
+      note: "プロフィール情報"
+    - name: created_at
+      type: datetime
+      note: "レコード作成日時（DB管理）"
+
+# list
+- id: item_list
+  type: model
+  kind: list
+  element: item             # model ID または primitive literal
+
+# dict
+- id: config_map
+  type: model
+  kind: dict
+  value: config             # model ID または primitive literal（keyは常にstr）
 ```
+
+### primitive予約語
+
+以下の語はprimitive予約語。model IDとして定義不可（ADR-021）。
+
+| primitive | 意味 |
+|-----------|------|
+| `str` | 文字列 |
+| `int` | 整数 |
+| `float` | 浮動小数点数 |
+| `bool` | 真偽値 |
+| `bytes` | バイト列 |
+| `datetime` | 日時 |
+| `any` | 型不定（使用は最小限に） |
 
 ### フィールド定義
 
 | フィールド | 必須 | 型 | 内容 | 出典 |
 |-----------|------|-----|------|------|
-| `kind` | ✓ | enum | `scalar` / `struct` / `list` / `dict` | ADR-007→ADR-010 |
+| `kind` | ✓ | enum | `struct` / `list` / `dict` | ADR-007→ADR-010, ADR-021 |
 | `fields` | struct時必須 | list\<field\> | フィールド定義（structのみ） | ADR-008 |
+| `element` | list時必須 | string | 要素の型。model ID または primitive literal | ADR-021 |
+| `value` | dict時必須 | string | 値の型。model ID または primitive literal | ADR-021 |
+
+`kind: scalar` は廃止。primitive literalを直接使う（ADR-021）。  
+`kind: dict` のkeyは常に `str`。`key` フィールドは存在しない（ADR-021）。
 
 ### field オブジェクト（struct内）
 
 | フィールド | 必須 | 型 | 内容 | 出典 |
 |-----------|------|-----|------|------|
 | `name` | ✓ | string | フィールド名。struct内でユニーク | ADR-008 |
-| `type` | ✓ | string | 型。primitiveリテラル or model ID | ADR-008 |
-| `comment` | 任意 | string | 人間向けdocstring兼LLM semantic contract | ADR-008 |
+| `type` | ✓ | string | 型。primitive予約語 or model ID | ADR-008 |
+| `pk` | 任意 | bool | `true` でPKカラム。1 struct内に1つ | ADR-021 |
+| `fk` | 任意 | `<model-id>.<field-name>` | FK参照先。省略時はJSON埋め込み扱い | ADR-021 |
+| `note` | 任意 | string | 人間向けdocstring兼LLM semantic contract | ADR-008, ADR-021 |
 
-`type` の機械的validationの対象はprimitive or 定義済みmodel IDの存在チェックのみ（ADR-008）。
+`type` の機械的validationはprimitive予約語 or 定義済みmodel IDの存在チェックのみ（ADR-008）。
 
-### kindごとの追加フィールド
+**`fk` フィールドの意味**
 
-> ⚠️ 未定: `scalar` / `list` / `dict` の具体的なフィールド構造は次sessionで確定する。
-> 出典: ADR-007（superseded）にて `element: <model-id>` 記法の言及あり。ADR-010への継承後の正式構造は未定。
-
-| kind | 追加フィールド（暫定） | 備考 |
-|------|----------------------|------|
-| `scalar` | `base: <primitive>` ? | primitiveの型エイリアス。フィールド名未定 |
-| `list` | `element: <model-id>` | ADR-007由来。継続有効か未確認 |
-| `dict` | `key: ?` / `value: <model-id>` ? | 未定 |
+| 記法 | DB上の扱い |
+|------|-----------|
+| `type: str, fk: role.id` | FKカラム。`role` modelの `id` フィールドを参照 |
+| `type: user_profile`（fkなし） | JSON埋め込みカラム |
+| `type: tag_list`（list kindのmodel） | variant/JSONカラム（実装依存） |
 
 ---
 
@@ -239,9 +277,7 @@ Processingレイヤー / Dataレイヤー。実行時にデータを保持する
 | `kind` | ✓ | enum | `db` / `session` / `collection` / `context` | ADR-007→ADR-010 |
 | `of` | 任意 | model-id | 保持するmodel ID | ADR-007 |
 
-> ⚠️ 未定: `store.kind: db` がER図のためにフィールド（列）定義を独自に持つかどうか未確定。
-> 現状の設計では `of: <model-id>` でmodelを参照する形のみ。
-> ERに列レベルの詳細が必要な場合はmodel側に持つか、store側に持つかを次sessionで決定する。
+`store.kind: db` は独自フィールド（列定義）を持たない。`of: <model-id>` でmodelを参照するのみ。ER図は `store.of` → model → fields の参照を辿って列定義を描画する（ADR-021）。
 
 ### collectionのnote規約
 
@@ -272,12 +308,12 @@ Applicationレイヤー。人間・外部システム。Sequence Diagramのエ�
 
 ### フィールド定義
 
-> ⚠️ 未定: `actor` 固有フィールドの要否は次sessionで確定する。
-> 現状はid/type/noteのみで十分と想定するが、`external: true` やシステム種別フラグが必要かは議論の余地あり。
+固有フィールドなし（ADR-021）。`id` / `type` / `note` のみで表現する。  
+`external:` / `role:` 等の属性はMermaid render上の描き分けが必要になった時点でADRを追加する。
 
 | フィールド | 必須 | 型 | 内容 | 出典 |
 |-----------|------|-----|------|------|
-| （固有フィールドなし） | — | — | id/type/noteのみで表現 | ADR-004 |
+| （固有フィールドなし） | — | — | id/type/noteのみで表現 | ADR-004, ADR-021 |
 
 ---
 
