@@ -84,6 +84,6 @@ flow:ステップに書くと「このtaskはこのflow文脈ではこのstore�
 - `spec/edges.md`（未作成）に本ADRの内容を反映する
 
 ## Evidence
-- commit: tbd
+- commit: 15e69b4
 - impl commit: tbd
 - 参考: 特になし

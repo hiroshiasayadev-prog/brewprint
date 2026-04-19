@@ -95,3 +95,4 @@ OOPにおける **class（型定義）vs instance（実行時実体）** の区�
 - commit: f911107
 - impl commit: n/a（ADR-010によりsuperseded）
 - 参考: OOPのclass vs instance区別、DDDのRepositoryパターン参考
+- 注: 本ADR内の "asset"（型定義）はADR-010以降 "model" に改称済み。本ADRの記述は当時の用語のまま保存

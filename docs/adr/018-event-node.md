@@ -103,6 +103,6 @@ eventのペイロード構造をnoteのみで記述すると、LLMがイベン�
 - stateノード（FSM）の設計はADR-019へ
 
 ## Evidence
-- commit: tbd
+- commit: 0a2759a
 - impl commit: tbd
 - 参考: 特になし

@@ -162,6 +162,6 @@ State Diagramが扱うeventはそのFSM専用のものが多く、別ファイ�
 - `store`と`state`の混同を避けるため、`spec/nodes.md`（または対応するspec）に両者の対比を記載する
 
 ## Evidence
-- commit: tbd
+- commit: 30611b3
 - impl commit: tbd
 - 参考: Mealy machine（FSM基本セマンティクス）、XState（transition記法の参考）
