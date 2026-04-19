@@ -23,7 +23,7 @@ flow:
     over: fetch_items          # iterateするlistの参照元node ID
     params:
       item: $item              # 現在のイテレーション要素
-      config: $params          # 補助入力（任意）
+      config: $params.config   # 他のparamも含めapply先taskのparams wiring
     returns: results           # applyの結果をcollectしたasset名
 ```
 
@@ -32,7 +32,7 @@ flow:
 | `foreach` | ✓ | apply先taskのID |
 | `over` | ✓ | iterateするlistの参照元node ID |
 | `mode` | 任意 | `sequential`（デフォルト）または `map`（並列実行） |
-| `params` | 任意 | 各イテレーションに渡すパラメータ。`$item`で現在要素を参照 |
+| `params` | 任意 | apply先taskのparams wiring（stepエントリと同じルール）。apply先にparamsがある場合は必須。`$item`で現在のイテレーション要素を参照 |
 | `returns` | 任意 | applyの結果をcollectしたasset名 |
 
 ### $itemシジルの導入
@@ -41,7 +41,7 @@ flow:
 
 | シジル | 意味 |
 |--------|------|
-| `$params` | ファイル境界からの入力（main nodeのparams） |
+| `$params.field` | ファイル境界からの入力（main nodeのparams）の特定フィールドを参照 |
 | `$item` | ループ境界からの入力（現在のイテレーション要素） |
 
 ### 型の解決は暗黙

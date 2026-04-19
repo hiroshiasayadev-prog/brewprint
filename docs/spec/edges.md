@@ -128,7 +128,7 @@ flow:
     over: fetch_items           # iterateするlistの参照元node ID
     params:
       item: $item               # 現在のイテレーション要素
-      config: $params.config    # 補助入力（任意）
+      config: $params.config    # 他のparamも含めapply先taskのparams wiring（任意ではなくapply先に依存）
     returns: results            # applyの結果をcollectしたasset名
 ```
 
@@ -139,7 +139,7 @@ flow:
 | `foreach` | ✓ | apply先taskのID（同ファイルのサブノードまたは外部main node） | ADR-016 |
 | `over` | ✓ | iterateするlistの参照元node ID | ADR-016 |
 | `mode` | 任意 | `sequential`（デフォルト）or `map`（並列実行） | ADR-016 |
-| `params` | 任意 | 各イテレーションに渡すparams。`$item` で現在要素を参照 | ADR-016 |
+| `params` | 任意 | apply先taskのparams wiring（stepエントリと同じルール）。apply先にparamsがある場合は必須。`$item` で現在のイテレーション要素を参照 | ADR-016 |
 | `returns` | 任意 | applyの結果をcollectしたasset名 | ADR-016 |
 
 #### modeの使い分け
