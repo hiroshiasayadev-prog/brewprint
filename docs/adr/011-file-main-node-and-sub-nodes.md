@@ -99,3 +99,8 @@ end
 - `spec/nodes.md`（未作成）にてメインノード・サブノードのフィールド定義を詳細化する
 - `foreach` / `cond` / `initializes` の設計はADR-012に委譲
 - ファイル内edgeの記述構造（control/data section）はADR-013に委譲
+
+## Evidence
+- commit: dfe1020
+- impl commit: tbd
+- 参考: GoおよびRustの「1ファイル=1public型+privateヘルパー」構造慣習参考

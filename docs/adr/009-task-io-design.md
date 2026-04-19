@@ -25,10 +25,12 @@ taskのI/Oフィールド名として `input`/`output` を使っていたが、�
   type: task
   params:
     - name: users
-      type: user_list    # asset ID
+      model: user_list    # model ID
     - name: orders
-      type: order_list   # asset ID
-  returns: merge_result
+      model: order_list   # model ID
+  returns:
+    name: merge_result
+    model: merge_result  # このassetノードがDAG上に暗黙的に生える
 ```
 
 ### 3. `returns` は単一asset参照のみ（複数返し禁止）
@@ -55,8 +57,10 @@ returns:
   type: task
   params:
     - name: data
-      type: dataset
-  returns: split_result
+      model: dataset
+  returns:
+    name: split_result
+    model: split_result  # このassetノードがDAG上に暗黙的に生える
 ```
 
 Pythonのtuple unpackのような「記法による複数返し」は、動的型付け＋構文糖衣があって成立する。静的検証性を優先するbrewprintでは採用しない。
@@ -123,6 +127,12 @@ task内にassetの定義をインラインで書くことを禁止する。
 
 ## 影響
 
-- `spec/overview.md` のendpoint例・taskのYAML例を `params`/`returns` に更新する
+- `spec/overview.md` のendpoint例・taskのYAML例を `params`/`returns` に更新する ✅
 - `spec/nodes.md`（未作成）にてtaskのフィールド定義を詳細化する
 - `spec/views.md`（未作成）にてDAG図のrender詳細を定義する
+- ADR-010により `params` の `type:` フィールドは `model:` に変更。`returns` は `{ name, model }` 形式に更新 ✅
+
+## Evidence
+- commit: a1a581d
+- impl commit: tbd
+- 参考: Python/Go/TypeScriptの関数シグネチャ慣習、Prisma/GraphQL SDLの名前付き型定義思想参考

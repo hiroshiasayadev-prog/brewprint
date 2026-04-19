@@ -30,3 +30,8 @@
 - `spec/overview.md` のノード種別テーブルを更新する
 - 以降のすべてのspec・uc・ADRは新名を使う
 - GoのAST struct定義は `TaskNode / AssetNode / StoreNode / ActorNode` とする
+
+## Evidence
+- commit: f911107
+- impl commit: tbd
+- 参考: Apache Airflow/Prefect/LuigiのTask慣習、DagsterのSoftware-Defined Assets、ReduxのStore概念参考

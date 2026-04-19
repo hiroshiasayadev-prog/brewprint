@@ -31,3 +31,8 @@ validation実装コストは度外視し、**LLMが楽できる仕様**を優先
 
 - GoのAST定義はノード種別ごとにstructを用意する
 - MCPの`get_signature`はstructをそのままJSONで返せばよい
+
+## Evidence
+- commit: 152e83e
+- impl commit: tbd
+- 参考: 特になし

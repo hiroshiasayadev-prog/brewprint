@@ -60,3 +60,8 @@ sequence diagramは**レイヤー間の粗い粒度の流れ**を表現する。
 - `actor` ノードが新規追加される（軽量な定義で良い）
 - sequence diagram viewのrenderロジックは、4種のparticipantをレイヤー順に並べる
 - spec/overview.md の「書ける図の一覧」を更新する必要がある
+
+## Evidence
+- commit: db44639
+- impl commit: tbd
+- 参考: UML標準Actor定義参考

@@ -39,3 +39,8 @@ modules/
 - クロスエッジのID参照は`モジュール名.ノード種別.ID`の3階層フルパス
 - master.yamlはgo.mod的存在として別途スキーマを定義する
 - ADR 003（名前解決ルール）に依存する
+
+## Evidence
+- commit: 152e83e
+- impl commit: tbd
+- 参考: Goのgo.mod台帳構造参考

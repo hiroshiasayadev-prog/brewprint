@@ -65,3 +65,8 @@ class AuthAPI {
 - class diagram viewのrenderロジックは `endpoint: true` なtaskをモジュール単位でグルーピングする
 - sequence diagramの `API` participantは class diagram viewへリンクする（ADR 004）
 - spec/overview.md の「書ける図の一覧」を更新する必要がある
+
+## Evidence
+- commit: db44639
+- impl commit: tbd
+- 参考: 特になし

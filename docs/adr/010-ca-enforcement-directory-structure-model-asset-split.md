@@ -121,3 +121,8 @@ state machineの `state`（「システムが今いる場所」）は、
 - `spec/nodes.md`（未作成）にて `model` / `task` のフィールド定義を詳細化する
 - `spec/overview.md` のノード種別テーブルを更新する必要がある ✅
 - **ADR-011により「1ファイル=1ノード」は「1ファイル=1メインノード」に改訂。その他の決定は継続有効**
+
+## Evidence
+- commit: 09b7d25
+- impl commit: tbd
+- 参考: Clean Architecture層構造、Dagsterの依存関係自動推論思想参考

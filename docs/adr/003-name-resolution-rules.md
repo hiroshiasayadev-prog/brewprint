@@ -39,3 +39,8 @@ Rustのmod内・Pythonの同パッケージimportと同じ感覚で自然。
 
 - GoのAST構築時に、エッジのfromがフルパスかどうかで名前解決ルートを分岐する
 - バリデーションはASTビルド時に解決失敗をエラーとして返す
+
+## Evidence
+- commit: 152e83e
+- impl commit: tbd
+- 参考: Rustのmod内スコープおよびPythonのパッケージimport慣習参考

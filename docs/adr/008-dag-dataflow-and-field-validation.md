@@ -66,3 +66,8 @@ fields:
 - `spec/nodes.md` のfield定義は `type / name / comment` の3要素とする
 - MCPの `inspect` ツールはcommentをLLMに渡してsemantic validationを行う
 - assetのIDは参照の一致をもって型チェックの根拠とするため、alias・rename系の機能を導入する場合は別途ADRで決定する
+
+## Evidence
+- commit: f911107
+- impl commit: tbd
+- 参考: Luigi Target概念・Dagster Asset Graph、Python PEP 484・TypeScript型アノテーション、Python docstring慣習参考
