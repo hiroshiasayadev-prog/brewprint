@@ -20,22 +20,21 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
   - `main: true` フラグ・サブノードのprivateスコープを確定
   - ADR-010の「1ファイル=1ノード」を「1ファイル=1メインノード」に改訂
 
-- [ ] **foreach / cond / initializes の設計 → ADR-012**
-  - `cond`：エッジの分岐点（ノードでない）。条件はnoteに書くcontract
-  - `foreach`：first-class化。外スコープ参照はparams明示強制。apply = 同ファイル内sub task ID参照
-  - `initializes`：taskの作業変数（空箱）の明示フィールド
-  - `for`：brewprintスコープ外。noteに押し込む
+- [x] **foreach / cond / initializes の設計 → ADR-012, 013（→016), 014**
+  - `branch`（旧`cond`）/ `fork` / `join` のノード種別を確定（ADR-012）
+  - `foreach` はnode typeから廃止し `flow:` の制御構文として設計、`$item` シジル導入（ADR-013 superseded by ADR-016）
+  - `initializes` をmain nodeのフィールドとして設計（ADR-014）
 
-- [ ] **ファイル内edgeの記述構造（control / data section） → ADR-013**
-  - 同一ファイル内のノード間edgeをどう書くか
-  - 制御線・データ線のsection構造
+- [x] **ファイル内edgeの記述構造（flow:セクション） → ADR-015**
+  - tasks=signatureのみ・wiringはflow:に分離
+  - fork/join記法・$paramsシジル・reads/writesフィールドを確定
 
-- [ ] **eventノードのスキーマを決める → ADR-014**
+- [ ] **eventノードのスキーマを決める → ADR-017**
   - 制御フローの起点として `event` ノードをDAGに導入する方向は確定
   - `source` 属性（ui / time / external / er）でタグ付け
   - 具体的なスキーマが未定（spec/overview.md `open_issues` より）
 
-- [ ] **Edgeの管理方式を決める → ADR-015**
+- [ ] **Edgeの管理方式を決める → ADR-018**
   - クロスエッジに `kind` 属性が必要なため、Nodeのadjacency listではなく別管理が有力
   - 未決（spec/overview.md `open_issues` より）
 

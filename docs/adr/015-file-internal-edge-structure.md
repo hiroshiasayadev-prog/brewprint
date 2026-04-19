@@ -279,7 +279,7 @@ branchesとjoinの対応関係をfork側に書くことで、「このforkは何
 
 - `spec/nodes.md`（未作成）にてtask/foreach/branch/fork/joinの`flow:`内での記法を詳細化する
 - `spec/views.md`（未作成）にてflow:セクションからDAG図を導出するrender規則を定義する
-- ADR-013のforeachの `apply:` はsub taskのID参照であり、`flow:`セクションのwiring記法とは別の機構。spec/nodes.mdにて整合を確認する
+- foreachの `flow:` 内での記法はADR-016にて確定（foreachはnode typeから廃止しflow:制御構文に統合。ADR-013はsuperseded）
 
 ## Evidence
 - commit: ed75964
