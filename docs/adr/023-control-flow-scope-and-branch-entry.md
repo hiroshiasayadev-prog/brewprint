@@ -128,6 +128,6 @@ branchだけ例外にする根拠がない。「制御フロー構文の内部�
 - `spec/nodes.md` のbranchセクションにスコープルールの参照を追記する
 
 ## Evidence
-- commit: tbd
+- commit: 7e80b9a
 - impl commit: tbd
 - 参考: 特になし

@@ -77,6 +77,6 @@ Mermaid flowchartはこのバー記号を再現できないため、視覚的に
 - 制御線ラベルの根拠として本ADRを `spec/views/dag.md` から参照する
 
 ## Evidence
-- commit: tbd
+- commit: ce50bcf
 - impl commit: tbd
 - 参考: ISO 5807:1985（フローチャート記号）、OMG UML 2.x Activity Diagram（ControlFlow / ObjectFlow / Action Node / Object Node / Decision Node / Fork / Join）、OMG BPMN 2.0（Data Store / Exclusive Gateway / Parallel Gateway / Multi-Instance Activity）
