@@ -229,6 +229,8 @@ flow:
 
 ### 5. storeのreads/writes
 
+> **注: 本セクションはADR-020によりsuperseded。`reads`/`writes` はflow:ステップではなくtask nodeのフィールドとして書く。**
+
 flow内の各stepに `reads:` / `writes:` フィールドで明示する。`params`/`returns`（asset）とは直交するフィールド。
 
 ```yaml

@@ -149,13 +149,14 @@ classは独立したノード種別として持たない。
 
 ## クロスエッジの種類
 
-| エッジ | 意味 |
-|--------|------|
-| DAG task → ER table | `write` |
-| ER table → DAG asset | `read` |
-| state transition → DAG task | `trigger` |
-| DAG asset → state | `reflect` |
-| state → ER table | `hydrate` |
+レイヤーをまたぐエッジは `write` / `read` の2種のみ。task nodeの `writes` / `reads` フィールドとして記述する（ADR-020）。
+
+| kind | 向き | 意味 |
+|------|------|------|
+| `write` | task → store | taskがstoreを更新する |
+| `read` | task → store | taskがstoreを参照する |
+
+`trigger` / `reflect` / `hydrate` はADR-018/019のevent・transition・`transition.action` で表現済みのため廃止。
 
 ### クロスエッジの連鎖
 
@@ -298,8 +299,8 @@ Application → Processing → Data
 
 ### stateノード（FSM）の設計
 
-State Diagram用のFSM状態ノード。`store`（データ保持）とは別概念。ADR-019で設計予定。
+State Diagram用のFSM状態ノード。`store`（データ保持）とは別概念。ADR-019にて確定済み。
 
 ### Edgeの管理方式
 
-クロスエッジにkind属性が必要なため、Nodeのadjacency listではなく別管理が有力。未決。
+クロスエッジは `write` / `read` の2種に絞り、task nodeの `reads`/`writes` フィールドとして記述する。ADR-020にて確定済み。

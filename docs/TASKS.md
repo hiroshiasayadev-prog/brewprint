@@ -29,14 +29,19 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
   - tasks=signatureのみ・wiringはflow:に分離
   - fork/join記法・$paramsシジル・reads/writesフィールドを確定
 
-- [ ] **eventノードのスキーマを決める → ADR-017**
+- [x] **eventノードのスキーマを決める → ADR-018**
+
+- [x] **stateノード（FSM）の設計 → ADR-019**
+  - `state` ノード種別・`transitions:` セクションを確定
+  - `store`（データ保持）との概念区別を明記
   - 制御フローの起点として `event` ノードをDAGに導入する方向は確定
   - `source` 属性（ui / time / external / er）でタグ付け
   - 具体的なスキーマが未定（spec/overview.md `open_issues` より）
 
-- [ ] **Edgeの管理方式を決める → ADR-018**
-  - クロスエッジに `kind` 属性が必要なため、Nodeのadjacency listではなく別管理が有力
-  - 未決（spec/overview.md `open_issues` より）
+- [x] **Edgeの管理方式を決める → ADR-020**
+  - クロスエッジを `write` / `read` の2種に絞り、task nodeの `reads`/`writes` フィールドとして記述
+  - `trigger`/`reflect`/`hydrate` は既存のevent/transition構造で表現済みのため廃止
+  - ADR-015の `reads`/`writes`（flow:ステップ記述）をsupersede
 
 ---
 
