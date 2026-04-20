@@ -40,6 +40,6 @@ ADR-011の「サブノードはファイル内private」の仕組みをそのま
 - actorが必要なファイル（state.yaml / sequence diagram ファイル等）にサブノードとして定義する
 
 ## Evidence
-- commit: tbd
+- commit: c5f3b07
 - impl commit: tbd
 - 参考: ADR-011（サブノード設計）

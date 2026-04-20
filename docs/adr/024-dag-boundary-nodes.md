@@ -74,6 +74,6 @@ MermaidではいくつかのキーワードがID名として使えない場合�
 - ADR-022の色付けテーブルに `boundaryNode` を追記する
 
 ## Evidence
-- commit: tbd
+- commit: ae532b0
 - impl commit: tbd
 - 参考: OMG UML 2.x Activity Diagram（Activity Parameter Node）、WCAG 2.1 Level AA
