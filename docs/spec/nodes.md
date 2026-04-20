@@ -1,6 +1,6 @@
 ---
 scope: docs/spec/nodes.md
-status: wip
+status: confirmed
 last_updated: 2026-04-20
 summary: >
   brewprintの全ノード種別のフィールド定義。
@@ -22,6 +22,7 @@ depends_on:
   - docs/adr/020-cross-edge-management.md
   - docs/adr/021-model-field-structure.md
   - docs/adr/023-control-flow-scope-and-branch-entry.md
+  - docs/adr/025-actor-file-placement.md
 ---
 
 # ノード定義仕様
@@ -515,7 +516,7 @@ Processingレイヤー。合流。対応する `fork` の全ブランチが揃�
 | `model` | Data | `model/*.yaml` | ❌ |
 | `asset` | Processing | なし（task.returnsから導出） | ✅ |
 | `store` | Processing / Data | `store/*.yaml` | ✅（reads/writes参照） |
-| `actor` | Application | （未定）| ❌ |
+| `actor` | Application | state.yaml等に同居（サブノード）（ADR-025） | ❌ |
 | `event` | Application | state.yaml等に同居 | ❌ |
 | `state` | Application | `state.yaml` | ❌ |
 | `branch` | Processing | `task/*.yaml`のサブノード等 | ✅ |
