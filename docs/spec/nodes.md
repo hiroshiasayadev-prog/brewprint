@@ -512,17 +512,20 @@ Processingレイヤー。合流。対応する `fork` の全ブランチが揃�
 
 ## ノード種別一覧
 
-| 種別 | レイヤー | ファイル配置 | DAGに登場 |
-|------|---------|------------|---------|
-| `task` | Processing | `task/*.yaml` | ✅ |
-| `model` | Data | `model/*.yaml` | ❌ |
-| `asset` | Processing | なし（task.returnsから導出） | ✅ |
-| `store` | Processing / Data | `store/*.yaml` | ✅（reads/writes参照） |
-| `actor` | Application | state.yaml等に同居（サブノード）（ADR-025） | ❌ |
-| `event` | Application | state.yaml等に同居 | ❌ |
-| `state` | Application | `state.yaml` | ❌ |
-| `branch` | Processing | `task/*.yaml`のサブノード等 | ✅ |
-| `fork` | Processing | `task/*.yaml`のサブノード等 | ✅ |
-| `join` | Processing | `task/*.yaml`のサブノード等 | ✅ |
+| 種別 | レイヤー | ファイル配置 | Seq | State | DAG | ER | API |
+|------|---------|------------|:---:|:---:|:---:|:---:|:---:|
+| `task` | Processing | `task/*.yaml` | △※1 | ❌ | ✅ | ❌ | △※1 |
+| `model` | Data | `model/*.yaml` | ❌ | ❌ | ❌ | ✅ | ❌ |
+| `asset` | Processing | なし（task.returnsから導出） | ❌ | ❌ | ✅ | ❌ | ❌ |
+| `store` | Processing / Data | `store/*.yaml` | ❌ | ❌ | ✅ | ✅ | ❌ |
+| `actor` | Application | state.yaml等に同居（サブノード）（ADR-025） | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `event` | Application | state.yaml等に同居 | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `state` | Application | `state.yaml` | ❌ | ✅ | ❌ | ❌ | ❌ |
+| `branch` | Processing | `task/*.yaml`のサブノード等 | ❌ | ❌ | ✅ | ❌ | ❌ |
+| `fork` | Processing | `task/*.yaml`のサブノード等 | ❌ | ❌ | ✅ | ❌ | ❌ |
+| `join` | Processing | `task/*.yaml`のサブノード等 | ❌ | ❌ | ✅ | ❌ | ❌ |
+
+凡例: Seq = Sequence Diagram / State = State Diagram / ER = ER Diagram / API = API Table  
+※1 `endpoint: true` の場合のみ。Sequence Diagramではtaskはlifelineではなく矢印ラベルとして参照される（ADR-017）。
 
 > `foreach` はADR-016にてnode typeから廃止。`flow:` セクションの制御構文として記述する（→ `spec/edges.md`）。
