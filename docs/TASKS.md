@@ -63,7 +63,7 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
 
 - [~] **spec/views/ ディレクトリを作成し図ごとにspecを書く**
   - [x] `spec/views/dag.md` — DAGのrenderルール（ノード・エッジのマッピング）　status: confirmed
-  - [ ] `spec/views/er.md` — ER図のrenderルール
+  - [x] `spec/views/er.md` — ER図のrenderルール
   - [ ] `spec/views/state.md` — State Diagramのrenderルール
   - [ ] `spec/views/sequence.md` — Sequence Diagramのrenderルール
   - [ ] `spec/views/api-table.md` — API Table（list_endpoints MCPツール出力）のルール

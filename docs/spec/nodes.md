@@ -23,6 +23,7 @@ depends_on:
   - docs/adr/021-model-field-structure.md
   - docs/adr/023-control-flow-scope-and-branch-entry.md
   - docs/adr/025-actor-file-placement.md
+  - docs/adr/026-fk-cardinality-and-nm-relation.md
 ---
 
 # ノード定義仕様
@@ -212,6 +213,7 @@ Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` �
 | `type` | ✓ | string | 型。primitive予約語 or model ID | ADR-008 |
 | `pk` | 任意 | bool | `true` でPKカラム。1 struct内に1つ | ADR-021 |
 | `fk` | 任意 | `<model-id>.<field-name>` | FK参照先。省略時はJSON埋め込み扱い | ADR-021 |
+| `unique` | 任意 | bool | `true` で1:1リレーション。`fk:` と併用。省略時はmany-to-one | ADR-026 |
 | `note` | 任意 | string | 人間向けdocstring兼LLM semantic contract | ADR-008, ADR-021 |
 
 `type` の機械的validationはprimitive予約語 or 定義済みmodel IDの存在チェックのみ（ADR-008）。
