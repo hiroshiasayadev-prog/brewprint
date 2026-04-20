@@ -1,6 +1,6 @@
 ---
 scope: docs/spec/views/dag.md
-status: wip
+status: confirmed
 last_updated: 2026-04-20
 summary: >
   DAG（Directed Acyclic Graph）のrenderルール定義。
@@ -156,6 +156,23 @@ class other_task external
 
 外部ノードの形状はノード種別に従う（task → 矩形、等）。
 
+### subgraph params / returns
+
+メインノードの入出力を図の境界として `subgraph` で囲む（ADR-024）。
+
+```
+subgraph params
+  config([config])
+end
+subgraph returns
+  result([result])
+end
+```
+
+- `subgraph params`: メインノードに `params` がある場合、各paramをassetノードとして列挙する
+- `subgraph returns`: メインノードに `returns` がある場合のみ描画。`returns` がない場合は省略
+- 境界assetには `boundaryNode` classDef を適用する
+
 ### foreachの↻装飾
 
 `foreach` はnode typeではなく `flow:` の制御構文のため、独立したノードとして描画しない（ADR-016）。
@@ -267,14 +284,21 @@ user --> user_flow          %% user ブランチへのデータ
 **fork / join（並列実行）**
 
 forkからの各ブランチに `"parallel"` ラベルを付ける（BPMN 2.0 Parallel Gateway準拠 / ADR-022）。
+joinノードへは、各branchタスクからの **制御線（合流）とデータ線（結果）の両方** を引く。
 
 ```
 fan_out{{fan_out}} == "parallel" ==> static_analysis
 fan_out{{fan_out}} == "parallel" ==> dynamic_analysis
 fan_out{{fan_out}} == "parallel" ==> dep_check
-static_analysis ==> aggregate{{aggregate}}
-dynamic_analysis ==> aggregate{{aggregate}}
-dep_check ==> aggregate{{aggregate}}
+static_analysis --> static_result([static_result])   %% データ線（branchタスクの出力）
+static_result --> aggregate{{aggregate}}              %% データ線（joinへの入力）
+static_analysis ==> aggregate{{aggregate}}            %% 制御線（合流）
+dynamic_analysis --> dynamic_result([dynamic_result])
+dynamic_result --> aggregate
+dynamic_analysis ==> aggregate
+dep_check --> dep_result([dep_result])
+dep_result --> aggregate
+dep_check ==> aggregate
 ```
 
 **foreach**
