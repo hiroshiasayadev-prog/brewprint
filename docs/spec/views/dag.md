@@ -93,6 +93,15 @@ _end([End])
 Mermaid ID は `_start` / `_end`（キーワード衝突回避のためアンダースコアプレフィックス付与）（ADR-024）。
 DAGの先頭に `_start([Start])` を置き、最後のtaskから `_end([End])` へ制御線（`==>`）を引く。floatingノード（ADR-023）も `_end` へ接続する。
 
+**floatingノード**: flow内で後続のwiring参照がないtask。branchの各caseタスクのように、分岐先で処理が完結しそれ以降のstepがない場合に発生する。floatingノードには暗黙的に `==> _end([End])` を追加して描画する。
+
+```
+admin_flow ==> _end([End])
+user_flow ==> _end
+```
+
+（`_end` は1つのノードなので、2本以上の制御線が収束してよい）
+
 ### task
 
 ```
@@ -220,7 +229,22 @@ login <--> session_store[(session_store)]   %% reads + writes 両方
 
 ### 制御線（`==>`）
 
-branch・fork・join を含む制御フローに使う。
+以下の全ケースで制御線を引く。
+
+- `_start` → 最初のtask（DAG起点）
+- 最後のtask → `_end`（DAG終点）
+- floatingノード → `_end`（暗黙終端）
+- **flow上で連続するtask間**（data線があっても必ず併記する）
+- task → branch / fork（分岐への入り口）
+- branch / join → 後続task（分岐・合流の出口）
+
+```
+process_report ==> transform       %% 連続するtask間
+fetch_user ==> route_by_role       %% task → branch
+fetch_data ==> fan_out{{fan_out}}  %% task → fork
+```
+
+> データ線（`-->`）だけでは実行順序がLLMに伝わりにくい。UML ControlFlowとして明示することで、DAGの制御構造を機械的に解析可能にする（ADR-022）。
 
 **branch（排他分岐）**
 
@@ -229,6 +253,15 @@ branch・fork・join を含む制御フローに使う。
 ```
 route_by_role{route_by_role} == "admin" ==> admin_flow
 route_by_role{route_by_role} == "user" ==> user_flow
+```
+
+**branchのparams wiring（データ線）**: branchノードが受け取るassetは2種のデータ線を引く。
+1本はbranchノード自身（ルーティング判断用）、もう1本は各branch task（実行時に使うデータ）。
+
+```
+user --> route_by_role      %% ルーティング判断用
+user --> admin_flow         %% admin ブランチへのデータ
+user --> user_flow          %% user ブランチへのデータ
 ```
 
 **fork / join（並列実行）**
@@ -304,6 +337,7 @@ flowchart TD
   _start([Start]) ==> process_report
   config --> process_report[process_report]
   process_report --> raw([raw])
+  process_report ==> transform
   raw --> transform[transform]
   transform --> result
   transform ==> _end([End])
@@ -320,35 +354,347 @@ flowchart TD
 
 ### fork / join を含むDAG
 
+YAML:
+```yaml
+nodes:
+  - id: analyze_code
+    type: task
+    main: true
+    params:
+      - name: source_code
+        model: source_code
+    returns:
+      name: full_report
+      model: full_report
+
+  - id: fetch_data
+    type: task
+    params:
+      - name: source_code
+        model: source_code
+    returns:
+      name: raw
+      model: raw_data
+
+  - id: fan_out
+    type: fork
+
+  - id: static_analysis
+    type: task
+    params:
+      - name: raw
+        model: raw_data
+    returns:
+      name: static_result
+      model: static_result
+
+  - id: dynamic_analysis
+    type: task
+    params:
+      - name: raw
+        model: raw_data
+    returns:
+      name: dynamic_result
+      model: dynamic_result
+
+  - id: dep_check
+    type: task
+    params:
+      - name: raw
+        model: raw_data
+    returns:
+      name: dep_result
+      model: dep_result
+
+  - id: aggregate
+    type: join
+    params:
+      - name: static_result
+        model: static_result
+      - name: dynamic_result
+        model: dynamic_result
+      - name: dep_result
+        model: dep_result
+    returns:
+      name: full_report
+      model: full_report
+
+flow:
+  - step: fetch_data
+    params:
+      source_code: $params.source_code
+  - fork: fan_out
+    branches:
+      - [static_analysis]
+      - [dynamic_analysis]
+      - [dep_check]
+    join: aggregate
+    params:
+      raw: fetch_data
+```
+
+Mermaid出力:
 ```mermaid
 flowchart TD
-  fetch_data[fetch_data] --> raw([raw])
-  raw --> fan_out{{fan_out}}
-  fan_out == "parallel" ==> static_analysis[static_analysis]
-  fan_out == "parallel" ==> dynamic_analysis[dynamic_analysis]
-  fan_out == "parallel" ==> dep_check[dep_check]
-  static_analysis ==> aggregate{{aggregate}}
-  dynamic_analysis ==> aggregate{{aggregate}}
-  dep_check ==> aggregate{{aggregate}}
-  aggregate --> full_report([full_report])
+  subgraph params
+    source_code([source_code])
+  end
+  subgraph returns
+    full_report([full_report])
+  end
+
+  _start([Start]) ==> fetch_data
+  source_code --> fetch_data[fetch_data]
+  fetch_data --> raw([raw])
+  fetch_data ==> fan_out{{fan_out}}
+  raw --> static_analysis[static_analysis]
+  raw --> dynamic_analysis[dynamic_analysis]
+  raw --> dep_check[dep_check]
+  fan_out == "parallel" ==> static_analysis
+  fan_out == "parallel" ==> dynamic_analysis
+  fan_out == "parallel" ==> dep_check
+  static_analysis --> static_result([static_result])
+  dynamic_analysis --> dynamic_result([dynamic_result])
+  dep_check --> dep_result([dep_result])
+  static_result --> aggregate{{aggregate}}
+  dynamic_result --> aggregate
+  dep_result --> aggregate
+  static_analysis ==> aggregate
+  dynamic_analysis ==> aggregate
+  dep_check ==> aggregate
+  aggregate --> full_report
+  aggregate ==> _end([End])
+
+  classDef taskNode     fill:#4A90D9,stroke:#2C5F8A,color:#fff
+  classDef assetNode    fill:#5BA55B,stroke:#3A6B3A,color:#fff
+  classDef forkNode     fill:#8A8A8A,stroke:#5A5A5A,color:#fff
+  classDef terminalNode fill:#2C2C2C,stroke:#000,color:#fff
+  classDef boundaryNode fill:#2D7D9A,stroke:#1A5068,color:#fff
+  class fetch_data,static_analysis,dynamic_analysis,dep_check taskNode
+  class raw,static_result,dynamic_result,dep_result assetNode
+  class fan_out,aggregate forkNode
+  class _start,_end terminalNode
+  class source_code,full_report boundaryNode
 ```
 
 ### storeを含むDAG
 
+YAML:
+```yaml
+nodes:
+  - id: authenticate
+    type: task
+    main: true
+    params:
+      - name: credentials
+        model: credential
+    returns:
+      name: auth_token
+      model: token
+
+  - id: login
+    type: task
+    params:
+      - name: credentials
+        model: credential
+    returns:
+      name: auth_token
+      model: token
+    reads: [session_store]
+    writes: [session_store]
+
+  - id: session_store
+    type: store
+    model: session
+
+flow:
+  - step: login
+    params:
+      credentials: $params.credentials
+```
+
+Mermaid出力:
 ```mermaid
 flowchart TD
-  credentials([credentials]) --> login[login]
-  session_store[(session_store)] --> login
-  login --> session_store
-  login --> auth_token([auth_token])
+  subgraph params
+    credentials([credentials])
+  end
+  subgraph returns
+    auth_token([auth_token])
+  end
+
+  _start([Start]) ==> login
+  credentials --> login[login]
+  login <--> session_store[(session_store)]
+  login --> auth_token
+  login ==> _end([End])
+
+  classDef taskNode     fill:#4A90D9,stroke:#2C5F8A,color:#fff
+  classDef storeNode    fill:#E8A838,stroke:#B07820,color:#fff
+  classDef terminalNode fill:#2C2C2C,stroke:#000,color:#fff
+  classDef boundaryNode fill:#2D7D9A,stroke:#1A5068,color:#fff
+  class login taskNode
+  class session_store storeNode
+  class _start,_end terminalNode
+  class credentials,auth_token boundaryNode
 ```
 
 ### foreachを含むDAG
 
+YAML:
+```yaml
+nodes:
+  - id: process_reports
+    type: task
+    main: true
+    params:
+      - name: config
+        model: app_config
+    returns:
+      name: results
+      model: result_list
+
+  - id: fetch_items
+    type: task
+    params:
+      - name: config
+        model: app_config
+    returns:
+      name: items
+      model: item_list
+
+  - id: process_item
+    type: task
+    params:
+      - name: item
+        model: item
+    returns:
+      name: result
+      model: result
+
+flow:
+  - step: fetch_items
+    params:
+      config: $params.config
+  - foreach: process_item
+    over: fetch_items
+    params:
+      item: $item
+    returns: results
+```
+
+Mermaid出力:
 ```mermaid
 flowchart TD
-  fetch_items[fetch_items] --> items([items])
+  subgraph params
+    config([config])
+  end
+  subgraph returns
+    results([results])
+  end
+
+  _start([Start]) ==> fetch_items
+  config --> fetch_items[fetch_items]
+  fetch_items --> items([items])
   fetch_items ==> process_item["↻ process_item"]
   items --"foreach"--> process_item
-  process_item --> results([results])
+  process_item --> results
+  process_item ==> _end([End])
+
+  classDef taskNode     fill:#4A90D9,stroke:#2C5F8A,color:#fff
+  classDef assetNode    fill:#5BA55B,stroke:#3A6B3A,color:#fff
+  classDef terminalNode fill:#2C2C2C,stroke:#000,color:#fff
+  classDef boundaryNode fill:#2D7D9A,stroke:#1A5068,color:#fff
+  class fetch_items,process_item taskNode
+  class items assetNode
+  class _start,_end terminalNode
+  class config,results boundaryNode
 ```
+
+### branchを含むDAG（floatingノードあり）
+
+returnsなし・floatingノードを含むパターン。branch caseタスクが後続なしで完結するため、
+両caseタスクがfloatingノードとなり `_end` へ暗黙接続される。
+
+YAML:
+```yaml
+nodes:
+  - id: handle_request
+    type: task
+    main: true
+    params:
+      - name: user_id
+        model: user_id
+
+  - id: fetch_user
+    type: task
+    params:
+      - name: user_id
+        model: user_id
+    returns:
+      name: user
+      model: user
+
+  - id: route_by_role
+    type: branch
+    params:
+      - name: user
+        model: user
+
+  - id: admin_flow
+    type: task
+    params:
+      - name: user
+        model: user
+
+  - id: user_flow
+    type: task
+    params:
+      - name: user
+        model: user
+
+flow:
+  - step: fetch_user
+    params:
+      user_id: $params.user_id
+  - branch: route_by_role
+    params:
+      user: fetch_user
+    cases:
+      - label: admin
+        step: admin_flow
+      - label: user
+        step: user_flow
+```
+
+Mermaid出力:
+```mermaid
+flowchart TD
+  subgraph params
+    user_id([user_id])
+  end
+
+  _start([Start]) ==> fetch_user
+  user_id --> fetch_user[fetch_user]
+  fetch_user --> user([user])
+  user --> route_by_role{route_by_role}
+  fetch_user ==> route_by_role
+  user --> admin_flow[admin_flow]
+  user --> user_flow[user_flow]
+  route_by_role == "admin" ==> admin_flow
+  route_by_role == "user" ==> user_flow
+  admin_flow ==> _end([End])
+  user_flow ==> _end
+
+  classDef taskNode     fill:#4A90D9,stroke:#2C5F8A,color:#fff
+  classDef assetNode    fill:#5BA55B,stroke:#3A6B3A,color:#fff
+  classDef branchNode   fill:#9B6BBD,stroke:#6B3D8F,color:#fff
+  classDef terminalNode fill:#2C2C2C,stroke:#000,color:#fff
+  classDef boundaryNode fill:#2D7D9A,stroke:#1A5068,color:#fff
+  class fetch_user,admin_flow,user_flow taskNode
+  class user assetNode
+  class route_by_role branchNode
+  class _start,_end terminalNode
+  class user_id boundaryNode
+```
+
