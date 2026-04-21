@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/views/state-diagram.md
 status: confirmed
-last_updated: 2026-04-20
+last_updated: 2026-04-22
 summary: >
   State DiagramのrenderルールとMermaid出力仕様を定義する。
   stateノード・eventノード・transitions:セクションを入力とし、
@@ -208,18 +208,18 @@ stateDiagram-v2
 
 ## Events
 
-| event | source | note |
-|-------|--------|------|
-| login_submitted | ui | ログインフォームのsubmit |
-| login_succeeded | external (auth_server) | — |
-| login_failed | external (auth_server) | — |
-| session_timeout | external (scheduler) | — |
+| event | source | actor | note |
+|-------|--------|-------|------|
+| login_submitted | ui | - | ログインフォームのsubmit |
+| login_succeeded | external | auth_server | — |
+| login_failed | external | auth_server | — |
+| session_timeout | external | scheduler | — |
 ````
 
 - H1 = ファイルID
 - 説明文 = ファイルレベルの `note`。ない場合は省略
 - **States表** = `type: state` の全ノード。`note` がない場合は `—`
-- **Events表** = `type: event` の全ノード。`source` と `note` を列挙。`note` がない場合は `—`
+- **Events表** = `type: event` の全ノード。`source` / `actor` / `note` を列挙。`actor` は `source=external` のみ記載、それ以外は `—`。`note` がない場合は `—`
 - Mermaid記法: `stateDiagram-v2`
 
 ---

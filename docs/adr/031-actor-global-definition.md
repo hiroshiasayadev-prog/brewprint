@@ -80,6 +80,6 @@ ID衝突がなければ問題ない。
 - `source=external` のeventの `actor:` フィールドはglobal actor IDを直参照する（ADR-018）
 
 ## Evidence
-- commit: tbd
+- commit: ae16bba
 - impl commit: tbd
 - 参考: 特になし
