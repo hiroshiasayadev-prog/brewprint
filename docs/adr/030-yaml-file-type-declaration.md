@@ -37,6 +37,7 @@ modules:
 | 値 | 対応するview |
 |----|-------------|
 | `api_table` | API Table view（ADR-028） |
+| `sequence_diagram` | Sequence Diagramシナリオ（ADR-032） |
 
 view種別が追加されるたびに本ADRの表を更新する。
 
@@ -58,6 +59,6 @@ view種別が追加されるたびに本ADRの表を更新する。
 - 新たなview種別を追加する際は本ADRの `as:` 値一覧を更新する
 
 ## Evidence
-- commit: tbd
+- commit: ec5e496
 - impl commit: tbd
 - 参考: 特になし

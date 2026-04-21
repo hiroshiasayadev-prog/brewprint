@@ -39,8 +39,26 @@ Mermaidのsequence diagramでは矢印にリンクを貼ることができない
 
 ### 矢印のラベル
 
-矢印のラベルにはtask IDを記載する（`auth.task.login` など）。
-リンクにはならないが、IDがあればMCP経由で詳細を参照できる。
+矢印の種別ごとにラベルの形式を定める。
+
+| 矢印 | ラベル |
+|------|--------|
+| Actor → UI | event ID |
+| UI → API | `METHOD path`（例: `POST /login`） |
+| API → DB | `reads` または `writes`（方向で読み書きを表現） |
+| API → UI | `returns.name`（returnsがない場合は `200 OK`） |
+
+DB操作の詳細（どのtaskがどのstoreをいつ操作するか）はMermaid図の下にtableとして付記する。tableの `step` 列はシナリオの `steps:` インデックスと対応する。
+
+### DB participantの粒度
+
+`store.kind=db` のstoreは全て「DB」1列にまとめる。`kind=session` / `kind=collection` / `kind=context` はparticipant列に出ない（task内部で吸収）。
+
+`store` はテーブル粒度の定義であり、スキーマ・DB単位の概念を持たないため、store IDごとに列を分けることはできない。複数DBを区別したい場合は `db_id` のような上位概念の追加が必要になるが、現時点ではスコープ外とする。
+
+### happy pathのみ
+
+sequence diagramはhappy pathのみを描画する。例外・エラーフローはnoteまたは別シナリオで表現する。taskの `returns` がhappy pathのレスポンスに対応する。
 
 ### 粒度の方針
 
@@ -70,6 +88,6 @@ sequence diagramは**レイヤー間の粗い粒度の流れ**を表現する。
 - spec/overview.md の「書ける図の一覧」を更新する必要がある
 
 ## Evidence
-- commit: db44639
+- commit: db44639（初版）, ae16bba（DB participant・矢印ラベル・happy path追記）
 - impl commit: tbd
 - 参考: UML標準Actor定義参考
