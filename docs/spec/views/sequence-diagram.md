@@ -89,6 +89,10 @@ participantの表示順（左→右）: `Actor → UI → API → DB`
 
 sequence diagramはhappy pathのみを描画する。例外・エラーフローはnoteまたは別シナリオファイルで表現する（ADR-004）。
 
+### event.payloadはMermaid図に出力しない
+
+`event.payload` はLLM向けのメタ情報（コード生成時の型参照）として定義ファイルに存在するが、Mermaid図には出力しない。`event.payload` から `task.params` への変換はUIコンポーネントの責務であり、brewprintのスコープ外。
+
 ---
 
 ## バックエンドによる自動解決
