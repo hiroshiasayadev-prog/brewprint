@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/nodes.md
 status: confirmed
-last_updated: 2026-04-20
+last_updated: 2026-04-21
 summary: >
   brewprintの全ノード種別のフィールド定義。
   各フィールドの必須/任意・型・意味・出典ADRを記載する。
@@ -24,6 +24,7 @@ depends_on:
   - docs/adr/023-control-flow-scope-and-branch-entry.md
   - docs/adr/025-actor-file-placement.md
   - docs/adr/026-fk-cardinality-and-nm-relation.md
+  - docs/adr/028-api-table-route-composition.md
 ---
 
 # ノード定義仕様
@@ -79,7 +80,7 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
   main: true
   endpoint: true
   method: POST
-  path: /auth/login
+  path: login
   params:
     - name: credentials
       model: credential
@@ -103,9 +104,9 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 | `returns` | 任意 | returns | 出力。model IDへの参照とasset名の宣言 | ADR-009 |
 | `reads` | 任意 | list\<store-id\> | 参照するstore IDのリスト | ADR-020 |
 | `writes` | 任意 | list\<store-id\> | 更新するstore IDのリスト | ADR-020 |
-| `endpoint` | 任意 | bool | `true` で `list_endpoints` MCPツールに出力 | ADR-005, ADR-017 |
+| `endpoint` | 任意 | bool | `true` でAPI Tableの集計対象となり、`list_endpoints` MCPツールに出力 | ADR-005, ADR-017, ADR-028 |
 | `method` | endpoint時必須 | enum | HTTP method（GET/POST/PUT/DELETE/PATCH） | ADR-005 |
-| `path` | endpoint時必須 | string | URLパス（例: `/auth/login`） | ADR-005 |
+| `path` | endpoint時必須 | string | endpointのleaf path（例: `login`）。full pathはAPI Table viewの `http_root_path` とmodule階層から構成する | ADR-005, ADR-028 |
 | `initializes` | 任意 | list\<init\> | このファイル内で使うstoreの初期宣言（main nodeのみ）| ADR-014 |
 
 ### param オブジェクト
@@ -296,24 +297,32 @@ collectionのnoteはLLMへのsemantic contract（ADR-007, ADR-008と同じ位置
 
 ## actor
 
-> 出典: ADR-004, ADR-006
+> 出典: ADR-004, ADR-006, ADR-031
 
-Applicationレイヤー。人間・外部システム。Sequence Diagramのエントリーポイントとして使用。UML標準Actorに対応。
+Applicationレイヤー。人間・外部システム。Sequence Diagramのparticipant列として登場。UML標準Actorに対応。
+
+actorはプロジェクトglobalな存在であり、モジュールに属さない。任意のファイル名・任意の配置で定義できる。プロジェクト内でIDがユニークであることをパーサーが保証する（ADR-031）。
 
 ```yaml
-- id: end_user
-  type: actor
-  note: "サービスを利用するエンドユーザー"
+# actors.yaml（ファイル名は任意）
+nodes:
+  - id: stripe
+    type: actor
+    note: "外部決済サービス"
 
-- id: payment_service
-  type: actor
-  note: "Stripeなど外部決済サービス"
+  - id: scheduler
+    type: actor
+    note: "cronスケジューラー"
+
+  - id: end_user
+    type: actor
+    note: "サービスを利用するエンドユーザー"
 ```
 
 ### フィールド定義
 
 固有フィールドなし（ADR-021）。`id` / `type` / `note` のみで表現する。  
-`external:` / `role:` 等の属性はMermaid render上の描き分けが必要になった時点でADRを追加する。
+モジュールパスは不要。参照は常にID直参照（ADR-031）。
 
 | フィールド | 必須 | 型 | 内容 | 出典 |
 |-----------|------|-----|------|------|
@@ -335,14 +344,10 @@ Applicationレイヤー。制御フローの起点。DAGの `flow:` には登場
     model: login_form
   note: "ログインフォームのsubmit"
 
-- id: daily_batch_triggered
-  type: event
-  source: time
-  note: "毎日0時に発火"
-
 - id: payment_webhook_received
   type: event
   source: external
+  actor: stripe
   payload:
     model: payment_event
   note: "Stripeからの決済完了通知"
@@ -360,7 +365,8 @@ Applicationレイヤー。制御フローの起点。DAGの `flow:` には登場
 
 | フィールド | 必須 | 型 | 内容 | 出典 |
 |-----------|------|-----|------|------|
-| `source` | ✓ | enum | `ui` / `time` / `external` / `er` | ADR-018 |
+| `source` | ✓ | enum | `ui` / `external` / `er` | ADR-018 |
+| `actor` | `external`のみ必須 | actor-id | 発火元のactor ID。brewprintのいずれかのファイルに `type: actor` ノードとして宣言されていること | ADR-018 |
 | `payload` | 任意 | payload | イベントが運ぶデータのmodel参照 | ADR-018 |
 | `watches` | `er`のみ必須 | store-id | 変化を監視するstore ID | ADR-018 |
 
@@ -372,12 +378,11 @@ Applicationレイヤー。制御フローの起点。DAGの `flow:` には登場
 
 ### sourceの意味
 
-| source | 意味 | payloadの要否 |
-|--------|------|-------------|
-| `ui` | ユーザー操作（クリック・フォーム送信等） | 任意（フォームデータ等） |
-| `time` | cron・スケジュール実行 | 基本不要 |
-| `external` | webhook・message queue・WebSocket | 任意（受信データ） |
-| `er` | storeの値変化による発火。`watches`必須 | 任意 |
+| source | 意味 | `actor`の要否 | payloadの要否 |
+|--------|------|-------------|-------------|
+| `ui` | ユーザー操作（クリック・フォーム送信等）。UI participant列を暗黙生成 | 不要 | 任意（フォームデータ等） |
+| `external` | 外部システム・スケジューラーからの入力。`actor:` で発火元を明示 | **必須** | 任意（受信データ） |
+| `er` | storeの値変化による発火。`watches`必須 | 不要 | 任意 |
 
 ---
 
@@ -518,7 +523,7 @@ Processingレイヤー。合流。対応する `fork` の全ブランチが揃�
 | `model` | Data | `model/*.yaml` | ❌ | ❌ | ❌ | ✅ | ❌ |
 | `asset` | Processing | なし（task.returnsから導出） | ❌ | ❌ | ✅ | ❌ | ❌ |
 | `store` | Processing / Data | `store/*.yaml` | ❌ | ❌ | ✅ | ✅ | ❌ |
-| `actor` | Application | state.yaml等に同居（サブノード）（ADR-025） | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `actor` | Application | プロジェクトglobal。任意のファイル名で定義（ADR-031） | ✅ | ❌ | ❌ | ❌ | ❌ |
 | `event` | Application | state.yaml等に同居 | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `state` | Application | `state.yaml` | ❌ | ✅ | ❌ | ❌ | ❌ |
 | `branch` | Processing | `task/*.yaml`のサブノード等 | ❌ | ❌ | ✅ | ❌ | ❌ |

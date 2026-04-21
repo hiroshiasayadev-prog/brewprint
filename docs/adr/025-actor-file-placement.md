@@ -1,7 +1,8 @@
 # 025: actorのファイル配置
 
-- **status**: accepted
+- **status**: superseded
 - **date**: 2026-04-20
+- **superseded by**: ADR-031
 
 ## 背景
 

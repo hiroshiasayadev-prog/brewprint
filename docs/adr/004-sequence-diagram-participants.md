@@ -16,9 +16,17 @@ sequence diagramのparticipantは以下の4種とする。
 | participant | 粒度 | brewprintの実体 |
 |---|---|---|
 | Actor | 人間・外部システム | 新規：`actor` ノード |
-| UI | イベント発火点 | 既存：`event`（source=ui） |
+| UI | イベント発火点 | `source=ui` なeventが存在する場合に暗黙生成 |
 | API | バックエンドエンドポイント単位 | 既存：`task`（endpoint=true） |
 | DB | 永続化層 | 既存：`store`（kind=db） |
+
+### UI participantの暗黙生成
+
+UI列はYAMLで明示的に宣言するノードを持たない。
+`source=ui` なeventがsequence diagramのシナリオ内に存在する場合に、renderが自動でUI participantを生成する。
+
+UIの種別（ブラウザ / モバイルアプリ等）の差異はstate diagram / wireframe側で表現する。
+sequence diagramではUIを単一の参加者として扱い、種別を区別しない。
 
 ### participantのリンク
 

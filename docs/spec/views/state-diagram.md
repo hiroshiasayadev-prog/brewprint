@@ -133,14 +133,17 @@ nodes:
   - id: login_succeeded
     type: event
     source: external
+    actor: auth_server
 
   - id: login_failed
     type: event
     source: external
+    actor: auth_server
 
   - id: session_timeout
     type: event
-    source: time
+    source: external
+    actor: scheduler
 
 transitions:
   - from: idle
@@ -208,7 +211,9 @@ stateDiagram-v2
 | event | source | note |
 |-------|--------|------|
 | login_submitted | ui | ログインフォームのsubmit |
-| session_timeout | time | — |
+| login_succeeded | external (auth_server) | — |
+| login_failed | external (auth_server) | — |
+| session_timeout | external (scheduler) | — |
 ````
 
 - H1 = ファイルID

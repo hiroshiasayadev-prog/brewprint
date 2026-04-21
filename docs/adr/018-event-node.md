@@ -26,7 +26,8 @@ eventの発生源として `ui / time / external / er` の4種は `spec/overview
 
 | フィールド | 必須 | 内容 |
 |-----------|------|------|
-| `source` | ✓ | `ui` / `time` / `external` / `er` |
+| `source` | ✓ | `ui` / `external` / `er` |
+| `actor` | `external`のみ必須 | 発火元のactor ID。`source=external` の場合、対応する `type: actor` ノードの宣言が必要 |
 | `payload` | 任意 | イベントが運ぶデータのmodel参照 |
 | `watches` | `er`のみ | 変化を監視するstore ID |
 | `note` | 任意 | 発火条件・詳細。複雑な条件はここに書く |
@@ -44,24 +45,22 @@ eventの発生源として `ui / time / external / er` の4種は `spec/overview
   note: "ログインフォームのsubmit"
 ```
 
-**`time`**: cronやスケジュール実行。payloadは基本不要。
-
-```yaml
-- id: daily_batch_triggered
-  type: event
-  source: time
-  note: "毎日0時に発火"
-```
-
-**`external`**: webhook・message queue・WebSocket等の外部システムからの入力。payloadに受信データのmodelを指定する。
+**`external`**: webhook・message queue・WebSocket等の外部システム（スケジューラー含む）からの入力。`actor:` フィールドで発火元actorを必ず明示する。参照先の `type: actor` ノードはbrewprintのいずれかのファイルに宣言されていること。
 
 ```yaml
 - id: payment_webhook_received
   type: event
   source: external
+  actor: stripe
   payload:
     model: payment_event
   note: "Stripeからの決済完了通知"
+
+- id: daily_batch_triggered
+  type: event
+  source: external
+  actor: scheduler
+  note: "毎日0時に発火"
 ```
 
 **`er`**: storeの値が変化したことによって発火するイベント。`watches`に監視対象のstore IDを指定する。
@@ -98,7 +97,7 @@ eventのペイロード構造をnoteのみで記述すると、LLMがイベン�
 ## 影響
 
 - `spec/overview.md` の「ノード種別」テーブルに `event` を追加する
-- `spec/overview.md` の「triggerの発生源（4種）」セクションを本ADRへの参照に更新する
+- `spec/overview.md` の「triggerの発生源」セクションを本ADRへの参照に更新する（`time` 削除・3種に変更）
 - `spec/overview.md` のsequence diagramのparticipant対応表の `event(source=ui)` 記述を本ADRに基づき整理する
 - stateノード（FSM）の設計はADR-019へ
 
