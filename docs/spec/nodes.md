@@ -22,9 +22,9 @@ depends_on:
   - docs/adr/020-cross-edge-management.md
   - docs/adr/021-model-field-structure.md
   - docs/adr/023-control-flow-scope-and-branch-entry.md
-  - docs/adr/025-actor-file-placement.md
   - docs/adr/026-fk-cardinality-and-nm-relation.md
   - docs/adr/028-api-table-route-composition.md
+  - docs/adr/031-actor-global-definition.md
 ---
 
 # ノード定義仕様
@@ -418,6 +418,9 @@ Applicationレイヤー。FSMの状態ノード。State Diagramで使用。`stor
 |-----------|------|-----|------|------|
 | `initial` | 任意 | bool | `true` でFSMの初期状態。1ファイルに1つ | ADR-019 |
 | `final` | 任意 | bool | `true` で終端状態（複数可） | ADR-019 |
+| `wireframe` | 任意 | object | この状態のUI骨格。単一rootのcontainerノード | ADR-029 |
+
+`wireframe`フィールドの詳細は `docs/spec/views/wireframe.md` を参照。
 
 `state` と `store` の区別:
 

@@ -61,12 +61,13 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
 - [x] **spec/edges.md を新規作成**
   - flow: / transitions: / reads/writes / $シジル体系を定義（ADR-015, 016, 019, 020に基づく）
 
-- [~] **spec/views/ ディレクトリを作成し図ごとにspecを書く**
+- [x] **spec/views/ ディレクトリを作成し図ごとにspecを書く**
   - [x] `spec/views/dag.md` — DAGのrenderルール（ノード・エッジのマッピング）　status: confirmed
   - [x] `spec/views/er.md` — ER図のrenderルール
-  - [ ] `spec/views/state.md` — State Diagramのrenderルール
-  - [ ] `spec/views/sequence.md` — Sequence Diagramのrenderルール
-  - [ ] `spec/views/api-table.md` — API Table（list_endpoints MCPツール出力）のルール
+  - [x] `spec/views/state.md` — State Diagramのrenderルール
+  - [x] `spec/views/sequence.md` — Sequence Diagramのrenderルール
+  - [x] `spec/views/api-table.md` — API Table（list_endpoints MCPツール出力）のルール
+  - [x] `spec/views/wireframe.md` — wireframe DSLのrenderルール　status: confirmed
   - 1ファイル = 1図。各ファイルにFront Matter（doc-policy準拠）
 
 ---
