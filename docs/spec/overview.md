@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/overview.md
 status: draft
-last_updated: 2026-04-19
+last_updated: 2026-04-21
 summary: >
   brewprintの全体概要。コンセプト・ノード種別・クロスエッジ・伝搬方向・
   責務分離方針・未解決課題を定義する。
@@ -17,6 +17,7 @@ depends_on:
   - docs/adr/011-file-main-node-and-sub-nodes.md
   - docs/adr/017-diagram-layers-and-scope.md
   - docs/adr/018-event-node.md
+  - docs/adr/028-api-table-route-composition.md
 open_issues:
   - stateノード（FSM）のスキーマ未定（ADR-019）
   - Edgeの別管理 vs Node内adjacency list未決
@@ -108,7 +109,7 @@ brewprintの**実装者はほぼAIを想定**している。この前提から�
   type: task
   endpoint: true
   method: POST
-  path: /auth/login
+  path: login
   params:
     - name: request
       model: login_request    # modelのID
@@ -116,6 +117,8 @@ brewprintの**実装者はほぼAIを想定**している。この前提から�
     name: auth_token
     model: token              # このassetノードがDAG上に暗黙的に生える
 ```
+
+> endpointのfull pathはtask単体では持たず、API Table viewの `http_root_path` とmodule階層から構成される（ADR-028）。
 
 | フィールド | 必須 | 内容 |
 |---|---|---|
@@ -258,7 +261,7 @@ dogfoodしながら必要なものだけ昇格させる運用。候補：`retry`
 |---|---|---|
 | Sequence Diagram | `actor` / `event` / `task`（endpoint=true）/ `store`（kind=db） | 誰が・何をいつやるか |
 | State Diagram | `state`（FSM）/ `event` / `store` | 何がどんな状態を持ち、どう遷移するか（ADR-019） |
-| API Table | `task`（endpoint=true） | `list_endpoints` MCPツールで出力。Mermaid描画なし |
+| API Table | `task`（endpoint=true） | API Table view YAMLに基づいてrenderし、`list_endpoints` MCPツールで出力。Mermaid描画なし |
 
 ### Processingレイヤー
 

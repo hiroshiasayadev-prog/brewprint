@@ -65,7 +65,6 @@ from: payment.stripe.webhook.task.receive
 | `task` | タスク |
 | `asset` | アセット |
 | `store` | ストア |
-| `actor` | アクター |
 | `event` | イベント |
 | `state` | ステート |
 | `branch` | ブランチ |
@@ -126,6 +125,6 @@ sentinelとして使うことでモジュールパスの深さに関係なく一
 - クロスエッジを持つ既存の spec / uc の参照形式に変更はない（1段モジュールは従来通り動作する）
 
 ## Evidence
-- commit: tbd
+- commit: 75cb64b
 - impl commit: tbd
 - 参考: Goのimport path方式参考

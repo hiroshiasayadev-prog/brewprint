@@ -103,6 +103,6 @@ Mermaid図の下に、DB操作の詳細をtableとして付記する。
 - Goパーサーは `as: sequence_diagram` のファイルをsequence diagramシナリオとして処理する
 
 ## Evidence
-- commit: tbd
+- commit: e5d4c5d
 - impl commit: tbd
 - 参考: 特になし

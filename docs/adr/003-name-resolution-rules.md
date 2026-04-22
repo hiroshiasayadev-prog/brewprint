@@ -1,8 +1,9 @@
 # 003: 名前解決ルール
 
-- **status**: accepted
+- **status**: superseded
 - **date**: 2026-04-17
 - **depends on**: ADR 002
+- **superseded by**: ADR-027
 
 ## 背景
 

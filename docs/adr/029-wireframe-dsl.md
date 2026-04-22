@@ -192,6 +192,6 @@ wireframeを別ファイル（SVGなど）に分離する案も検討したが�
 
 ## Evidence
 
-- commit: tbd
+- commit: e7dd532
 - impl commit: tbd
 - 参考: PlantUML Salt参考、wireweave DSL参考
