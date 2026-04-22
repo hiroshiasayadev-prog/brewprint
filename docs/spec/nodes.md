@@ -63,7 +63,6 @@ transitions:            # Applicationレイヤーの状態遷移（ADR-019）
 |-----------|------|-----|------|
 | `id` | ✓ | string | モジュール内でユニークな識別子 |
 | `type` | ✓ | enum | ノード種別（後述） |
-| `main` | 任意 | bool | `true` でメインノード宣言。1ファイルに1つだけ許容（ADR-011） |
 | `note` | 任意 | string | 人間向けdocstring兼LLMへのsemantic contract（ADR-008） |
 
 ---
@@ -100,6 +99,7 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 
 | フィールド | 必須 | 型 | 内容 | 出典 |
 |-----------|------|-----|------|------|
+| `main` | 任意 | bool | `true` でメインノード宣言。1ファイルに1つだけ許容。`task` にのみ適用（ADR-011） |
 | `params` | 任意 | list\<param\> | 入力。model IDへの参照リスト | ADR-009 |
 | `returns` | 任意 | returns | 出力。model IDへの参照とasset名の宣言 | ADR-009 |
 | `reads` | 任意 | list\<store-id\> | 参照するstore IDのリスト | ADR-020 |

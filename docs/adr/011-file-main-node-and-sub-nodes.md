@@ -8,7 +8,7 @@
 
 ADR-010は「1ファイル=1ノード」を原則とした。しかし以下のケースで実態と合わなくなることが明確になった。
 
-- `foreach` のようなtaskは、applyする処理（sub task）を必然的に持つ
+- taskは、内部で使うバリデーションや変換などのsub taskを必然的に持つことがある
 - mermaid DAGは「このファイルが担う処理のまとまり」をsubgraphとして表現する
 - sub taskをすべて別ファイルに切り出すと、単純な処理でもファイルが爆発し、subgraphも描けなくなる
 
@@ -21,39 +21,36 @@ GoやRustの「1ファイル = 1 public型 + 複数のprivate helper」と同じ
 1ファイルに複数のノードを定義できる。ただしファイルの代表となる**メインノードは1つだけ**。
 
 ```yaml
-# task/process_items.yaml
+# task/checkout.yaml
 
 nodes:
-  - id: process_items
-    type: foreach
+  - id: checkout
+    type: task
     main: true              # メインノード（publicノード）
-    over:
-      name: items
-      model: item_list
+    endpoint: true
+    method: POST
+    path: checkout
     params:
-      - name: config
-        model: app_config
-    apply: process_item     # 同ファイル内のsub task IDを参照
+      - name: cart
+        model: cart
     returns:
-      name: results
-      model: result_list
+      name: order
+      model: order
 
-  - id: process_item        # サブノード（このファイル内にprivate）
+  - id: validate_stock     # サブノード（このファイル内にprivate）
     type: task
     params:
-      - name: item
-        model: item
-      - name: config
-        model: app_config
+      - name: cart
+        model: cart
     returns:
-      name: result
-      model: result
-    note: "itemにconfigを適用して変換する"
+      name: stock_ok
+      model: bool
+    note: "カートの全アイテムの在庫を確認する"
 ```
 
 ### 2. メインノードの宣言
 
-`main: true` フラグをノードに付与する。1ファイルに1つだけ許容。
+`main: true` フラグをノードに付与する。1ファイルに1つだけ許容。**`task` ノードにのみ適用する。** `state` / `event` / `actor` のように1ファイルに複数ノードが並ぶ場合でも、全ノードが外部参照可能であり `main: true` を付ける意味がないため適用外。
 
 ### 3. サブノードの可視性スコープ
 
