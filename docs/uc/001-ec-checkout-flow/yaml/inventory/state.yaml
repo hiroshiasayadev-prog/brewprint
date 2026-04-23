@@ -1,0 +1,93 @@
+# 在庫FSM
+# 商品在庫の状態遷移をER起点で管理
+# - 4種のstate: in_stock (initial) / low_stock / out_of_stock / restocking
+# - 1種のevent: inventory_changed (source: er, watches クロスモジュール)
+# - guard を閾値判定・状態フラグ判定で使用
+# - wireframe は持たない（UI画面を持たない監視FSMのため）
+# - final state は持たない（業務稼働中は継続遷移するFSM）
+#
+# 参照ADR:
+# - ADR-017: 三層モデル（Applicationレイヤー）
+# - ADR-018: event source: er
+# - ADR-019: stateノード設計、transitions セクション
+# - ADR-027: クロスモジュール store 参照のフルパス記法
+
+nodes:
+  # ── state ──
+
+  - id: in_stock
+    type: state
+    initial: true
+    note: "在庫充足（閾値 threshold 以上）"
+
+  - id: low_stock
+    type: state
+    note: "在庫少量（0 < stock < threshold）"
+
+  - id: out_of_stock
+    type: state
+    note: "在庫切れ（stock == 0）"
+
+  - id: restocking
+    type: state
+    note: |
+      補充作業中。
+      バックヤードの restock 処理が inventory_db に書き込むことで発火・遷移する想定。
+      restock_in_progress フラグ（inventory_db レコード内）で判定。
+
+  # ── event ──
+
+  - id: inventory_changed
+    type: event
+    source: er
+    watches: catalog.store.inventory_db
+    note: |
+      catalog.store.inventory_db（商品在庫DB）の変化を監視するER起点event（ADR-018）。
+      クロスモジュールstore参照のためフルパス記法（ADR-027）。
+      payloadは省略（どのレコードが変化したかは watches 側の監視機構で解決される前提）。
+
+transitions:
+  # in_stock からの遷移
+  - from: in_stock
+    on: inventory_changed
+    to: low_stock
+    guard: "stock > 0 AND stock < threshold"
+
+  - from: in_stock
+    on: inventory_changed
+    to: out_of_stock
+    guard: "stock == 0"
+
+  # low_stock からの遷移
+  - from: low_stock
+    on: inventory_changed
+    to: in_stock
+    guard: "stock >= threshold"
+
+  - from: low_stock
+    on: inventory_changed
+    to: out_of_stock
+    guard: "stock == 0"
+
+  # out_of_stock からの遷移
+  - from: out_of_stock
+    on: inventory_changed
+    to: restocking
+    guard: "restock_in_progress == true"
+
+  - from: out_of_stock
+    on: inventory_changed
+    to: in_stock
+    guard: "stock >= threshold"
+    note: "補充作業を経ずに直接補充された場合（管理者手動投入等）"
+
+  # restocking からの遷移
+  - from: restocking
+    on: inventory_changed
+    to: in_stock
+    guard: "stock >= threshold"
+
+  - from: restocking
+    on: inventory_changed
+    to: low_stock
+    guard: "stock > 0 AND stock < threshold"

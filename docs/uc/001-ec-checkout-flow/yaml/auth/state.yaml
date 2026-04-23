@@ -1,0 +1,132 @@
+# 認証FSM
+# ログイン操作全体の状態遷移を表現
+# - 5種のstate: idle (initial) / login_screen / loading / authenticated (final) / error (final)
+# - 4種のevent: enter_login / login_submitted / login_succeeded / login_failed
+# - transition.action は auth.task.login（クロスファイル参照、ラベル表示される）
+# - guard は login_screen → loading のクライアントバリデーション
+# - wireframe は login_screen / loading で定義
+#
+# 参照ADR:
+# - ADR-017: 三層モデル（Applicationレイヤー）
+# - ADR-018: event source定義（ui / external / er）
+# - ADR-019: stateノード設計、transitions セクション
+# - ADR-029: wireframe DSL
+# - ADR-034: event source: internal 追加（task完了起点のevent）
+
+nodes:
+  # ── state ──
+
+  - id: idle
+    type: state
+    initial: true
+    note: "未ログイン・ログイン画面未遷移の初期状態"
+
+  - id: login_screen
+    type: state
+    note: "ログイン画面表示中。ユーザー入力待ち"
+    wireframe:
+      type: col
+      children:
+        - type: text
+          id: login_title
+          label: "ログイン"
+        - type: input
+          id: username_input
+          label: "ユーザー名"
+          placeholder: "username"
+        - type: password
+          id: password_input
+          label: "パスワード"
+          placeholder: "パスワードを入力"
+        - type: button
+          id: submit_button
+          label: "ログイン"
+          fires: login_submitted
+
+  - id: loading
+    type: state
+    note: "認証API呼び出し中。ユーザー操作はブロック"
+    wireframe:
+      type: col
+      children:
+        - type: icon
+          id: loading_spinner
+        - type: text
+          id: loading_text
+          label: "認証中..."
+        - type: button
+          id: cancel_button
+          label: "キャンセル"
+          disabled: true
+
+  - id: authenticated
+    type: state
+    final: true
+    note: "認証済み。以降のアプリ機能が利用可能"
+
+  - id: error
+    type: state
+    final: true
+    note: "認証失敗の終端状態。再ログインは error → login_screen の enter_login で行う"
+
+  # ── event ──
+
+  - id: enter_login
+    type: event
+    source: ui
+    note: |
+      ログイン画面への遷移トリガー。
+      - idle からの初回遷移
+      - error からの再ログイン復帰遷移
+      の両方で使用する。
+
+  - id: login_submitted
+    type: event
+    source: ui
+    payload:
+      model: login_form
+    note: "ログインフォームのsubmit操作。認証APIを起動する"
+
+  - id: login_succeeded
+    type: event
+    source: internal
+    payload:
+      model: token
+    note: "auth.task.login 成功時にFSM runtimeが発火。返却された token を運ぶ（ADR-034）"
+
+  - id: login_failed
+    type: event
+    source: internal
+    note: "auth.task.login 失敗時にFSM runtimeが発火（ADR-034）"
+
+transitions:
+  # 初期ログイン画面への遷移
+  - from: idle
+    on: enter_login
+    to: login_screen
+
+  # エラー状態からの明示的な再ログイン
+  - from: error
+    on: enter_login
+    to: login_screen
+    note: "終端 error からの復帰はユーザーの明示操作（enter_login）を要する"
+
+  # フォーム送信 → 認証処理
+  - from: login_screen
+    on: login_submitted
+    to: loading
+    action: auth.task.login
+    guard: "form.valid == true"
+    note: |
+      クライアントサイドバリデーション通過時のみ loading に遷移。
+      action は auth.task.login（auth/task/login.yaml、クロスファイル参照）。
+
+  # 認証成功
+  - from: loading
+    on: login_succeeded
+    to: authenticated
+
+  # 認証失敗
+  - from: loading
+    on: login_failed
+    to: error
