@@ -1,0 +1,10 @@
+# ユーザー認証情報のDB store
+# of: credential（auth.model.credential のPK = username）
+# cart / order の user_id クロスモジュールFK の参照先を保持する
+
+nodes:
+  - id: user_db
+    type: store
+    kind: db
+    of: credential
+    note: "ユーザー認証情報テーブル。PKはusername"

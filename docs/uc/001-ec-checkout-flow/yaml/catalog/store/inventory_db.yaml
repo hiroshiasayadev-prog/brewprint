@@ -1,0 +1,11 @@
+# 在庫管理のDB store
+# of: item（catalog.model.item）— item.stock フィールドを在庫カラムとして管理
+# inventory/state.yaml の er source event が watches: catalog.store.inventory_db で監視する
+# checkout / process_order の reads/writes 対象でもある
+
+nodes:
+  - id: inventory_db
+    type: store
+    kind: db
+    of: item
+    note: "在庫数（item.stock）を管理するテーブル。在庫変動イベントの監視対象"

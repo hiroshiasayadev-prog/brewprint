@@ -1,0 +1,11 @@
+# 注文データのDB store
+# of: order（order.model.order）
+# checkout で initializes（間接的にwritesで作成）、process_order / process_payment で reads+writes される
+# payment_event の order_id FK 参照先でもある
+
+nodes:
+  - id: order_db
+    type: store
+    kind: db
+    of: order
+    note: "注文テーブル。PKはorder.id。決済処理でステータスが更新される"

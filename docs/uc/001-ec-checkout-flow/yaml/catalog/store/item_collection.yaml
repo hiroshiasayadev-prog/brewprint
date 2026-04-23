@@ -1,0 +1,13 @@
+# 商品カタログのcollection store（collection kind カバレッジ）
+# of: item（catalog.model.item）
+# note に検索条件（semantic contract）を記述する（ADR-007, ADR-008）
+
+nodes:
+  - id: item_collection
+    type: store
+    kind: collection
+    of: item
+    note: |
+      - find_by_id: idが一致する商品1件
+      - list_available: is_available = true の商品一覧
+      - find_by_name: name に部分一致する商品一覧

@@ -1,0 +1,10 @@
+# アクセストークンのセッションstore
+# HTTPセッション相当。of: token
+# token は user_id (FK: credential.username) + expires_at を持つ
+
+nodes:
+  - id: session_store
+    type: store
+    kind: session
+    of: token
+    note: "ログイン中ユーザーのアクセストークンを保持するセッションストア"

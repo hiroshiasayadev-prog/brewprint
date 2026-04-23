@@ -1,0 +1,11 @@
+# カートのセッションstore
+# ユーザーセッション単位でカート情報を保持する
+# of: cart（cart.model.cart）
+# add_to_cart で writes、validate_cart で reads される
+
+nodes:
+  - id: cart_session
+    type: store
+    kind: session
+    of: cart
+    note: "セッション単位のカート保持ストア。チェックアウト完了で破棄される"

@@ -1,0 +1,11 @@
+# リクエストスコープのコンテキストstore（context kind カバレッジ）
+# of: request_context（auth.model.request_context、dict kind: value: str）
+# auth.task.login で reads して認証済みユーザー情報をリクエスト内に伝播させる想定
+# ADR-007: context kind はリクエストスコープの一時的なキー値ストア
+
+nodes:
+  - id: request_context_store
+    type: store
+    kind: context
+    of: request_context
+    note: "リクエスト単位のコンテキスト。user_id / session_id などを一時保持する"
