@@ -1,0 +1,14 @@
+# UI event `login_submitted` の payload 用
+# event.payload.model で参照される
+
+nodes:
+  - id: login_form
+    type: model
+    kind: struct
+    fields:
+      - name: username
+        type: str
+        note: "フォーム入力されたユーザー名"
+      - name: password
+        type: str
+        note: "フォーム入力されたパスワード"

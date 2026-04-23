@@ -1,0 +1,27 @@
+# 商品カタログのエンティティ
+# カバレッジ: primitive 全種（str, int, float, bool, datetime）を1ファイルで網羅
+
+nodes:
+  - id: item
+    type: model
+    kind: struct
+    fields:
+      - name: id
+        type: str
+        pk: true
+        note: "商品ID（PK）。cart_item.item_id / order_item.item_id のクロスモジュールFK参照先"
+      - name: name
+        type: str
+        note: "商品名"
+      - name: price
+        type: float
+        note: "単価（float primitive の例）"
+      - name: stock
+        type: int
+        note: "在庫数（int primitive の例）"
+      - name: is_available
+        type: bool
+        note: "販売可能フラグ（bool primitive の例）"
+      - name: created_at
+        type: datetime
+        note: "登録日時（datetime primitive の例）"

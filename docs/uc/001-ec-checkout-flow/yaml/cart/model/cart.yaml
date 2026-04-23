@@ -1,0 +1,23 @@
+# カート本体。セッション単位で保持される
+# ADR-033: cart.user_id は auth.credential.username へのクロスモジュールFK
+#          → sentinel 方式でフルパス `auth.model.credential.username` 必須
+
+nodes:
+  - id: cart
+    type: model
+    kind: struct
+    fields:
+      - name: id
+        type: str
+        pk: true
+        note: "カートID（PK）"
+      - name: user_id
+        type: str
+        fk: auth.model.credential.username
+        note: "所有ユーザー。auth モジュールへのクロスモジュールFK（ADR-033）"
+      - name: status
+        type: str
+        note: "カート状態（active / locked / checked_out）"
+      - name: updated_at
+        type: datetime
+        note: "最終更新日時"

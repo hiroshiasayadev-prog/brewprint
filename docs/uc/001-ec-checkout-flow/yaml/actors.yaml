@@ -1,0 +1,11 @@
+# プロジェクトglobalなactor定義（ADR-031）
+# actorはモジュールに属さず、IDはプロジェクト内でユニーク
+
+nodes:
+  - id: end_user
+    type: actor
+    note: "ECサイトを利用するエンドユーザー。UI操作の主体"
+
+  - id: stripe
+    type: actor
+    note: "外部決済サービス。webhookで payment_webhook_received event を発火（source=external）"

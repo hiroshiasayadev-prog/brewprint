@@ -1,0 +1,21 @@
+# auth.task.login の initializes で使うログエントリ型（ADR-014）
+# initializes で宣言された store はファイル内 private
+
+nodes:
+  - id: login_log
+    type: model
+    kind: struct
+    fields:
+      - name: id
+        type: str
+        pk: true
+        note: "ログID（PK）"
+      - name: username
+        type: str
+        note: "認証試行ユーザー名"
+      - name: success
+        type: bool
+        note: "認証成否フラグ（bool primitive の例）"
+      - name: attempted_at
+        type: datetime
+        note: "認証試行日時"

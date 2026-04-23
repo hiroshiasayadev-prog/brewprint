@@ -1,0 +1,9 @@
+# catalog.task.get_items の returns.model で使用
+# ADR-021: list kind は element のみ必須
+# カバレッジ: list kind model
+
+nodes:
+  - id: item_list
+    type: model
+    kind: list
+    element: item

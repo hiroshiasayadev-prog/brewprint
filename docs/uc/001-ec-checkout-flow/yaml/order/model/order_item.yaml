@@ -1,0 +1,26 @@
+# 注文内アイテム。order と catalog.item の N:M 中間model
+# ADR-026: N:M は中間model + surrogate key で表現。2本のfkを持つ
+
+nodes:
+  - id: order_item
+    type: model
+    kind: struct
+    fields:
+      - name: id
+        type: str
+        pk: true
+        note: "中間テーブルのsurrogate key（PK / ADR-026）"
+      - name: order_id
+        type: str
+        fk: order.id
+        note: "所属注文。同モジュール内FK（bare ID参照）"
+      - name: item_id
+        type: str
+        fk: catalog.model.item.id
+        note: "商品参照。catalog モジュールへのクロスモジュールFK（ADR-033）"
+      - name: qty
+        type: int
+        note: "数量"
+      - name: price_snapshot
+        type: float
+        note: "注文時点の単価（後日価格が変わってもこの値は不変）"

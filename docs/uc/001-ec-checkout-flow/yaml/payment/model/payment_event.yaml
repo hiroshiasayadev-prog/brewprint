@@ -1,0 +1,26 @@
+# Stripe webhook の event payload 用
+# event `payment_webhook_received` の payload.model として使用
+# task `process_payment` の params.model としても使用
+
+nodes:
+  - id: payment_event
+    type: model
+    kind: struct
+    fields:
+      - name: event_id
+        type: str
+        pk: true
+        note: "Stripe側のevent ID（PK / 冪等性キー）"
+      - name: order_id
+        type: str
+        fk: order.model.order.id
+        note: "対象注文。order モジュールへのクロスモジュールFK（ADR-033）"
+      - name: amount
+        type: float
+        note: "決済金額"
+      - name: status
+        type: str
+        note: "決済結果（succeeded / failed）"
+      - name: received_at
+        type: datetime
+        note: "webhook受信日時"

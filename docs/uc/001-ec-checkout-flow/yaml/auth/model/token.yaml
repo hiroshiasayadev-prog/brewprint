@@ -1,0 +1,21 @@
+# アクセストークン。credential と 1:1 リレーション（1ユーザー=1有効トークン）
+# ADR-026: 1:1 は unique: true で明示
+# カバレッジ: fk + unique: true（1:1）の例
+
+nodes:
+  - id: token
+    type: model
+    kind: struct
+    fields:
+      - name: access_token
+        type: str
+        pk: true
+        note: "アクセストークン文字列（PK）"
+      - name: user_id
+        type: str
+        fk: credential.username
+        unique: true
+        note: "credentialへの1:1 FK。1ユーザーにつき有効トークンは1つ（ADR-026）"
+      - name: expires_at
+        type: datetime
+        note: "トークン有効期限"

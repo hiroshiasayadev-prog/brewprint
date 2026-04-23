@@ -1,0 +1,9 @@
+# auth の context kind store の型
+# ADR-021: dict kind は value のみ必須。key は常に str
+# カバレッジ: dict kind model + context kind store の両方をこのmodelでカバー
+
+nodes:
+  - id: request_context
+    type: model
+    kind: dict
+    value: str

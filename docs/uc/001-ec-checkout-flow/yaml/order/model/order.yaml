@@ -1,0 +1,29 @@
+# 注文エンティティ
+# shipping_address は fk なし → DBではJSON埋め込みカラム（ADR-021）
+# user_id は auth.credential.username へのクロスモジュールFK（ADR-033）
+
+nodes:
+  - id: order
+    type: model
+    kind: struct
+    fields:
+      - name: id
+        type: str
+        pk: true
+        note: "注文ID（PK）。order_item.order_id / payment_event.order_id のFK参照先"
+      - name: user_id
+        type: str
+        fk: auth.model.credential.username
+        note: "注文者。auth モジュールへのクロスモジュールFK（ADR-033）"
+      - name: shipping_address
+        type: address
+        note: "配送先住所。fk なし → DBではJSONカラム埋め込み（ADR-021）"
+      - name: total_price
+        type: float
+        note: "注文合計金額"
+      - name: status
+        type: str
+        note: "注文状態（pending / processing / confirmed / failed）"
+      - name: created_at
+        type: datetime
+        note: "注文日時"

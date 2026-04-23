@@ -1,0 +1,25 @@
+# 配送先住所。JSON埋め込み専用（pk なし / fk なし）
+# order.shipping_address の型として使われる
+# ADR-021: fk を持たない model 型参照 → DBではJSONカラム埋め込み扱い
+# カバレッジ: JSON埋め込みパターン（fk なしのmodel ID参照）
+
+nodes:
+  - id: address
+    type: model
+    kind: struct
+    fields:
+      - name: zip_code
+        type: str
+        note: "郵便番号"
+      - name: prefecture
+        type: str
+        note: "都道府県"
+      - name: city
+        type: str
+        note: "市区町村"
+      - name: street
+        type: str
+        note: "番地・建物名"
+      - name: country
+        type: str
+        note: "国コード（ISO 3166-1 alpha-2 を想定）"
