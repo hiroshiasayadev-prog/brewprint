@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/nodes.md
 status: confirmed
-last_updated: 2026-04-21
+last_updated: 2026-04-24
 summary: >
   brewprintの全ノード種別のフィールド定義。
   各フィールドの必須/任意・型・意味・出典ADRを記載する。
@@ -25,6 +25,7 @@ depends_on:
   - docs/adr/026-fk-cardinality-and-nm-relation.md
   - docs/adr/028-api-table-route-composition.md
   - docs/adr/031-actor-global-definition.md
+  - docs/adr/034-internal-event-source.md
 ---
 
 # ノード定義仕様
@@ -365,7 +366,7 @@ Applicationレイヤー。制御フローの起点。DAGの `flow:` には登場
 
 | フィールド | 必須 | 型 | 内容 | 出典 |
 |-----------|------|-----|------|------|
-| `source` | ✓ | enum | `ui` / `external` / `er` | ADR-018 |
+| `source` | ✓ | enum | `ui` / `external` / `er` / `internal` | ADR-018, ADR-034 |
 | `actor` | `external`のみ必須 | actor-id | 発火元のactor ID。brewprintのいずれかのファイルに `type: actor` ノードとして宣言されていること | ADR-018 |
 | `payload` | 任意 | payload | イベントが運ぶデータのmodel参照 | ADR-018 |
 | `watches` | `er`のみ必須 | store-id | 変化を監視するstore ID | ADR-018 |
@@ -383,6 +384,7 @@ Applicationレイヤー。制御フローの起点。DAGの `flow:` には登場
 | `ui` | ユーザー操作（クリック・フォーム送信等）。UI participant列を暗黙生成 | 不要 | 任意（フォームデータ等） |
 | `external` | 外部システム・スケジューラーからの入力。`actor:` で発火元を明示 | **必須** | 任意（受信データ） |
 | `er` | storeの値変化による発火。`watches`必須 | 不要 | 任意 |
+| `internal` | アプリ内部での発火（task完了・FSM runtime内部処理・内部タイマー等）。何を監視するかは `note:` で人間向けに記述（ADR-034） | 不要 | 任意 |
 
 ---
 
