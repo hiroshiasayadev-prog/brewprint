@@ -1,0 +1,129 @@
+# チェックアウトタスク
+# - endpoint: POST /api/order/checkout
+# - main: checkout（cart_id + shipping_address を受け取り pending_order を返す）
+# - sub task:
+#     build_order            … cart から draft order を組み立てて order_db に保存
+#     reserve_inventory      … 商品在庫を確保（catalog.store.inventory_db を更新）
+#     notify_payment_gateway … 決済GW（Stripe）に決済要求を送信（実際の確定はwebhook）
+# - 制御構文: fork+join（reserve_inventory と notify_payment_gateway を並列実行）
+# - クロスモジュール参照: cart.store.cart_session, auth.store.user_db, catalog.store.inventory_db
+#
+# 制御フロースコープ（ADR-023）:
+#   reserve_inventory / notify_payment_gateway の returns は join のparamsで集約する形でのみ
+#   外部に出す。fork外から直接参照するwiringは書かない。
+#
+# spec gap (README.md に記録):
+#   - fork.params.draft_order が branches 内の各 step.params.draft_order にどう wiring されるか
+#     spec/edges.md §1-2 では明文化なし。本ファイルでは「fork.params の name と
+#     branch step の params の name が一致するものを暗黙 wiring する」前提で書く。
+
+nodes:
+  - id: checkout
+    type: task
+    main: true
+    endpoint: true
+    method: POST
+    path: checkout
+    params:
+      - name: cart_id
+        model: str
+        note: "対象カートID"
+      - name: shipping_address
+        model: address
+        note: "配送先（JSON埋め込み model、ADR-021）"
+    returns:
+      name: pending_order
+      model: order
+    note: |
+      カート確定 → 注文レコード作成 → 在庫確保 + 決済要求送信 を並列実行し、
+      pending状態の注文（決済webhook待ち）を返す。
+
+  # --- 直列前段 ---
+  - id: build_order
+    type: task
+    endpoint: false
+    params:
+      - name: cart_id
+        model: str
+      - name: shipping_address
+        model: address
+    returns:
+      name: draft_order
+      model: order
+    reads:
+      - cart.store.cart_session
+      - auth.store.user_db
+    writes:
+      - order_db
+    note: |
+      cart_session から cart を取得し、user_db でユーザー存在を確認した上で
+      draft order（status: pending）を order_db に新規作成して返す。
+
+  # --- 並列ブランチ群 ---
+  - id: reserve_inventory
+    type: task
+    endpoint: false
+    params:
+      - name: draft_order
+        model: order
+    returns:
+      name: reserved
+      model: order
+    reads:
+      - catalog.store.inventory_db
+    writes:
+      - catalog.store.inventory_db
+    note: |
+      draft_order の order_item から item_id / qty を読み出し、
+      catalog.store.inventory_db の stock を減算して在庫確保。
+      読み込みと書き込みは同一トランザクション境界（ADR-008/020）。
+
+  - id: notify_payment_gateway
+    type: task
+    endpoint: false
+    params:
+      - name: draft_order
+        model: order
+    returns:
+      name: notified
+      model: order
+    note: |
+      Stripe API に決済要求を送信（外部HTTP呼び出し）。
+      決済の最終結果は payment.task.process_payment が webhook で受信。
+      ここでは送信完了のみを保証して draft_order を passthrough で返す。
+
+  # --- 制御フローノード ---
+  - id: parallel_processing
+    type: fork
+    params:
+      - name: draft_order
+        model: order
+    note: "在庫確保と決済要求送信を並列実行する分岐点"
+
+  - id: finalize_checkout
+    type: join
+    params:
+      - name: reserved
+        model: order
+      - name: notified
+        model: order
+    returns:
+      name: pending_order
+      model: order
+    note: |
+      両ブランチ完了を待ち合わせ、結果統合済みの pending_order を返す。
+      在庫確保済み + 決済GW通知済み = pending（webhookで confirmed/failed に確定）。
+
+flow:
+  - step: build_order
+    params:
+      cart_id: $params.cart_id
+      shipping_address: $params.shipping_address
+
+  - fork: parallel_processing
+    branches:
+      - [reserve_inventory]
+      - [notify_payment_gateway]
+    join: finalize_checkout
+    params:
+      draft_order: build_order

@@ -1,0 +1,21 @@
+# 商品一覧取得タスク
+# - endpoint: GET /api/catalog/items
+# - reads: item_collection（同モジュール内、bare ID参照）
+# - returns: item_list（list kind カバレッジ）
+
+nodes:
+  - id: get_items
+    type: task
+    main: true
+    endpoint: true
+    method: GET
+    path: items
+    returns:
+      name: items
+      model: item_list
+    reads:
+      - item_collection
+    note: |
+      販売中の商品一覧を返す。
+      item_collection の note にある `list_available` クエリ（is_available = true）を使用。
+      params なし（フィルタ無しで全件返す簡易仕様。検索/ページングは別endpointへ）。

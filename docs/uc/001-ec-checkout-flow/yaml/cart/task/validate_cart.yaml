@@ -1,0 +1,57 @@
+# カート内アイテム一括バリデーションタスク
+# - main: validate_cart（endpoint: false。内部呼び出しのみ）
+# - sub:  validate_item（endpoint: false。同ファイル内 private、ADR-011）
+# - flow: foreach（ADR-016）— validate_item を $params.cart_items の各要素に sequential に適用
+# - sub task の reads: catalog.store.item_collection / catalog.store.inventory_db（クロスモジュール）
+#
+# カバレッジ:
+#   - foreach 構文 / sub task / $params.field シジル / $item シジル
+#   - クロスモジュール store reads（catalog.* を cart モジュールから参照）
+#
+# spec gap (README.md に記録):
+#   - foreach.over に $params.field を指定可能か spec 上の明文化なし。
+#     edges.md §1-5 の表は「node ID」とのみ記述。HANDOFF §6 の例に従い $params.cart_items を採用。
+
+nodes:
+  - id: validate_cart
+    type: task
+    main: true
+    endpoint: false
+    params:
+      - name: cart_items
+        model: cart_item_list
+        note: "バリデート対象のカートアイテム一覧（list kind）"
+    returns:
+      name: validated_items
+      model: cart_item_list
+    note: |
+      カート内アイテムを 1 件ずつ validate_item で検証し、
+      検証通過したアイテムのリストを返す。
+      mode: sequential（1件ずつ順に処理。後続でロールバック単位を揃えるため）
+
+  - id: validate_item
+    type: task
+    endpoint: false
+    params:
+      - name: cart_item
+        model: cart_item
+        note: "1件のカートアイテム"
+    returns:
+      name: validated
+      model: cart_item
+    reads:
+      - catalog.store.item_collection
+      - catalog.store.inventory_db
+    note: |
+      1件の cart_item について商品存在確認と在庫確認を行う。
+      - catalog.store.item_collection.find_by_id で cart_item.item_id の商品存在を確認
+      - catalog.store.inventory_db で item.stock >= cart_item.qty を確認
+      失敗時は実装で例外を上げる（YAML上は成功パスのみ表現）。
+
+flow:
+  - foreach: validate_item
+    over: $params.cart_items
+    mode: sequential
+    params:
+      cart_item: $item
+    returns: validated_items

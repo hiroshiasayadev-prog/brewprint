@@ -1,0 +1,37 @@
+# カートへの商品追加タスク
+# - endpoint: POST /api/cart/items
+# - reads: catalog.store.item_collection（クロスモジュール、フルパス必須）
+# - writes: cart_session（同モジュール、bare ID参照）
+# - params: cart_id / item_id / qty（primitive 引数）
+# - returns: 更新後の cart
+
+nodes:
+  - id: add_to_cart
+    type: task
+    main: true
+    endpoint: true
+    method: POST
+    path: items
+    params:
+      - name: cart_id
+        model: str
+        note: "対象カートID（primitive str）"
+      - name: item_id
+        model: str
+        note: "追加する商品ID（catalog.model.item.id へのID参照）"
+      - name: qty
+        model: int
+        note: "数量（primitive int）"
+    returns:
+      name: updated_cart
+      model: cart
+    reads:
+      - catalog.store.item_collection
+    writes:
+      - cart_session
+    note: |
+      指定商品をカートに追加する。
+      実装メモ:
+      - catalog.store.item_collection で item_id の存在を確認（find_by_id）
+      - cart_session から既存cartを取得し、cart_item を append または qty を加算
+      - 同一トランザクションで cart_session を更新

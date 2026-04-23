@@ -1,0 +1,27 @@
+# Stripe webhook 受信タスク（external eventハンドラ）
+# - endpoint: POST /api/payment/webhooks/stripe
+# - writes: order.store.order_db（クロスモジュール、フルパス必須）
+# - params: event（payment_event = webhook payload）
+# - 対応event: order/state.yaml の payment_webhook_received（source: external, actor: stripe）
+#   transition.action から本タスクを呼ぶ
+
+nodes:
+  - id: process_payment
+    type: task
+    main: true
+    endpoint: true
+    method: POST
+    path: webhooks/stripe
+    params:
+      - name: event
+        model: payment_event
+        note: "Stripe webhook payload。同 model は event.payload.model としても再利用される"
+    writes:
+      - order.store.order_db
+    note: |
+      Stripe からの決済完了/失敗 webhook を受信し、対応する注文ステータスを更新する。
+      実装メモ:
+      - event.event_id は冪等性キー。同一 event_id の再送は idempotent に扱う
+      - event.order_id を主キーに order.store.order_db の order を引き当て
+      - event.status に応じて order.status を confirmed / failed に更新
+      - returns なし（webhookは200/空ボディ応答が一般的）

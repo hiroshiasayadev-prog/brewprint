@@ -1,0 +1,41 @@
+# 認証ログインタスク
+# - endpoint: POST /api/auth/login（leaf path: login + module path「auth」を api_table が組み立て）
+# - reads: user_db（認証情報の参照）, request_context_store（リクエスト文脈の参照／context kindカバレッジ）
+# - writes: session_store（発行トークンの保持）, login_log_db（initializes で宣言した試行ログstore）
+# - initializes: login_log_db を空で宣言（ADR-014: ファイル内private）
+# - returns: token（auth.model.token）
+
+nodes:
+  - id: login
+    type: task
+    main: true
+    endpoint: true
+    method: POST
+    path: login
+    params:
+      - name: form
+        model: login_form
+        note: "UIフォーム入力。auth.model.login_form"
+    returns:
+      name: auth_token
+      model: token
+    reads:
+      - user_db
+      - request_context_store
+    writes:
+      - session_store
+      - login_log_db
+    initializes:
+      - name: login_log_db
+        model: login_log
+        note: |
+          認証試行ログのprivate store（ADR-014）。
+          各ログイン試行ごとに login_log エントリを append する。
+          初期値は空コレクション。`writes: [login_log_db]` で更新する。
+    note: |
+      認証情報を検証しアクセストークンを発行する。
+      実装メモ:
+      - user_db で credential を引き当て、form.password と照合
+      - 成功時 session_store に token を発行・保存
+      - 試行履歴は成否に関わらず login_log_db に記録
+      - request_context_store からリクエスト元情報（IP等）を取得しログに付与

@@ -1,0 +1,11 @@
+# cart_item の list kind model
+# ADR-021: list kind は element のみ必須
+# 用途: cart.task.validate_cart の $params.cart_items（foreach.over）の型として使用
+# 補足: cart.cart_items のような関連は ER ではなく cart_item.cart_id (FK) で表現する。
+#       このlist modelはAPI境界での「カート内アイテム一覧」を運ぶ型として独立に存在する。
+
+nodes:
+  - id: cart_item_list
+    type: model
+    kind: list
+    element: cart_item
