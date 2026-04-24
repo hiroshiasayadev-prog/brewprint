@@ -12,8 +12,11 @@ depends_on:
   - docs/adr/018-event-node.md
   - docs/adr/019-state-node.md
   - docs/adr/030-yaml-file-type-declaration.md
+  - docs/adr/031-actor-global-definition.md
   - docs/adr/032-sequence-diagram-scenario-schema.md
+  - docs/adr/034-internal-event-source.md
   - docs/adr/035-fsm-guard-branch-and-transition-identification.md
+  - docs/adr/036-sequence-diagram-arrow-rules-per-source.md
 ---
 
 # Sequence Diagram renderルール
@@ -100,16 +103,16 @@ steps:
 
 ## participants
 
-sequence diagramに登場するparticipantは以下の4種（ADR-004）。
+sequence diagramに登場するparticipantは以下の4種（ADR-004 / ADR-036）。
 
 | participant | 生成条件 | brewprintの実体 |
 |---|---|---|
-| Actor | `source=external` のeventが存在する場合 | `type: actor` ノード（ADR-031） |
-| UI | `source=ui` のeventが存在する場合に暗黙生成 | YAMLに明示ノードなし |
+| Actor | `source=external` のeventを参照するstepが1つでもある場合 | `type: actor` ノード（ADR-031） |
+| UI | `source=ui` のeventを参照するstepが1つでもある場合に暗黙生成 | YAMLに明示ノードなし |
 | API | シナリオのstepが参照するtaskのendpoint | `type: task`（endpoint=true） |
-| DB | シナリオのstepが参照するtaskのreads/writes（kind=dbのみ） | `type: store`（kind=db）を「DB」1列に集約 |
+| DB | 以下いずれかでstepが `store.kind=db` を参照する場合<br>・taskの `reads` / `writes`<br>・`source=er` eventの `watches`（ADR-036） | `type: store`（kind=db）を「DB」1列に集約 |
 
-participantの表示順（左→右）: `Actor → UI → API → DB`
+participantの表示順（左→右）: `Actor → UI → API → DB`（存在するもののみ）
 
 ### DB participantの粒度
 
@@ -122,12 +125,26 @@ participantの表示順（左→右）: `Actor → UI → API → DB`
 
 ## 矢印ラベル
 
+event駆動の起点矢印は `event.source` によって以下5パターン（ADR-036）:
+
+| `event.source` | 起点→API矢印 | ラベル | API応答矢印 |
+|---|---|---|---|
+| `ui` | `UI→API` | `METHOD path`（例: `POST /login`） | `API→UI`: `returns.name` / `200 OK` |
+| `external` | `Actor→API` | `METHOD path`（例: `POST /webhooks/stripe`） | `API→Actor`: `returns.name` / `200 OK` |
+| `internal` | `API→API`（self-message） | event ID | なし |
+| `er`（`watches`先が `store.kind=db`） | `DB→API` | event ID | なし |
+| `er`（`watches`先が `store.kind≠db`） | `API→API`（self-message） | event ID | なし |
+
+task実行に伴うDBアクセスは上記と独立:
+
 | 矢印 | ラベル |
 |------|--------|
-| Actor → UI | event ID |
-| UI → API | `METHOD path`（例: `POST /login`） |
 | API → DB | `reads` または `writes` |
-| API → UI | `returns.name`（returnsがない場合は `200 OK`） |
+
+### ラベル選択の原則
+
+- **`METHOD path`（`ui` / `external`）**: HTTPリクエストの物理的到達を表す。呼び出し元（UI / Actor）が存在し、応答矢印 `API→UI` / `API→Actor` も描画する
+- **event ID（`internal` / `er`）**: FSM runtime駆動でHTTPの物理表現が存在せず、呼び出し元もない。「何が駆動したか」を event ID で示す。応答矢印は描画しない
 
 ### happy pathのみ
 
@@ -141,16 +158,20 @@ sequence diagramはhappy pathのみを描画する。例外・エラーフロー
 
 ## バックエンドによる自動解決
 
-シナリオYAMLに明示するのは `(from_state, via)` のみ。以下はバックエンドが `state_file` を参照して自動解決する。
+シナリオYAMLに明示するのは `(from_state, via, guard?)` のみ。以下はバックエンドが `state_file` を参照して自動解決する。
 
 | 情報 | 解決元 |
 |------|--------|
-| 矢印の送信元participant | event の `source` / `actor` |
+| 起点矢印のパターン | event の `source` によって `ui` / `external` / `internal` / `er` の5パターンに分岐（ADR-036） |
+| Actor participantの生成 | `source=external` のeventを参照するstepの `event.actor` |
+| UI participantの生成 | `source=ui` のeventを参照するstepが1つでもある場合に暗黙生成 |
+| DB participantの生成 | taskの `reads` / `writes`、または `source=er` eventの `watches` が `store.kind=db` を含む場合 |
 | 呼び出されるtask | transition の `action` |
-| UI → API の矢印ラベル | task の `method` / `path` |
+| `UI→API` / `Actor→API` のラベル | task の `method` / `path` |
 | API → DB の矢印・方向 | task の `reads` / `writes`（kind=dbのみ） |
-| API → UI の矢印ラベル | task の `returns.name`（なければ `200 OK`） |
-| UI participantの生成 | `source=ui` のeventが存在する場合に暗黙生成 |
+| `API→UI` / `API→Actor` のラベル | task の `returns.name`（なければ `200 OK`） |
+| `DB→API` の起点 | `source=er` eventの `watches` 先（kind=db時） |
+| 自己ループの発生 | `source=internal`、または `source=er` で `watches` 先が `store.kind≠db` |
 
 ---
 
@@ -161,16 +182,12 @@ sequence diagramはhappy pathのみを描画する。例外・エラーフロー
 
 ```mermaid
 sequenceDiagram
-  participant Actor as {actor-id}
-  participant UI
-  participant API as {task-id}
-  participant DB
+  [participants: 必要なもののみ宣言（Actor / UI / API / DB）]
 
-  Actor->>UI: {event-id}
-  UI->>API: METHOD path
-  API->>DB: reads
-  DB-->>API: 
-  API-->>UI: returns.name
+  [起点→API矢印: event.source に応じて分岐 →「矢印ラベル」表参照]
+  API->>DB: reads / writes
+  DB-->>API:
+  [API応答矢印: source=ui / external のみ描画。internal / er は描画しない]
 ```
 
 ## DB操作
@@ -188,7 +205,9 @@ sequenceDiagram
 
 ## Mermaid出力イメージ
 
-### YAMLの入力例
+### ログインフロー（source=ui）
+
+#### YAMLの入力例
 
 ```yaml
 # auth/state.yaml（抜粋）
@@ -232,7 +251,7 @@ steps:
     via: login_submitted
 ```
 
-### 期待するMermaid出力
+#### 期待するMermaid出力
 
 ```mermaid
 sequenceDiagram
@@ -246,11 +265,53 @@ sequenceDiagram
   API-->>UI: auth_token
 ```
 
-### DB操作table
+#### DB操作table
 
 | step | task | store | 操作 |
 |------|------|-------|------|
 | 1 | auth.task.login | user_db | reads |
+
+---
+
+### Webhookフロー（source=external）
+
+「シナリオファイルの構造 > guard分岐を含むシナリオの例」の `scenarios/payment_webhook_success.yaml` に対応するMermaid出力。task定義は以下を想定する:
+
+```yaml
+# payment/tasks.yaml（抜粋）
+nodes:
+  - id: process_payment
+    type: task
+    endpoint: true
+    method: POST
+    path: /webhooks/stripe
+    writes:
+      - order_db
+```
+
+#### 期待するMermaid出力
+
+```mermaid
+sequenceDiagram
+  participant Actor as stripe
+  participant API as payment.task.process_payment
+  participant DB
+
+  Actor->>API: POST /webhooks/stripe
+  API->>DB: writes
+  DB-->>API: 
+  API-->>Actor: 200 OK
+```
+
+- `Actor` はeventの `actor: stripe`（ADR-031のglobal actor）から解決
+- UI participantは `source=external` のため生成されない
+- API応答矢印 `API→Actor` のラベルは `returns` 未定義のため `200 OK`
+
+#### DB操作table
+
+| step | task | store | 操作 |
+|------|------|-------|------|
+| 1 | payment.task.process_payment | order_db | writes |
 
 ---
 
