@@ -203,7 +203,9 @@ nodes:
 
 ### sequence scenarios
 
-- `views/scenarios/checkout_flow.yaml`: state_file = `order/state.yaml`, steps = idle→checkout（source=uiパス検証）
+- `views/scenarios/checkout_flow.yaml`: state_file = `order/state.yaml`
+  - Step 1: `cart --view_checkout--> checkout_screen`（action なし → UI->>UI self-message、ADR-037検証）
+  - Step 2: `checkout_screen --checkout_submitted--> processing`（source=ui + action あり → UI→API、ADR-038検証）
 - `views/scenarios/payment_webhook_flow.yaml`: state_file = `order/state.yaml`, steps = processing→payment_webhook_received（source=externalパス検証）
 
 ### api_table
