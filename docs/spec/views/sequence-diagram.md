@@ -17,6 +17,7 @@ depends_on:
   - docs/adr/034-internal-event-source.md
   - docs/adr/035-fsm-guard-branch-and-transition-identification.md
   - docs/adr/036-sequence-diagram-arrow-rules-per-source.md
+  - docs/adr/037-sequence-diagram-action-less-transition.md
 ---
 
 # Sequence Diagram renderルール
@@ -125,15 +126,18 @@ participantの表示順（左→右）: `Actor → UI → API → DB`（存在�
 
 ## 矢印ラベル
 
-event駆動の起点矢印は `event.source` によって以下5パターン（ADR-036）:
+event駆動の起点矢印は `event.source` と `transition.action` の有無によって以下のパターン（ADR-036 / ADR-037）:
 
-| `event.source` | 起点→API矢印 | ラベル | API応答矢印 |
-|---|---|---|---|
-| `ui` | `UI→API` | `METHOD path`（例: `POST /login`） | `API→UI`: `returns.name` / `200 OK` |
-| `external` | `Actor→API` | `METHOD path`（例: `POST /webhooks/stripe`） | `API→Actor`: `returns.name` / `200 OK` |
-| `internal` | `API→API`（self-message） | event ID | なし |
-| `er`（`watches`先が `store.kind=db`） | `DB→API` | event ID | なし |
-| `er`（`watches`先が `store.kind≠db`） | `API→API`（self-message） | event ID | なし |
+| `event.source` | `transition.action` | 起点→終点 | ラベル | API応答矢印 |
+|---|---|---|---|---|
+| `ui` | あり | `UI→API` | `METHOD path`（例: `POST /login`） | `API→UI`: `returns.name` / `200 OK` |
+| `ui` | **なし** | **`UI->>UI`（self-message）** | **event ID** | **なし** |
+| `external` | あり | `Actor→API` | `METHOD path`（例: `POST /webhooks/stripe`） | `API→Actor`: `returns.name` / `200 OK` |
+| `internal` | — | `API→API`（self-message） | event ID | なし |
+| `er`（`watches`先が `store.kind=db`） | — | `DB→API` | event ID | なし |
+| `er`（`watches`先が `store.kind≠db`） | — | `API→API`（self-message） | event ID | なし |
+
+`source=ui` かつ action なし の step では API participant を生成しない。DB 操作 table への出力もなし。
 
 task実行に伴うDBアクセスは上記と独立:
 
@@ -143,8 +147,8 @@ task実行に伴うDBアクセスは上記と独立:
 
 ### ラベル選択の原則
 
-- **`METHOD path`（`ui` / `external`）**: HTTPリクエストの物理的到達を表す。呼び出し元（UI / Actor）が存在し、応答矢印 `API→UI` / `API→Actor` も描画する
-- **event ID（`internal` / `er`）**: FSM runtime駆動でHTTPの物理表現が存在せず、呼び出し元もない。「何が駆動したか」を event ID で示す。応答矢印は描画しない
+- **`METHOD path`（`ui` action あり / `external`）**: HTTPリクエストの物理的到達を表す。呼び出し元（UI / Actor）が存在し、応答矢印 `API→UI` / `API→Actor` も描画する
+- **event ID（`ui` action なし / `internal` / `er`）**: HTTP呼び出しを伴わないため `METHOD path` のソースが存在しない。「何が駆動したか」を event ID で示す。応答矢印は描画しない（ADR-037）
 
 ### happy pathのみ
 
@@ -162,7 +166,7 @@ sequence diagramはhappy pathのみを描画する。例外・エラーフロー
 
 | 情報 | 解決元 |
 |------|--------|
-| 起点矢印のパターン | event の `source` によって `ui` / `external` / `internal` / `er` の5パターンに分岐（ADR-036） |
+| 起点矢印のパターン | event の `source` と `transition.action` の有無で分岐（ADR-036 / ADR-037） |
 | Actor participantの生成 | `source=external` のeventを参照するstepの `event.actor` |
 | UI participantの生成 | `source=ui` のeventを参照するstepが1つでもある場合に暗黙生成 |
 | DB participantの生成 | taskの `reads` / `writes`、または `source=er` eventの `watches` が `store.kind=db` を含む場合 |
