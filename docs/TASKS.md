@@ -12,78 +12,52 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
 
 ---
 
-- [x] **YAMLの階層構造とディレクトリ構造の1:1対応設計 → ADR-010**
-  - CA強制・1ファイル=1ノード・model/asset分離・ビュー自動導出を確定
-  - ADR-007（asset定義）・ADR-002（ビュー別ファイル分け）を部分supersede
+## 仕様設計（ADR + spec）
 
-- [x] **1ファイル=1メインノード + サブノード構造 → ADR-011**
-  - `main: true` フラグ・サブノードのprivateスコープを確定
-  - ADR-010の「1ファイル=1ノード」を「1ファイル=1メインノード」に改訂
+- [x] **ADR-001〜039 完了**
+  - ノード種別・エッジ設計・名前解決・各view renderルール・wireframe DSL・シナリオスキーマ等を確定
+  - 最新: ADR-039（ER図横断view YAML: `as: er_diagram`）
 
-- [x] **foreach / cond / initializes の設計 → ADR-012, 013（→016), 014**
-  - `branch`（旧`cond`）/ `fork` / `join` のノード種別を確定（ADR-012）
-  - `foreach` はnode typeから廃止し `flow:` の制御構文として設計、`$item` シジル導入（ADR-013 superseded by ADR-016）
-  - `initializes` をmain nodeのフィールドとして設計（ADR-014）
+- [x] **spec/nodes.md** — 全ノード種別フィールド定義 (status: confirmed)
 
-- [x] **ファイル内edgeの記述構造（flow:セクション） → ADR-015**
-  - tasks=signatureのみ・wiringはflow:に分離
-  - fork/join記法・$paramsシジル・reads/writesフィールドを確定
+- [~] **spec/edges.md** — flow: / transitions: / reads・writes / $シジル体系 (status: wip)
+  - 内容は実質完成しているが Front Matter が wip のまま。confirmed に更新すること
 
-- [x] **eventノードのスキーマを決める → ADR-018**
-
-- [x] **stateノード（FSM）の設計 → ADR-019**
-  - `state` ノード種別・`transitions:` セクションを確定
-  - `store`（データ保持）との概念区別を明記
-  - 制御フローの起点として `event` ノードをDAGに導入する方向は確定
-  - `source` 属性（ui / time / external / er）でタグ付け
-  - 具体的なスキーマが未定（spec/overview.md `open_issues` より）
-
-- [x] **Edgeの管理方式を決める → ADR-020**
-  - クロスエッジを `write` / `read` の2種に絞り、task nodeの `reads`/`writes` フィールドとして記述
-  - `trigger`/`reflect`/`hydrate` は既存のevent/transition構造で表現済みのため廃止
-  - ADR-015の `reads`/`writes`（flow:ステップ記述）をsupersede
+- [x] **spec/views/dag.md** (status: confirmed)
+- [x] **spec/views/er.md** (status: confirmed)
+- [x] **spec/views/state-diagram.md** (status: confirmed)
+- [x] **spec/views/sequence-diagram.md** (status: confirmed)
+- [x] **spec/views/api-table.md** (status: confirmed)
+- [x] **spec/views/wireframe.md** (status: confirmed)
 
 ---
 
 ## ユースケース
 
-- [ ] **UC-001: login flowのユースケースを書く**
-  - `docs/uc/001-login-flow.md` を新規作成
-  - sequence → DAG → ER が全部繋がるのを1ユースケースで通しで確認する
-  - actor / endpoint / store(kind=db) の実際のYAML記述を確認する（store=旧state）
-  - ADR-012/013（foreach/cond/edge）確定後に着手推奨
+- [~] **UC-001: EC Checkout Flow**（`docs/uc/001-ec-checkout-flow/`）
+  - [x] YAML群（actors / model / store / task / state / views）全ファイル作成完了
+  - [x] `views/scenarios/checkout_flow.yaml` — 2 step構成（action なし遷移 + fork+join taskのADR-037/038検証）
+  - [x] `views/scenarios/payment_webhook_flow.yaml`
+  - [x] `views/api_table.yaml` / `views/er.yaml`
+  - [ ] **README.md 未作成**（10個のrender例を含む。HANDOFF.md §5参照）
+  - 完了条件: README.md 作成 → HANDOFF.md 削除
 
 ---
 
-- [x] **spec/nodes.md を新規作成**
-  - 全ノード種別のフィールド定義を網羅（ADR-001〜021に基づく）
-
-- [x] **spec/edges.md を新規作成**
-  - flow: / transitions: / reads/writes / $シジル体系を定義（ADR-015, 016, 019, 020に基づく）
-
-- [x] **spec/views/ ディレクトリを作成し図ごとにspecを書く**
-  - [x] `spec/views/dag.md` — DAGのrenderルール（ノード・エッジのマッピング）　status: confirmed
-  - [x] `spec/views/er.md` — ER図のrenderルール
-  - [x] `spec/views/state.md` — State Diagramのrenderルール
-  - [x] `spec/views/sequence.md` — Sequence Diagramのrenderルール
-  - [x] `spec/views/api-table.md` — API Table（list_endpoints MCPツール出力）のルール
-  - [x] `spec/views/wireframe.md` — wireframe DSLのrenderルール　status: confirmed
-  - 1ファイル = 1図。各ファイルにFront Matter（doc-policy準拠）
-
----
-
-## 実装
+## 実装（Go）
 
 - [ ] **GoのAST struct定義**
-  - ADR 001に基づき、ノード種別ごとにstructを用意
-  - eventノードのスキーマ確定後に着手推奨
+  - ノード種別ごとにstruct（ADR-001〜現在のスキーマに基づく）
+  - spec/nodes.md + spec/edges.md が基準ドキュメント
 
 - [ ] **YAMLパーサー実装**
-  - AST構築 + 名前解決（ADR 003）
+  - AST構築 + 名前解決（ADR-003, ADR-027）
   - エラーはASTビルド時に返す
 
 - [ ] **MCPツール実装**
   - `get_signature` / `get_deps` / `inspect`
+  - リバースルックアップ（cross-edge逆引き）はここで実装（ADR-020）
 
 - [ ] **Mermaidレンダラー実装**
-  - 各view（DAG / ER / state / class / sequence）のrenderロジック
+  - DAG / ER / State Diagram / Sequence Diagram / API Table / Wireframe
+  - 各viewのrenderルールはspec/views/配下のspecに準拠
