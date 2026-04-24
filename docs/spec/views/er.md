@@ -1,15 +1,17 @@
 ---
 scope: docs/spec/views/er.md
 status: confirmed
-last_updated: 2026-04-20
+last_updated: 2026-04-24
 summary: >
   ER図のrenderルール。
   store.kind=dbとmodelの参照を辿ってMermaid erDiagramを生成する際の
   エンティティ・カラム・リレーション表記ルールを定義する。
+  view YAMLによる横断描画もサポートする（ADR-039）。
 depends_on:
   - docs/adr/007-asset-store-boundary.md
   - docs/adr/021-model-field-structure.md
   - docs/adr/026-fk-cardinality-and-nm-relation.md
+  - docs/adr/039-er-diagram-composed-view.md
 ---
 
 # ER図 renderルール
@@ -168,12 +170,45 @@ erDiagram
 
 ## renderスコープ
 
-ER図は**ファイル単位ではなくモジュール単位**で描画する。
+### デフォルト: モジュール単位
+
+view YAML を指定しない場合、ER図は**モジュール単位**で描画する。
 モジュール内の全 `store.kind: db` を収集し、それらが参照する model を辿って1枚の図にまとめる。
 
-描画対象外：
+### view YAML による横断描画（ADR-039）
+
+複数モジュールにまたがる ER 図を生成したい場合は、view YAML を定義する。
+
+```yaml
+as: er_diagram
+id: ec_er
+note: ECサイト全体のER図
+modules:
+  - module: auth
+  - module: catalog
+  - module: cart
+  - module: order
+  - module: payment
+```
+
+| フィールド | 説明 |
+|-----------|------|
+| `as` | `er_diagram` 固定 |
+| `id` | ER図の識別子 |
+| `note` | 説明（任意） |
+| `modules[].module` | 集計対象モジュールパス。直下の `store.kind: db` のみが対象（サブモジュールは自動収集しない） |
+
+サブモジュールを含めたい場合は `modules[]` に明示的に列挙する。
+
+#### クロスモジュール FK の扱い
+
+view YAML に複数モジュールが含まれる場合、モジュールをまたぐ `fk:` もリレーション線として描画する。
+view YAML に含まれないモジュールへの FK は `json` 型カラムとして表示し、リレーション線は引かない。
+
+描画対象外（デフォルト・横断共通）：
 - `store.kind: db` に辿り着かない model（型定義として使われているだけのもの）
 - JSON埋め込みの参照先 model
+- view YAML に含まれないモジュールへのクロスモジュール FK
 
 ---
 
