@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/edges.md
-status: wip
-last_updated: 2026-04-20
+status: confirmed
+last_updated: 2026-04-25
 summary: >
   brewprintのエッジ記法の定義。
   ファイル内データフロー（flow:セクション）・状態遷移（transitions:セクション）・

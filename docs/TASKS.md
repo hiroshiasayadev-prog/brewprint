@@ -20,8 +20,7 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
 
 - [x] **spec/nodes.md** — 全ノード種別フィールド定義 (status: confirmed)
 
-- [~] **spec/edges.md** — flow: / transitions: / reads・writes / $シジル体系 (status: wip)
-  - 内容は実質完成しているが Front Matter が wip のまま。confirmed に更新すること
+- [x] **spec/edges.md** — flow: / transitions: / reads・writes / $シジル体系 (status: confirmed)
 
 - [x] **spec/views/dag.md** (status: confirmed)
 - [x] **spec/views/er.md** (status: confirmed)
