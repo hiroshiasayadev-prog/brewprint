@@ -138,6 +138,6 @@ ADR-011 で sub task はファイル内privateと定義されており、外部�
 - UC-001 の `order.task.checkout` を含むシナリオは本ADRのルールでDB参加者が出る
 
 ## Evidence
-- commit: tbd
+- commit: 6d834d4
 - impl commit: tbd
 - 参考: 特になし

@@ -76,6 +76,6 @@ happy path のフロー記述に note を使うのは誤用になる。
   本 ADR は ADR-036 の **補完** として位置づける（supersede はしない）
 
 ## Evidence
-- commit: tbd
+- commit: dba8a2b
 - impl commit: tbd
 - 参考: UML 2.x Sequence Diagram self-message 記法

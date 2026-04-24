@@ -109,6 +109,6 @@ webhook/スケジューラーにおける `Actor→API` は物理的にHTTPリ�
 - ADR-034 で追加された `source: internal` の可視化方針が本ADRで補完される
 
 ## Evidence
-- commit: tbd
+- commit: fdcd7a8
 - impl commit: tbd
 - 参考: UML 2.x Sequence Diagramのself-message記法、HTTP webhookにおけるreceiver-side modeling慣習

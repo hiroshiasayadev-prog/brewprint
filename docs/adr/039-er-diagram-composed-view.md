@@ -76,6 +76,6 @@ view YAML に含まれないモジュールへの FK は `json` 型カラムと�
 - `render_er` MCP ツールは view YAML の有無を見て動作を切り替える（実装 tbd）
 
 ## Evidence
-- commit: tbd
+- commit: 42472a7
 - impl commit: tbd
 - 参考: ADR-028（API Table の view YAML パターン）

@@ -82,6 +82,6 @@ eventの `source` enum に **`internal`** を追加する。
 - UC-001 の `auth/state.yaml` は本ADRに基づいて `login_succeeded` / `login_failed` を `source: internal` として記述
 
 ## Evidence
-- commit: tbd
+- commit: 374dc53
 - impl commit: tbd
 - 参考: UML 2.x Activity Diagramにおける内部トリガーeventの概念、FSMランタイム実装慣習

@@ -79,6 +79,6 @@ ER図の描画対象は `store.kind: db` から辿れる model に限定され�
 - `spec/views/er.md` でカーディナリティの導出ルールを定義する
 
 ## Evidence
-- commit: tbd
+- commit: c831a5f
 - impl commit: tbd
 - 参考: Django/Rails/PrismaのSurrogate key慣習参考

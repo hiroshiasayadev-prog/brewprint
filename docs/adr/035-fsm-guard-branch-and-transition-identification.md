@@ -181,6 +181,6 @@ FSMの正当なパターンを潰すため却下。`guard` による特定を採
 - 解決ルール表に従ってエラー判定
 
 ## Evidence
-- commit: tbd
+- commit: 6acb6c8
 - impl commit: tbd
 - 参考: UML 2.5.1 StateMachines（Transition.guard、choice pseudostate）、Mealy machine

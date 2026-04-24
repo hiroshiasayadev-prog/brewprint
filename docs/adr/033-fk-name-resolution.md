@@ -59,6 +59,6 @@ model を含む他の全ノード種別はモジュールスコープである�
 - UC-001 の cart/order モデルのクロスモジュール FK は `auth.model.credential.username` 形式で記述する
 
 ## Evidence
-- commit: tbd
+- commit: 029c05e
 - impl commit: tbd
 - 参考: ADR-027（sentinel方式・同モジュール省略ルール）、ADR-031（actor global定義）
