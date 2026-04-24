@@ -77,6 +77,18 @@ transitions:
 | `guard` | 任意 | 遷移条件テキスト（評価はbrewprintのスコープ外） |
 | `note` | 任意 | 補足説明 |
 
+#### 同一 `(from, on)` の複数transition（ADR-035で追加）
+
+同一 `(from, on)` ペアに対して、**互いに異なる `guard:` を持つ複数のtransitionを許容する**（Mealy machine / UML 2.x StateMachines準拠）。transitionの識別キーは `(from, on, guard)` の3タプル。
+
+制約：
+
+- 同一 `(from, on)` に複数transitionが存在する場合、**全エントリに `guard:` が必須**
+- 同一 `(from, on, guard)` の完全一致は不可（パーサーエラー）
+- guardのない単独transitionと、guardのある複数transitionを混在させることはできない
+
+この分岐はstate diagramではchoice pseudostate、sequence diagramではstepの `guard:` で解決する（ADR-035）。
+
 ### 3. `action`はtransitionに属し、eventには属さない
 
 `action`を`transition`に置く理由は、actionが **「現在のstate × event」の組み合わせで決まるもの** だから。

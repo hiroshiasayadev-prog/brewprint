@@ -3,6 +3,8 @@
 - **status**: accepted
 - **date**: 2026-04-22
 
+> ※ ADR-035 で拡張：stepに `guard:` フィールドを追加し、guard分岐を持つtransitionの一意特定に対応。`(from_state, via)` による一意特定は `(from_state, via, guard?)` に変更される。
+
 ## 背景
 
 ADR-004でsequence diagramのparticipant種別・矢印ラベル・DB participantの粒度を確定した。

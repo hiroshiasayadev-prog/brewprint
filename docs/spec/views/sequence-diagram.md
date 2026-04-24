@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/views/sequence-diagram.md
 status: confirmed
-last_updated: 2026-04-22
+last_updated: 2026-04-24
 summary: >
   Sequence DiagramのシナリオファイルYAML schemaとrenderルールを定義する。
   as: sequence_diagram のview定義ファイルを入力とし、
@@ -13,6 +13,7 @@ depends_on:
   - docs/adr/019-state-node.md
   - docs/adr/030-yaml-file-type-declaration.md
   - docs/adr/032-sequence-diagram-scenario-schema.md
+  - docs/adr/035-fsm-guard-branch-and-transition-identification.md
 ---
 
 # Sequence Diagram renderルール
@@ -48,9 +49,52 @@ steps:
 |-----------|------|------|
 | `from_state` | ✓ | 遷移前のstate ID。省略不可 |
 | `via` | ✓ | 発火するevent ID |
+| `guard` | 任意 | transitionを一意特定するためのguard文字列（ADR-035） |
 
-`(from_state, via)` のペアで `state_file` 内の `transitions:` を一意に特定する。
-対応するtransitionが存在しない場合はパーサーエラー。
+### transition解決ルール
+
+`(from_state, via)` で `state_file` 内の候補transitionを絞り込み、`step.guard` と `transition.guard` の**完全一致**で一意特定する（ADR-035）。
+
+| 候補数 | `step.guard` | 挙動 |
+|-------|--------------|------|
+| 0 | 任意 | パーサーエラー：対応transitionが存在しない |
+| 1 | 省略 | 候補のtransitionを採用 |
+| 1 | 指定 | `transition.guard` と完全一致なら採用。不一致はエラー |
+| 2以上 | 省略 | パーサーエラー：曖昧（guard指定必須） |
+| 2以上 | 指定 | 完全一致する1件を採用。0件または複数一致はエラー |
+
+**guardの文字列比較はexact match。** brewprintはguard式を評価しない（ADR-019）ため、空白の有無などの表記揺れは別物として扱われる。ユーザーは `state_file` 側のguard文字列をそのままコピーして使う運用とする。
+
+### guard分岐を含むシナリオの例
+
+```yaml
+# order/state.yaml（抜粋）
+transitions:
+  - from: processing
+    on: payment_webhook_received
+    to: confirmed
+    action: payment.task.process_payment
+    guard: "payload.status == 'succeeded'"
+
+  - from: processing
+    on: payment_webhook_received
+    to: failed
+    guard: "payload.status == 'failed'"
+```
+
+```yaml
+# scenarios/payment_webhook_success.yaml
+as: sequence_diagram
+id: payment_webhook_success
+title: "決済ウェブフック成功フロー"
+state_file: order/state.yaml
+steps:
+  - from_state: processing
+    via: payment_webhook_received
+    guard: "payload.status == 'succeeded'"
+```
+
+候補は2件だが `step.guard` により `confirmed` へのtransitionが一意に特定される。
 
 ---
 

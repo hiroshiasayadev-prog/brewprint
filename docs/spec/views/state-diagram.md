@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/views/state-diagram.md
 status: confirmed
-last_updated: 2026-04-22
+last_updated: 2026-04-24
 summary: >
   State DiagramのrenderルールとMermaid出力仕様を定義する。
   stateノード・eventノード・transitions:セクションを入力とし、
@@ -10,6 +10,7 @@ depends_on:
   - docs/adr/017-diagram-layers-and-scope.md
   - docs/adr/018-event-node.md
   - docs/adr/019-state-node.md
+  - docs/adr/035-fsm-guard-branch-and-transition-identification.md
 ---
 
 # State Diagram renderルール
@@ -94,6 +95,61 @@ login_submitted [retryCount < 3]                     ← guardのみ
 login_submitted / auth.task.login                    ← クロスファイルactionのみ
 login_submitted [retryCount < 3] / auth.task.login   ← guard + クロスファイルaction
 ```
+
+---
+
+## guard分岐の描画（choice pseudostate）
+
+同一 `(from, on)` に**複数のtransitionが存在する**場合、choice pseudostate（UML `<<choice>>`）を挿入して分岐を明示する（ADR-035）。
+
+### 判定ルール
+
+| `(from, on)` 候補数 | 描画方式 |
+|---|---|
+| 1件 | 通常の直接矢印（上記ラベルパターンに従う） |
+| 2件以上 | choice pseudostate経由で分岐 |
+
+FSMパーサーは、同一 `(from, on)` に複数transitionが存在する場合、全エントリに `guard` があることを保証する（ADR-019, ADR-035）。guardなしと混在している場合はパーサーエラー。
+
+### choice pseudostateの生成ルール
+
+- **ID命名**: `_choice_{from}_{on}` の形式で自動生成。ユーザーはYAMLで意識しない
+- **宣言位置**: `stateDiagram-v2` 直下の**冒頭ブロックにまとめて**出力する  
+  （Mermaid仕様：`state X <<choice>>` は使用前に宣言する必要があるため）
+- **入る矢印**: `from → _choice_xxx`、ラベルは **event IDのみ**（guardは付けない）
+- **出る矢印**: `_choice_xxx → to`、ラベルは **`[guard文字列]` のみ**（event IDは付けない）
+- actionがあるtransitionの `/ action` は、choiceから出る矢印側に付与する（クロスファイル参照のみ）
+
+### 出力例
+
+**入力YAML（抜粋）：**
+
+```yaml
+transitions:
+  - from: processing
+    on: payment_webhook_received
+    to: confirmed
+    action: payment.task.process_payment
+    guard: "payload.status == 'succeeded'"
+
+  - from: processing
+    on: payment_webhook_received
+    to: failed
+    guard: "payload.status == 'failed'"
+```
+
+**期待するMermaid出力（該当部分のみ抜粋）：**
+
+```mermaid
+stateDiagram-v2
+  state _choice_processing_payment_webhook_received <<choice>>
+
+  processing --> _choice_processing_payment_webhook_received : payment_webhook_received
+  _choice_processing_payment_webhook_received --> confirmed : [payload.status == 'succeeded'] / payment.task.process_payment
+  _choice_processing_payment_webhook_received --> failed : [payload.status == 'failed']
+```
+
+冒頭の `state _choice_xxx <<choice>>` 宣言を後置するとdiamond形状にならず通常ノードとして描画されるため、**必ず冒頭ブロックに集約する**。
 
 ---
 
