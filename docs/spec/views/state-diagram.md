@@ -188,13 +188,13 @@ nodes:
 
   - id: login_succeeded
     type: event
-    source: external
-    actor: auth_server
+    source: internal
+    note: "auth.task.login 成功時にFSM runtimeが発火"
 
   - id: login_failed
     type: event
-    source: external
-    actor: auth_server
+    source: internal
+    note: "auth.task.login 失敗時にFSM runtimeが発火"
 
   - id: session_timeout
     type: event
@@ -267,8 +267,8 @@ stateDiagram-v2
 | event | source | actor | note |
 |-------|--------|-------|------|
 | login_submitted | ui | - | ログインフォームのsubmit |
-| login_succeeded | external | auth_server | — |
-| login_failed | external | auth_server | — |
+| login_succeeded | internal | - | — |
+| login_failed | internal | - | — |
 | session_timeout | external | scheduler | — |
 ````
 
