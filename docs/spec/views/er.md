@@ -131,6 +131,8 @@ erDiagram
 ## N:M の表現
 
 N:M は中間 model（FK を2本持つ struct）として明示的に定義する（ADR-026）。
+中間 model もDBテーブルとして実在するため、対応する `store.kind: db` を定義する必要がある。
+`store.kind: db` を定義しない中間 model はER図に登場しない（下記「renderスコープ」の描画対象外ルールに該当する）。
 ER図上は中間エンティティを介した2本のN:1として描画される。
 
 ```mermaid
@@ -206,7 +208,7 @@ view YAML に複数モジュールが含まれる場合、モジュールをま�
 view YAML に含まれないモジュールへの FK は `json` 型カラムとして表示し、リレーション線は引かない。
 
 描画対象外（デフォルト・横断共通）：
-- `store.kind: db` に辿り着かない model（型定義として使われているだけのもの）
+- `store.kind: db` に辿り着かない model（型定義として使われているだけのもの、`store.kind: db` を定義していないN:M中間 model を含む）
 - JSON埋め込みの参照先 model
 - view YAML に含まれないモジュールへのクロスモジュール FK
 

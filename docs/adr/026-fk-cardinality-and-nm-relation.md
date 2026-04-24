@@ -49,6 +49,18 @@ N:M リレーションを直接表現する構文は持たない。
       fk: tag.id
 ```
 
+中間 model もDBテーブルとして実在するため、対応する `store.kind: db` を定義する必要がある。
+ER図の描画対象は `store.kind: db` から辿れる model に限定されるため（`spec/views/er.md`）、
+`store.kind: db` を定義しない中間 model はER図に登場しない。
+
+```yaml
+# store/user_tag_db.yaml
+- id: user_tag_db
+  type: store
+  kind: db
+  of: user_tag
+```
+
 ### 4. 複合 PK は現時点で非サポート
 
 `pk: true` の「1 struct に1つ」制約（ADR-021）を維持する。
