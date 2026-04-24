@@ -93,6 +93,9 @@ API Tableの出力sectionは `modules[]` の各要素ごとに1つ持つ。
 ## route構成ルール
 
 endpoint taskの `path` はfull pathではなくleaf pathである。
+`path` は省略可能で、省略時は `task.id` をleaf nameとして使う。
+`path` は `/` を含まないsingle segmentのみ許容する（例: `stripe`、`login`）。`/` を含む複数セグメントは不正であり、URL階層はmoduleディレクトリ構造で表現する。
+
 API Tableは各endpointの最終routeを以下の要素から構成する。
 
 ```text

@@ -1,0 +1,22 @@
+# ECサイト API Table view定義（ADR-028）
+# as: api_table で endpoint: true な task を集約して API 一覧表を生成する。
+# http_root_path が各 task.path の前に付与され、フルパスを構成する。
+# include_submodules: false により各モジュール直下の endpoint のみ集計。
+
+as: api_table
+id: ec_api
+note: ECサイトAPI一覧
+http_root_path: /api
+modules:
+  - module: auth
+    include_submodules: false
+  - module: catalog
+    include_submodules: false
+  - module: cart
+    include_submodules: false
+  - module: order
+    include_submodules: false
+  - module: payment
+    include_submodules: false
+  - module: payment.webhooks
+    include_submodules: false

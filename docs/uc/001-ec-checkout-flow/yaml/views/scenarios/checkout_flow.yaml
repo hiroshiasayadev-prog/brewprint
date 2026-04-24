@@ -1,0 +1,25 @@
+# チェックアウトフロー シナリオ（ADR-032 / ADR-036 / ADR-037）
+# state_file: order/state.yaml
+#
+# カバーするパス:
+#   Step 1: cart --(view_checkout)--> checkout_screen
+#     source=ui, action なし → UI->>UI self-message（ADR-037）
+#   Step 2: checkout_screen --(checkout_submitted)--> processing
+#     source=ui, action=order.task.checkout → UI→API（POST /checkout）
+#
+# 検証ポイント:
+#   - action なし遷移の self-message 描画（ADR-037）
+#   - fork+join を持つ task（checkout）の sub task reads/writes 集約（ADR-038）
+#   - クロスモジュール参照（cart.store.cart_session, auth.store.user_db,
+#     catalog.store.inventory_db）を持つ task の DB 参加者生成
+
+as: sequence_diagram
+id: checkout_flow
+title: "チェックアウトフロー"
+state_file: order/state.yaml
+steps:
+  - from_state: cart
+    via: view_checkout
+
+  - from_state: checkout_screen
+    via: checkout_submitted

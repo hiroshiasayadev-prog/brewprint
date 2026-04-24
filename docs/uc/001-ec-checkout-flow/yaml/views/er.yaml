@@ -1,0 +1,15 @@
+# EC全体ER図 view定義（ADR-039）
+# as: er_diagram で横断view YAML を宣言。
+# view YAML に含まれる全モジュールの store.kind: db を対象とする。
+# クロスモジュール FK（cart→auth、cart→catalog、order→auth、order→catalog 等）は
+# リレーション線として描画される。
+
+as: er_diagram
+id: ec_er
+note: ECサイト全体のER図
+modules:
+  - module: auth
+  - module: catalog
+  - module: cart
+  - module: order
+  - module: payment

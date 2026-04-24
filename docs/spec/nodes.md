@@ -107,7 +107,7 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 | `writes` | 任意 | list\<store-id\> | 更新するstore IDのリスト | ADR-020 |
 | `endpoint` | 任意 | bool | `true` でAPI Tableの集計対象となり、`list_endpoints` MCPツールに出力 | ADR-005, ADR-017, ADR-028 |
 | `method` | endpoint時必須 | enum | HTTP method（GET/POST/PUT/DELETE/PATCH） | ADR-005 |
-| `path` | endpoint時必須 | string | endpointのleaf path（例: `login`）。full pathはAPI Table viewの `http_root_path` とmodule階層から構成する | ADR-005, ADR-028 |
+| `path` | 任意 | string | endpointのleaf path（例: `login`）。省略時は `task.id` をleaf nameとして使う。`/` を含む複数セグメント不可（single segment限定）。full pathはAPI Table viewの `http_root_path` とmodule階層から構成する | ADR-005, ADR-028 |
 | `initializes` | 任意 | list\<init\> | このファイル内で使うstoreの初期宣言（main nodeのみ）| ADR-014 |
 
 ### param オブジェクト

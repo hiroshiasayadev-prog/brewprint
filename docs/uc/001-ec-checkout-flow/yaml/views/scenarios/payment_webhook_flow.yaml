@@ -1,0 +1,23 @@
+# 決済ウェブフックフロー シナリオ（ADR-032 / ADR-035 / ADR-036）
+# state_file: order/state.yaml
+#
+# カバーするパス:
+#   Step 1: processing --(payment_webhook_received / guard: succeeded)--> confirmed
+#     source=external（actor: stripe）, action=payment.task.process_payment
+#     → Actor→API（POST /webhooks/stripe）
+#
+# 検証ポイント:
+#   - source=external のシナリオ（Actor participant 生成、ADR-036）
+#   - guard による transition 一意特定（ADR-035）
+#     ※ payment_webhook_received は同一 (from, via) に 2 transition 存在するため
+#       guard 必須
+#   - API→Actor 応答矢印（returns 未定義 → "200 OK"）
+
+as: sequence_diagram
+id: payment_webhook_flow
+title: "決済ウェブフックフロー（成功）"
+state_file: order/state.yaml
+steps:
+  - from_state: processing
+    via: payment_webhook_received
+    guard: "payload.status == 'succeeded'"

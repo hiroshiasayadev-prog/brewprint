@@ -44,14 +44,18 @@ modules:
 
 ### 2. endpoint taskの `path` はleaf pathとする
 
-`task.endpoint: true` の場合でも、taskの `path` はfull pathではなくleaf pathを持つ。
+`task.endpoint: true` の場合、taskの `path` はfull pathではなくleaf pathを持つ。
+
+- **optional**: `path` は省略可能。省略時は `task.id` をleaf nameとして使う
+- **single segment**: `path` は `/` を含まないsingle segmentのみ許容する。`webhooks/stripe` のような複数セグメントは不正
+- module階層によるURL構造の表現はmoduleディレクトリ構造に委ねる（ADR-002）
 
 ```yaml
 - id: login
   type: task
   endpoint: true
   method: POST
-  path: login
+  path: login       # id と異なる場合のみ明示的に上書き
 ```
 
 ```yaml
@@ -59,7 +63,16 @@ modules:
   type: task
   endpoint: true
   method: GET
-  path: start
+  # path省略 → task.id "start" をleaf nameとして使う
+```
+
+```yaml
+# NG: /を含む複数セグメントは不正
+- id: process_payment
+  type: task
+  endpoint: true
+  method: POST
+  path: webhooks/stripe   # ← 禁止。webhooksはmoduleディレクトリで表現すること
 ```
 
 full pathはtask単体では決まらない。API Table viewの `http_root_path` とmodule階層情報を用いて構成する。

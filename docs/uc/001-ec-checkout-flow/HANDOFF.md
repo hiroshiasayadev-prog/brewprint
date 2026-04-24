@@ -229,6 +229,14 @@ modules:
 
 ---
 
+## 3b. セッションCで追加された作業
+
+セッションB-3完了後に確定した追加ファイル:
+
+- `yaml/views/er.yaml` — ADR-039: EC全体ER図のview YAML（modules: auth/catalog/cart/order/payment）
+
+---
+
 ## 4. 書く順序（依存順）
 
 1. `actors.yaml`
@@ -298,7 +306,7 @@ modules:
 
 ---
 
-## 6. ⚠️ 注意点（前セッションで議論済みのもの）
+## 6. ⚠️ 注意点
 
 ### main: は task のみ（前セッション最終確定）
 
@@ -347,6 +355,65 @@ foreachはflow構文。`cart/task/validate_cart.yaml` 内で：
 
 サブノードの task には `initializes` を書けない。
 
+### er.yaml の書き方（ADR-039）
+
+```yaml
+as: er_diagram
+id: ec_er
+note: ECサイト全体のER図
+modules:
+  - module: auth
+  - module: catalog
+  - module: cart
+  - module: order
+  - module: payment
+```
+
+- `include_submodules` は持たない設計
+- view YAML に含まれるモジュール間のクロスモジュールFKはリレーション線として描画される
+- N:M中間 model（order_item / cart_item）は `store.kind: db` 経由で辿られる（ADR-026）
+
+### guard 分岐 step の書き方（ADR-035）
+
+同一 `(from_state, via)` に複数 transition がある場合（`payment_webhook_received` など）、
+step に `guard:` フィールドが必須。`state_file` 内の `transition.guard` と**文字列完全一致**で照合する。
+
+```yaml
+- from_state: processing
+  via: payment_webhook_received
+  guard: "payload.status == 'succeeded'"
+```
+
+### event source 別の矢印ルール（ADR-036）
+
+| event.source | 矢印 | ラベル | 応答矢印 |
+|---|---|---|---|
+| `ui` | `UI→API` | `METHOD path` | `API→UI` |
+| `external` | `Actor→API` | `METHOD path` | `API→Actor` |
+| `internal` | `API->>API`（自己ループ） | event ID | なし |
+| `er`（watches先 kind=db） | `DB→API` | event ID | なし |
+| `er`（watches先 kind≠db） | `API->>API`（自己ループ） | event ID | なし |
+
+participant表示順: `Actor → UI → API → DB`（存在するもののみ）
+
+### action なし transition の描画（ADR-037）
+
+`transition.action` がない step は `UI->>UI: {event ID}` の self-message として描画。
+API participant は生成しない。checkout_flow の `(cart, view_checkout)` がこれに該当。
+
+### sub task reads/writes の辿り（ADR-038）
+
+sequence diagram バックエンドは `transition.action` が指すファイル内の **main + 全 sub tasks** の reads/writes を集約してDB参加者・DB操作tableを生成する。
+
+DB操作tableには `sub_task` 列が追加される。main task 直接のDB操作行は `sub_task: -`。
+
+```markdown
+| step | task | sub_task | store | 操作 |
+|------|------|----------|-------|------|
+| 2 | order.task.checkout | build_order | order_db | writes |
+| 2 | order.task.checkout | reserve_inventory | catalog.store.inventory_db | reads |
+```
+
 ---
 
 ## 7. 不整合発見時の対応
@@ -374,14 +441,30 @@ foreachはflow構文。`cart/task/validate_cart.yaml` 内で：
 1. actors.yaml + 全model 書き終わった時点
 2. 全store + 全task 書き終わった時点
 3. 全state.yaml 書き終わった時点
-4. views 書き終わった時点
+4. views 書き終わった時点（api_table + er.yaml + scenarios 2本）
 5. README 完成時点
-
-各commitでADR Evidence更新は不要（このUCは新規ADRを起こさない想定）。万一新規ADR/spec更新が発生した場合のみ Evidence更新を依頼。
 
 ---
 
-## 9. 完了条件
+## 9. 主要参照ADR（Cで重要なもの）
+
+- ADR-028（api-table route composition）
+- ADR-030（yaml file type declaration: `as:`）
+- ADR-031（actor global）
+- ADR-032（sequence-diagram scenario schema）
+- ADR-034（event source: internal）
+- ADR-035（FSM guard分岐の許容と一意特定。step.guard フィールド追加）
+- ADR-036（sequence diagram矢印ルール: event source 4種別）
+- ADR-037（action なし transition → UI self-message）
+- ADR-038（sub task reads/writes の辿り。DB操作table に sub_task 列追加）
+- ADR-039（ER図横断view YAML: `as: er_diagram`）
+
+**spec/views（render準拠の基準）**:
+- spec/views/api-table.md / dag.md / er.md / sequence-diagram.md / state-diagram.md / wireframe.md
+
+---
+
+## 10. 完了条件
 
 - [ ] §2 のカバレッジチェックリスト全項目 ✓
 - [ ] §1 の全ファイル作成済み
@@ -391,7 +474,7 @@ foreachはflow構文。`cart/task/validate_cart.yaml` 内で：
 
 ---
 
-## 10. 完了後の片付け
+## 11. 完了後の片付け
 
 このHANDOFF.md は完了後に削除してよい。残しておいても害はないが、UC本体（README.md + yaml/）が成果物。
 
