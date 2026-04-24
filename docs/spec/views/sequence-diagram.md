@@ -18,6 +18,7 @@ depends_on:
   - docs/adr/035-fsm-guard-branch-and-transition-identification.md
   - docs/adr/036-sequence-diagram-arrow-rules-per-source.md
   - docs/adr/037-sequence-diagram-action-less-transition.md
+  - docs/adr/038-sequence-diagram-sub-task-traversal.md
 ---
 
 # Sequence Diagram renderルール
@@ -111,7 +112,7 @@ sequence diagramに登場するparticipantは以下の4種（ADR-004 / ADR-036�
 | Actor | `source=external` のeventを参照するstepが1つでもある場合 | `type: actor` ノード（ADR-031） |
 | UI | `source=ui` のeventを参照するstepが1つでもある場合に暗黙生成 | YAMLに明示ノードなし |
 | API | シナリオのstepが参照するtaskのendpoint | `type: task`（endpoint=true） |
-| DB | 以下いずれかでstepが `store.kind=db` を参照する場合<br>・taskの `reads` / `writes`<br>・`source=er` eventの `watches`（ADR-036） | `type: store`（kind=db）を「DB」1列に集約 |
+| DB | 以下いずれかでstepが `store.kind=db` を参照する場合<br>・taskと**同一ファイル内の全task**（main + sub）の `reads` / `writes`（ADR-038）<br>・`source=er` eventの `watches`（ADR-036） | `type: store`（kind=db）を「DB」1列に集約 |
 
 participantの表示順（左→右）: `Actor → UI → API → DB`（存在するもののみ）
 
@@ -169,10 +170,10 @@ sequence diagramはhappy pathのみを描画する。例外・エラーフロー
 | 起点矢印のパターン | event の `source` と `transition.action` の有無で分岐（ADR-036 / ADR-037） |
 | Actor participantの生成 | `source=external` のeventを参照するstepの `event.actor` |
 | UI participantの生成 | `source=ui` のeventを参照するstepが1つでもある場合に暗黙生成 |
-| DB participantの生成 | taskの `reads` / `writes`、または `source=er` eventの `watches` が `store.kind=db` を含む場合 |
+| DB participantの生成 | taskと同一ファイル内の全task（main + sub）の `reads` / `writes`、または `source=er` eventの `watches` が `store.kind=db` を含む場合（ADR-038） |
 | 呼び出されるtask | transition の `action` |
 | `UI→API` / `Actor→API` のラベル | task の `method` / `path` |
-| API → DB の矢印・方向 | task の `reads` / `writes`（kind=dbのみ） |
+| API → DB の矢印・方向 | taskと同一ファイル内の全task（main + sub）の `reads` / `writes`（kind=dbのみ、ADR-038） |
 | `API→UI` / `API→Actor` のラベル | task の `returns.name`（なければ `200 OK`） |
 | `DB→API` の起点 | `source=er` eventの `watches` 先（kind=db時） |
 | 自己ループの発生 | `source=internal`、または `source=er` で `watches` 先が `store.kind≠db` |
@@ -196,13 +197,15 @@ sequenceDiagram
 
 ## DB操作
 
-| step | task | store | 操作 |
-|------|------|-------|------|
-| 1 | auth.task.login | user_db | reads |
-| 1 | auth.task.login | session_store | writes |
+| step | task | sub_task | store | 操作 |
+|------|------|----------|-------|------|
+| 1 | auth.task.login | - | user_db | reads |
+| 1 | auth.task.login | - | session_store | writes |
 ````
 
 - `step` 列はシナリオの `steps:` の1-originインデックス
+- `task` 列は `transition.action` が指すmain taskのqualified ID（ADR-038）
+- `sub_task` 列はsub taskのshort ID。main task自身の `reads` / `writes` による行は `-`（ADR-038）
 - `kind=session` / `kind=collection` / `kind=context` のstoreはDB操作tableにも出力しない
 
 ---
@@ -271,9 +274,9 @@ sequenceDiagram
 
 #### DB操作table
 
-| step | task | store | 操作 |
-|------|------|-------|------|
-| 1 | auth.task.login | user_db | reads |
+| step | task | sub_task | store | 操作 |
+|------|------|----------|-------|------|
+| 1 | auth.task.login | - | user_db | reads |
 
 ---
 
@@ -313,9 +316,9 @@ sequenceDiagram
 
 #### DB操作table
 
-| step | task | store | 操作 |
-|------|------|-------|------|
-| 1 | payment.task.process_payment | order_db | writes |
+| step | task | sub_task | store | 操作 |
+|------|------|----------|-------|------|
+| 1 | payment.task.process_payment | - | order_db | writes |
 
 ---
 
