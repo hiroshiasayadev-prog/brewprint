@@ -70,6 +70,18 @@ steps:
 
 **guardの文字列比較はexact match。** brewprintはguard式を評価しない（ADR-019）ため、空白の有無などの表記揺れは別物として扱われる。ユーザーは `state_file` 側のguard文字列をそのままコピーして使う運用とする。
 
+### stepの連続性
+
+`steps` は単一シナリオにおける時系列の FSM transition 列を表す。
+Renderer は `steps` の定義順に矢印を出力する。
+
+各 step は `state_file` 内の transition を一意に解決する。
+step[i] が解決した transition の `to` は、step[i+1].from_state と一致しなければならない。
+一致しない場合は parser error とする。
+
+独立したシナリオを同一 sequence diagram に混在させてはならない。
+別シナリオとして表現する場合は、別の `as: sequence_diagram` ファイルを作成する。
+
 ### guard分岐を含むシナリオの例
 
 ```yaml

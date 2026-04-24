@@ -27,10 +27,10 @@ title: "ログインフロー"
 state_file: auth/state.yaml    # 参照するstate定義ファイル
 steps:
   - from_state: idle
-    via: login_submitted
+    via: login_submitted        # to: loading
 
-  - from_state: session_expired
-    via: login_submitted
+  - from_state: loading
+    via: login_succeeded        # to: authenticated
 ```
 
 ### フィールド定義
@@ -52,6 +52,18 @@ steps:
 
 `(from_state, via)` のペアで `state_file` 内の `transitions:` を一意に特定する。
 対応するtransitionが存在しない場合はパーサーエラー。
+
+### stepの連続性
+
+`steps` は単一シナリオにおける時系列の FSM transition 列を表す。
+Renderer は `steps` の定義順に矢印を出力する。
+
+各 step は `state_file` 内の transition を一意に解決する。
+step[i] が解決した transition の `to` は、step[i+1].from_state と一致しなければならない。
+一致しない場合は parser error とする。
+
+独立したシナリオを同一 sequence diagram に混在させてはならない。
+別シナリオとして表現する場合は、別の `as: sequence_diagram` ファイルを作成する。
 
 ### バックエンドによる自動解決
 
