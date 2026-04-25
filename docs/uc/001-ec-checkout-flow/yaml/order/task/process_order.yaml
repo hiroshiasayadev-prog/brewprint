@@ -4,11 +4,9 @@
 # - スコープ（ADR-023）: confirm_order / cancel_order の returns は分岐外で参照しない。
 #   各パスは独立して終端（floating node）→ DAG では END に直行
 #
-# spec gap (README.md に記録):
-#   - branch.cases.step は単一 node ID のみ（spec/edges.md §1-4）。
-#     confirm_order / cancel_order に order param を wiring する記法が
-#     stepエントリと違って書けない。本ファイルでは branch.params の order が
-#     後続 step に暗黙伝播する前提で書く（fork と同じ問題）。
+# ADR-040:
+#   - branch.params は branch node 自身の判定入力としてのみ扱う。
+#   - case entry task への params wiring は cases[].params に明示する。
 
 nodes:
   - id: process_order
@@ -83,5 +81,9 @@ flow:
     cases:
       - label: in_stock
         step: confirm_order
+        params:
+          order: check_inventory
       - label: out_of_stock
         step: cancel_order
+        params:
+          order: check_inventory

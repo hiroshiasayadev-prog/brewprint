@@ -17,6 +17,7 @@ depends_on:
   - docs/adr/019-state-node.md
   - docs/adr/020-cross-edge-management.md
   - docs/adr/023-control-flow-scope-and-branch-entry.md
+  - docs/adr/040-control-flow-step-wiring.md
 ---
 
 # エッジ定義仕様
@@ -117,18 +118,25 @@ flow:
 
 ### 1-2. forkエントリ（並列実行）
 
-> 出典: ADR-012, ADR-015
+> 出典: ADR-012, ADR-015, ADR-040
 
 ```yaml
 flow:
   - fork: fan_out
     branches:
-      - [static_analysis]
-      - [dynamic_analysis]
-      - [dep_check]
+      - steps:
+          - step: static_analysis
+            params:
+              raw: fetch_data
+      - steps:
+          - step: dynamic_analysis
+            params:
+              raw: fetch_data
+      - steps:
+          - step: dep_check
+            params:
+              raw: fetch_data
     join: aggregate
-    params:
-      request: fetch_data       # 各branchへの共通入力
 ```
 
 #### forkエントリのフィールド
@@ -136,15 +144,61 @@ flow:
 | フィールド | 必須 | 内容 | 出典 |
 |-----------|------|------|------|
 | `fork` | ✓ | fork node ID | ADR-012, ADR-015 |
-| `branches` | ✓ | 各ブランチのstep列をリストで記述 | ADR-015 |
+| `branches` | ✓ | branch object のリスト | ADR-040 |
 | `join` | ✓ | 対応するjoin node ID | ADR-015 |
-| `params` | 任意 | 各ブランチへの共通入力のwiring | ADR-015 |
 
 `fork` と `join` は必ずペアで使う。`fork` 単体・`join` 単体は不正（ADR-012）。
 
+#### branch object
+
+| フィールド | 必須 | 内容 | 出典 |
+|-----------|------|------|------|
+| `steps` | ✓ | このbranchで実行するstep objectのリスト | ADR-040 |
+
+`steps[]` の各要素は通常の `flow` の `step` エントリと同じ形式を使う。
+
+| フィールド | 必須 | 内容 | 出典 |
+|-----------|------|------|------|
+| `step` | ✓ | 実行するnode ID | ADR-015, ADR-040 |
+| `params` | 任意 | 入力のwiring。key=param名, value=参照元 | ADR-015, ADR-040 |
+
+旧形式の `branches: - [step_a, step_b]` は使用しない。paramsが不要な場合も `steps:` 配下に `step:` を明示する。
+
+```yaml
+branches:
+  - steps:
+      - step: static_analysis
+  - steps:
+      - step: dynamic_analysis
+```
+
+`fork.params` によるbranch内stepへの暗黙伝播は採用しない。branch内taskへの入力は、各 `steps[].params` に明示的に書く（ADR-040）。
+
+#### join.params の解決
+
+`join:` で指定されたjoin nodeの `params` は、各branch終端stepの `returns.name` と同名一致で解決する。
+
+```yaml
+nodes:
+  - id: static_analysis
+    type: task
+    returns:
+      name: static_result
+      model: static_result
+
+  - id: aggregate
+    type: join
+    params:
+      - name: static_result
+        model: static_result
+```
+
+上記では `static_analysis.returns.name == static_result` が `aggregate.params.static_result` に渡る。
+一致するbranch終端stepのreturnsが存在しない場合はparser errorとする。
+
 ### 1-4. branchエントリ（排他分岐）
 
-> 出典: ADR-012, ADR-023
+> 出典: ADR-012, ADR-023, ADR-040
 
 ```yaml
 flow:
@@ -154,8 +208,12 @@ flow:
     cases:
       - label: admin
         step: admin_flow
+        params:
+          user: fetch_user
       - label: user
         step: user_flow
+        params:
+          user: fetch_user
 ```
 
 #### branchエントリのフィールド
@@ -163,8 +221,10 @@ flow:
 | フィールド | 必須 | 内容 | 出典 |
 |-----------|------|------|------|
 | `branch` | ✓ | branch node ID | ADR-012 |
-| `params` | 任意 | 分岐判断に使う入力のwiring（stepエントリと同じルール） | ADR-023 |
+| `params` | 任意 | branch node自身の分岐判断に使う入力のwiring（stepエントリと同じルール） | ADR-023, ADR-040 |
 | `cases` | ✓ | 各パスのエントリポイントのリスト | ADR-023 |
+
+`branch.params` はbranch node自身の判定入力としてのみ扱う。case entry taskへのwiringは `cases[].params` に明示的に書く（ADR-040）。
 
 #### casesエントリのフィールド
 
@@ -172,8 +232,11 @@ flow:
 |-----------|------|------|------|
 | `label` | ✓ | 条件ラベル。人間とLLMへの意味記述。評価はbrewprintのスコープ外 | ADR-023 |
 | `step` | ✓ | このケースのエントリポイントとなるtask ID（単一） | ADR-023 |
+| `params` | 任意 | case entry taskへの入力wiring。key=param名, value=参照元 | ADR-040 |
 
-`step` は単一のnode IDのみ。エントリポイント以降の後続stepはwiring（`params`参照）から導出されるDAG構造によって決まるため、cases内での列挙は不要。`fork` の `branches` がstep列を持つのは並列ブランチの帰属を示す必要があるため。`branch` は1パスしか実行されないためエントリポイントのみで十分（ADR-023）。
+`step` は単一のnode IDのみ。エントリポイント以降の後続stepはwiring（`params`参照）から導出されるDAG構造によって決まるため、cases内でのstep列挙は不要。`branch` は1パスしか実行されないためエントリポイントのみで十分（ADR-023）。
+
+case内で生成されたassetは、ADR-023の制御フロースコープによりbranch外から直接参照できない。`cases[].params` はcase entry taskへの入力を明示するためのものであり、branch内部assetの外部参照を許可するものではない。
 
 ### 1-5. foreachエントリ（ループ実行）
 
@@ -197,7 +260,7 @@ flow:
 | フィールド | 必須 | 内容 | 出典 |
 |-----------|------|------|------|
 | `foreach` | ✓ | apply先taskのID（同ファイルのサブノードまたは外部main node） | ADR-016 |
-| `over` | ✓ | iterateするlistの参照元node ID | ADR-016 |
+| `over` | ✓ | iterateするlistの参照元。**node ID**（前段taskの `returns` asset）または **`$params.field`**（main taskのparams内のlistフィールド）を指定可。`$params.field` を指定した場合、parser/validatorは `main.params.<field>.model` が `kind: list` であることを検証する | ADR-016 |
 | `mode` | 任意 | `sequential`（デフォルト）or `map`（並列実行） | ADR-016 |
 | `params` | 任意 | apply先taskのparams wiring（stepエントリと同じルール）。apply先にparamsがある場合は必須。`$item` で現在のイテレーション要素を参照 | ADR-016 |
 | `returns` | 任意 | applyの結果をcollectしたasset名 | ADR-016 |
