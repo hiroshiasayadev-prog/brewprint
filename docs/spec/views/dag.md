@@ -65,20 +65,41 @@ flowchart TD
 ## Tasks
 
 ### login
-**params**: credentials (credential)
-**returns**: auth_token (token)
-**reads**: session_store
-**writes**: session_store
-**note**: 認証情報を検証しトークンを発行する
+
+認証情報を検証しトークンを発行する。
+
+#### Params
+
+| name | model | note |
+|---|---|---|
+| credentials | credential | ログインフォーム入力 |
+
+#### Returns
+
+| name | model |
+|---|---|
+| auth_token | token |
+
+#### Store access
+
+| access | store |
+|---|---|
+| read/write | session_store |
+| write | login_log_db |
 
 ### other_task
+
 **外部参照**: [auth.task.validate](../../auth/task/validate.md)
 ```
 
-- 同ファイル内のtask: signature（params/returns）・reads/writes・noteを列挙
+- 同ファイル内のtask: `note` をH3直下の本文として出力し、signature（params/returns）・reads/writesをtableで列挙する
 - 外部参照taskのみ: `**外部参照**:` でリンクを示し詳細は省略
-- `reads` / `writes` がない場合は該当行を省略
-- `note` がない場合は該当行を省略
+- `note` がない場合はH3直下の本文を省略する
+- `params` がない場合は `#### Params` セクションを省略する
+- `returns` がない場合は `#### Returns` セクションを省略する
+- `reads` / `writes` がない場合は `#### Store access` セクションを省略する
+- 同じstoreが `reads` と `writes` の両方に存在する場合、`Store access` の `access` は `read/write` として1行に集約する
+- `Params` の `note` がない場合は `—` を表示する
 
 ---
 

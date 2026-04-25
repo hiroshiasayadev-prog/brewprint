@@ -1,0 +1,10 @@
+groups:
+  - id: auth
+    label: 認証
+    modules: [auth]
+  - id: commerce
+    label: 商取引
+    modules: [cart, order, payment]
+  - id: catalog
+    label: カタログ
+    modules: [catalog, inventory]
