@@ -42,7 +42,7 @@
 | `id` / `type` | 全task YAML | task nodeの基本識別子をカバーする。 |
 | `main` | `yaml/*/task/*.yaml` | ファイル代表taskの明示をカバーする。 |
 | `endpoint` | `yaml/auth/task/login.yaml`, `yaml/catalog/task/get_items.yaml`, `yaml/cart/task/add_to_cart.yaml`, `yaml/order/task/checkout.yaml`, `yaml/payment/webhooks/task/process_payment.yaml` | API Table対象taskと内部専用taskの差分をカバーする。 |
-| `method` / `path` | endpoint task群 | leaf path方式をカバーする。`path: catalog_items`, `path: cart_items`, `path: checkout`, `path: stripe` など。 |
+| `method` / `path` | endpoint task群 | leaf path方式をカバーする。`path: login`, `path: catalog_items`, `path: cart_items`, `path: checkout`, `path: stripe` など。 |
 | `params` | `yaml/auth/task/login.yaml`, `yaml/cart/task/add_to_cart.yaml`, `yaml/order/task/checkout.yaml` など | model参照とprimitive参照（`str` / `int`）の両方をカバーする。 |
 | `returns` | `yaml/auth/task/login.yaml`, `yaml/catalog/task/get_items.yaml`, `yaml/order/task/checkout.yaml` など | 単一return asset導出をカバーする。returnsなしtaskも `process_order` / `process_payment` でカバーする。 |
 | `reads` | `yaml/auth/task/login.yaml`, `yaml/cart/task/validate_cart.yaml`, `yaml/order/task/checkout.yaml` など | 同モジュールstore参照とクロスモジュールstore参照をカバーする。 |
