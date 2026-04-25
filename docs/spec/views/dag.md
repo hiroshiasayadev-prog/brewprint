@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/views/dag.md
 status: confirmed
-last_updated: 2026-04-20
+last_updated: 2026-04-25
 summary: >
   DAG（Directed Acyclic Graph）のrenderルール定義。
   Processingレイヤーのノード・エッジをMermaid flowchartとして出力する際の
@@ -17,6 +17,7 @@ depends_on:
   - docs/adr/022-dag-node-shapes-and-edge-types.md
   - docs/adr/023-control-flow-scope-and-branch-entry.md
   - docs/adr/024-dag-boundary-nodes.md
+  - docs/adr/040-control-flow-step-wiring.md
 ---
 
 # DAG renderルール
@@ -449,12 +450,19 @@ flow:
       source_code: $params.source_code
   - fork: fan_out
     branches:
-      - [static_analysis]
-      - [dynamic_analysis]
-      - [dep_check]
+      - steps:
+          - step: static_analysis
+            params:
+              raw: fetch_data
+      - steps:
+          - step: dynamic_analysis
+            params:
+              raw: fetch_data
+      - steps:
+          - step: dep_check
+            params:
+              raw: fetch_data
     join: aggregate
-    params:
-      raw: fetch_data
 ```
 
 Mermaid出力:
@@ -687,8 +695,12 @@ flow:
     cases:
       - label: admin
         step: admin_flow
+        params:
+          user: fetch_user
       - label: user
         step: user_flow
+        params:
+          user: fetch_user
 ```
 
 Mermaid出力:

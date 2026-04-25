@@ -95,7 +95,6 @@ flowchart TD
   build_order --> draft_order([draft_order])
 
   build_order ==> parallel_processing{{parallel_processing}}
-  draft_order --> parallel_processing
   draft_order --> reserve_inventory[reserve_inventory]
   draft_order --> notify_payment_gateway[notify_payment_gateway]
 

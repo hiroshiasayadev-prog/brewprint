@@ -12,10 +12,9 @@
 #   reserve_inventory / notify_payment_gateway の returns は join のparamsで集約する形でのみ
 #   外部に出す。fork外から直接参照するwiringは書かない。
 #
-# spec gap (README.md に記録):
-#   - fork.params.draft_order が branches 内の各 step.params.draft_order にどう wiring されるか
-#     spec/edges.md §1-2 では明文化なし。本ファイルでは「fork.params の name と
-#     branch step の params の name が一致するものを暗黙 wiring する」前提で書く。
+# ADR-040:
+#   - fork.branches は steps: を持つbranch objectとして記述する。
+#   - branch内taskへのparams wiringは steps[].params に明示する。
 
 nodes:
   - id: checkout
@@ -122,8 +121,12 @@ flow:
 
   - fork: parallel_processing
     branches:
-      - [reserve_inventory]
-      - [notify_payment_gateway]
+      - steps:
+          - step: reserve_inventory
+            params:
+              draft_order: build_order
+      - steps:
+          - step: notify_payment_gateway
+            params:
+              draft_order: build_order
     join: finalize_checkout
-    params:
-      draft_order: build_order
