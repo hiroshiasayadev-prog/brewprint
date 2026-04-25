@@ -16,7 +16,5 @@ modules:
     include_submodules: false
   - module: order
     include_submodules: false
-  - module: payment
-    include_submodules: false
   - module: payment.webhooks
     include_submodules: false
