@@ -124,32 +124,42 @@ depends_on:
 
 実際のユースケースをYAMLで書いたもの。スキーマ設計のinputとして使う。
 
-### 命名
+### 命名・構造
+
+UCはディレクトリ単位で管理する。
 
 ```
 docs/uc/
-  NNN-タイトル.md   （例: 001-simple-dag.md）
+  NNN-タイトル/
+    README.md         ← 概要・ファイル構成・ドキュメント目次・TODO/spec gap
+    HANDOFF.md        ← 作業引継ぎメモ（一時的。完了後削除可）
+    TASKS-UC-NNN.md   ← spec gap・追跡タスク（一時的。完了後削除可）
+    yaml/             ← 実例YAML群
+    docs/
+      coverage.md     ← カバレッジ表
+      render-*.md     ← view種別ごとのrender期待値
 ```
 
-### フォーマット
+### フォーマット（README.md）
 
 ```markdown
-# NNN: タイトル
+# UC-NNN: タイトル
 
 ## 概要
 
 何を表現したいユースケースか。
 
-## YAML
+## ファイル構成
 
-​```yaml
-# 実例
-​```
+（ディレクトリツリー）
 
-## 期待するrender
+## ドキュメント
 
-- DAG図: （Mermaid）
-- signature: （MCPレスポンスイメージ）
+（docs/ 以下の各ファイルへのリンク表）
+
+## TODO / spec gap
+
+未解決事項は TASKS-UC-NNN.md を参照。
 ```
 
 ---
