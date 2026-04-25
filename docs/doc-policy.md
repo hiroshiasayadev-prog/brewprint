@@ -126,19 +126,47 @@ depends_on:
 
 ### 命名・構造
 
-UCはディレクトリ単位で管理する。
+UCはディレクトリ単位で管理する。各UCディレクトリがblueprintの「プロジェクト」単位に対応する。
 
 ```
 docs/uc/
   NNN-タイトル/
-    README.md         ← 概要・ファイル構成・ドキュメント目次・TODO/spec gap
-    HANDOFF.md        ← 作業引継ぎメモ（一時的。完了後削除可）
-    TASKS-UC-NNN.md   ← spec gap・追跡タスク（一時的。完了後削除可）
-    yaml/             ← 実例YAML群
+    README.md             ← 概要・ファイル構成・ドキュメント目次・TODO/spec gap
+    HANDOFF.md            ← 作業引継ぎメモ（一時的。完了後削除可）
+    TASKS-UC-NNN.md       ← spec gap・追跡タスク（一時的。完了後削除可）
+    render_index.yaml     ← render出力のグルーピング設定（人間が書く。省略時は1 module = 1 group）
+    yaml/                 ← 実例YAML群（single source of truth）
+    renders/              ← Go rendererによる自動生成物（人間が直接編集しない）
+      index.md            ← masterインデックス（全groupへのリンクテーブル）
+      {group-id}/
+        index.md          ← groupインデックス
+        dag-{task}.md
+        state-{state}.md
+        seq-{scenario}.md
+      _cross/             ← module横断view（ER / API Table）
+        er.md
+        api.md
     docs/
-      coverage.md     ← カバレッジ表
-      render-*.md     ← view種別ごとのrender期待値
+      coverage.md         ← カバレッジ表（人間が書く）
 ```
+
+`renders/` はGo rendererが `brewprint render ./yaml/ --out ./renders/` で生成する。
+goldenテスト目的でgitにcommitすることは許容するが、編集権限はGo rendererのみ。
+
+`render_index.yaml` でgroupを定義することで、renders/の粒度をプロジェクト規模に合わせて制御できる。
+
+```yaml
+# render_index.yaml（例）
+groups:
+  - id: auth
+    label: 認証
+    modules: [auth]
+  - id: commerce
+    label: 商取引
+    modules: [cart, order, payment]
+```
+
+詳細はADR-043を参照。
 
 ### フォーマット（README.md）
 

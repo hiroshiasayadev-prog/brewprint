@@ -43,8 +43,8 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
   - [x] `TASKS-UC-001.md` 作成
   - [x] `docs/coverage.md` / `docs/render-*.md` 記入完了
   - [x] UC-001で発見したspec gapの解消方針決定
+  - [ ] **golden fixture 再配置**（ADR-043）: `docs/render-*.md` を `renders/{group}/` 構造に移行する（Go実装と並行でよい）
   - 詳細: `docs/uc/001-ec-checkout-flow/TASKS-UC-001.md`
-  - 完了条件: docs配下の全render / view例記入完了
 
 ---
 
