@@ -1,0 +1,94 @@
+/*
+ * brewprint wireframe reference CSS
+ *
+ * This file defines the structural fixed CSS profile for wireframe HTML fragments.
+ * It intentionally avoids visual styling such as colors, borders, shadows,
+ * radius, font choices, and decorative spacing.
+ *
+ * Visual preview-only styling should live in a separate preview CSS file.
+ */
+
+.wf-col,
+.wf-row,
+.wf-grid,
+.wf-header,
+.wf-footer,
+.wf-sidebar,
+.wf-main,
+.wf-card,
+.wf-field,
+.wf-image,
+.wf-icon,
+.wf-text,
+.wf-badge,
+.wf-button,
+.wf-checkbox,
+.wf-radio,
+.wf-divider {
+  box-sizing: border-box;
+}
+
+.wf-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wf-row {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.wf-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.wf-header,
+.wf-footer,
+.wf-sidebar,
+.wf-main,
+.wf-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wf-text,
+.wf-badge {
+  display: inline-block;
+}
+
+.wf-button {
+  width: fit-content;
+}
+
+.wf-checkbox,
+.wf-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wf-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wf-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wf-divider {
+  width: 100%;
+}

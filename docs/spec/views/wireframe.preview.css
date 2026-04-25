@@ -1,0 +1,103 @@
+/*
+ * brewprint wireframe preview CSS
+ *
+ * This file is for human visual inspection of wireframe HTML fragments.
+ * It is intentionally separate from wireframe.css because it contains
+ * preview-only visual styling such as borders, backgrounds, and radius.
+ *
+ * Do not treat this file as part of the wireframe DSL semantics.
+ */
+
+:root {
+  --wf-preview-bg: #f6f7f9;
+  --wf-preview-surface: #ffffff;
+  --wf-preview-border: #cfd4dc;
+  --wf-preview-muted-border: #d8dde6;
+  --wf-preview-muted-bg: #f2f4f7;
+  --wf-preview-text: #1f2937;
+  --wf-preview-muted-text: #667085;
+}
+
+body {
+  margin: 0;
+  padding: 24px;
+  background: var(--wf-preview-bg);
+  color: var(--wf-preview-text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.wf-preview-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.wf-preview-frame {
+  min-height: 640px;
+  background: var(--wf-preview-surface);
+  border: 1px solid var(--wf-preview-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.wf-header,
+.wf-footer,
+.wf-sidebar,
+.wf-main,
+.wf-card {
+  border: 1px solid var(--wf-preview-muted-border);
+  background: var(--wf-preview-surface);
+}
+
+.wf-header,
+.wf-footer {
+  background: var(--wf-preview-muted-bg);
+}
+
+.wf-card {
+  border-radius: 6px;
+}
+
+.wf-image,
+.wf-icon {
+  border: 1px dashed var(--wf-preview-border);
+  background: var(--wf-preview-muted-bg);
+  color: var(--wf-preview-muted-text);
+}
+
+.wf-badge {
+  border: 1px solid var(--wf-preview-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: var(--wf-preview-muted-bg);
+}
+
+.wf-divider {
+  border: 0;
+  border-top: 1px solid var(--wf-preview-border);
+}
+
+.wf-button,
+.wf-field input,
+.wf-field select {
+  font: inherit;
+}
+
+.wf-button {
+  padding: 6px 12px;
+  border: 1px solid var(--wf-preview-border);
+  border-radius: 4px;
+  background: var(--wf-preview-surface);
+}
+
+.wf-field input,
+.wf-field select {
+  padding: 6px 8px;
+  border: 1px solid var(--wf-preview-border);
+  border-radius: 4px;
+  background: var(--wf-preview-surface);
+}
+
+.wf-checkbox,
+.wf-radio {
+  color: var(--wf-preview-text);
+}
