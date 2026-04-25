@@ -3,8 +3,8 @@
 #
 # カバーするパス:
 #   Step 1: processing --(payment_webhook_received / guard: succeeded)--> confirmed
-#     source=external（actor: stripe）, action=payment.task.process_payment
-#     → Actor→API（POST /webhooks/stripe）
+#     source=external（actor: stripe）, action=payment.webhooks.task.process_payment
+#     → Actor→API（POST /stripe）
 #
 # 検証ポイント:
 #   - source=external のシナリオ（Actor participant 生成、ADR-036）

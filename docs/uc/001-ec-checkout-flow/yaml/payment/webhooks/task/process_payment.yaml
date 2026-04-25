@@ -1,5 +1,5 @@
 # Stripe webhook 受信タスク（external eventハンドラ）
-# - endpoint: POST /api/payment/webhooks/stripe
+# - endpoint: POST /api/stripe
 # - module: payment.webhooks → task.path: stripe（single segment）
 # - writes: order.store.order_db（クロスモジュール、フルパス必須）
 # - params: event（payment_event = webhook payload）

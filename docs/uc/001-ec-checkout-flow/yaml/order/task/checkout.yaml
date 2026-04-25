@@ -1,5 +1,5 @@
 # チェックアウトタスク
-# - endpoint: POST /api/order/checkout
+# - endpoint: POST /api/checkout
 # - main: checkout（cart_id + shipping_address を受け取り pending_order を返す）
 # - sub task:
 #     build_order            … cart から draft order を組み立てて order_db に保存
@@ -88,7 +88,7 @@ nodes:
       model: order
     note: |
       Stripe API に決済要求を送信（外部HTTP呼び出し）。
-      決済の最終結果は payment.task.process_payment が webhook で受信。
+      決済の最終結果は payment.webhooks.task.process_payment が webhook で受信。
       ここでは送信完了のみを保証して draft_order を passthrough で返す。
 
   # --- 制御フローノード ---

@@ -151,7 +151,7 @@ nodes:
     payload:
       model: payment_event
     note: |
-      Stripe webhook受信（POST /api/webhooks/stripe）。
+      Stripe webhook受信（POST /api/stripe）。
       actor: stripe はプロジェクトglobalなactors.yamlに定義（ADR-031）。
       payload.status で成否を判定し、guardで分岐する。
 
