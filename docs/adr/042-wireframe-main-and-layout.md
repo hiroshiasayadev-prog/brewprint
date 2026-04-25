@@ -274,6 +274,6 @@ padding/gapは見た目の調整にも使えるが、wireframeでは「領域と
 - Go rendererは `layout` objectを解釈してHTML/CSSへ変換する。
 
 ## Evidence
-- commit: tbd
+- commit: 16fc169
 - impl commit: tbd
 - 参考: HTML semantic elements（main/header/footer/aside）、CSS Flexbox / Grid の基本layout概念

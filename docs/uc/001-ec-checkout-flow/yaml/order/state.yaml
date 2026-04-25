@@ -12,6 +12,7 @@
 # - ADR-019: stateノード設計、transitions セクション
 # - ADR-029: wireframe DSL
 # - ADR-031: actor はプロジェクトglobal（actors.yaml）
+# - ADR-042: wireframe main container / layout object
 
 nodes:
   # ── state ──
@@ -22,92 +23,182 @@ nodes:
     note: "カート内容を確認する画面（購入手続き開始前）"
     wireframe:
       type: col
+      layout:
+        width: fill
+        height: fill
+        min_height: 640
       children:
         - type: header
           id: cart_header
+          layout:
+            height: 56
+            padding:
+              x: 16
+              y: 8
+            justify: center
           children:
             - type: text
               id: cart_header_title
               label: "ショッピングカート"
-        - type: col
-          id: cart_body
+        - type: row
+          id: cart_shell
+          layout:
+            grow: true
+            gap: 16
           children:
-            - type: text
-              id: cart_items_label
-              label: "カート内アイテム"
-            - type: divider
-              id: items_divider
-            - type: row
-              id: item_row
+            - type: sidebar
+              id: cart_sidebar
+              layout:
+                width: 220
+                padding: 16
+                gap: 8
               children:
-                - type: image
-                  id: item_thumbnail
-                - type: col
-                  id: item_info_col
+                - type: text
+                  id: cart_summary_title
+                  label: "注文サマリー"
+                - type: text
+                  id: cart_total_label
+                  label: "合計金額"
+            - type: main
+              id: cart_main
+              layout:
+                grow: true
+                padding: 16
+                gap: 12
+                scroll: y
+              children:
+                - type: text
+                  id: cart_items_label
+                  label: "カート内アイテム"
+                - type: divider
+                  id: items_divider
+                - type: row
+                  id: item_row
+                  layout:
+                    gap: 12
+                    align: center
                   children:
-                    - type: text
-                      id: item_name
-                      label: "商品名"
-                    - type: badge
-                      id: shipping_badge
-                      label: "送料無料"
-            - type: button
-              id: proceed_button
-              label: "購入手続きへ"
-              fires: view_checkout
+                    - type: image
+                      id: item_thumbnail
+                      layout:
+                        width: 96
+                        height: 96
+                    - type: col
+                      id: item_info_col
+                      layout:
+                        grow: true
+                        gap: 8
+                      children:
+                        - type: text
+                          id: item_name
+                          label: "商品名"
+                        - type: badge
+                          id: shipping_badge
+                          label: "送料無料"
+                - type: button
+                  id: proceed_button
+                  label: "購入手続きへ"
+                  fires: view_checkout
         - type: footer
           id: cart_footer
+          layout:
+            height: 48
+            padding:
+              x: 16
+              y: 8
           children:
             - type: text
-              id: cart_total_label
-              label: "合計金額"
+              id: cart_footer_note
+              label: "価格は税込表示です"
 
   - id: checkout_screen
     type: state
     note: "配送先・支払い方法の入力画面"
     wireframe:
       type: col
+      layout:
+        width: fill
+        min_height: 640
       children:
-        - type: card
-          id: shipping_card
+        - type: header
+          id: checkout_header
+          layout:
+            height: 56
+            padding:
+              x: 16
+              y: 8
           children:
             - type: text
-              id: shipping_title
-              label: "配送先情報"
-            - type: grid
-              id: address_grid
-              cols: 2
+              id: checkout_header_title
+              label: "チェックアウト"
+        - type: main
+          id: checkout_main
+          layout:
+            grow: true
+            padding: 16
+            gap: 16
+            scroll: y
+          children:
+            - type: card
+              id: shipping_card
+              layout:
+                gap: 12
+                padding: 16
               children:
-                - type: input
-                  id: postal_code_input
-                  label: "郵便番号"
-                  placeholder: "123-4567"
-                  span: 1
-                - type: input
-                  id: prefecture_input
-                  label: "都道府県"
-                  span: 1
-                - type: input
-                  id: address_full_input
-                  label: "番地・建物名"
-                  placeholder: "東京都千代田区..."
-                  span: 2
-        - type: card
-          id: payment_card
+                - type: text
+                  id: shipping_title
+                  label: "配送先情報"
+                - type: grid
+                  id: address_grid
+                  cols: 2
+                  layout:
+                    gap: 12
+                  children:
+                    - type: input
+                      id: postal_code_input
+                      label: "郵便番号"
+                      placeholder: "123-4567"
+                      span: 1
+                    - type: input
+                      id: prefecture_input
+                      label: "都道府県"
+                      span: 1
+                    - type: input
+                      id: address_full_input
+                      label: "番地・建物名"
+                      placeholder: "東京都千代田区..."
+                      span: 2
+            - type: card
+              id: payment_card
+              layout:
+                gap: 12
+                padding: 16
+              children:
+                - type: text
+                  id: payment_title
+                  label: "支払い方法"
+                - type: select
+                  id: payment_method_select
+                  label: "支払い方法を選択"
+                - type: checkbox
+                  id: tos_agree_checkbox
+                  label: "利用規約に同意する"
+            - type: button
+              id: confirm_button
+              label: "注文を確定する"
+              fires: checkout_submitted
+        - type: footer
+          id: checkout_footer
+          layout:
+            height: 48
+            padding:
+              x: 16
+              y: 8
           children:
-            - type: text
-              id: payment_title
-              label: "支払い方法"
-            - type: select
-              id: payment_method_select
-              label: "支払い方法を選択"
-            - type: checkbox
-              id: tos_agree_checkbox
-              label: "利用規約に同意する"
-        - type: button
-          id: confirm_button
-          label: "注文を確定する"
-          fires: checkout_submitted
+            - type: button
+              id: back_to_cart_button
+              label: "カートに戻る"
+              fires: view_cart
 
   - id: processing
     type: state

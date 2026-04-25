@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/nodes.md
 status: confirmed
-last_updated: 2026-04-25
+last_updated: 2026-04-26
 summary: >
   brewprintの全ノード種別のフィールド定義。
   各フィールドの必須/任意・型・意味・出典ADRを記載する。
@@ -27,6 +27,7 @@ depends_on:
   - docs/adr/031-actor-global-definition.md
   - docs/adr/040-control-flow-step-wiring.md
   - docs/adr/034-internal-event-source.md
+  - docs/adr/042-wireframe-main-and-layout.md
 ---
 
 # ノード定義仕様
@@ -421,9 +422,9 @@ Applicationレイヤー。FSMの状態ノード。State Diagramで使用。`stor
 |-----------|------|-----|------|------|
 | `initial` | 任意 | bool | `true` でFSMの初期状態。1ファイルに1つ | ADR-019 |
 | `final` | 任意 | bool | `true` で終端状態（複数可） | ADR-019 |
-| `wireframe` | 任意 | object | この状態のUI骨格。単一rootのcontainerノード | ADR-029 |
+| `wireframe` | 任意 | object | この状態のUI骨格。単一rootのcontainerノード。`main` containerと`layout` objectを含む詳細はwireframe specで定義 | ADR-029, ADR-042 |
 
-`wireframe`フィールドの詳細は `docs/spec/views/wireframe.md` を参照。
+`wireframe`フィールドの詳細は `docs/spec/views/wireframe.md` を参照。`main` containerと`layout` objectの設計判断は `docs/adr/042-wireframe-main-and-layout.md` を参照。
 
 `state` と `store` の区別:
 

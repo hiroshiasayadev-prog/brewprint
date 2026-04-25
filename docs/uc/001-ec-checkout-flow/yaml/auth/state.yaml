@@ -12,6 +12,7 @@
 # - ADR-019: stateノード設計、transitions セクション
 # - ADR-029: wireframe DSL
 # - ADR-034: event source: internal 追加（task完了起点のevent）
+# - ADR-042: wireframe main container / layout object
 
 nodes:
   # ── state ──
@@ -26,38 +27,69 @@ nodes:
     note: "ログイン画面表示中。ユーザー入力待ち"
     wireframe:
       type: col
+      layout:
+        width: fill
+        min_height: 480
       children:
-        - type: text
-          id: login_title
-          label: "ログイン"
-        - type: input
-          id: username_input
-          label: "ユーザー名"
-          placeholder: "username"
-        - type: password
-          id: password_input
-          label: "パスワード"
-          placeholder: "パスワードを入力"
-        - type: button
-          id: submit_button
-          label: "ログイン"
-          fires: login_submitted
+        - type: main
+          id: login_main
+          layout:
+            grow: true
+            padding: 24
+            gap: 16
+            align: stretch
+            justify: center
+          children:
+            - type: card
+              id: login_card
+              layout:
+                width: 360
+                gap: 12
+                padding: 16
+              children:
+                - type: text
+                  id: login_title
+                  label: "ログイン"
+                - type: input
+                  id: username_input
+                  label: "ユーザー名"
+                  placeholder: "username"
+                - type: password
+                  id: password_input
+                  label: "パスワード"
+                  placeholder: "パスワードを入力"
+                - type: button
+                  id: submit_button
+                  label: "ログイン"
+                  fires: login_submitted
 
   - id: loading
     type: state
     note: "認証API呼び出し中。ユーザー操作はブロック"
     wireframe:
       type: col
+      layout:
+        width: fill
+        min_height: 320
       children:
-        - type: icon
-          id: loading_spinner
-        - type: text
-          id: loading_text
-          label: "認証中..."
-        - type: button
-          id: cancel_button
-          label: "キャンセル"
-          disabled: true
+        - type: main
+          id: loading_main
+          layout:
+            grow: true
+            padding: 24
+            gap: 12
+            align: center
+            justify: center
+          children:
+            - type: icon
+              id: loading_spinner
+            - type: text
+              id: loading_text
+              label: "認証中..."
+            - type: button
+              id: cancel_button
+              label: "キャンセル"
+              disabled: true
 
   - id: authenticated
     type: state
