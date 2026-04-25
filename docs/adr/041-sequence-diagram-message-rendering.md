@@ -156,6 +156,6 @@ UI / Actor への応答矢印は、外部境界に対するHTTP応答を示す�
 - Sequence Diagram renderer実装では、scenario step indexを保持したまま各messageを生成する必要がある
 
 ## Evidence
-- commit: tbd
+- commit: fa3cc7c
 - impl commit: tbd
 - 参考: 特になし

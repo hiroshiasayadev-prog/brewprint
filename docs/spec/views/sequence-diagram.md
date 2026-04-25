@@ -207,7 +207,8 @@ sequenceDiagram
   [participants: 必要なもののみ宣言（Actor / UI / API / DB）]
 
   [起点→API矢印: event.source に応じて分岐 →「矢印ラベル」表参照。labelは {step_index}. {label}]
-  API->>DB: {step_index}. reads / writes
+  API->>DB: {step_index}. reads   # reads がある場合
+  API->>DB: {step_index}. writes  # writes がある場合
   [API応答矢印: source=ui / external のみ描画。internal / er は描画しない。labelは {step_index}. {label}]
 ```
 
