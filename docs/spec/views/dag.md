@@ -38,7 +38,7 @@ depends_on:
 ```markdown
 # {メインノードID}
 
-**API**: [{method} {path}](../views/api-table.md)
+**API**: [{method} {path}](../_cross/api.md)
 
 {メインノードのnote}
 
@@ -54,10 +54,10 @@ flowchart TD
 ```
 
 - H1 = メインノードの `id`
-- **API行** = メインノードが `endpoint: true` の場合のみ出力。`note` の前に置く
+- **API行** = メインノードが `endpoint: true` の場合のみ出力。`note` の前に置く。リンク先は同じ `renders/` 配下の `_cross/api.md` とする
 - 説明文 = メインノードの `note`。`note` がない場合は省略
 - Mermaid記法: `flowchart TD`（上から下）
-- **Tasks詳細セクション** = Mermaid図の後に続く。各taskのsignature・reads/writes・noteを一覧する
+- **Tasks詳細セクション** = Mermaid図の後に続く。task / fork / join / branch のsignature・reads/writes・noteを一覧する
 
 ### Tasks詳細セクションのフォーマット
 
@@ -92,7 +92,8 @@ flowchart TD
 **外部参照**: [auth.task.validate](../../auth/task/validate.md)
 ```
 
-- 同ファイル内のtask: `note` をH3直下の本文として出力し、signature（params/returns）・reads/writesをtableで列挙する
+- 同ファイル内のtask / fork / join / branch: `note` をH3直下の本文として出力し、signature（params/returns）・reads/writesをtableで列挙する
+- メインノードの `note` はH1直下の説明文として既に出力されるため、`## Tasks` 内のメインノードH3直下では省略する
 - 外部参照taskのみ: `**外部参照**:` でリンクを示し詳細は省略
 - `note` がない場合はH3直下の本文を省略する
 - `params` がない場合は `#### Params` セクションを省略する

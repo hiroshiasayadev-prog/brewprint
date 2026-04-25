@@ -94,8 +94,8 @@ masterの `renders/index.md` はgroup一覧をテーブル形式で示す。
 
 | group | DAG | State | Sequence | ER | API |
 |---|---|---|---|---|---|
-| auth | [login](auth/dag-login.md) | [auth](auth/state-auth.md) | - | - | - |
-| commerce | [checkout](commerce/dag-checkout.md) ... | ... | ... | - | - |
+| [認証](auth/index.md) | 1 | 1 | - | - | - |
+| [商取引](commerce/index.md) | 3 | 1 | - | - | - |
 | *(cross)* | - | - | - | [er](_cross/er.md) | [api](_cross/api.md) |
 ```
 

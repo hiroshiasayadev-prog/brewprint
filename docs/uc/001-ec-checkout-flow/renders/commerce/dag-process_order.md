@@ -46,9 +46,6 @@ flowchart TD
 
 ### process_order
 
-在庫状況に応じて confirm（在庫充足）/ cancel（在庫不足）に分岐する。
-returns なし（各分岐先 task が order_db を更新して終端、DAG的には END へfloating）。
-
 #### Params
 
 | name | model | note |

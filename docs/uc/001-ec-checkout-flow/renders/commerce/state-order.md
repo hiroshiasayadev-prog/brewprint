@@ -32,5 +32,5 @@ stateDiagram-v2
 |---|---|---|---|
 | view_checkout | ui | — | 「購入手続きへ」ボタンクリックによる画面遷移 |
 | view_cart | ui | — | カート画面への復帰（failed からの再試行パス） |
-| checkout_submitted | ui | — | 「注文を確定する」ボタンクリック。送信データはshipping情報・支払い方法選択・同意フラグ・カート内容などの複合だが、brewprintのpayloadは単一model参照のため、ここではpayloadを省略してnoteで記述する。実装上はorder.task.checkoutのparams（cart, user_id 等）が対応する。 |
+| checkout_submitted | ui | — | 「注文を確定する」ボタンクリック。送信データはshipping情報・支払い方法選択・同意フラグ・カート内容などの複合だが、brewprintのpayloadは単一model参照のため、ここではpayloadを省略してnoteで記述する。実装上はorder.task.checkoutのparams（cart_id, shipping_address 等）が対応する。 |
 | payment_webhook_received | external | stripe | Stripe webhook受信（POST /api/stripe）。actor: stripe はプロジェクトglobalなactors.yamlに定義（ADR-031）。payload.status で成否を判定し、guardで分岐する。 |

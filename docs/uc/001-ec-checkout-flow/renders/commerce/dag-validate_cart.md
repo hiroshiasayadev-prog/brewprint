@@ -36,10 +36,6 @@ flowchart TD
 
 ### validate_cart
 
-カート内アイテムを 1 件ずつ validate_item で検証し、
-検証通過したアイテムのリストを返す。
-mode: sequential（1件ずつ順に処理。後続でロールバック単位を揃えるため）
-
 #### Params
 
 | name | model | note |

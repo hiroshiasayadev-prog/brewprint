@@ -60,9 +60,6 @@ flowchart TD
 
 ### checkout
 
-カート確定 → 注文レコード作成 → 在庫確保 + 決済要求送信 を並列実行し、
-pending状態の注文（決済webhook待ち）を返す。
-
 #### Params
 
 | name | model | note |
