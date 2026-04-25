@@ -14,9 +14,10 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
 
 ## 仕様設計（ADR + spec）
 
-- [x] **ADR-001〜039 完了**
+- [x] **ADR-001〜041 完了**
   - ノード種別・エッジ設計・名前解決・各view renderルール・wireframe DSL・シナリオスキーマ等を確定
-  - 最新: ADR-039（ER図横断view YAML: `as: er_diagram`）
+  - ADR-040: 制御フロー内step wiring明示化（`fork.branches[].steps[].params` / `branch.cases[].params`）
+  - ADR-041: Sequence Diagram message rendering（step index prefix / DB片方向 / autonumber不使用）
 
 - [x] **spec/nodes.md** — 全ノード種別フィールド定義 (status: confirmed)
 
@@ -33,13 +34,17 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
 
 ## ユースケース
 
-- [~] **UC-001: EC Checkout Flow**（`docs/uc/001-ec-checkout-flow/`）
+- [x] **UC-001: EC Checkout Flow**（`docs/uc/001-ec-checkout-flow/`）
   - [x] YAML群（actors / model / store / task / state / views）全ファイル作成完了
   - [x] `views/scenarios/checkout_flow.yaml` — 2 step構成（action なし遷移 + fork+join taskのADR-037/038検証）
   - [x] `views/scenarios/payment_webhook_flow.yaml`
   - [x] `views/api_table.yaml` / `views/er.yaml`
-  - [ ] **README.md 未作成**（10個のrender例を含む。HANDOFF.md §5参照）
-  - 完了条件: README.md 作成 → HANDOFF.md 削除
+  - [x] `README.md` 骨格作成
+  - [x] `TASKS-UC-001.md` 作成
+  - [x] `docs/coverage.md` / `docs/render-*.md` 記入完了
+  - [x] UC-001で発見したspec gapの解消方針決定
+  - 詳細: `docs/uc/001-ec-checkout-flow/TASKS-UC-001.md`
+  - 完了条件: docs配下の全render / view例記入完了
 
 ---
 

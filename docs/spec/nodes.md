@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/nodes.md
 status: confirmed
-last_updated: 2026-04-24
+last_updated: 2026-04-25
 summary: >
   brewprintの全ノード種別のフィールド定義。
   各フィールドの必須/任意・型・意味・出典ADRを記載する。
@@ -25,6 +25,7 @@ depends_on:
   - docs/adr/026-fk-cardinality-and-nm-relation.md
   - docs/adr/028-api-table-route-composition.md
   - docs/adr/031-actor-global-definition.md
+  - docs/adr/040-control-flow-step-wiring.md
   - docs/adr/034-internal-event-source.md
 ---
 
@@ -471,19 +472,10 @@ Processingレイヤー。並列分岐。後続パスを**すべて並列実行**
 ```yaml
 - id: fan_out
   type: fork
-  params:
-    - name: request
-      model: analysis_request
   note: "静的解析・動的解析・依存チェックを並列実行する"
 ```
 
-### フィールド定義
-
-| フィールド | 必須 | 型 | 内容 | 出典 |
-|-----------|------|-----|------|------|
-| `params` | 任意 | list\<param\> | 各ブランチへの共通入力 | ADR-012 |
-
-`fork` 単体での使用は不正。対応する `join` が必須（ADR-012）。wiringはflow:セクションで記述（ADR-015）。
+`fork` 単体での使用は不正。対応する `join` が必須（ADR-012）。branch内taskへの入力は `flow:` セクションの `branches[].steps[].params` に明示する（ADR-040）。
 
 ---
 

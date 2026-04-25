@@ -64,7 +64,6 @@ docs/uc/001-ec-checkout-flow/
     payment/
       model/
         payment_event.yaml
-      task/
       webhooks/
         task/
           process_payment.yaml
