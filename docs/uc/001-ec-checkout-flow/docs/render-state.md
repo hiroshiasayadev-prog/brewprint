@@ -37,7 +37,7 @@ stateDiagram-v2
   failed --> cart : view_cart
   checkout_screen --> processing : checkout_submitted / order.task.checkout
   processing --> _choice_processing_payment_webhook_received : payment_webhook_received
-  _choice_processing_payment_webhook_received --> confirmed : [payload.status == 'succeeded'] / payment.task.process_payment
+  _choice_processing_payment_webhook_received --> confirmed : [payload.status == 'succeeded'] / payment.webhooks.task.process_payment
   _choice_processing_payment_webhook_received --> failed : [payload.status == 'failed']
 ```
 

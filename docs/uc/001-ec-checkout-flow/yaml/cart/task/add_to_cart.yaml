@@ -1,5 +1,5 @@
 # カートへの商品追加タスク
-# - endpoint: POST /api/cart/items
+# - endpoint: POST /api/cart_items
 # - reads: catalog.store.item_collection（クロスモジュール、フルパス必須）
 # - writes: cart_session（同モジュール、bare ID参照）
 # - params: cart_id / item_id / qty（primitive 引数）
@@ -11,7 +11,7 @@ nodes:
     main: true
     endpoint: true
     method: POST
-    path: items
+    path: cart_items
     params:
       - name: cart_id
         model: str

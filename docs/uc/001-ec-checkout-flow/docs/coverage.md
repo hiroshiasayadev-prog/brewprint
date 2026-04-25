@@ -29,11 +29,11 @@
 | `$params.field` | `yaml/order/task/checkout.yaml`, `yaml/order/task/process_order.yaml`, `yaml/cart/task/validate_cart.yaml` | main task paramsからflowへ入力を注入する境界シジルをカバーする。 |
 | `foreach` | `yaml/cart/task/validate_cart.yaml` | `foreach: validate_item`, `mode: sequential`, `params: { cart_item: $item }`, `returns:` をカバーする。 |
 | `$item` | `yaml/cart/task/validate_cart.yaml` | foreachの現在要素をapply先taskへ渡す記法をカバーする。 |
-| `foreach.over` | `yaml/cart/task/validate_cart.yaml` | `over: $params.cart_items` を使用。`over` に `$params.field` を許可するかは spec gap として `TASKS-UC-001.md` で追跡中。 |
-| `fork` / `branches` / `join` | `yaml/order/task/checkout.yaml` | `branches: [[reserve_inventory], [notify_payment_gateway]]` と `join: finalize_checkout` をカバーする。 |
-| `fork.params` | `yaml/order/task/checkout.yaml` | `draft_order: build_order` をbranches内stepへ渡す前提を使用。暗黙wiring規則は spec gap として追跡中。 |
-| `branch` / `cases` | `yaml/order/task/process_order.yaml` | `cases[].label` と `cases[].step` による排他分岐をカバーする。 |
-| `branch.params` | `yaml/order/task/process_order.yaml` | `order: check_inventory` をcase先taskへ渡す前提を使用。暗黙wiring規則は spec gap として追跡中。 |
+| `foreach.over` | `yaml/cart/task/validate_cart.yaml` | `over: $params.cart_items` を使用。`node_id` と `$params.field` の両方を許可する現行 `edges.md` に追随済み。 |
+| `fork` / `branches` / `join` | `yaml/order/task/checkout.yaml` | ADR-040 の `branches[].steps[].step` + `steps[].params` 形式と `join: finalize_checkout` をカバーする。 |
+| `fork.branches[].steps[].params` | `yaml/order/task/checkout.yaml` | fork内taskへのparams wiringを、暗黙伝播ではなく各stepの `params:` で明示する形式をカバーする。 |
+| `branch` / `cases` | `yaml/order/task/process_order.yaml` | `cases[].label` / `cases[].step` / `cases[].params` による排他分岐をカバーする。 |
+| `branch.params` / `cases[].params` | `yaml/order/task/process_order.yaml` | `branch.params` はbranch node自身の判定入力、`cases[].params` はcase先taskへのwiringとして分離するADR-040形式をカバーする。 |
 
 ## task内フィールド
 
@@ -42,7 +42,7 @@
 | `id` / `type` | 全task YAML | task nodeの基本識別子をカバーする。 |
 | `main` | `yaml/*/task/*.yaml` | ファイル代表taskの明示をカバーする。 |
 | `endpoint` | `yaml/auth/task/login.yaml`, `yaml/catalog/task/get_items.yaml`, `yaml/cart/task/add_to_cart.yaml`, `yaml/order/task/checkout.yaml`, `yaml/payment/webhooks/task/process_payment.yaml` | API Table対象taskと内部専用taskの差分をカバーする。 |
-| `method` / `path` | endpoint task群 | leaf path方式をカバーする。`path: items`, `path: checkout`, `path: stripe` など。 |
+| `method` / `path` | endpoint task群 | leaf path方式をカバーする。`path: catalog_items`, `path: cart_items`, `path: checkout`, `path: stripe` など。 |
 | `params` | `yaml/auth/task/login.yaml`, `yaml/cart/task/add_to_cart.yaml`, `yaml/order/task/checkout.yaml` など | model参照とprimitive参照（`str` / `int`）の両方をカバーする。 |
 | `returns` | `yaml/auth/task/login.yaml`, `yaml/catalog/task/get_items.yaml`, `yaml/order/task/checkout.yaml` など | 単一return asset導出をカバーする。returnsなしtaskも `process_order` / `process_payment` でカバーする。 |
 | `reads` | `yaml/auth/task/login.yaml`, `yaml/cart/task/validate_cart.yaml`, `yaml/order/task/checkout.yaml` など | 同モジュールstore参照とクロスモジュールstore参照をカバーする。 |
@@ -74,7 +74,7 @@
 | `state.initial` | `auth.state: idle`, `order.state: cart`, `inventory.state: in_stock` | 初期状態をカバーする。 |
 | `state.final` | `auth.state: authenticated/error`, `order.state: confirmed/failed` | 終端状態をカバーする。 |
 | `transitions` | `yaml/auth/state.yaml`, `yaml/order/state.yaml`, `yaml/inventory/state.yaml` | FSM遷移定義をカバーする。 |
-| `transition.action` | `auth.state -> auth.task.login`, `order.state -> order.task.checkout`, `order.state -> payment.task.process_payment` | Application → Processing の参照をカバーする。 |
+| `transition.action` | `auth.state -> auth.task.login`, `order.state -> order.task.checkout`, `order.state -> payment.webhooks.task.process_payment` | Application → Processing の参照をカバーする。 |
 | actionなしtransition | `order.state: cart -> checkout_screen`, `auth.state: idle -> login_screen` | sequence diagram上のUI self-message対象をカバーする。 |
 | `guard` | `auth/state.yaml`, `order/state.yaml`, `inventory/state.yaml` | 単独guardと同一 `(from, on)` のguard分岐をカバーする。 |
 | `event.source: ui` | `auth/state.yaml`, `order/state.yaml` | UI起点eventをカバーする。 |

@@ -249,6 +249,6 @@ case内に `steps:` listを導入すると、ADR-023の「branchはエントリ�
 - UC-001 のDAG render期待値は、data線を各branch/case taskへ明示的に引く形へ更新する
 
 ## Evidence
-- commit: tbd
+- commit: 3b91f73
 - impl commit: tbd
 - 参考: Airflow / Prefect の workflow 内 task call における明示的引数渡し慣習

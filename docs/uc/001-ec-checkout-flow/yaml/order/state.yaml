@@ -180,11 +180,11 @@ transitions:
   - from: processing
     on: payment_webhook_received
     to: confirmed
-    action: payment.task.process_payment
+    action: payment.webhooks.task.process_payment
     guard: "payload.status == 'succeeded'"
     note: |
       Stripe決済成功。
-      payment.task.process_payment（payment/task/process_payment.yaml、クロスファイル）で
+      payment.webhooks.task.process_payment（payment/webhooks/task/process_payment.yaml、クロスファイル）で
       order_db に反映する。
 
   # 決済失敗

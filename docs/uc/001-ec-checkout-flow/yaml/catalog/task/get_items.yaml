@@ -1,5 +1,5 @@
 # 商品一覧取得タスク
-# - endpoint: GET /api/catalog/items
+# - endpoint: GET /api/catalog_items
 # - reads: item_collection（同モジュール内、bare ID参照）
 # - returns: item_list（list kind カバレッジ）
 
@@ -9,7 +9,7 @@ nodes:
     main: true
     endpoint: true
     method: GET
-    path: items
+    path: catalog_items
     returns:
       name: items
       model: item_list
