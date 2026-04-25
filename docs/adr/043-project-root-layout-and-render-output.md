@@ -151,6 +151,6 @@ ADR-027のmodule nestingとの整合（ネストしたmoduleを指定したと�
 - CLIインターフェースはGo実装ADRで規定する。
 
 ## Evidence
-- commit: tbd
+- commit: 3200fa2
 - impl commit: tbd
 - 参考: 特になし

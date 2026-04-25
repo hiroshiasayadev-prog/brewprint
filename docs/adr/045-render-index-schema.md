@@ -160,6 +160,6 @@ ADR-027のmodule nestingは名前解決のためのルールであり、grouping
 - `docs/spec/` への追記は不要（render_index.yamlはbrewprint YAML仕様の対象外のツール設定ファイル）。
 
 ## Evidence
-- commit: tbd
+- commit: 3200fa2
 - impl commit: tbd
 - 参考: 特になし

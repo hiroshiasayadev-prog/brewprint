@@ -86,6 +86,6 @@ Mermaid flowchart は edge label をサポートしているため、追加の�
 - 既存の `==>` control flow edge には影響しない
 
 ## Evidence
-- commit: tbd
+- commit: 5f5a945
 - impl commit: tbd
 - 参考: Mermaid flowchart edge label、UML Activity Diagram ObjectFlow、永続化層へのread/write access表現
