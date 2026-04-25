@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/views/sequence-diagram.md
 status: confirmed
-last_updated: 2026-04-24
+last_updated: 2026-04-25
 summary: >
   Sequence DiagramのシナリオファイルYAML schemaとrenderルールを定義する。
   as: sequence_diagram のview定義ファイルを入力とし、
@@ -19,6 +19,7 @@ depends_on:
   - docs/adr/036-sequence-diagram-arrow-rules-per-source.md
   - docs/adr/037-sequence-diagram-action-less-transition.md
   - docs/adr/038-sequence-diagram-sub-task-traversal.md
+  - docs/adr/041-sequence-diagram-message-rendering.md
 ---
 
 # Sequence Diagram renderルール
@@ -90,7 +91,7 @@ transitions:
   - from: processing
     on: payment_webhook_received
     to: confirmed
-    action: payment.task.process_payment
+    action: payment.webhooks.task.process_payment
     guard: "payload.status == 'succeeded'"
 
   - from: processing
@@ -158,6 +159,10 @@ task実行に伴うDBアクセスは上記と独立:
 |------|--------|
 | API → DB | `reads` または `writes` |
 
+DBアクセスは `API->>DB` の片方向のみ描画し、`DB-->>API` の戻り矢印は描画しない。戻り値の詳細はDB操作table側で確認する。
+
+すべてのmessage labelには、シナリオ `steps:` の1-origin indexを `{step_index}. {label}` 形式でprefixする。これはMermaidの `autonumber` ではなくbrewprint rendererが付与する。
+
 ### ラベル選択の原則
 
 - **`METHOD path`（`ui` action あり / `external`）**: HTTPリクエストの物理的到達を表す。呼び出し元（UI / Actor）が存在し、応答矢印 `API→UI` / `API→Actor` も描画する
@@ -201,10 +206,9 @@ sequence diagramはhappy pathのみを描画する。例外・エラーフロー
 sequenceDiagram
   [participants: 必要なもののみ宣言（Actor / UI / API / DB）]
 
-  [起点→API矢印: event.source に応じて分岐 →「矢印ラベル」表参照]
-  API->>DB: reads / writes
-  DB-->>API:
-  [API応答矢印: source=ui / external のみ描画。internal / er は描画しない]
+  [起点→API矢印: event.source に応じて分岐 →「矢印ラベル」表参照。labelは {step_index}. {label}]
+  API->>DB: {step_index}. reads / writes
+  [API応答矢印: source=ui / external のみ描画。internal / er は描画しない。labelは {step_index}. {label}]
 ```
 
 ## DB操作
@@ -278,10 +282,9 @@ sequenceDiagram
   participant API as auth.task.login
   participant DB
 
-  UI->>API: POST /login
-  API->>DB: reads
-  DB-->>API: 
-  API-->>UI: auth_token
+  UI->>API: 1. POST /login
+  API->>DB: 1. reads
+  API-->>UI: 1. auth_token
 ```
 
 #### DB操作table
@@ -297,13 +300,13 @@ sequenceDiagram
 「シナリオファイルの構造 > guard分岐を含むシナリオの例」の `scenarios/payment_webhook_success.yaml` に対応するMermaid出力。task定義は以下を想定する:
 
 ```yaml
-# payment/tasks.yaml（抜粋）
+# payment/webhooks/task/process_payment.yaml（抜粋）
 nodes:
   - id: process_payment
     type: task
     endpoint: true
     method: POST
-    path: /webhooks/stripe
+    path: stripe
     writes:
       - order_db
 ```
@@ -312,17 +315,16 @@ nodes:
 
 ```mermaid
 sequenceDiagram
-  participant Actor as stripe
-  participant API as payment.task.process_payment
+  participant Stripe as stripe
+  participant API as payment.webhooks.task.process_payment
   participant DB
 
-  Actor->>API: POST /webhooks/stripe
-  API->>DB: writes
-  DB-->>API: 
-  API-->>Actor: 200 OK
+  Stripe->>API: 1. POST /stripe
+  API->>DB: 1. writes
+  API-->>Stripe: 1. 200 OK
 ```
 
-- `Actor` はeventの `actor: stripe`（ADR-031のglobal actor）から解決
+- `Stripe` participant はeventの `actor: stripe`（ADR-031のglobal actor）から解決
 - UI participantは `source=external` のため生成されない
 - API応答矢印 `API→Actor` のラベルは `returns` 未定義のため `200 OK`
 
@@ -330,7 +332,7 @@ sequenceDiagram
 
 | step | task | sub_task | store | 操作 |
 |------|------|----------|-------|------|
-| 1 | payment.task.process_payment | - | order_db | writes |
+| 1 | payment.webhooks.task.process_payment | - | order_db | writes |
 
 ---
 

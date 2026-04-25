@@ -14,13 +14,11 @@ sequenceDiagram
   participant API as order.task.checkout
   participant DB
 
-  UI->>UI: view_checkout
-  UI->>API: POST /checkout
-  API->>DB: reads
-  DB-->>API:
-  API->>DB: writes
-  DB-->>API:
-  API-->>UI: pending_order
+  UI->>UI: 1. view_checkout
+  UI->>API: 2. POST /checkout
+  API->>DB: 2. reads
+  API->>DB: 2. writes
+  API-->>UI: 2. pending_order
 ```
 
 DB操作:
@@ -42,14 +40,13 @@ DB操作:
 
 ```mermaid
 sequenceDiagram
-  participant Actor as stripe
+  participant Stripe as stripe
   participant API as payment.webhooks.task.process_payment
   participant DB
 
-  Actor->>API: POST /stripe
-  API->>DB: writes
-  DB-->>API:
-  API-->>Actor: 200 OK
+  Stripe->>API: 1. POST /stripe
+  API->>DB: 1. writes
+  API-->>Stripe: 1. 200 OK
 ```
 
 DB操作:
