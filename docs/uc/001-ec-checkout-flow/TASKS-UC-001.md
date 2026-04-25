@@ -9,25 +9,25 @@ UC-001 固有の残作業・render例・spec gap を追跡するための作業�
 
 - [x] YAML群 作成完了
 - [x] README.md 骨格作成
-- [x] README.md カバレッジ表を記入
-- [ ] README.md render / view例を記入
+- [ ] docs/coverage.md を現行specに追随
+- [ ] docs/render-*.md のTODOを解消
 - [x] UC-001で発見したspec gapの扱いを確定
 - [ ] 完了後に HANDOFF.md を削除
 
 ---
 
-## README.md 残作業
+## 残作業
 
-### カバレッジ
+### カバレッジ（docs/coverage.md）
 
 - [x] ノード種別
-- [x] flow構文
+- [ ] flow構文（ADR-040 / foreach.over `$params.field` 解決済み状態へ更新）
 - [x] task内フィールド
 - [x] model内フィールド
 - [x] state / event / wireframe
 - [x] view定義
 
-### render / view例
+### render / view例（docs/render-*.md）
 
 - [x] DAG: `auth.task.login`
 - [x] DAG: `cart.task.validate_cart`
@@ -37,9 +37,9 @@ UC-001 固有の残作業・render例・spec gap を追跡するための作業�
 - [x] State Diagram: order
 - [x] State Diagram: inventory
 - [x] ER Diagram: ec全体
-- [ ] Sequence Diagram: checkout_flow
-- [ ] Sequence Diagram: payment_webhook_flow
-- [ ] API Table
+- [ ] Sequence Diagram: checkout_flow（TODO placeholderあり）
+- [ ] Sequence Diagram: payment_webhook_flow（TODO placeholderあり）
+- [ ] API Table（TODO placeholderあり）
 
 ---
 
@@ -80,7 +80,7 @@ UC-001 固有の残作業・render例・spec gap を追跡するための作業�
 
 ## 完了条件
 
-- [ ] README.md のカバレッジ表が埋まっている
-- [ ] README.md の全render / view例が埋まっている
+- [ ] docs/coverage.md が現行specに追随している
+- [ ] docs/render-*.md の全render / view例がTODOなしで埋まっている
 - [x] spec gap を ADR / spec / TASKS のどれで扱うか決まっている
 - [ ] `HANDOFF.md` を削除済み
