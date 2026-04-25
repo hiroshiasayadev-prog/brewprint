@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/api-table.md
 status: draft
-last_updated: 2026-04-21
+last_updated: 2026-04-25
 summary: >
   API Table viewのYAML schemaとrenderルール定義。
   endpoint taskの収集範囲・route構成・Markdown table出力形式を定義する。
@@ -79,6 +79,7 @@ API Tableの出力sectionは `modules[]` の各要素ごとに1つ持つ。
 - `include_submodules: false` の場合、そのmodule直下のendpoint taskのみを対象にする
 - `include_submodules: true` の場合、配下submoduleのendpoint taskも同一sectionに含める
 - submoduleごとに別sectionは切らない
+- 収集対象endpointが0件のmodule-entryはsectionを出力しない。parser error / warning にはしない
 
 例: `app.auth` をsection起点moduleとし、`app.auth.oauth` を含む場合
 
@@ -159,8 +160,8 @@ section内でのtask表示名は、section起点moduleからの相対pathを使�
 
 ## Routes
 
-- [`/{route-1}`](#{anchor})
-- [`/{route-2}`](#{anchor})
+- [{module-1}](#{module-1-anchor})
+- [{module-2}](#{module-2-anchor})
 
 ## {module-1}
 
@@ -186,6 +187,8 @@ section内でのtask表示名は、section起点moduleからの相対pathを使�
 
 `## Routes` には、各sectionの見出しリンクを列挙する。
 リンクの表示名はsection見出しと同じ値を使う。
+Routes一覧の順序は、出力されるsectionの順序と同じく `modules[]` の記述順に従う。収集対象endpointが0件で省略されたsectionはRoutes一覧にも出力しない。
+リンク先anchorは、Markdown rendererの見出しID生成規則に従う。
 
 ### section見出し
 

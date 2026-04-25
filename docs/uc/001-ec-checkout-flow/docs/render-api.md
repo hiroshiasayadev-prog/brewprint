@@ -7,13 +7,20 @@
 - `yaml/views/api_table.yaml`
 - endpoint task群
 
+### Render結果
+
+```markdown
+# ec_api
+
+ECサイトAPI一覧
+
 ## Routes
 
-- `/api/login`
-- `/api/catalog_items`
-- `/api/cart_items`
-- `/api/checkout`
-- `/api/stripe`
+- [auth](#auth)
+- [catalog](#catalog)
+- [cart](#cart)
+- [order](#order)
+- [payment.webhooks](#paymentwebhooks)
 
 ## auth
 
@@ -43,4 +50,5 @@
 
 | task id | method | path | params | returns |
 |---|---|---|---|---|
-| stripe | POST | /api/stripe | payment_event | - |
+| process_payment | POST | /api/stripe | payment_event | - |
+```
