@@ -18,10 +18,10 @@ flowchart TD
   _start([Start]) ==> login[login]
   form --> login
 
-  user_db[(user_db)] --> login
-  request_context_store[(request_context_store)] --> login
-  login --> session_store[(session_store)]
-  login --> login_log_db[(login_log_db)]
+  user_db[(user_db)] -- "read" --> login
+  request_context_store[(request_context_store)] -- "read" --> login
+  login -- "write" --> session_store[(session_store)]
+  login -- "write" --> login_log_db[(login_log_db)]
 
   login --> auth_token
   login ==> _end([End])
@@ -54,8 +54,8 @@ flowchart TD
   _start([Start]) ==> validate_item["↻ validate_item"]
   cart_items --"foreach"--> validate_item
 
-  item_collection[(catalog.store.item_collection)] --> validate_item
-  inventory_db[(catalog.store.inventory_db)] --> validate_item
+  item_collection[(catalog.store.item_collection)] -- "read" --> validate_item
+  inventory_db[(catalog.store.inventory_db)] -- "read" --> validate_item
 
   validate_item --> validated_items
   validate_item ==> _end([End])
@@ -89,9 +89,9 @@ flowchart TD
   _start([Start]) ==> build_order[build_order]
   cart_id --> build_order
   shipping_address --> build_order
-  cart_session[(cart.store.cart_session)] --> build_order
-  user_db[(auth.store.user_db)] --> build_order
-  build_order --> order_db[(order_db)]
+  cart_session[(cart.store.cart_session)] -- "read" --> build_order
+  user_db[(auth.store.user_db)] -- "read" --> build_order
+  build_order -- "write" --> order_db[(order_db)]
   build_order --> draft_order([draft_order])
 
   build_order ==> parallel_processing{{parallel_processing}}
@@ -101,7 +101,7 @@ flowchart TD
   parallel_processing == "parallel" ==> reserve_inventory
   parallel_processing == "parallel" ==> notify_payment_gateway
 
-  reserve_inventory <--> inventory_db[(catalog.store.inventory_db)]
+  reserve_inventory <-- "read/write" --> inventory_db[(catalog.store.inventory_db)]
   reserve_inventory --> reserved([reserved])
   notify_payment_gateway --> notified([notified])
 
@@ -141,8 +141,8 @@ flowchart TD
 
   _start([Start]) ==> check_inventory[check_inventory]
   order_id --> check_inventory
-  order_db[(order_db)] --> check_inventory
-  inventory_db[(catalog.store.inventory_db)] --> check_inventory
+  order_db[(order_db)] -- "read" --> check_inventory
+  inventory_db[(catalog.store.inventory_db)] -- "read" --> check_inventory
   check_inventory --> order_asset([order])
 
   check_inventory ==> route_by_inventory{route_by_inventory}
@@ -153,8 +153,8 @@ flowchart TD
   route_by_inventory == "in_stock" ==> confirm_order
   route_by_inventory == "out_of_stock" ==> cancel_order
 
-  confirm_order --> order_db
-  cancel_order --> order_db
+  confirm_order -- "write" --> order_db
+  cancel_order -- "write" --> order_db
   confirm_order ==> _end([End])
   cancel_order ==> _end
 

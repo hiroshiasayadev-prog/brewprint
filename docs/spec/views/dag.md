@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/views/dag.md
 status: confirmed
-last_updated: 2026-04-25
+last_updated: 2026-04-26
 summary: >
   DAG（Directed Acyclic Graph）のrenderルール定義。
   Processingレイヤーのノード・エッジをMermaid flowchartとして出力する際の
@@ -18,6 +18,7 @@ depends_on:
   - docs/adr/023-control-flow-scope-and-branch-entry.md
   - docs/adr/024-dag-boundary-nodes.md
   - docs/adr/040-control-flow-step-wiring.md
+  - docs/adr/044-store-access-edge-labels.md
 ---
 
 # DAG renderルール
@@ -224,6 +225,7 @@ class config,result boundaryNode
 |------|---------|------------|------|
 | データ線 | ObjectFlow | `-->` | データの受け渡し |
 | ラベル付きデータ線 | ObjectFlow | `--"label"-->` | foreach等、意味を付与するデータの受け渡し |
+| store access線 | ObjectFlow | `-- "read" -->` / `-- "write" -->` / `<-- "read/write" -->` | storeへの読み書きアクセス |
 | 制御線 | ControlFlow | `==>` | 実行順序の制御 |
 | ラベル付き制御線 | ControlFlow | `== "label" ==>` | branch・forkの条件付き制御フロー |
 
@@ -236,13 +238,20 @@ fetch_data --> raw([raw])
 raw --> transform
 ```
 
-store の reads / writes も同じデータ線で描く。方向で reads / writes を区別する。
-reads と writes が両方ある場合は双方向エッジ `<-->` を使う。
+store の `reads` / `writes` は store access線として描く。通常の asset dataflow と区別するため、アクセス種別を edge label で明示する（ADR-044）。
+
+| YAML上の指定 | Mermaid表現 | 意味 |
+|-------------|-------------|------|
+| `reads: [store]` | `store -- "read" --> task` | task が store を読む |
+| `writes: [store]` | `task -- "write" --> store` | task が store に書く |
+| `reads` と `writes` の両方 | `task <-- "read/write" --> store` | task が store を読み書きする |
+
+store edge の向きは従来どおり維持するが、意味の主表現はラベルに寄せる。
 
 ```
-session_store[(session_store)] --> login    %% reads のみ
-login --> audit_log[(audit_log)]            %% writes のみ
-login <--> session_store[(session_store)]   %% reads + writes 両方
+session_store[(session_store)] -- "read" --> login       %% reads のみ
+login -- "write" --> audit_log[(audit_log)]              %% writes のみ
+login <-- "read/write" --> session_store[(session_store)] %% reads + writes 両方
 ```
 
 ### 制御線（`==>`）
@@ -557,7 +566,7 @@ flowchart TD
 
   _start([Start]) ==> login
   credentials --> login[login]
-  login <--> session_store[(session_store)]
+  login <-- "read/write" --> session_store[(session_store)]
   login --> auth_token
   login ==> _end([End])
 
