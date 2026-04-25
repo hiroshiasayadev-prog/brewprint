@@ -422,6 +422,7 @@ Applicationレイヤー。FSMの状態ノード。State Diagramで使用。`stor
 |-----------|------|-----|------|------|
 | `initial` | 任意 | bool | `true` でFSMの初期状態。1ファイルに1つ | ADR-019 |
 | `final` | 任意 | bool | `true` で終端状態（複数可） | ADR-019 |
+| `note` | 任意 | string | 状態の意味・この状態にある条件 | ADR-019 |
 | `wireframe` | 任意 | object | この状態のUI骨格。単一rootのcontainerノード。`main` containerと`layout` objectを含む詳細はwireframe specで定義 | ADR-029, ADR-042 |
 
 `wireframe`フィールドの詳細は `docs/spec/views/wireframe.md` を参照。`main` containerと`layout` objectの設計判断は `docs/adr/042-wireframe-main-and-layout.md` を参照。

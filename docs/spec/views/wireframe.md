@@ -105,7 +105,7 @@ wireframeの要素は **container** と **leaf** に分類される。
 |-----------|-----|------|
 | `span` | integer | grid内で何列分を占有するか。gridの子ノードに記述する |
 
-`span` は `grid` の直接子でのみ意味を持つ。`grid` 外の `span` はparser errorとしてよい。
+`span` は `grid` の直接子でのみrenderに反映する。`grid` 外の `span` は意味を持たないが、v1ではparser errorにはしない。
 
 ## layout object
 
@@ -133,7 +133,7 @@ layout:
 | `height` | size | 全要素 | 高さ。数値はpx。予約語として `fill` / `fit` を許可 |
 | `min_width` | int | 全要素 | 最小幅px。`fill` / `fit` は不可 |
 | `min_height` | int | 全要素 | 最小高さpx。`fill` / `fit` は不可 |
-| `grow` | bool | 全要素 | `true`でrow/colの子として残り領域を占有 |
+| `grow` | bool | row/colの直接子 | `true`で残り領域を占有 |
 | `gap` | int | container | 子要素間のgap px |
 | `padding` | int or object | container | container内側の構造的余白。leafではv1非対応 |
 | `align` | enum | container | 交差軸方向の配置。`start` / `center` / `end` / `stretch` |
@@ -155,6 +155,9 @@ layout:
   width: 220       # width: 220px
   height: 56       # height: 56px; min-height: 56px
 ```
+
+`height` の固定値は、header/footer/imageなどの縦方向の占有領域を保つため、`height` と `min-height` の両方へ変換する。
+`width` の固定値は `min-width` を自動付与せず、必要な場合は `min_width` を明示する。
 
 ```yaml
 layout:
@@ -192,7 +195,16 @@ layout:
 ```
 
 `x` は left/right、`y` は top/bottom の省略形。
-`top` / `right` / `bottom` / `left` が指定された場合は個別指定を優先する。
+補完順序は、まず `top` / `right` / `bottom` / `left` を0で初期化し、`x` があれば left/right に適用し、`y` があれば top/bottom に適用し、最後に `top` / `right` / `bottom` / `left` の個別指定で上書きする。
+
+```yaml
+layout:
+  padding:
+    x: 16
+    top: 8
+```
+
+上記は `padding: 8px 16px 0px 16px` に変換する。
 
 leaf要素のpaddingはv1では扱わない。button/input/text等の見た目調整になりやすく、構造layoutと視覚styleの境界が曖昧になるため。
 
@@ -217,6 +229,8 @@ leaf要素のpaddingはv1では扱わない。button/input/text等の見た目�
 ```
 
 画面の残り領域を取らせたい場合は `fill` ではなく `grow: true` を使う。
+`row` / `col` の直接子に `width: fill` / `height: fill` を指定しても、flexの残り領域占有にはならない。
+特に `row` の直接子に `width: fill` を指定すると兄弟要素を押し出す可能性があるため、残り領域の占有には `grow: true` を使う。
 
 ## validation方針
 
@@ -228,9 +242,10 @@ parser / validator は以下を検証する。
 - `main` はcontainerなので `children` 必須。
 - `grid` は `cols` 必須。`cols` は1以上の整数。
 - `layout` は全要素で任意。
-- `width` / `height` / `min_width` / `min_height` / `grow` はcontainer/leafのどちらにも指定可能。
+- `width` / `height` / `min_width` / `min_height` はcontainer/leafのどちらにも指定可能。
+- `grow` フィールドはcontainer/leafのどちらにも書けるが、`grow: true` が有効なのは `row` / `col` の直接子のみ。
 - `gap` / `padding` / `align` / `justify` / `scroll` はcontainerでのみ有効。leafで指定した場合はparser error。
-- `grow: true` は `row` / `col` の直接子でのみ有効。それ以外の位置ではparser error。
+- `grow: true` を `row` / `col` の直接子以外に指定した場合はparser error。
 - `layout` に未定義fieldがある場合はparser error。
 - `style` / `class` / `css` 等、HTML/CSS実装詳細を直接指定するfieldはparser error。
 - `fires` はinteractive leafでのみ指定可能。
@@ -297,7 +312,7 @@ HTML rendererは、wireframe treeをHTML fragmentとして出力する。DOCTYPE
 ### 出力契約
 
 - 全wireframe要素に `.wf-*` namespaceのclassを付与する。
-- YAMLの `id` はHTMLの `id` 属性にはせず、`data-wf-id` に出力する。
+- YAMLの `id` はHTMLの `id` 属性にはせず、`data-wf-id` に出力する。これは複数wireframe fragmentを同一ページに表示した場合のHTML `id` 衝突を避けるためである。
 - YAMLの `fires` は `data-wf-fires` に出力する。
 - `label` / `placeholder` / `id` / `fires` はHTML escapeする。
 - JSは生成しない。
@@ -331,6 +346,8 @@ HTML rendererは、wireframe treeをHTML fragmentとして出力する。DOCTYPE
 ### fixed CSS profile
 
 rendererは以下の意味を持つ固定CSSを前提としてよい。
+reference CSS file は `docs/spec/views/wireframe.css` とする。
+以下のCSSは主要ルールの抜粋であり、完全なreference CSSは `docs/spec/views/wireframe.css` を正とする。
 
 ```css
 .wf-col { display: flex; flex-direction: column; gap: 8px; }
@@ -341,6 +358,16 @@ rendererは以下の意味を持つ固定CSSを前提としてよい。
 ```
 
 これはrender profile側の固定CSSであり、YAMLから任意に指定するstyleではない。
+`docs/spec/views/wireframe.css` は構造CSSのみを含み、色・border・radius・shadow・font指定・背景色・preview専用装飾は含めない。
+
+### preview CSS
+
+目視確認用のpreview CSS file は `docs/spec/views/wireframe.preview.css` とする。
+
+`wireframe.preview.css` は、HTML fragmentをブラウザで確認しやすくするための補助CSSであり、wireframe DSLの意味論には含めない。
+このファイルには、薄い枠線、背景色、角丸、button/input/selectの最低限の見た目など、preview専用の視覚styleを含めてよい。
+
+Go rendererのHTML fragment出力やgolden testの期待値は `wireframe.preview.css` に依存しない。
 
 ### layout変換
 
@@ -358,7 +385,7 @@ rendererは以下の意味を持つ固定CSSを前提としてよい。
 | `layout.gap: 16` | `gap: 16px` |
 | `layout.padding: 16` | `padding: 16px` |
 | `layout.padding.x: 16` + `layout.padding.y: 8` | `padding: 8px 16px 8px 16px` |
-| `layout.padding.top/right/bottom/left` | `padding: {top}px {right}px {bottom}px {left}px`。未指定方向は0px、`x` / `y` があればその値で補完 |
+| `layout.padding.top/right/bottom/left` | `padding: {top}px {right}px {bottom}px {left}px`。補完順序は `0` 初期化 → `x` / `y` 適用 → 個別方向指定で上書き |
 | `layout.align: start` | `align-items: flex-start` |
 | `layout.align: center` | `align-items: center` |
 | `layout.align: end` | `align-items: flex-end` |
