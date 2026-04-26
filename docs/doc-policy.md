@@ -141,11 +141,14 @@ docs/uc/
       {group-id}/
         index.md          ← groupインデックス
         dag-{task}.md
-        state-{state}.md
+        state-{fsm}.md
         seq-{scenario}.md
+        wireframe-{fsm}-{state}.html
       _cross/             ← module横断view（ER / API Table）
         er.md
         api.md
+      _preview/           ← preview harness
+        wireframe.html
     docs/
       coverage.md         ← カバレッジ表（人間が書く）
 ```

@@ -56,16 +56,22 @@ renders/
   {group-id}/
     index.md                ← groupインデックス（group内の全render一覧テーブル）
     dag-{task-id}.md
-    state-{state-id}.md
+    state-{fsm-id}.md
     seq-{scenario-id}.md
+    wireframe-{fsm-id}-{state-id}.html
   _cross/
     er.md
     api.md
     （将来のcross-cutting viewも同ディレクトリ配下に配置する）
+  _preview/
+    wireframe.html          ← preview harness
 ```
 
 module横断的なview（ER / API Table等）は `_cross/` に置く。
+preview harnessは `_preview/` に置く。
 アンダースコアプレフィックスはgroup IDと区別するためのconventionであり、group idにアンダースコア始まりを使うことはvalidation errorとする。
+
+State / Sequence / Wireframe / Preview の詳細な配置規則はADR-046で規定する。
 
 ### 3. render_index.yaml によるグルーピング制御（概念）
 
