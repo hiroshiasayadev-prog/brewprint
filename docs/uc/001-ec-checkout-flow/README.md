@@ -10,88 +10,89 @@ UC-001 は、ECサイトのチェックアウト処理を題材に、brewprint �
 
 ```text
 docs/uc/001-ec-checkout-flow/
-  README.md           ← このファイル
-  HANDOFF.md
-  TASKS-UC-001.md
-  yaml/
+  README.md             ← このファイル
+  TASKS-UC-001.md       ← UC-001固有の追跡タスク
+  render_index.yaml     ← render出力のgroup定義
+  yaml/                 ← brewprint YAML群（single source of truth）
     actors.yaml
     auth/
-      model/
-        credential.yaml
-        login_form.yaml
-        login_log.yaml
-        request_context.yaml
-        token.yaml
       state.yaml
+      model/
       store/
-        request_context_store.yaml
-        session_store.yaml
-        user_db.yaml
       task/
-        login.yaml
     cart/
       model/
-        cart.yaml
-        cart_item.yaml
-        cart_item_list.yaml
       store/
-        cart_session.yaml
       task/
-        add_to_cart.yaml
-        validate_cart.yaml
     catalog/
       model/
-        item.yaml
-        item_list.yaml
       store/
-        inventory_db.yaml
-        item_collection.yaml
       task/
-        get_items.yaml
     inventory/
       state.yaml
     order/
-      model/
-        address.yaml
-        order.yaml
-        order_item.yaml
       state.yaml
+      model/
       store/
-        order_db.yaml
       task/
-        checkout.yaml
-        process_order.yaml
     payment/
       model/
-        payment_event.yaml
       webhooks/
         task/
-          process_payment.yaml
     views/
       api_table.yaml
       er.yaml
       scenarios/
         checkout_flow.yaml
         payment_webhook_flow.yaml
-  docs/
-    coverage.md         ← カバレッジ表（ノード種別・flow構文・task/model/state/view）
-    render-dag.md       ← DAG render例 × 4
-    render-state.md     ← State Diagram render例 × 3
-    render-er.md        ← ER Diagram render例
-    render-seq.md       ← Sequence Diagram render例 × 2
-    render-api.md       ← API Table render例
+  renders/              ← Go renderer golden fixture（canonical render output）
+    index.md            ← master render index
+    auth/
+      index.md
+      dag-login.md
+      state-auth.md
+      wireframe-auth-login_screen.html
+      wireframe-auth-loading.html
+    commerce/
+      index.md
+      dag-checkout.md
+      dag-process_order.md
+      dag-validate_cart.md
+      seq-checkout_flow.md
+      seq-payment_webhook_flow.md
+      state-order.md
+      wireframe-order-cart.html
+      wireframe-order-checkout_screen.html
+    catalog/
+      index.md
+      state-inventory.md
+    _cross/
+      er.md
+      api.md
+    _preview/
+      wireframe.html
+  docs/                 ← 人間が書く補助ドキュメント / 旧render参照
+    coverage.md
+    render-dag.md
+    render-state.md
+    render-er.md
+    render-seq.md
+    render-api.md
+    render-wireframe.md
 ```
 
 ## ドキュメント
 
 | ファイル | 内容 |
 |---|---|
+| [renders/index.md](renders/index.md) | canonical render output の master index |
 | [coverage.md](docs/coverage.md) | ノード種別・flow構文・task/model/state/viewフィールドのカバレッジ表 |
-| [render-dag.md](docs/render-dag.md) | DAG render期待値（シンプル / foreach / fork+join / branch） |
-| [render-state.md](docs/render-state.md) | State Diagram render期待値（auth / order / inventory） |
-| [render-er.md](docs/render-er.md) | ER Diagram render期待値（ec全体） |
-| [render-seq.md](docs/render-seq.md) | Sequence Diagram render期待値（checkout_flow / payment_webhook_flow） |
-| [render-api.md](docs/render-api.md) | API Table render期待値 |
+| [render-dag.md](docs/render-dag.md) | 旧DAG render参照。canonical fixture は `renders/` を正とする |
+| [render-state.md](docs/render-state.md) | 旧State Diagram render参照。canonical fixture は `renders/` を正とする |
+| [render-er.md](docs/render-er.md) | 旧ER Diagram render参照。canonical fixture は `renders/` を正とする |
+| [render-seq.md](docs/render-seq.md) | 旧Sequence Diagram render参照。canonical fixture は `renders/` を正とする |
+| [render-api.md](docs/render-api.md) | 旧API Table render参照。canonical fixture は `renders/` を正とする |
+| [render-wireframe.md](docs/render-wireframe.md) | 旧Wireframe HTML fragment render参照。canonical fixture は `renders/` を正とする |
 
 ## TODO / spec gap
 

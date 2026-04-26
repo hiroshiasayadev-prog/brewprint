@@ -1,5 +1,8 @@
 # UC-001 wireframe render期待値
 
+> 注記: このファイルは履歴用に残す旧手書きrender参照であり、canonicalではない。
+> 正式なgolden fixtureは `../renders/` 配下を正とする。
+
 ## スコープ
 
 このdocは `docs/uc/001-ec-checkout-flow` の既存state wireframeを対象に、HTML fragment renderの期待値を定義する。

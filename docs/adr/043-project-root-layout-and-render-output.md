@@ -98,16 +98,18 @@ masterの `renders/index.md` はgroup一覧をテーブル形式で示す。
 ```markdown
 # {project-name} render index
 
-| group | DAG | State | Sequence | ER | API |
-|---|---|---|---|---|---|
-| [認証](auth/index.md) | 1 | 1 | - | - | - |
-| [商取引](commerce/index.md) | 3 | 1 | - | - | - |
-| *(cross)* | - | - | - | [er](_cross/er.md) | [api](_cross/api.md) |
+| group | DAG | State | Sequence | Wireframe | ER | API |
+|---|---|---|---|---|---|---|
+| [認証](auth/index.md) | 1 | 1 | - | 2 | - | - |
+| [商取引](commerce/index.md) | 3 | 1 | 2 | 2 | - | - |
+| *(cross)* | - | - | - | - | [er](_cross/er.md) | [api](_cross/api.md) |
+| *(preview)* | - | - | - | [wireframe preview](_preview/wireframe.html) | - | - |
 ```
 
-group列の表示ルール: 明示groupは `label`（省略時は `id`）、暗黙groupは `id`（= module名）、cross行は固定で `*(cross)*`。
+group列の表示ルール: 明示groupは `label`（省略時は `id`）、暗黙groupは `id`（= module名）、cross行は固定で `*(cross)*`、preview行は固定で `*(preview)*`。
 
-各groupの `{group-id}/index.md` はgroup内のrender一覧をテーブル形式で示す。master `index.md` はgroupへのリンクのみを持ち、個別renderへの直リンクはgroup `index.md` が提供する。これによりmaster index.mdの肥大化を防ぐ。
+各groupの `{group-id}/index.md` はgroup内のrender一覧をテーブル形式で示す。master `index.md` は通常groupへのリンクのみを持ち、個別renderへの直リンクはgroup `index.md` が提供する。これによりmaster index.mdの肥大化を防ぐ。
+ただし `_cross/` と `_preview/` は通常groupではない特殊renderディレクトリであり、master `index.md` から `*(cross)*` / `*(preview)*` 行として直接リンクしてよい。
 
 ### 5. CLIインターフェース（参考）
 

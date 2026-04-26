@@ -1,5 +1,8 @@
 # UC-001: DAG render例
 
+> 注記: このファイルは履歴用に残す旧手書きrender参照であり、canonicalではない。
+> 正式なgolden fixtureは `../renders/` 配下を正とする。
+
 ## DAG例1: シンプル（auth.task.login）
 
 入力:

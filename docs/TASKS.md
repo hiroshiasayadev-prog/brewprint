@@ -43,7 +43,13 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
   - [x] `TASKS-UC-001.md` 作成
   - [x] `docs/coverage.md` / `docs/render-*.md` 記入完了
   - [x] UC-001で発見したspec gapの解消方針決定
-  - [ ] **golden fixture 再配置**（ADR-043）: `docs/render-*.md` を `renders/{group}/` 構造に移行する（Go実装と並行でよい）
+  - [~] **golden fixture 再配置**（ADR-043 / ADR-046）
+    - [x] `render_index.yaml` 追加
+    - [x] `renders/{group}/` へ DAG / State / Sequence / Wireframe を配置
+    - [x] `_cross/` へ ER / API を配置
+    - [x] `_preview/wireframe.html` を配置
+    - [x] README / coverage / legacy docs 表記を追随
+    - [ ] Go renderer 実装後に `renders/` を正式 golden fixture として再生成・検証
   - 詳細: `docs/uc/001-ec-checkout-flow/TASKS-UC-001.md`
 
 ---

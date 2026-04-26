@@ -11,6 +11,8 @@ UC-001 固有の残作業・render例・spec gap を追跡するための作業�
 - [x] README.md 骨格作成
 - [x] docs/coverage.md を現行specに追随
 - [x] docs/render-*.md のTODOを解消
+- [x] renders/ への golden fixture 再配置を実施
+- [x] 旧 docs/render-*.md に legacy / non-canonical 表記を追加
 - [x] UC-001で発見したspec gapの扱いを確定
 - [x] 完了後に HANDOFF.md を削除
 
@@ -40,6 +42,20 @@ UC-001 固有の残作業・render例・spec gap を追跡するための作業�
 - [x] Sequence Diagram: checkout_flow
 - [x] Sequence Diagram: payment_webhook_flow
 - [x] API Table
+- [x] Wireframe HTML fragment
+
+### renders/ 移行（ADR-043 / ADR-046）
+
+- [x] `render_index.yaml` を追加
+- [x] `renders/index.md` を追加
+- [x] group index を追加
+- [x] DAG / State / Sequence / Wireframe を group 配下へ配置
+- [x] ER / API を `_cross/` へ配置
+- [x] preview harness を `_preview/wireframe.html` へ配置
+- [x] README.md を新構成へ追随
+- [x] docs/render-*.md に legacy / non-canonical 表記を追加
+- [x] docs/coverage.md を新構成へ追随
+- [ ] Go renderer 実装後に `renders/` を正式 golden fixture として再生成・検証
 
 ---
 
@@ -82,5 +98,7 @@ UC-001 固有の残作業・render例・spec gap を追跡するための作業�
 
 - [x] docs/coverage.md が現行specに追随している
 - [x] docs/render-*.md の全render / view例がTODOなしで埋まっている
+- [x] `renders/` へ canonical render fixture を配置している
+- [x] 旧 docs/render-*.md が legacy / non-canonical であることを明示している
 - [x] spec gap を ADR / spec / TASKS のどれで扱うか決まっている
 - [x] `HANDOFF.md` を削除済み

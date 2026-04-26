@@ -1,5 +1,8 @@
 # UC-001: ER Diagram render例
 
+> 注記: このファイルは履歴用に残す旧手書きrender参照であり、canonicalではない。
+> 正式なgolden fixtureは `../renders/` 配下を正とする。
+
 ## ER Diagram: ec全体
 
 入力:

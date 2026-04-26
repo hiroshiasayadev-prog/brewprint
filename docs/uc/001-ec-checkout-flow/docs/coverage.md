@@ -82,7 +82,7 @@
 | `event.source: external` + `actor` | `order/state.yaml` | Stripe webhook eventをカバーする。 |
 | `event.source: er` + `watches` | `inventory/state.yaml` | DB変化監視eventをカバーする。 |
 | `event.payload.model` | `auth/state.yaml`, `order/state.yaml` | event payloadのmodel参照をカバーする。 |
-| wireframe layout | `auth/state.yaml`, `order/state.yaml` | `col` / `row` / `grid` / `header` / `footer` / `card` をカバーする。`sidebar` は未使用。 |
+| wireframe layout | `auth/state.yaml`, `order/state.yaml` | `col` / `row` / `grid` / `header` / `footer` / `main` / `card` / `sidebar` をカバーする。 |
 | wireframe component | `auth/state.yaml`, `order/state.yaml` | `text` / `button` / `input` / `password` / `select` / `checkbox` / `image` / `icon` / `badge` / `divider` をカバーする。`radio` は未使用。 |
 | wireframe interactive field | `auth/state.yaml`, `order/state.yaml` | `fires` / `disabled` / `placeholder` をカバーする。 |
 | wireframe grid field | `order/state.yaml` | `cols` / `span` をカバーする。 |
