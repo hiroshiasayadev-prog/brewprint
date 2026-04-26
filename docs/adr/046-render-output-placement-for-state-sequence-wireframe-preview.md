@@ -212,6 +212,6 @@ Preview HTMLは個別wireframe fragmentそのものではないが、Go renderer
 - Go rendererはState / Sequence / Wireframe / Preview出力時に本ADRのgroup解決規則と命名規則に従う。
 
 ## Evidence
-- commit: tbd
+- commit: 881c92d
 - impl commit: tbd
 - 参考: 特になし

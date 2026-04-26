@@ -94,6 +94,6 @@ Claude Codeによる自立コーディングを支援する上でも、パター
 - stateノード（FSM）の設計はADR-019へ
 
 ## Evidence
-- commit: tbd
+- commit: 0a2759a
 - impl commit: tbd
 - 参考: clean-arch層構造参考
