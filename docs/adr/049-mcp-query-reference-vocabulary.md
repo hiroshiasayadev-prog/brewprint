@@ -143,6 +143,6 @@ ADR-047のQueryService境界、ADR-048のResolvedProject index strategyは継続
 - Go実装のQueryService methodは `GetReferences` とする。
 
 ## Evidence
-- commit: tbd
+- commit: 870feb1
 - impl commit: tbd
 - 参考: Python inspect / IDE references / compiler semantic model

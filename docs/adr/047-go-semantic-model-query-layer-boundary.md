@@ -205,6 +205,6 @@ Rendererが `ResolvedProject` を直接読めば、初期実装は単純にな�
 - `docs/spec/mcp.md` でMCP toolの外部仕様を別途定義する必要がある。
 
 ## Evidence
-- commit: tbd
+- commit: da28fa9
 - impl commit: tbd
 - 参考: Goのlayering慣習

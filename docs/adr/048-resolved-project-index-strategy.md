@@ -241,6 +241,6 @@ ADR-048では、Milestone 1〜3で必要になる最小限のindexに絞る。
 - `docs/spec/mcp.md` では、本ADRのindex方針を前提に `get_signature` / `get_deps` / `inspect` の外部I/Oを定義する。
 
 ## Evidence
-- commit: tbd
+- commit: da28fa9
 - impl commit: tbd
 - 参考: compiler symbol table / semantic model、Goのmap-based index慣習
