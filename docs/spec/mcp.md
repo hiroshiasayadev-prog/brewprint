@@ -1383,7 +1383,7 @@ API Tableが複数存在し、`api_table_id` が省略された場合は、全AP
           "endpoints": [
             {
               "method": "POST",
-              "path": "/api/auth/login",
+              "path": "/api/login",
               "leaf_path": "login",
               "task": "auth.task.login",
               "params": "auth.model.login_request",
@@ -1400,6 +1400,10 @@ API Tableが複数存在し、`api_table_id` が省略された場合は、全AP
   "diagnostics": []
 }
 ```
+
+この例ではsection起点moduleが `auth` のため、ADR-028のroute合成規則により、section起点moduleからの相対module pathは空になる。
+そのためfull pathは `/api/auth/login` ではなく `/api/login` になる。
+`/api/auth/login` を返したい場合は、API Table view側で `http_root_path: /api/auth` とするか、section起点moduleを上位moduleにする。
 
 ### 9.4 endpoint object
 

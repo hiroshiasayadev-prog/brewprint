@@ -21,7 +21,7 @@ brewprintでは、同じYAMLから以下のような問い合わせが繰り返�
 - あるtaskをactionとして呼ぶtransitionを探す
 - あるscenario IDからsequence scenarioを取得する
 - rendererがDAG / State / Sequence / ER / API / Wireframeの入力を集める
-- MCP toolが `get_signature` / `get_deps` / `inspect` の返却材料を集める
+- MCP toolが `get_signature` / `get_references` / `inspect` の返却材料を集める
 
 これらを都度Raw YAMLまたはResolvedProject内の全slice走査で実装すると、以下の問題が起きる。
 
@@ -101,11 +101,20 @@ ADR-048時点で必須とする初期reverse lookup indexは以下とする。
 
 | index | key | value | 主な利用者 |
 |---|---|---|---|
+| `referencesBySource` | source object ID | reference list | `get_references(direction=out)` / `inspect(model)` / `inspect(task)` |
+| `referencesByTarget` | target object ID | reference list | `get_references(direction=in)` / `inspect(model)` / `inspect(store)` / `inspect(task)` |
 | `tasksReadingStore` | store `QualifiedID` | task `QualifiedID` list | `inspect(store)` / ER変化影響 / Sequence DB操作 |
 | `tasksWritingStore` | store `QualifiedID` | task `QualifiedID` list | `inspect(store)` / ER変化影響 / Sequence DB操作 |
 | `transitionsByStateEventGuard` | `(stateFileID, fromStateID, eventID, guard?)` | transition ref | Sequence scenario解決 / State render |
-| `actionsByTask` | task `QualifiedID` | transition ref list | `inspect(task)` / `get_deps(task)` / Sequence逆引き |
+| `actionsByTask` | task `QualifiedID` | transition ref list | `inspect(task)` / `get_references(task)` / Sequence逆引き |
 | `scenariosByID` | scenario ID | resolved scenario | MCP query / Sequence render |
+
+`referencesBySource` / `referencesByTarget` は、ADR-049の `references` schemaに対応する汎用semantic reference indexである。
+対象には、task params / returns / reads / writes、store.of、model field type / fk、event payload / actor / watches、transition from / to / event / action、scenario step transition等のdirect referenceを含める。
+MCP v1ではdirect referenceのみをindexし、transitive closureは持たない。
+
+`tasksReadingStore` / `tasksWritingStore` / `actionsByTask` は、rendererや特定queryで頻繁に使う用途別indexとして残す。
+ただし、MCP外部schemaの中心語彙は `references` であり、`get_references` / `inspect` の一般的な参照返却は `referencesBySource` / `referencesByTarget` を主材料にする。
 
 `transition ref` は、transition本体への参照に加えて、定義元state file、source location、resolved action taskがあればその `QualifiedID` を持つ。
 
@@ -162,9 +171,9 @@ Sequence Diagram rendererは、scenario IDからscenarioを取得し、各step�
 
 ### 9. 依存グラフ全体は初期indexにしない
 
-`get_deps` 用の完全なtransitive dependency graphはADR-048では事前構築しない。
+`get_references` 用の完全なtransitive reference graphはADR-048では事前構築しない。
 
-初期実装では、以下のbase / reverse indexを組み合わせて浅い依存を返す。
+初期実装では、以下のbase / reverse indexを組み合わせてdirect referenceを返す。
 
 - task params / returns / reads / writes
 - transition action
@@ -221,7 +230,7 @@ ADR-048では、Milestone 1〜3で必要になる最小限のindexに絞る。
 
 - DAG vertical sliceに必要な `nodesByQID` / `nodesByFile` / `mainNodeByFile` / store access index
 - State / Sequence解決に必要なtransition index
-- MCP `inspect` / `get_deps` に必要なreverse lookup index
+- MCP `inspect` / `get_references` に必要な汎用reverse lookup index
 - Sequence scenario取得に必要な `scenariosByID`
 
 ### ResolvedProjectのfield直読みを禁止しない理由
@@ -234,11 +243,11 @@ ADR-048では、Milestone 1〜3で必要になる最小限のindexに絞る。
 ## 影響
 
 - `ResolvedProject` build pipelineは、semantic validation後にbase indexとreverse lookup indexを構築する。
-- `QueryService` は `ResolvedProject` のindex / accessorを使って `GetSignature` / `Inspect` / `GetDeps` を実装する。
+- `QueryService` は `ResolvedProject` のindex / accessorを使って `GetSignature` / `Inspect` / `GetReferences` を実装する。
 - RendererはRaw YAML structsではなく、index / accessorまたはview-specific view modelを使う。
 - Milestone 1のDAG vertical sliceでは、最低限 `nodesByQID` / `nodesByFile` / `mainNodeByFile` / `tasksReadingStore` / `tasksWritingStore` を実装する。
-- Milestone 3のQueryService vertical sliceでは、本ADRのreverse lookup indexを利用する。
-- `docs/spec/mcp.md` では、本ADRのindex方針を前提に `get_signature` / `get_deps` / `inspect` の外部I/Oを定義する。
+- Milestone 3のQueryService vertical sliceでは、本ADRのreverse lookup indexを利用する。特に `GetReferences` / MCP `get_references` は `referencesBySource` / `referencesByTarget` を主材料にする。
+- `docs/spec/mcp.md` では、本ADRのindex方針を前提に `get_signature` / `get_references` / `inspect` の外部I/Oを定義する。
 
 ## Evidence
 - commit: da28fa9
