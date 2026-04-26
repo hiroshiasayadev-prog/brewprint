@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>UC-001 Wireframe Preview</title>
+  <link rel="stylesheet" href="../../../../spec/views/wireframe.css">
+  <link rel="stylesheet" href="../../../../spec/views/wireframe.preview.css">
+</head>
+<body>
+  <main class="wf-preview-page">
+    <h1>UC-001 Wireframe Preview</h1>
+
+    <section>
+      <h2>auth.login_screen</h2>
+      <div class="wf-preview-frame">
+        <div class="wf-col" style="width: 100%; min-height: 480px;">
+          <main class="wf-main" data-wf-id="login_main" style="flex: 1 1 0%; min-width: 0; min-height: 0; gap: 16px; padding: 24px; align-items: stretch; justify-content: center;">
+            <section class="wf-card" data-wf-id="login_card" style="width: 360px; gap: 12px; padding: 16px;">
+              <span class="wf-text" data-wf-id="login_title">ログイン</span>
+              <div class="wf-field" data-wf-id="username_input">
+                <label>ユーザー名</label>
+                <input type="text" placeholder="username" />
+              </div>
+              <div class="wf-field" data-wf-id="password_input">
+                <label>パスワード</label>
+                <input type="password" placeholder="パスワードを入力" />
+              </div>
+              <button class="wf-button" data-wf-id="submit_button" data-wf-fires="login_submitted">ログイン</button>
+            </section>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>auth.loading</h2>
+      <div class="wf-preview-frame">
+        <div class="wf-col" style="width: 100%; min-height: 320px;">
+          <main class="wf-main" data-wf-id="loading_main" style="flex: 1 1 0%; min-width: 0; min-height: 0; gap: 12px; padding: 24px; align-items: center; justify-content: center;">
+            <span class="wf-icon" data-wf-id="loading_spinner">[icon]</span>
+            <span class="wf-text" data-wf-id="loading_text">認証中...</span>
+            <button class="wf-button" data-wf-id="cancel_button" disabled>キャンセル</button>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>order.cart</h2>
+      <div class="wf-preview-frame">
+        <div class="wf-col" style="width: 100%; height: 100%; min-height: 640px;">
+          <header class="wf-header" data-wf-id="cart_header" style="height: 56px; min-height: 56px; padding: 8px 16px 8px 16px; justify-content: center;">
+            <span class="wf-text" data-wf-id="cart_header_title">ショッピングカート</span>
+          </header>
+          <div class="wf-row" data-wf-id="cart_shell" style="flex: 1 1 0%; min-width: 0; min-height: 0; gap: 16px;">
+            <aside class="wf-sidebar" data-wf-id="cart_sidebar" style="width: 220px; gap: 8px; padding: 16px;">
+              <span class="wf-text" data-wf-id="cart_summary_title">注文サマリー</span>
+              <span class="wf-text" data-wf-id="cart_total_label">合計金額</span>
+            </aside>
+            <main class="wf-main" data-wf-id="cart_main" style="flex: 1 1 0%; min-width: 0; min-height: 0; gap: 12px; padding: 16px; overflow-y: auto;">
+              <span class="wf-text" data-wf-id="cart_items_label">カート内アイテム</span>
+              <hr class="wf-divider" data-wf-id="items_divider" />
+              <div class="wf-row" data-wf-id="item_row" style="gap: 12px; align-items: center;">
+                <div class="wf-image" data-wf-id="item_thumbnail" style="width: 96px; height: 96px; min-height: 96px;">[image]</div>
+                <div class="wf-col" data-wf-id="item_info_col" style="flex: 1 1 0%; min-width: 0; min-height: 0; gap: 8px;">
+                  <span class="wf-text" data-wf-id="item_name">商品名</span>
+                  <span class="wf-badge" data-wf-id="shipping_badge">送料無料</span>
+                </div>
+              </div>
+              <button class="wf-button" data-wf-id="proceed_button" data-wf-fires="view_checkout">購入手続きへ</button>
+            </main>
+          </div>
+          <footer class="wf-footer" data-wf-id="cart_footer" style="height: 48px; min-height: 48px; padding: 8px 16px 8px 16px;">
+            <span class="wf-text" data-wf-id="cart_footer_note">価格は税込表示です</span>
+          </footer>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>order.checkout_screen</h2>
+      <div class="wf-preview-frame">
+        <div class="wf-col" style="width: 100%; min-height: 640px;">
+          <header class="wf-header" data-wf-id="checkout_header" style="height: 56px; min-height: 56px; padding: 8px 16px 8px 16px;">
+            <span class="wf-text" data-wf-id="checkout_header_title">チェックアウト</span>
+          </header>
+          <main class="wf-main" data-wf-id="checkout_main" style="flex: 1 1 0%; min-width: 0; min-height: 0; gap: 16px; padding: 16px; overflow-y: auto;">
+            <section class="wf-card" data-wf-id="shipping_card" style="gap: 12px; padding: 16px;">
+              <span class="wf-text" data-wf-id="shipping_title">配送先情報</span>
+              <div class="wf-grid" data-wf-id="address_grid" style="grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                <div class="wf-field" data-wf-id="postal_code_input" style="grid-column: span 1;">
+                  <label>郵便番号</label>
+                  <input type="text" placeholder="123-4567" />
+                </div>
+                <div class="wf-field" data-wf-id="prefecture_input" style="grid-column: span 1;">
+                  <label>都道府県</label>
+                  <input type="text" />
+                </div>
+                <div class="wf-field" data-wf-id="address_full_input" style="grid-column: span 2;">
+                  <label>番地・建物名</label>
+                  <input type="text" placeholder="東京都千代田区..." />
+                </div>
+              </div>
+            </section>
+            <section class="wf-card" data-wf-id="payment_card" style="gap: 12px; padding: 16px;">
+              <span class="wf-text" data-wf-id="payment_title">支払い方法</span>
+              <div class="wf-field" data-wf-id="payment_method_select">
+                <label>支払い方法を選択</label>
+                <select></select>
+              </div>
+              <label class="wf-checkbox" data-wf-id="tos_agree_checkbox"><input type="checkbox" /> 利用規約に同意する</label>
+            </section>
+            <button class="wf-button" data-wf-id="confirm_button" data-wf-fires="checkout_submitted">注文を確定する</button>
+          </main>
+          <footer class="wf-footer" data-wf-id="checkout_footer" style="height: 48px; min-height: 48px; padding: 8px 16px 8px 16px;">
+            <button class="wf-button" data-wf-id="back_to_cart_button" data-wf-fires="view_cart">カートに戻る</button>
+          </footer>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

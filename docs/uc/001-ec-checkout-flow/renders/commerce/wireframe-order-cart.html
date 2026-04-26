@@ -1,0 +1,26 @@
+<div class="wf-col" style="width: 100%; height: 100%; min-height: 640px;">
+  <header class="wf-header" data-wf-id="cart_header" style="height: 56px; min-height: 56px; padding: 8px 16px 8px 16px; justify-content: center;">
+    <span class="wf-text" data-wf-id="cart_header_title">ショッピングカート</span>
+  </header>
+  <div class="wf-row" data-wf-id="cart_shell" style="flex: 1 1 0%; min-width: 0; min-height: 0; gap: 16px;">
+    <aside class="wf-sidebar" data-wf-id="cart_sidebar" style="width: 220px; gap: 8px; padding: 16px;">
+      <span class="wf-text" data-wf-id="cart_summary_title">注文サマリー</span>
+      <span class="wf-text" data-wf-id="cart_total_label">合計金額</span>
+    </aside>
+    <main class="wf-main" data-wf-id="cart_main" style="flex: 1 1 0%; min-width: 0; min-height: 0; gap: 12px; padding: 16px; overflow-y: auto;">
+      <span class="wf-text" data-wf-id="cart_items_label">カート内アイテム</span>
+      <hr class="wf-divider" data-wf-id="items_divider" />
+      <div class="wf-row" data-wf-id="item_row" style="gap: 12px; align-items: center;">
+        <div class="wf-image" data-wf-id="item_thumbnail" style="width: 96px; height: 96px; min-height: 96px;">[image]</div>
+        <div class="wf-col" data-wf-id="item_info_col" style="flex: 1 1 0%; min-width: 0; min-height: 0; gap: 8px;">
+          <span class="wf-text" data-wf-id="item_name">商品名</span>
+          <span class="wf-badge" data-wf-id="shipping_badge">送料無料</span>
+        </div>
+      </div>
+      <button class="wf-button" data-wf-id="proceed_button" data-wf-fires="view_checkout">購入手続きへ</button>
+    </main>
+  </div>
+  <footer class="wf-footer" data-wf-id="cart_footer" style="height: 48px; min-height: 48px; padding: 8px 16px 8px 16px;">
+    <span class="wf-text" data-wf-id="cart_footer_note">価格は税込表示です</span>
+  </footer>
+</div>

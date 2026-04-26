@@ -1,0 +1,36 @@
+<div class="wf-col" style="width: 100%; min-height: 640px;">
+  <header class="wf-header" data-wf-id="checkout_header" style="height: 56px; min-height: 56px; padding: 8px 16px 8px 16px;">
+    <span class="wf-text" data-wf-id="checkout_header_title">チェックアウト</span>
+  </header>
+  <main class="wf-main" data-wf-id="checkout_main" style="flex: 1 1 0%; min-width: 0; min-height: 0; gap: 16px; padding: 16px; overflow-y: auto;">
+    <section class="wf-card" data-wf-id="shipping_card" style="gap: 12px; padding: 16px;">
+      <span class="wf-text" data-wf-id="shipping_title">配送先情報</span>
+      <div class="wf-grid" data-wf-id="address_grid" style="grid-template-columns: repeat(2, 1fr); gap: 12px;">
+        <div class="wf-field" data-wf-id="postal_code_input" style="grid-column: span 1;">
+          <label>郵便番号</label>
+          <input type="text" placeholder="123-4567" />
+        </div>
+        <div class="wf-field" data-wf-id="prefecture_input" style="grid-column: span 1;">
+          <label>都道府県</label>
+          <input type="text" />
+        </div>
+        <div class="wf-field" data-wf-id="address_full_input" style="grid-column: span 2;">
+          <label>番地・建物名</label>
+          <input type="text" placeholder="東京都千代田区..." />
+        </div>
+      </div>
+    </section>
+    <section class="wf-card" data-wf-id="payment_card" style="gap: 12px; padding: 16px;">
+      <span class="wf-text" data-wf-id="payment_title">支払い方法</span>
+      <div class="wf-field" data-wf-id="payment_method_select">
+        <label>支払い方法を選択</label>
+        <select></select>
+      </div>
+      <label class="wf-checkbox" data-wf-id="tos_agree_checkbox"><input type="checkbox" /> 利用規約に同意する</label>
+    </section>
+    <button class="wf-button" data-wf-id="confirm_button" data-wf-fires="checkout_submitted">注文を確定する</button>
+  </main>
+  <footer class="wf-footer" data-wf-id="checkout_footer" style="height: 48px; min-height: 48px; padding: 8px 16px 8px 16px;">
+    <button class="wf-button" data-wf-id="back_to_cart_button" data-wf-fires="view_cart">カートに戻る</button>
+  </footer>
+</div>
