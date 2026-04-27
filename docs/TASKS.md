@@ -77,6 +77,8 @@ renderer と MCP wrapper が Raw YAML structs を直接読まない方針を前�
   - reverse lookup index を ResolvedProject build 時に構築する方針を決める
   - MCP tool / renderer は都度Raw構造を走査せず、ResolvedProjectのindexを読む
   - 初期index候補を決める
+    - referencesBySource
+    - referencesByTarget
     - tasksReadingStore
     - tasksWritingStore
     - transitionsByStateEventGuard
@@ -100,44 +102,46 @@ renderer と MCP wrapper が Raw YAML structs を直接読まない方針を前�
 
 ### Milestone 1: UC-001のDAG 1本を縦に通す
 
-- [ ] **Go project skeleton を作る**
+- [x] **Go project skeleton を作る**
   - package構成
   - UC-001 fixture 読み込み
   - YAML decode の入口
   - golden test の入口
 
-- [ ] **YAML loader + file classifier を実装する**
+- [x] **YAML loader + file classifier を実装する**
   - node file / view file / `render_index.yaml` を分類する
   - view file は `as:` で判定する
   - node file は `nodes:` を入口にする
 
-- [ ] **Raw YAML structs を実装する**
-  - `docs/spec/nodes.md` / `docs/spec/edges.md` / `docs/spec/views/*.md` の構造に対応する
-  - 最初は task / model / store / flow step / params / returns / reads / writes に絞る
+- [x] **Raw YAML structs を実装する**
+  - M1範囲として task / model / store / actor / params / returns / reads / writes / initializes を実装
+  - view file / render_index.yaml は分類のみで、decodeは後続milestoneに回す
   - validationは薄くてよい
 
-- [ ] **Symbol table / QualifiedID parser を実装する**
+- [x] **Symbol table / QualifiedID parser を実装する**
   - ADR-027 sentinel方式
   - actor global（ADR-031）
   - module nesting
   - 同モジュール内ID直書き
   - クロスモジュールフルパス
 
-- [ ] **ResolvedProject build の最小版を実装する**
+- [x] **ResolvedProject build の最小版を実装する**
   - main node by file
-  - model / store / task index
+  - model / store / task / actor index
   - implicit asset
+  - file-private initialized store
   - reads/writes index
   - nodesByQID / nodesByFile
   - DAG renderer が必要な範囲だけ先に実装する
 
-- [ ] **DAG renderer vertical slice を通す**
+- [x] **DAG renderer vertical slice を通す**
   - UC-001の `auth.task.login` を Raw → Resolved → Render まで通す
   - `docs/uc/001-ec-checkout-flow/renders/auth/dag-login.md` とgolden一致させる
   - params / returns boundary
   - implicit asset
   - store read/write edge label（ADR-044）
   - Tasks詳細セクション
+  - `go test ./...` 通過（2026-04-27）
 
 ### Milestone 2: DAG renderer の対象を広げる
 
@@ -168,6 +172,8 @@ renderer と MCP wrapper が Raw YAML structs を直接読まない方針を前�
 
 - [ ] **reverse lookup index を整備する**
   - ADR-048に準拠して実装する
+  - referencesBySource
+  - referencesByTarget
   - tasksReadingStore
   - tasksWritingStore
   - transitionsByStateEventGuard
