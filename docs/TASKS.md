@@ -48,13 +48,13 @@ brewprintの積みタスク一覧。会話をまたいでコンテキストを�
   - [x] `TASKS-UC-001.md` 作成
   - [x] `docs/coverage.md` / `docs/render-*.md` 記入完了
   - [x] UC-001で発見したspec gapの解消方針決定
-  - [~] **golden fixture 再配置**（ADR-043 / ADR-046）
+  - [x] **golden fixture 再配置**（ADR-043 / ADR-046）
     - [x] `render_index.yaml` 追加
     - [x] `renders/{group}/` へ DAG / State / Sequence / Wireframe を配置
     - [x] `_cross/` へ ER / API を配置
     - [x] `_preview/wireframe.html` を配置
     - [x] README / coverage / legacy docs 表記を追随
-    - [ ] Go renderer 実装後に `renders/` を正式 golden fixture として再生成・検証
+    - [x] Go renderer 実装後に `renders/` を正式 golden fixture として再生成・検証
   - 詳細: `docs/uc/001-ec-checkout-flow/TASKS-UC-001.md`
 
 ---
@@ -145,22 +145,29 @@ renderer と MCP wrapper が Raw YAML structs を直接読まない方針を前�
 
 ### Milestone 2: DAG renderer の対象を広げる
 
-- [ ] **foreach をDAG rendererに追加する**
+- [x] **foreach をDAG rendererに追加する**
   - `cart.task.validate_cart`
   - `foreach.over: $params.field`
   - `$item`
   - apply先taskの `↻` 表示
+  - `docs/uc/001-ec-checkout-flow/renders/commerce/dag-validate_cart.md` とgolden一致
 
-- [ ] **fork / join をDAG rendererに追加する**
+- [x] **fork / join をDAG rendererに追加する**
   - `order.task.checkout`
   - ADR-040 の `branches[].steps[].params`
   - join.params の branch終端step `returns.name` 解決
+  - `docs/uc/001-ec-checkout-flow/renders/commerce/dag-checkout.md` とgolden一致
 
-- [ ] **branch / cases をDAG rendererに追加する**
+- [x] **branch / cases をDAG rendererに追加する**
   - `order.task.process_order`
   - `branch.params` と `cases[].params` の分離
   - floating node → `_end`
   - 制御フロースコープ（ADR-023）
+  - `docs/uc/001-ec-checkout-flow/renders/commerce/dag-process_order.md` とgolden一致
+
+- [x] **M2完了確認**
+  - 既存M1の `auth.task.login` golden test維持
+  - `go fmt ./...` / `go test ./...` 通過（2026-04-27）
 
 ### Milestone 3: QueryService を通す
 
