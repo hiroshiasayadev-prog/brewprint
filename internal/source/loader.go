@@ -119,8 +119,34 @@ func decodeNodeFile(root *yaml.Node) (*rawyaml.NodeFile, error) {
 				return nil, err
 			}
 			out.Actors = append(out.Actors, actor)
+		case "branch":
+			var branch rawyaml.ControlNode
+			if err := node.Decode(&branch); err != nil {
+				return nil, err
+			}
+			out.Branches = append(out.Branches, branch)
+		case "fork":
+			var fork rawyaml.ControlNode
+			if err := node.Decode(&fork); err != nil {
+				return nil, err
+			}
+			out.Forks = append(out.Forks, fork)
+		case "join":
+			var join rawyaml.ControlNode
+			if err := node.Decode(&join); err != nil {
+				return nil, err
+			}
+			out.Joins = append(out.Joins, join)
 		default:
 			out.Unsupported = append(out.Unsupported, common)
+		}
+	}
+	if flowNode, ok := mappingValue(root, "flow"); ok {
+		if flowNode.Kind != yaml.SequenceNode {
+			return nil, fmt.Errorf("top-level flow must be a sequence")
+		}
+		if err := flowNode.Decode(&out.Flow); err != nil {
+			return nil, err
 		}
 	}
 	return out, nil

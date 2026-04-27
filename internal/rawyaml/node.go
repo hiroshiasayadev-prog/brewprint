@@ -27,6 +27,10 @@ type NodeFile struct {
 	Models      []Model
 	Stores      []Store
 	Actors      []Actor
+	Branches    []ControlNode
+	Forks       []ControlNode
+	Joins       []ControlNode
+	Flow        []FlowEntry
 	Unsupported []CommonNode
 }
 

@@ -20,6 +20,10 @@ func RenderFile(project *semantic.Project, fileID semantic.FileID) (string, erro
 }
 
 func RenderTask(project *semantic.Project, task *semantic.Task) (string, error) {
+	if len(project.FlowByFile[task.FileID]) > 0 {
+		return renderFlowTask(project, task), nil
+	}
+
 	var b strings.Builder
 
 	fmt.Fprintf(&b, "# %s\n\n", task.ID)

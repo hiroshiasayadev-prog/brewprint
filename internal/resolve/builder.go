@@ -28,10 +28,20 @@ func Build(raw *rawyaml.Project) (*semantic.Project, []semantic.Diagnostic) {
 		for _, task := range file.NodeFile.Tasks {
 			symbols.addNode(buildTask(fileID, module, task))
 		}
+		for _, branch := range file.NodeFile.Branches {
+			symbols.addNode(buildBranch(fileID, module, branch))
+		}
+		for _, fork := range file.NodeFile.Forks {
+			symbols.addNode(buildFork(fileID, module, fork))
+		}
+		for _, join := range file.NodeFile.Joins {
+			symbols.addNode(buildJoin(fileID, module, join))
+		}
 	}
 
 	buildInitializedStores(project, symbols)
 	resolveTaskStoreAccess(project, symbols)
+	buildFlows(raw, project, symbols)
 	return project, symbols.diags
 }
 
@@ -88,6 +98,80 @@ func buildTask(fileID semantic.FileID, module string, raw rawyaml.Task) *semanti
 		task.Writes = append(task.Writes, semantic.StoreRef{Name: write})
 	}
 	return task
+}
+
+func buildBranch(fileID semantic.FileID, module string, raw rawyaml.ControlNode) *semantic.Branch {
+	branch := &semantic.Branch{
+		BaseNode: semantic.BaseNode{
+			QID:    qidFor(module, "branch", raw.ID),
+			FileID: fileID,
+			ID:     raw.ID,
+			Kind:   semantic.NodeKindBranch,
+			Main:   raw.Main,
+			Note:   raw.Note,
+		},
+	}
+	branch.Params = buildParams(module, raw.Params)
+	return branch
+}
+
+func buildFork(fileID semantic.FileID, module string, raw rawyaml.ControlNode) *semantic.Fork {
+	fork := &semantic.Fork{
+		BaseNode: semantic.BaseNode{
+			QID:    qidFor(module, "fork", raw.ID),
+			FileID: fileID,
+			ID:     raw.ID,
+			Kind:   semantic.NodeKindFork,
+			Main:   raw.Main,
+			Note:   raw.Note,
+		},
+	}
+	fork.Params = buildParams(module, raw.Params)
+	return fork
+}
+
+func buildJoin(fileID semantic.FileID, module string, raw rawyaml.ControlNode) *semantic.Join {
+	qid := qidFor(module, "join", raw.ID)
+	join := &semantic.Join{
+		BaseNode: semantic.BaseNode{
+			QID:    qid,
+			FileID: fileID,
+			ID:     raw.ID,
+			Kind:   semantic.NodeKindJoin,
+			Main:   raw.Main,
+			Note:   raw.Note,
+		},
+	}
+	join.Params = buildParams(module, raw.Params)
+	if raw.Returns != nil {
+		modelQID := resolveModelQID(module, raw.Returns.Model)
+		join.Returns = &semantic.Return{
+			Name:      raw.Returns.Name,
+			Model:     modelQID,
+			ModelName: raw.Returns.Model,
+			Asset: &semantic.Asset{
+				Name:       raw.Returns.Name,
+				Model:      modelQID,
+				ModelName:  raw.Returns.Model,
+				ProducedBy: qid,
+				FileID:     fileID,
+			},
+		}
+	}
+	return join
+}
+
+func buildParams(module string, raw []rawyaml.Param) []semantic.Param {
+	params := make([]semantic.Param, 0, len(raw))
+	for _, param := range raw {
+		params = append(params, semantic.Param{
+			Name:      param.Name,
+			Model:     resolveModelQID(module, param.Model),
+			ModelName: param.Model,
+			Note:      param.Note,
+		})
+	}
+	return params
 }
 
 func buildModel(fileID semantic.FileID, module string, raw rawyaml.Model) *semantic.Model {

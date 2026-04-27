@@ -10,7 +10,7 @@ import (
 	"github.com/hiroshiasayadev-prog/brewprint/internal/testutil/golden"
 )
 
-func TestRenderLoginDAGGolden(t *testing.T) {
+func TestRenderDAGGolden(t *testing.T) {
 	yamlRoot := filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/yaml")
 	loader := source.Loader{}
 	raw, err := loader.Load(yamlRoot)
@@ -25,16 +25,44 @@ func TestRenderLoginDAGGolden(t *testing.T) {
 		}
 	}
 	assertLoginResolved(t, project)
+	assertM2Resolved(t, project)
 
-	actual, err := RenderFile(project, semantic.FileID("auth/task/login.yaml"))
-	if err != nil {
-		t.Fatalf("render login dag: %v", err)
+	cases := []struct {
+		name     string
+		fileID   semantic.FileID
+		goldenMD string
+	}{
+		{
+			name:     "login",
+			fileID:   semantic.FileID("auth/task/login.yaml"),
+			goldenMD: filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/renders/auth/dag-login.md"),
+		},
+		{
+			name:     "validate_cart",
+			fileID:   semantic.FileID("cart/task/validate_cart.yaml"),
+			goldenMD: filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/renders/commerce/dag-validate_cart.md"),
+		},
+		{
+			name:     "checkout",
+			fileID:   semantic.FileID("order/task/checkout.yaml"),
+			goldenMD: filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/renders/commerce/dag-checkout.md"),
+		},
+		{
+			name:     "process_order",
+			fileID:   semantic.FileID("order/task/process_order.yaml"),
+			goldenMD: filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/renders/commerce/dag-process_order.md"),
+		},
 	}
 
-	golden.AssertEqualFile(t,
-		filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/renders/auth/dag-login.md"),
-		actual,
-	)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual, err := RenderFile(project, tc.fileID)
+			if err != nil {
+				t.Fatalf("render dag: %v", err)
+			}
+			golden.AssertEqualFile(t, tc.goldenMD, actual)
+		})
+	}
 }
 
 func assertLoginResolved(t *testing.T, project *semantic.Project) {
@@ -55,6 +83,31 @@ func assertLoginResolved(t *testing.T, project *semantic.Project) {
 	assertStoreRef(t, task.Writes, "login_log_db", semantic.QualifiedID("auth.task.login.store.login_log_db"), true)
 	if _, exists := project.StoresByQID[semantic.QualifiedID("auth.task.login.store.login_log_db")]; exists {
 		t.Fatalf("file-private initialized store leaked into StoresByQID")
+	}
+}
+
+func assertM2Resolved(t *testing.T, project *semantic.Project) {
+	t.Helper()
+	if _, ok := project.BranchesByQID[semantic.QualifiedID("order.branch.route_by_inventory")]; !ok {
+		t.Fatalf("order.branch.route_by_inventory not found")
+	}
+	if _, ok := project.ForksByQID[semantic.QualifiedID("order.fork.parallel_processing")]; !ok {
+		t.Fatalf("order.fork.parallel_processing not found")
+	}
+	if _, ok := project.JoinsByQID[semantic.QualifiedID("order.join.finalize_checkout")]; !ok {
+		t.Fatalf("order.join.finalize_checkout not found")
+	}
+	validateFlow := project.FlowByFile[semantic.FileID("cart/task/validate_cart.yaml")]
+	if len(validateFlow) != 1 || validateFlow[0].Kind != semantic.FlowKindForeach {
+		t.Fatalf("validate_cart flow not resolved as foreach: %#v", validateFlow)
+	}
+	checkoutFlow := project.FlowByFile[semantic.FileID("order/task/checkout.yaml")]
+	if len(checkoutFlow) != 2 || checkoutFlow[1].Kind != semantic.FlowKindFork {
+		t.Fatalf("checkout flow not resolved as step + fork: %#v", checkoutFlow)
+	}
+	processFlow := project.FlowByFile[semantic.FileID("order/task/process_order.yaml")]
+	if len(processFlow) != 2 || processFlow[1].Kind != semantic.FlowKindBranch {
+		t.Fatalf("process_order flow not resolved as step + branch: %#v", processFlow)
 	}
 }
 

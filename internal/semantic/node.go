@@ -3,10 +3,13 @@ package semantic
 type NodeKind string
 
 const (
-	NodeKindTask  NodeKind = "task"
-	NodeKindModel NodeKind = "model"
-	NodeKindStore NodeKind = "store"
-	NodeKindActor NodeKind = "actor"
+	NodeKindTask   NodeKind = "task"
+	NodeKindModel  NodeKind = "model"
+	NodeKindStore  NodeKind = "store"
+	NodeKindActor  NodeKind = "actor"
+	NodeKindBranch NodeKind = "branch"
+	NodeKindFork   NodeKind = "fork"
+	NodeKindJoin   NodeKind = "join"
 )
 
 type Node interface {

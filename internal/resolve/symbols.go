@@ -40,6 +40,12 @@ func (s *symbolTable) addNode(node semantic.Node) {
 		s.project.ModelsByQID[qid] = n
 	case *semantic.Store:
 		s.project.StoresByQID[qid] = n
+	case *semantic.Branch:
+		s.project.BranchesByQID[qid] = n
+	case *semantic.Fork:
+		s.project.ForksByQID[qid] = n
+	case *semantic.Join:
+		s.project.JoinsByQID[qid] = n
 	case *semantic.Actor:
 		if _, exists := s.project.ActorsByQID[qid]; exists {
 			s.addDiagnostic(semantic.SeverityError, fileID, "duplicate actor id: "+n.ID)
