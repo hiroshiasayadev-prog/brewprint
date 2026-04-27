@@ -102,6 +102,52 @@ M1では `cmd/brewprint/main.go` は空殻でよい。
 DAG vertical sliceはgolden testから直接動かす。
 CLIの引数設計や `brewprint render` コマンド設計は、render対象・出力配置が増える後続milestoneで扱う。
 
+### 3.5 Go module / YAML decoder
+
+`go.mod` のmodule pathは、docsも含むこのrepo全体をGo module rootとして扱い、以下を採用する。
+
+```go
+module github.com/hiroshiasayadev-prog/brewprint
+```
+
+UC fixtureやdocsは同一repo内のtestdata相当の入力として扱う。
+Go packageとしてimportしないため、docsが同一repoに存在していてもmodule path上の問題はない。
+
+YAML decoderはM1では以下を採用する。
+
+```go
+gopkg.in/yaml.v3
+```
+
+M1では通常のstruct decodeを基本とする。
+`yaml.Node` はline/column等のsource locationや柔軟な未知フィールド検出が必要になった時点で使う。
+M1のDAG 1本では、全ファイルを `yaml.Node` として保持する必要はない。
+
+`yaml.Node` を使う場合も、利用範囲は `internal/source` 内部に閉じる。
+`rawyaml` / `semantic` / `resolve` / `render` は `yaml.Node` に依存しない。
+
+禁止例:
+
+```go
+type Task struct {
+    Node *yaml.Node
+}
+```
+
+source locationが必要になった場合は、`source` が `yaml.Node.Line` / `yaml.Node.Column` を読み取り、`rawyaml.SourceLoc` または `semantic.Diagnostic` に写像する。
+
+例:
+
+```go
+type SourceLoc struct {
+    File   string
+    Line   int
+    Column int
+}
+```
+
+この方針により、YAML decode実装をstruct decodeから `yaml.Node` 併用へ変更しても、semantic build / renderer / query layer には影響を広げない。
+
 ---
 
 ## 4. 初期ディレクトリ構成
@@ -193,6 +239,40 @@ rawyaml/render_index.go
 
 `source` が行うのはdecode-time validationまでである。
 名前解決、semantic validation、derived model buildは行わない。
+
+FileID / module path導出例:
+
+```text
+yaml root:
+  docs/uc/001-ec-checkout-flow/yaml
+
+auth/task/login.yaml
+  FileID: auth/task/login.yaml
+  module: auth
+  node kind: task
+  qid: auth.task.login
+
+auth/model/token.yaml
+  FileID: auth/model/token.yaml
+  module: auth
+  node kind: model
+  qid: auth.model.token
+
+payment/webhooks/task/process_payment.yaml
+  FileID: payment/webhooks/task/process_payment.yaml
+  module: payment.webhooks
+  node kind: task
+  qid: payment.webhooks.task.process_payment
+
+actors.yaml
+  FileID: actors.yaml
+  actor: project global
+  external reference form: end_user / stripe
+  internal qid form: actor.end_user / actor.stripe
+```
+
+actorはADR-031に従い、YAML上の参照形式はglobal ID直参照とする。
+内部index用の `QualifiedID` は、通常nodeと衝突しないよう `actor.<id>` 形式で保持する。
 
 ### 5.2 `internal/rawyaml`
 
@@ -299,6 +379,19 @@ FilesByTopLevelModule
 - `TasksReadingStore` / `TasksWritingStore` を構築する
 - duplicate actor IDを検出する
 
+M1のstore参照解決順は以下とする。
+
+```text
+reads / writes store resolution:
+1. 同一FileIDの StoresByFileLocal[name]
+2. 同一moduleの store.<name>
+3. フルパス QualifiedID
+```
+
+`initializes` 由来のfile-private storeは外部ファイルから参照できない。
+M1では少なくとも `writes` の解決対象に含める。
+`reads` でfile-private storeを読むケースも、同一ファイル内であれば同じ解決順に従って許容する。
+
 `resolve` はrenderer向けのMermaid / Markdown整形をしない。
 
 ### 5.5 `internal/render/dag`
@@ -331,6 +424,10 @@ ADR-028に基づく正式なroute合成は、M5のAPI Table rendererで扱う。
 - expected fileの読み込み
 - actualとの比較
 - 差分表示補助
+- 改行コードをCRLFからLFへ正規化する
+- expected / actual の末尾改行を1つに揃える
+
+M1ではtrailing spacesやMarkdown内部の空行は意味のある出力差分として扱い、勝手にtrimしない。
 
 rendererごとのテスト本体は、各renderer package側に置く。
 
