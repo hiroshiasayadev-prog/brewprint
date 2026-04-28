@@ -38,6 +38,11 @@ func TestRenderDAGGolden(t *testing.T) {
 			goldenMD: filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/renders/auth/dag-login.md"),
 		},
 		{
+			name:     "add_to_cart",
+			fileID:   semantic.FileID("cart/task/add_to_cart.yaml"),
+			goldenMD: filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/renders/commerce/dag-add_to_cart.md"),
+		},
+		{
 			name:     "validate_cart",
 			fileID:   semantic.FileID("cart/task/validate_cart.yaml"),
 			goldenMD: filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/renders/commerce/dag-validate_cart.md"),
@@ -51,6 +56,16 @@ func TestRenderDAGGolden(t *testing.T) {
 			name:     "process_order",
 			fileID:   semantic.FileID("order/task/process_order.yaml"),
 			goldenMD: filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/renders/commerce/dag-process_order.md"),
+		},
+		{
+			name:     "process_payment",
+			fileID:   semantic.FileID("payment/webhooks/task/process_payment.yaml"),
+			goldenMD: filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/renders/commerce/dag-process_payment.md"),
+		},
+		{
+			name:     "get_items",
+			fileID:   semantic.FileID("catalog/task/get_items.yaml"),
+			goldenMD: filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/renders/catalog/dag-get_items.md"),
 		},
 	}
 

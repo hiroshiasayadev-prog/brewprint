@@ -394,3 +394,20 @@ renderer と MCP wrapper が Raw YAML structs を直接読まない方針を前�
   - `Write` がネストした出力ディレクトリを作成して書き込めることを固定
   - CLI testではなく一括render本体側で出力パス契約を担保する
   - `go fmt ./...` / `go test ./...` 通過済み（2026-04-29、M8-2差分後）
+
+- [x] **UC-001 render fixtureを一括render出力へ追随する 第1段**
+  - M8一括render manifestで不足していたDAG fixture 3本を追加
+    - `renders/commerce/dag-add_to_cart.md`
+    - `renders/catalog/dag-get_items.md`
+    - `renders/commerce/dag-process_payment.md`
+  - master `renders/index.md` のDAG件数を現行一括render出力に合わせて更新
+  - group indexの完全追随は後続差分で扱う
+  - `go fmt ./...` / `go test ./...` 通過済み（2026-04-29、M8-3差分後）
+
+- [x] **DAG renderer golden testを追加fixtureへ拡張する**
+  - `internal/render/dag/renderer_test.go` のgolden対象に追加DAG 3本を追加
+    - `cart/task/add_to_cart.yaml`
+    - `catalog/task/get_items.yaml`
+    - `payment/webhooks/task/process_payment.yaml`
+  - `dag-process_payment.md` を実レンダー出力に合わせて更新
+  - `go test ./internal/render/dag` / `go test ./...` 通過済み（2026-04-29、M8-4差分後）
