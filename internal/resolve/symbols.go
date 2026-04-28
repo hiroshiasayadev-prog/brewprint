@@ -12,14 +12,18 @@ func newSymbolTable(project *semantic.Project) *symbolTable {
 }
 
 func (s *symbolTable) addDiagnostic(severity semantic.Severity, fileID semantic.FileID, message string) {
-	s.diags = append(s.diags, semantic.Diagnostic{Severity: severity, FileID: fileID, Message: message})
+	s.addDiagnosticCode(severity, diagnosticSemanticValidation, fileID, message)
+}
+
+func (s *symbolTable) addDiagnosticCode(severity semantic.Severity, code string, fileID semantic.FileID, message string) {
+	s.diags = append(s.diags, semantic.Diagnostic{Severity: severity, Code: code, FileID: fileID, Message: message})
 }
 
 func (s *symbolTable) addNode(node semantic.Node) {
 	qid := node.GetQID()
 	fileID := node.GetFileID()
 	if _, exists := s.project.NodesByQID[qid]; exists {
-		s.addDiagnostic(semantic.SeverityError, fileID, "duplicate node qid: "+qid.String())
+		s.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateNode, fileID, "duplicate node qid: "+qid.String())
 		return
 	}
 
@@ -27,7 +31,7 @@ func (s *symbolTable) addNode(node semantic.Node) {
 	s.project.NodesByFile[fileID] = append(s.project.NodesByFile[fileID], node)
 	if node.IsMain() {
 		if _, exists := s.project.MainNodeByFile[fileID]; exists {
-			s.addDiagnostic(semantic.SeverityError, fileID, "duplicate main node in file")
+			s.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateMainNode, fileID, "duplicate main node in file")
 		} else {
 			s.project.MainNodeByFile[fileID] = qid
 		}
@@ -38,6 +42,10 @@ func (s *symbolTable) addNode(node semantic.Node) {
 		s.project.TasksByQID[qid] = n
 	case *semantic.Model:
 		s.project.ModelsByQID[qid] = n
+	case *semantic.State:
+		s.project.StatesByQID[qid] = n
+	case *semantic.Event:
+		s.project.EventsByQID[qid] = n
 	case *semantic.Store:
 		s.project.StoresByQID[qid] = n
 	case *semantic.Branch:
@@ -48,7 +56,7 @@ func (s *symbolTable) addNode(node semantic.Node) {
 		s.project.JoinsByQID[qid] = n
 	case *semantic.Actor:
 		if _, exists := s.project.ActorsByQID[qid]; exists {
-			s.addDiagnostic(semantic.SeverityError, fileID, "duplicate actor id: "+n.ID)
+			s.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateActor, fileID, "duplicate actor id: "+n.ID)
 			return
 		}
 		s.project.ActorsByQID[qid] = n

@@ -37,6 +37,19 @@ func (Loader) Load(root string) (*rawyaml.Project, error) {
 		return nil, err
 	}
 
+	if filepath.Base(filepath.Clean(root)) == "yaml" {
+		renderIndexPath := filepath.Join(filepath.Dir(root), "render_index.yaml")
+		if _, err := os.Stat(renderIndexPath); err == nil {
+			file, err := loadFile(renderIndexPath, "render_index.yaml")
+			if err != nil {
+				return nil, err
+			}
+			files = append(files, file)
+		} else if !os.IsNotExist(err) {
+			return nil, err
+		}
+	}
+
 	sort.Slice(files, func(i, j int) bool { return files[i].ID < files[j].ID })
 	return &rawyaml.Project{Root: root, Files: files}, nil
 }
@@ -60,6 +73,38 @@ func loadFile(path, fileID string) (rawyaml.File, error) {
 		Kind:   class.kind,
 		ViewAs: class.viewAs,
 	}
+	if class.kind == rawyaml.FileKindRenderIndex {
+		renderIndex, err := decodeRenderIndex(root)
+		if err != nil {
+			return rawyaml.File{}, fmt.Errorf("%s: %w", fileID, err)
+		}
+		file.RenderIndex = renderIndex
+		return file, nil
+	}
+	if class.kind == rawyaml.FileKindView && class.viewAs == "sequence_diagram" {
+		sequenceScenario, err := decodeSequenceScenario(root)
+		if err != nil {
+			return rawyaml.File{}, fmt.Errorf("%s: %w", fileID, err)
+		}
+		file.SequenceScenario = sequenceScenario
+		return file, nil
+	}
+	if class.kind == rawyaml.FileKindView && class.viewAs == "er_diagram" {
+		erView, err := decodeERView(root)
+		if err != nil {
+			return rawyaml.File{}, fmt.Errorf("%s: %w", fileID, err)
+		}
+		file.ERView = erView
+		return file, nil
+	}
+	if class.kind == rawyaml.FileKindView && class.viewAs == "api_table" {
+		apiView, err := decodeAPIView(root)
+		if err != nil {
+			return rawyaml.File{}, fmt.Errorf("%s: %w", fileID, err)
+		}
+		file.APIView = apiView
+		return file, nil
+	}
 	if class.kind != rawyaml.FileKindNode {
 		return file, nil
 	}
@@ -80,6 +125,38 @@ func documentRoot(doc *yaml.Node) *yaml.Node {
 		return doc.Content[0]
 	}
 	return doc
+}
+
+func decodeRenderIndex(root *yaml.Node) (*rawyaml.RenderIndex, error) {
+	var out rawyaml.RenderIndex
+	if err := root.Decode(&out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func decodeSequenceScenario(root *yaml.Node) (*rawyaml.SequenceScenario, error) {
+	var out rawyaml.SequenceScenario
+	if err := root.Decode(&out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func decodeERView(root *yaml.Node) (*rawyaml.ERView, error) {
+	var out rawyaml.ERView
+	if err := root.Decode(&out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func decodeAPIView(root *yaml.Node) (*rawyaml.APIView, error) {
+	var out rawyaml.APIView
+	if err := root.Decode(&out); err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 func decodeNodeFile(root *yaml.Node) (*rawyaml.NodeFile, error) {
@@ -119,6 +196,18 @@ func decodeNodeFile(root *yaml.Node) (*rawyaml.NodeFile, error) {
 				return nil, err
 			}
 			out.Actors = append(out.Actors, actor)
+		case "state":
+			var state rawyaml.State
+			if err := node.Decode(&state); err != nil {
+				return nil, err
+			}
+			out.States = append(out.States, state)
+		case "event":
+			var event rawyaml.Event
+			if err := node.Decode(&event); err != nil {
+				return nil, err
+			}
+			out.Events = append(out.Events, event)
 		case "branch":
 			var branch rawyaml.ControlNode
 			if err := node.Decode(&branch); err != nil {
@@ -146,6 +235,14 @@ func decodeNodeFile(root *yaml.Node) (*rawyaml.NodeFile, error) {
 			return nil, fmt.Errorf("top-level flow must be a sequence")
 		}
 		if err := flowNode.Decode(&out.Flow); err != nil {
+			return nil, err
+		}
+	}
+	if transitionsNode, ok := mappingValue(root, "transitions"); ok {
+		if transitionsNode.Kind != yaml.SequenceNode {
+			return nil, fmt.Errorf("top-level transitions must be a sequence")
+		}
+		if err := transitionsNode.Decode(&out.Transitions); err != nil {
 			return nil, err
 		}
 	}

@@ -1,0 +1,100 @@
+package resolve
+
+import (
+	"fmt"
+
+	"github.com/hiroshiasayadev-prog/brewprint/internal/rawyaml"
+	"github.com/hiroshiasayadev-prog/brewprint/internal/semantic"
+)
+
+func buildScenarios(raw *rawyaml.Project, project *semantic.Project, symbols *symbolTable) {
+	for _, file := range raw.Files {
+		if file.Kind != rawyaml.FileKindView || file.SequenceScenario == nil {
+			continue
+		}
+		scenario := buildScenario(file, project, symbols)
+		if scenario == nil {
+			continue
+		}
+		if _, exists := project.ScenariosByID[scenario.ID]; exists {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateView, semantic.FileID(file.ID), "duplicate sequence scenario id: "+scenario.ID)
+			continue
+		}
+		project.ScenariosByID[scenario.ID] = scenario
+	}
+}
+
+func buildScenario(file rawyaml.File, project *semantic.Project, symbols *symbolTable) *semantic.SequenceScenario {
+	raw := file.SequenceScenario
+	fileID := semantic.FileID(file.ID)
+	if raw.ID == "" {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidViewDefinition, fileID, "sequence scenario id is required")
+		return nil
+	}
+	if raw.StateFile == "" {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidViewDefinition, fileID, "sequence scenario state_file is required: "+raw.ID)
+		return nil
+	}
+	if len(raw.Steps) == 0 {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidViewDefinition, fileID, "sequence scenario steps must not be empty: "+raw.ID)
+		return nil
+	}
+
+	scenario := &semantic.SequenceScenario{
+		FileID:    fileID,
+		ID:        raw.ID,
+		Title:     raw.Title,
+		StateFile: semantic.FileID(raw.StateFile),
+	}
+	for i, rawStep := range raw.Steps {
+		transition, ok := resolveScenarioTransition(project, scenario.StateFile, rawStep)
+		if !ok {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedSequenceStep, fileID, fmt.Sprintf("unresolved sequence step %d: %s via %s", i+1, rawStep.FromState, rawStep.Via))
+			continue
+		}
+		if len(scenario.Steps) > 0 {
+			prev := scenario.Steps[len(scenario.Steps)-1].Transition
+			if prev.To != rawStep.FromState {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticNonContinuousSequence, fileID, fmt.Sprintf("sequence step %d is not continuous: previous to=%s, current from_state=%s", i+1, prev.To, rawStep.FromState))
+			}
+		}
+		scenario.Steps = append(scenario.Steps, semantic.SequenceStep{
+			FromState:  rawStep.FromState,
+			Via:        rawStep.Via,
+			Guard:      rawStep.Guard,
+			Transition: transition,
+		})
+	}
+	return scenario
+}
+
+func resolveScenarioTransition(project *semantic.Project, stateFile semantic.FileID, step rawyaml.SequenceStep) (semantic.Transition, bool) {
+	var candidates []semantic.Transition
+	for _, transition := range project.TransitionsByFile[stateFile] {
+		if transition.From == step.FromState && transition.On == step.Via {
+			candidates = append(candidates, transition)
+		}
+	}
+	if len(candidates) == 0 {
+		return semantic.Transition{}, false
+	}
+	if len(candidates) == 1 {
+		if step.Guard == "" || candidates[0].Guard == step.Guard {
+			return candidates[0], true
+		}
+		return semantic.Transition{}, false
+	}
+	if step.Guard == "" {
+		return semantic.Transition{}, false
+	}
+	var matches []semantic.Transition
+	for _, candidate := range candidates {
+		if candidate.Guard == step.Guard {
+			matches = append(matches, candidate)
+		}
+	}
+	if len(matches) != 1 {
+		return semantic.Transition{}, false
+	}
+	return matches[0], true
+}

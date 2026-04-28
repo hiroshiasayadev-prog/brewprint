@@ -25,6 +25,12 @@ func Build(raw *rawyaml.Project) (*semantic.Project, []semantic.Diagnostic) {
 		for _, actor := range file.NodeFile.Actors {
 			symbols.addNode(buildActor(fileID, actor))
 		}
+		for _, state := range file.NodeFile.States {
+			symbols.addNode(buildState(fileID, module, state))
+		}
+		for _, event := range file.NodeFile.Events {
+			symbols.addNode(buildEvent(fileID, module, event))
+		}
 		for _, task := range file.NodeFile.Tasks {
 			symbols.addNode(buildTask(fileID, module, task))
 		}
@@ -42,7 +48,13 @@ func Build(raw *rawyaml.Project) (*semantic.Project, []semantic.Diagnostic) {
 	buildInitializedStores(project, symbols)
 	resolveTaskStoreAccess(project, symbols)
 	buildFlows(raw, project, symbols)
-	return project, symbols.diags
+	buildTransitions(raw, project, symbols)
+	buildScenarios(raw, project, symbols)
+	buildERViews(raw, project, symbols)
+	buildAPIViews(raw, project, symbols)
+	validateProject(project, symbols)
+	buildReferences(project)
+	return project, sortedDiagnostics(symbols.diags)
 }
 
 func buildTask(fileID semantic.FileID, module string, raw rawyaml.Task) *semantic.Task {
@@ -227,6 +239,86 @@ func buildActor(fileID semantic.FileID, raw rawyaml.Actor) *semantic.Actor {
 	}
 }
 
+func buildState(fileID semantic.FileID, module string, raw rawyaml.State) *semantic.State {
+	return &semantic.State{
+		BaseNode: semantic.BaseNode{
+			QID:    qidFor(module, "state", raw.ID),
+			FileID: fileID,
+			ID:     raw.ID,
+			Kind:   semantic.NodeKindState,
+			Note:   raw.Note,
+		},
+		Initial:   raw.Initial,
+		Final:     raw.Final,
+		Wireframe: buildWireframe(raw.Wireframe),
+	}
+}
+
+func buildWireframe(raw *rawyaml.WireframeElement) *semantic.WireframeElement {
+	if raw == nil {
+		return nil
+	}
+	out := &semantic.WireframeElement{
+		Type:        raw.Type,
+		ID:          raw.ID,
+		Label:       raw.Label,
+		Cols:        raw.Cols,
+		Fires:       raw.Fires,
+		Disabled:    raw.Disabled,
+		Placeholder: raw.Placeholder,
+		Span:        raw.Span,
+		Layout:      buildWireframeLayout(raw.Layout),
+	}
+	for _, child := range raw.Children {
+		built := buildWireframe(&child)
+		if built != nil {
+			out.Children = append(out.Children, *built)
+		}
+	}
+	return out
+}
+
+func buildWireframeLayout(raw *rawyaml.WireframeLayout) *semantic.WireframeLayout {
+	if raw == nil {
+		return nil
+	}
+	return &semantic.WireframeLayout{
+		Width:     raw.Width,
+		Height:    raw.Height,
+		MinWidth:  raw.MinWidth,
+		MinHeight: raw.MinHeight,
+		Grow:      raw.Grow,
+		Gap:       raw.Gap,
+		Padding:   raw.Padding,
+		Align:     raw.Align,
+		Justify:   raw.Justify,
+		Scroll:    raw.Scroll,
+	}
+}
+
+func buildEvent(fileID semantic.FileID, module string, raw rawyaml.Event) *semantic.Event {
+	event := &semantic.Event{
+		BaseNode: semantic.BaseNode{
+			QID:    qidFor(module, "event", raw.ID),
+			FileID: fileID,
+			ID:     raw.ID,
+			Kind:   semantic.NodeKindEvent,
+			Note:   raw.Note,
+		},
+		Source:      raw.Source,
+		Actor:       raw.Actor,
+		WatchesName: raw.Watches,
+	}
+	if raw.Payload != nil {
+		event.PayloadName = raw.Payload.Model
+		event.PayloadModel = resolveModelQID(module, raw.Payload.Model)
+	}
+	if raw.Watches != "" {
+		event.Watches = resolveSameModuleStoreQID(module, raw.Watches)
+	}
+	return event
+}
+
 func buildInitializedStores(project *semantic.Project, symbols *symbolTable) {
 	for _, task := range project.TasksByQID {
 		for i := range task.Initializes {
@@ -250,7 +342,7 @@ func buildInitializedStores(project *semantic.Project, symbols *symbolTable) {
 				project.StoresByFileLocal[task.FileID] = map[string]*semantic.Store{}
 			}
 			if _, exists := project.StoresByFileLocal[task.FileID][init.Name]; exists {
-				symbols.addDiagnostic(semantic.SeverityError, task.FileID, "duplicate initialized store: "+init.Name)
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateInitializedStore, task.FileID, "duplicate initialized store: "+init.Name)
 				continue
 			}
 			project.StoresByFileLocal[task.FileID][init.Name] = store
@@ -265,7 +357,6 @@ func resolveTaskStoreAccess(project *semantic.Project, symbols *symbolTable) {
 			ref := resolveStoreRef(project, task.FileID, module, task.Reads[i].Name)
 			task.Reads[i] = ref
 			if ref.Store == "" {
-				symbols.addDiagnostic(semantic.SeverityWarning, task.FileID, "unresolved read store: "+ref.Name)
 				continue
 			}
 			project.TasksReadingStore[ref.Store] = append(project.TasksReadingStore[ref.Store], task.QID)
@@ -274,7 +365,6 @@ func resolveTaskStoreAccess(project *semantic.Project, symbols *symbolTable) {
 			ref := resolveStoreRef(project, task.FileID, module, task.Writes[i].Name)
 			task.Writes[i] = ref
 			if ref.Store == "" {
-				symbols.addDiagnostic(semantic.SeverityWarning, task.FileID, "unresolved write store: "+ref.Name)
 				continue
 			}
 			project.TasksWritingStore[ref.Store] = append(project.TasksWritingStore[ref.Store], task.QID)
