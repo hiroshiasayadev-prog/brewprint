@@ -373,3 +373,16 @@ renderer と MCP wrapper が Raw YAML structs を直接読まない方針を前�
   - `docs/impl/go-m7-summary.md` を追加
   - M7で追加したCLI / diagnostics / validation / spec / 境界 / 次候補を整理
   - 次sessionの復帰用メモを記載
+
+### Milestone 8: render CLI / 一括render pipeline を実装する
+
+- [x] **render CLI 第1段を実装する**
+  - `brewprint render --yaml-root <path> --out <path>` を追加
+  - validate相当のsemantic diagnosticsを通過したprojectだけrenderする
+  - `internal/render/project` に一括render orchestratorを追加
+  - 既存rendererを束ねて、DAG / State / Sequence / ER / API / Wireframe / Previewを出力する
+  - `render_index.yaml` に基づき `renders/{group}/...` / `_cross/` / `_preview/` へ配置する
+  - master `index.md` / group `index.md` を生成する
+  - CLI testではUC-001を `t.TempDir()` に出力し、主要出力パスと生成件数を固定する
+  - renderer本文のgolden一致は各 `internal/render/*` package testに委譲し、CLI testは一括生成・配置確認に限定する
+  - `go fmt ./...` / `go test ./...` 通過済み（2026-04-29、M8-1差分後）
