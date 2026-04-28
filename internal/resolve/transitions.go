@@ -43,7 +43,35 @@ func buildTransitions(raw *rawyaml.Project, project *semantic.Project, symbols *
 			transitions = append(transitions, transition)
 		}
 		project.TransitionsByFile[fileID] = transitions
+		indexTransitions(project, fileID, transitions, symbols)
 		validateGuardBranches(fileID, transitions, symbols)
+	}
+}
+
+func indexTransitions(project *semantic.Project, fileID semantic.FileID, transitions []semantic.Transition, symbols *symbolTable) {
+	for _, transition := range transitions {
+		if transition.FromState == "" || transition.Event == "" {
+			continue
+		}
+		key := semantic.TransitionKey{
+			StateFile: fileID,
+			FromState: transition.FromState,
+			Event:     transition.Event,
+			Guard:     transition.Guard,
+		}
+		ref := semantic.TransitionRef{Key: key, Transition: transition}
+		if _, exists := project.TransitionsByStateEventGuard[key]; exists {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateTransition, fileID, "duplicate transition index key: "+transition.From+" on "+transition.On+" guard "+transition.Guard)
+			continue
+		}
+		project.TransitionsByStateEventGuard[key] = ref
+		eventKey := semantic.TransitionEventKey{StateFile: fileID, FromState: transition.FromState, Event: transition.Event}
+		project.TransitionsByStateEvent[eventKey] = append(project.TransitionsByStateEvent[eventKey], ref)
+		if transition.ActionTask != "" {
+			if _, ok := project.TasksByQID[transition.ActionTask]; ok {
+				project.ActionsByTask[transition.ActionTask] = append(project.ActionsByTask[transition.ActionTask], ref)
+			}
+		}
 	}
 }
 

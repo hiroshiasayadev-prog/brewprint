@@ -11,8 +11,15 @@ const (
 	ReferenceKindReads         ReferenceKind = "reads"
 	ReferenceKindWrites        ReferenceKind = "writes"
 	ReferenceKindStoreOf       ReferenceKind = "store_of"
-	ReferenceKindFieldType     ReferenceKind = "field_type"
-	ReferenceKindFieldFK       ReferenceKind = "field_fk"
+	ReferenceKindFieldType        ReferenceKind = "field_type"
+	ReferenceKindFieldFK          ReferenceKind = "field_fk"
+	ReferenceKindTransitionEvent  ReferenceKind = "transition_event"
+	ReferenceKindTransitionFrom   ReferenceKind = "transition_from"
+	ReferenceKindTransitionTo     ReferenceKind = "transition_to"
+	ReferenceKindTransitionAction ReferenceKind = "transition_action"
+	ReferenceKindEventPayload     ReferenceKind = "event_payload"
+	ReferenceKindEventActor       ReferenceKind = "event_actor"
+	ReferenceKindEventWatches     ReferenceKind = "event_watches"
 )
 
 type ReferenceDirection string
@@ -34,6 +41,12 @@ type ReferenceEndpoint struct {
 	ScopeFile   FileID
 	File        FileID
 	LocalID     string
+	StateFile   FileID
+	From        string
+	On          string
+	To          string
+	Guard       string
+	Action      QualifiedID
 }
 
 type Reference struct {
@@ -67,4 +80,19 @@ func PrimitiveObjectKey(name string) ObjectKey {
 		return ""
 	}
 	return ObjectKey("primitive:" + name)
+}
+
+func TransitionObjectKey(transition Transition) ObjectKey {
+	if transition.FileID == "" || transition.From == "" || transition.On == "" {
+		return ""
+	}
+	return ObjectKey("transition:" + TransitionID(transition))
+}
+
+func TransitionID(transition Transition) string {
+	id := transition.FileID.String() + "#" + transition.From + ":" + transition.On
+	if transition.Guard != "" {
+		id += "[" + transition.Guard + "]"
+	}
+	return id
 }

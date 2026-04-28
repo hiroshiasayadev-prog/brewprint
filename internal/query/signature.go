@@ -49,6 +49,24 @@ func (s *Service) signatureForNode(node semantic.Node) (Signature, string, error
 			"store_kind": n.StoreKind,
 			"of":         n.Of.String(),
 		}, n.Note, nil
+	case *semantic.State:
+		return Signature{
+			"initial":   n.Initial,
+			"final":     n.Final,
+			"wireframe": map[string]any{"present": n.Wireframe != nil},
+		}, n.Note, nil
+	case *semantic.Event:
+		sig := Signature{"source": n.Source}
+		if n.Actor != "" {
+			sig["actor"] = n.Actor
+		}
+		if n.PayloadModel != "" || n.PayloadName != "" {
+			sig["payload"] = map[string]any{"model": n.PayloadModel.String()}
+		}
+		if n.Watches != "" || n.WatchesName != "" {
+			sig["watches"] = n.Watches.String()
+		}
+		return sig, n.Note, nil
 	case *semantic.Branch:
 		return Signature{"params": paramSignatures(n.Params)}, n.Note, nil
 	case *semantic.Fork:

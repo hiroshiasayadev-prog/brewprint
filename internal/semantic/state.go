@@ -30,3 +30,21 @@ type Transition struct {
 	ToState    QualifiedID
 	ActionTask QualifiedID
 }
+
+type TransitionKey struct {
+	StateFile FileID
+	FromState QualifiedID
+	Event     QualifiedID
+	Guard     string
+}
+
+type TransitionEventKey struct {
+	StateFile FileID
+	FromState QualifiedID
+	Event     QualifiedID
+}
+
+type TransitionRef struct {
+	Key        TransitionKey
+	Transition Transition
+}

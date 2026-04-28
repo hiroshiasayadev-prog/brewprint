@@ -69,32 +69,30 @@ func buildScenario(file rawyaml.File, project *semantic.Project, symbols *symbol
 }
 
 func resolveScenarioTransition(project *semantic.Project, stateFile semantic.FileID, step rawyaml.SequenceStep) (semantic.Transition, bool) {
-	var candidates []semantic.Transition
-	for _, transition := range project.TransitionsByFile[stateFile] {
-		if transition.From == step.FromState && transition.On == step.Via {
-			candidates = append(candidates, transition)
-		}
+	fromState := resolveNodeQID(project, stateFile, semantic.NodeKindState, step.FromState)
+	event := resolveNodeQID(project, stateFile, semantic.NodeKindEvent, step.Via)
+	if fromState == "" || event == "" {
+		return semantic.Transition{}, false
 	}
+	eventKey := semantic.TransitionEventKey{StateFile: stateFile, FromState: fromState, Event: event}
+	candidates := project.TransitionsByStateEvent[eventKey]
 	if len(candidates) == 0 {
 		return semantic.Transition{}, false
 	}
 	if len(candidates) == 1 {
-		if step.Guard == "" || candidates[0].Guard == step.Guard {
-			return candidates[0], true
+		transition := candidates[0].Transition
+		if step.Guard == "" || transition.Guard == step.Guard {
+			return transition, true
 		}
 		return semantic.Transition{}, false
 	}
 	if step.Guard == "" {
 		return semantic.Transition{}, false
 	}
-	var matches []semantic.Transition
-	for _, candidate := range candidates {
-		if candidate.Guard == step.Guard {
-			matches = append(matches, candidate)
-		}
-	}
-	if len(matches) != 1 {
+	key := semantic.TransitionKey{StateFile: stateFile, FromState: fromState, Event: event, Guard: step.Guard}
+	ref, ok := project.TransitionsByStateEventGuard[key]
+	if !ok {
 		return semantic.Transition{}, false
 	}
-	return matches[0], true
+	return ref.Transition, true
 }

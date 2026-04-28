@@ -61,6 +61,30 @@ func TestQueryServiceUC001(t *testing.T) {
 		if len(joinParams) != 2 {
 			t.Fatalf("join params = %#v", joinParams)
 		}
+
+		state, err := service.GetSignature(GetSignatureRequest{Selector: Selector{ID: "order.state.checkout_screen"}})
+		if err != nil {
+			t.Fatalf("GetSignature state: %v", err)
+		}
+		if state.Signature["initial"] != false || state.Signature["final"] != false {
+			t.Fatalf("state signature = %#v", state.Signature)
+		}
+		wireframe := state.Signature["wireframe"].(map[string]any)
+		if wireframe["present"] != true {
+			t.Fatalf("state wireframe signature = %#v", wireframe)
+		}
+
+		event, err := service.GetSignature(GetSignatureRequest{Selector: Selector{ID: "order.event.payment_webhook_received"}})
+		if err != nil {
+			t.Fatalf("GetSignature event: %v", err)
+		}
+		if event.Signature["source"] != "external" || event.Signature["actor"] != "stripe" {
+			t.Fatalf("event signature = %#v", event.Signature)
+		}
+		payload := event.Signature["payload"].(map[string]any)
+		if payload["model"] != "payment.model.payment_event" {
+			t.Fatalf("event payload signature = %#v", payload)
+		}
 	})
 
 	t.Run("GetReferences", func(t *testing.T) {
@@ -98,6 +122,53 @@ func TestQueryServiceUC001(t *testing.T) {
 				t.Fatalf("non-read ref in reads filter: %#v", ref)
 			}
 		}
+
+		checkoutActionRefs, err := service.GetReferences(GetReferencesRequest{Selector: Selector{ID: "order.task.checkout"}, Direction: "in", Kinds: []string{"transition_action"}})
+		if err != nil {
+			t.Fatalf("GetReferences checkout transition_action: %v", err)
+		}
+		checkoutAction := assertHasReference(t, checkoutActionRefs.References, "transition_action", "in", "order/state.yaml#checkout_screen:checkout_submitted", "order.task.checkout")
+		if checkoutAction.From.StateFile != "order/state.yaml" || checkoutAction.From.FromState != "checkout_screen" || checkoutAction.From.On != "checkout_submitted" || checkoutAction.From.ToState != "processing" || checkoutAction.From.Action != "order.task.checkout" {
+			t.Fatalf("checkout transition endpoint = %#v", checkoutAction.From)
+		}
+
+		paymentActionRefs, err := service.GetReferences(GetReferencesRequest{Selector: Selector{ID: "payment.webhooks.task.process_payment"}, Direction: "in", Kinds: []string{"transition_action"}})
+		if err != nil {
+			t.Fatalf("GetReferences payment transition_action: %v", err)
+		}
+		paymentAction := assertHasReference(t, paymentActionRefs.References, "transition_action", "in", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']", "payment.webhooks.task.process_payment")
+		if paymentAction.From.Guard != "payload.status == 'succeeded'" || paymentAction.From.Action != "payment.webhooks.task.process_payment" {
+			t.Fatalf("payment transition endpoint = %#v", paymentAction.From)
+		}
+
+		paymentEventRefs, err := service.GetReferences(GetReferencesRequest{Selector: Selector{ID: "order.event.payment_webhook_received"}, Direction: "both"})
+		if err != nil {
+			t.Fatalf("GetReferences payment event: %v", err)
+		}
+		assertHasReference(t, paymentEventRefs.References, "event_payload", "out", "order.event.payment_webhook_received", "payment.model.payment_event")
+		assertHasReference(t, paymentEventRefs.References, "event_actor", "out", "order.event.payment_webhook_received", "stripe")
+		assertHasReference(t, paymentEventRefs.References, "transition_event", "in", "order/state.yaml#processing:payment_webhook_received[payload.status == 'failed']", "order.event.payment_webhook_received")
+		assertHasReference(t, paymentEventRefs.References, "transition_event", "in", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']", "order.event.payment_webhook_received")
+
+		payloadModelRefs, err := service.GetReferences(GetReferencesRequest{Selector: Selector{ID: "payment.model.payment_event"}, Direction: "in", Kinds: []string{"event_payload"}})
+		if err != nil {
+			t.Fatalf("GetReferences payment model event_payload: %v", err)
+		}
+		assertHasReference(t, payloadModelRefs.References, "event_payload", "in", "order.event.payment_webhook_received", "payment.model.payment_event")
+
+		inventoryStoreRefs, err := service.GetReferences(GetReferencesRequest{Selector: Selector{ID: "catalog.store.inventory_db"}, Direction: "in", Kinds: []string{"event_watches"}})
+		if err != nil {
+			t.Fatalf("GetReferences inventory store event_watches: %v", err)
+		}
+		assertHasReference(t, inventoryStoreRefs.References, "event_watches", "in", "inventory.event.inventory_changed", "catalog.store.inventory_db")
+
+		processingStateRefs, err := service.GetReferences(GetReferencesRequest{Selector: Selector{ID: "order.state.processing"}, Direction: "both", Kinds: []string{"transition_from", "transition_to"}})
+		if err != nil {
+			t.Fatalf("GetReferences processing state transitions: %v", err)
+		}
+		assertHasReference(t, processingStateRefs.References, "transition_to", "in", "order/state.yaml#checkout_screen:checkout_submitted", "order.state.processing")
+		assertHasReference(t, processingStateRefs.References, "transition_from", "in", "order/state.yaml#processing:payment_webhook_received[payload.status == 'failed']", "order.state.processing")
+		assertHasReference(t, processingStateRefs.References, "transition_from", "in", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']", "order.state.processing")
 	})
 
 	t.Run("ListEndpoints", func(t *testing.T) {
@@ -143,6 +214,25 @@ func TestQueryServiceUC001(t *testing.T) {
 		if _, ok := checkout.Members["sub_tasks"]; !ok {
 			t.Fatalf("checkout sub_tasks member missing: %#v", checkout.Members)
 		}
+		checkoutActions := checkout.Members["action_transitions"].([]TransitionRef)
+		if len(checkoutActions) != 1 {
+			t.Fatalf("checkout action transitions = %#v", checkoutActions)
+		}
+		if checkoutActions[0].ID != "order/state.yaml#checkout_screen:checkout_submitted" || checkoutActions[0].Action != "order.task.checkout" {
+			t.Fatalf("checkout action transition = %#v", checkoutActions[0])
+		}
+
+		payment, err := service.Inspect(InspectRequest{Selector: Selector{ID: "payment.webhooks.task.process_payment"}})
+		if err != nil {
+			t.Fatalf("Inspect payment process: %v", err)
+		}
+		paymentActions := payment.Members["action_transitions"].([]TransitionRef)
+		if len(paymentActions) != 1 {
+			t.Fatalf("payment action transitions = %#v", paymentActions)
+		}
+		if paymentActions[0].ID != "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']" {
+			t.Fatalf("payment action transition = %#v", paymentActions[0])
+		}
 
 		model, err := service.Inspect(InspectRequest{Selector: Selector{ID: "auth.model.login_form"}})
 		if err != nil {
@@ -160,10 +250,79 @@ func TestQueryServiceUC001(t *testing.T) {
 			t.Fatalf("store model member missing: %#v", store.Members)
 		}
 		assertHasReference(t, store.References, "reads", "in", "auth.task.login", "auth.store.user_db")
+
+		state, err := service.Inspect(InspectRequest{Selector: Selector{ID: "order.state.processing"}})
+		if err != nil {
+			t.Fatalf("Inspect processing state: %v", err)
+		}
+		incoming := state.Members["incoming_transitions"].([]TransitionRef)
+		outgoing := state.Members["outgoing_transitions"].([]TransitionRef)
+		if len(incoming) != 1 || incoming[0].ID != "order/state.yaml#checkout_screen:checkout_submitted" {
+			t.Fatalf("processing incoming transitions = %#v", incoming)
+		}
+		if len(outgoing) != 2 {
+			t.Fatalf("processing outgoing transitions = %#v", outgoing)
+		}
+		if outgoing[0].ID != "order/state.yaml#processing:payment_webhook_received[payload.status == 'failed']" || outgoing[1].ID != "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']" {
+			t.Fatalf("processing outgoing transitions = %#v", outgoing)
+		}
+
+		event, err := service.Inspect(InspectRequest{Selector: Selector{ID: "order.event.payment_webhook_received"}})
+		if err != nil {
+			t.Fatalf("Inspect payment event: %v", err)
+		}
+		triggering := event.Members["triggering_transitions"].([]TransitionRef)
+		if len(triggering) != 2 {
+			t.Fatalf("payment event triggering transitions = %#v", triggering)
+		}
+		hints := event.Members["sequence_hints"].(map[string]any)
+		if hints["participant"] != "Actor" || hints["actor"] != "stripe" || hints["message_label_source"] != "METHOD path" {
+			t.Fatalf("payment event sequence hints = %#v", hints)
+		}
 	})
 }
 
+func TestResolvedTransitionIndexesUC001(t *testing.T) {
+	project := loadUC001Project(t)
+
+	key := semantic.TransitionKey{
+		StateFile: semantic.FileID("order/state.yaml"),
+		FromState: semantic.QualifiedID("order.state.processing"),
+		Event:     semantic.QualifiedID("order.event.payment_webhook_received"),
+		Guard:     "payload.status == 'succeeded'",
+	}
+	ref, ok := project.TransitionsByStateEventGuard[key]
+	if !ok {
+		t.Fatalf("transition index missing key %#v", key)
+	}
+	if ref.Transition.ToState != semantic.QualifiedID("order.state.confirmed") {
+		t.Fatalf("indexed transition to = %s, want order.state.confirmed", ref.Transition.ToState)
+	}
+
+	eventKey := semantic.TransitionEventKey{
+		StateFile: semantic.FileID("order/state.yaml"),
+		FromState: semantic.QualifiedID("order.state.processing"),
+		Event:     semantic.QualifiedID("order.event.payment_webhook_received"),
+	}
+	if got := len(project.TransitionsByStateEvent[eventKey]); got != 2 {
+		t.Fatalf("transition event candidates len = %d, want 2", got)
+	}
+
+	actions := project.ActionsByTask[semantic.QualifiedID("payment.webhooks.task.process_payment")]
+	if len(actions) != 1 {
+		t.Fatalf("actionsByTask len = %d, want 1: %#v", len(actions), actions)
+	}
+	if actions[0].Transition.Guard != "payload.status == 'succeeded'" {
+		t.Fatalf("action transition guard = %q", actions[0].Transition.Guard)
+	}
+}
+
 func newUC001Service(t *testing.T) *Service {
+	t.Helper()
+	return NewService(loadUC001Project(t))
+}
+
+func loadUC001Project(t *testing.T) *semantic.Project {
 	t.Helper()
 	yamlRoot := filepath.FromSlash("../../docs/uc/001-ec-checkout-flow/yaml")
 	loader := source.Loader{}
@@ -177,7 +336,7 @@ func newUC001Service(t *testing.T) *Service {
 			t.Fatalf("semantic diagnostic: %s: %s", diagnostic.FileID, diagnostic.Message)
 		}
 	}
-	return NewService(project)
+	return project
 }
 
 func assertHasEndpoint(t *testing.T, sections []EndpointSection, module, task, method, path string) {
@@ -195,7 +354,7 @@ func assertHasEndpoint(t *testing.T, sections []EndpointSection, module, task, m
 	t.Fatalf("endpoint not found module=%s task=%s method=%s path=%s in %#v", module, task, method, path, sections)
 }
 
-func assertHasReference(t *testing.T, refs []Reference, kind, direction, fromID, toID string) {
+func assertHasReference(t *testing.T, refs []Reference, kind, direction, fromID, toID string) Reference {
 	t.Helper()
 	for _, ref := range refs {
 		if ref.Kind != kind || ref.Direction != direction {
@@ -207,7 +366,8 @@ func assertHasReference(t *testing.T, refs []Reference, kind, direction, fromID,
 		if toID != "" && ref.To.ID != toID {
 			continue
 		}
-		return
+		return ref
 	}
 	t.Fatalf("reference not found kind=%s direction=%s from=%s to=%s in %#v", kind, direction, fromID, toID, refs)
+	return Reference{}
 }

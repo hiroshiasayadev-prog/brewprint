@@ -185,10 +185,36 @@ renderer と MCP wrapper が Raw YAML structs を直接読まない方針を前�
   - tasksReadingStore
   - tasksWritingStore
 
-- [ ] **state / event / scenario 系reverse lookup indexを第2段で検討する**
-  - transitionsByStateEventGuard
-  - actionsByTask
-  - scenariosByID
+- [x] **state / event / scenario 系reverse lookup indexを第2段で実装する**
+  - `scenariosByID` は既に実装済み
+  - `transitionsByStateEventGuard` を追加
+  - `transitionsByStateEvent` を候補列挙用補助indexとして追加
+  - `actionsByTask` を追加
+  - sequence scenario step解決を transition index lookup に変更
+  - `inspect(task)` に `members.action_transitions` を追加
+  - UC-001で transition index / actionsByTask / inspect action_transitions をtest固定
+  - `go test ./...` 通過済み（2026-04-29、M9-1差分後）
+
+- [x] **transition / event direct referencesをGetReferencesへ載せる**
+  - MCP specの reference kind に合わせて `transition_from` / `transition_event` / `transition_to` / `transition_action` を追加する
+  - `event_payload` / `event_actor` / `event_watches` を追加する
+  - transition endpointの `state_file` / `from` / `on` / `to` / `guard` / `action` を返す
+  - UC-001で task / event / model / store / state からのincoming/outgoing referenceをtest固定する
+  - `gofmt ./...` / `go test ./...` 通過済み（2026-04-29、M9-2差分後）
+
+- [x] **inspect(state/event) を実装する**
+  - state inspectで incoming_transitions / outgoing_transitions を返す
+  - event inspectで triggering_transitions / sequence_hints を返す
+  - GetSignatureも state / event に対応
+  - UC-001で state/event signature / inspect をtest固定する
+  - `gofmt ./...` / `go test ./...` 通過済み（2026-04-29、M9-3差分後）
+
+- [ ] **inspect(scenario) を実装する**
+  - selectorで sequence scenario view object を解決する
+  - scenario signatureで id / title / state_file を返す
+  - members.steps に resolved transition / action task / guard exact match結果を返す
+  - scenario_state_file / scenario_step_transition reference を検討する
+  - UC-001の checkout_flow / payment_webhook_flow でtest固定する
 
 ### Milestone 4: render_index / output placement を実装する
 

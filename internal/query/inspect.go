@@ -32,6 +32,10 @@ func (s *Service) Inspect(req InspectRequest) (InspectResponse, error) {
 		members["fields"] = fieldSignatures(n.Fields)
 	case *semantic.Store:
 		members = s.storeMembers(n)
+	case *semantic.State:
+		members = s.stateMembers(n)
+	case *semantic.Event:
+		members = s.eventMembers(n)
 	default:
 		return InspectResponse{}, errUnsupportedInspect(node.GetKind())
 	}
@@ -105,6 +109,9 @@ func (s *Service) taskMembers(task *semantic.Task) map[string]any {
 			"schema_status": "draft",
 		}
 	}
+	if transitions := transitionRefsForTask(s.project, task.QID); len(transitions) > 0 {
+		members["action_transitions"] = transitions
+	}
 	return members
 }
 
@@ -119,6 +126,101 @@ func (s *Service) storeMembers(store *semantic.Store) map[string]any {
 		}
 	}
 	return members
+}
+
+func (s *Service) stateMembers(state *semantic.State) map[string]any {
+	members := map[string]any{}
+	var incoming []TransitionRef
+	var outgoing []TransitionRef
+	for _, transitions := range s.project.TransitionsByFile {
+		for _, transition := range transitions {
+			if transition.ToState == state.QID {
+				incoming = append(incoming, transitionRefFromSemantic(transition))
+			}
+			if transition.FromState == state.QID {
+				outgoing = append(outgoing, transitionRefFromSemantic(transition))
+			}
+		}
+	}
+	sortTransitionRefs(incoming)
+	sortTransitionRefs(outgoing)
+	if len(incoming) > 0 {
+		members["incoming_transitions"] = incoming
+	}
+	if len(outgoing) > 0 {
+		members["outgoing_transitions"] = outgoing
+	}
+	return members
+}
+
+func (s *Service) eventMembers(event *semantic.Event) map[string]any {
+	members := map[string]any{}
+	var triggering []TransitionRef
+	for _, transitions := range s.project.TransitionsByFile {
+		for _, transition := range transitions {
+			if transition.Event == event.QID {
+				triggering = append(triggering, transitionRefFromSemantic(transition))
+			}
+		}
+	}
+	sortTransitionRefs(triggering)
+	if len(triggering) > 0 {
+		members["triggering_transitions"] = triggering
+	}
+	if hints := sequenceHintsForEvent(event); len(hints) > 0 {
+		members["sequence_hints"] = hints
+	}
+	return members
+}
+
+func sequenceHintsForEvent(event *semantic.Event) map[string]any {
+	switch event.Source {
+	case "external":
+		return map[string]any{"advisory": true, "participant": "Actor", "actor": event.Actor, "message_label_source": "METHOD path"}
+	case "ui":
+		return map[string]any{"advisory": true, "participant": "User", "message_label_source": "event id"}
+	case "internal":
+		return map[string]any{"advisory": true, "participant": "Task", "message_label_source": "event id"}
+	case "er":
+		return map[string]any{"advisory": true, "participant": "DB", "message_label_source": "watched store"}
+	default:
+		return nil
+	}
+}
+
+func transitionRefsForTask(project *semantic.Project, taskID semantic.QualifiedID) []TransitionRef {
+	if project == nil {
+		return nil
+	}
+	refs := project.ActionsByTask[taskID]
+	out := make([]TransitionRef, 0, len(refs))
+	for _, ref := range refs {
+		out = append(out, transitionRefFromSemantic(ref.Transition))
+	}
+	sortTransitionRefs(out)
+	return out
+}
+
+func sortTransitionRefs(refs []TransitionRef) {
+	sort.Slice(refs, func(i, j int) bool { return refs[i].ID < refs[j].ID })
+}
+
+func transitionRefFromSemantic(transition semantic.Transition) TransitionRef {
+	return TransitionRef{
+		Object:    "transition",
+		Kind:      "transition",
+		ID:        transitionID(transition),
+		StateFile: transition.FileID.String(),
+		From:      transition.From,
+		On:        transition.On,
+		To:        transition.To,
+		Guard:     transition.Guard,
+		Action:    transition.ActionTask.String(),
+	}
+}
+
+func transitionID(transition semantic.Transition) string {
+	return semantic.TransitionID(transition)
 }
 
 func flowEntriesSummary(entries []semantic.FlowEntry) []map[string]any {

@@ -74,6 +74,12 @@ func endpointFromSemantic(endpoint semantic.ReferenceEndpoint) ReferenceEndpoint
 		ScopeFile:   endpoint.ScopeFile.String(),
 		File:        endpoint.File.String(),
 		LocalID:     endpoint.LocalID,
+		StateFile:   endpoint.StateFile.String(),
+		FromState:   endpoint.From,
+		On:          endpoint.On,
+		ToState:     endpoint.To,
+		Guard:       endpoint.Guard,
+		Action:      endpoint.Action.String(),
 	}
 }
 

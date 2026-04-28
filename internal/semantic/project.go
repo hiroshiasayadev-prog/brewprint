@@ -27,6 +27,10 @@ type Project struct {
 	FlowByFile        map[FileID][]FlowEntry
 	TransitionsByFile map[FileID][]Transition
 
+	TransitionsByStateEventGuard map[TransitionKey]TransitionRef
+	TransitionsByStateEvent      map[TransitionEventKey][]TransitionRef
+	ActionsByTask                map[QualifiedID][]TransitionRef
+
 	ScenariosByID map[string]*SequenceScenario
 	ERViewsByID   map[string]*ERView
 	APIViewsByID  map[string]*APIView
@@ -51,9 +55,12 @@ func NewProject() *Project {
 		TasksWritingStore:  map[QualifiedID][]QualifiedID{},
 		ReferencesBySource: map[ObjectKey][]Reference{},
 		ReferencesByTarget: map[ObjectKey][]Reference{},
-		FlowByFile:         map[FileID][]FlowEntry{},
-		TransitionsByFile:  map[FileID][]Transition{},
-		ScenariosByID:      map[string]*SequenceScenario{},
+		FlowByFile:                    map[FileID][]FlowEntry{},
+		TransitionsByFile:             map[FileID][]Transition{},
+		TransitionsByStateEventGuard:  map[TransitionKey]TransitionRef{},
+		TransitionsByStateEvent:       map[TransitionEventKey][]TransitionRef{},
+		ActionsByTask:                 map[QualifiedID][]TransitionRef{},
+		ScenariosByID:                 map[string]*SequenceScenario{},
 		ERViewsByID:        map[string]*ERView{},
 		APIViewsByID:       map[string]*APIView{},
 	}

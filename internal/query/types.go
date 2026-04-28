@@ -31,6 +31,18 @@ type FieldRef struct {
 	Name   string `json:"name"`
 }
 
+type TransitionRef struct {
+	Object    string `json:"object"`
+	Kind      string `json:"kind"`
+	ID        string `json:"id"`
+	StateFile string `json:"state_file"`
+	From      string `json:"from"`
+	On        string `json:"on"`
+	To        string `json:"to"`
+	Guard     string `json:"guard,omitempty"`
+	Action    string `json:"action,omitempty"`
+}
+
 type ReferenceEndpoint struct {
 	Object      string `json:"object,omitempty"`
 	Kind        string `json:"kind,omitempty"`
@@ -42,6 +54,12 @@ type ReferenceEndpoint struct {
 	ScopeFile   string `json:"scope_file,omitempty"`
 	File        string `json:"file,omitempty"`
 	LocalID     string `json:"local_id,omitempty"`
+	StateFile   string `json:"state_file,omitempty"`
+	FromState   string `json:"from,omitempty"`
+	On          string `json:"on,omitempty"`
+	ToState     string `json:"to,omitempty"`
+	Guard       string `json:"guard,omitempty"`
+	Action      string `json:"action,omitempty"`
 }
 
 type Reference struct {

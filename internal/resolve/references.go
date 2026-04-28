@@ -126,6 +126,81 @@ func buildReferences(project *semantic.Project) {
 		}
 	}
 
+	for _, event := range project.EventsByQID {
+		if event.PayloadModel != "" || event.PayloadName != "" {
+			addReference(project, semantic.Reference{
+				Kind:      semantic.ReferenceKindEventPayload,
+				SourceKey: semantic.NodeObjectKey(event.QID),
+				TargetKey: modelOrPrimitiveKey(project, event.PayloadModel, event.PayloadName),
+				From:      nodeEndpoint(event),
+				To:        modelOrPrimitiveEndpoint(project, event.PayloadModel, event.PayloadName),
+			})
+		}
+		if event.Actor != "" {
+			addReference(project, semantic.Reference{
+				Kind:      semantic.ReferenceKindEventActor,
+				SourceKey: semantic.NodeObjectKey(event.QID),
+				TargetKey: semantic.NodeObjectKey(semantic.QualifiedID(event.Actor)),
+				From:      nodeEndpoint(event),
+				To:        actorEndpoint(project, event.Actor),
+			})
+		}
+		if event.Watches != "" {
+			addReference(project, semantic.Reference{
+				Kind:      semantic.ReferenceKindEventWatches,
+				SourceKey: semantic.NodeObjectKey(event.QID),
+				TargetKey: semantic.NodeObjectKey(event.Watches),
+				From:      nodeEndpoint(event),
+				To:        storeEndpoint(project, event.Watches),
+			})
+		}
+	}
+
+	for _, transitions := range project.TransitionsByFile {
+		for _, transition := range transitions {
+			transitionKey := semantic.TransitionObjectKey(transition)
+			transitionEndpoint := transitionEndpoint(transition)
+			if transition.FromState != "" {
+				addReference(project, semantic.Reference{
+					Kind:      semantic.ReferenceKindTransitionFrom,
+					SourceKey: transitionKey,
+					TargetKey: semantic.NodeObjectKey(transition.FromState),
+					From:      transitionEndpoint,
+					To:        nodeEndpoint(project.StatesByQID[transition.FromState]),
+				})
+			}
+			if transition.Event != "" {
+				addReference(project, semantic.Reference{
+					Kind:      semantic.ReferenceKindTransitionEvent,
+					SourceKey: transitionKey,
+					TargetKey: semantic.NodeObjectKey(transition.Event),
+					From:      transitionEndpoint,
+					To:        nodeEndpoint(project.EventsByQID[transition.Event]),
+				})
+			}
+			if transition.ToState != "" {
+				addReference(project, semantic.Reference{
+					Kind:      semantic.ReferenceKindTransitionTo,
+					SourceKey: transitionKey,
+					TargetKey: semantic.NodeObjectKey(transition.ToState),
+					From:      transitionEndpoint,
+					To:        nodeEndpoint(project.StatesByQID[transition.ToState]),
+				})
+			}
+			if transition.ActionTask != "" {
+				if task := project.TasksByQID[transition.ActionTask]; task != nil {
+					addReference(project, semantic.Reference{
+						Kind:      semantic.ReferenceKindTransitionAction,
+						SourceKey: transitionKey,
+						TargetKey: semantic.NodeObjectKey(transition.ActionTask),
+						From:      transitionEndpoint,
+						To:        nodeEndpoint(task),
+					})
+				}
+			}
+		}
+	}
+
 	for _, model := range project.ModelsByQID {
 		module := moduleForFileID(model.FileID)
 		for _, field := range model.Fields {
@@ -164,6 +239,9 @@ func addReference(project *semantic.Project, ref semantic.Reference) {
 }
 
 func nodeEndpoint(node semantic.Node) semantic.ReferenceEndpoint {
+	if node == nil {
+		return semantic.ReferenceEndpoint{}
+	}
 	return semantic.ReferenceEndpoint{
 		Object:      "node",
 		Kind:        string(node.GetKind()),
@@ -186,6 +264,29 @@ func storeEndpoint(project *semantic.Project, qid semantic.QualifiedID) semantic
 		}
 	}
 	return semantic.ReferenceEndpoint{Object: "node", Kind: "store", ID: qid.String(), QualifiedID: qid}
+}
+
+func actorEndpoint(project *semantic.Project, actorID string) semantic.ReferenceEndpoint {
+	if actor := project.ActorsByQID[semantic.QualifiedID(actorID)]; actor != nil {
+		return nodeEndpoint(actor)
+	}
+	return semantic.ReferenceEndpoint{Object: "node", Kind: "actor", ID: actorID, QualifiedID: semantic.QualifiedID(actorID), Name: actorID}
+}
+
+func transitionEndpoint(transition semantic.Transition) semantic.ReferenceEndpoint {
+	return semantic.ReferenceEndpoint{
+		Object:    "transition",
+		Kind:      "transition",
+		ID:        semantic.TransitionID(transition),
+		File:      transition.FileID,
+		LocalID:   transition.From + ":" + transition.On,
+		StateFile: transition.FileID,
+		From:      transition.From,
+		On:        transition.On,
+		To:        transition.To,
+		Guard:     transition.Guard,
+		Action:    transition.ActionTask,
+	}
 }
 
 func assetEndpoint(asset *semantic.Asset) semantic.ReferenceEndpoint {
