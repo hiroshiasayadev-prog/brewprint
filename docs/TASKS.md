@@ -411,3 +411,33 @@ renderer と MCP wrapper が Raw YAML structs を直接読まない方針を前�
     - `payment/webhooks/task/process_payment.yaml`
   - `dag-process_payment.md` を実レンダー出力に合わせて更新
   - `go test ./internal/render/dag` / `go test ./...` 通過済み（2026-04-29、M8-4差分後）
+
+- [x] **UC-001 group index fixtureを一括render出力へ追随する**
+  - `renders/commerce/index.md` に追加DAG 2本を反映
+    - `dag-add_to_cart.md`
+    - `dag-process_payment.md`
+  - `renders/catalog/index.md` に `dag-get_items.md` を反映
+  - `renders/auth/index.md` / `renders/catalog/index.md` / `renders/commerce/index.md` を project renderer 形式へ統一
+  - `internal/render/project/renderer_test.go` に group index fixture 一致テストを追加
+  - `go test ./...` 通過済み（2026-04-29、M8-5差分後）
+
+- [x] **render CLI `--clean` を追加する**
+  - `brewprint render --yaml-root <path> --out <path> --clean` を追加
+  - render / validation / placement 成功後、書き込み直前に `--out` を削除して作り直す
+  - `--out` が空・`.`・filesystem root・`..` を含む場合は拒否する
+  - `--out` が `--yaml-root` を含む場合は YAML 削除事故防止のため拒否する
+  - stale file 削除のCLI testを追加
+  - unsafe clean path のunit testを追加
+  - `go test ./...` 通過済み（2026-04-29、M8-6差分後）
+
+- [x] **UC-001 render fixture再生成コマンドをREADMEへ明記する**
+  - `docs/uc/001-ec-checkout-flow/README.md` に `brewprint render --yaml-root ... --out ... --clean` を追記
+  - READMEの `renders/` ツリーに M8で追加したDAG fixtureを反映
+  - docsのみの変更のため追加テストなし
+
+- [x] **project renderer index生成仕様を固定する**
+  - master index titleを project directory名から人間向けに整形する
+  - group index titleに `render_index.yaml` の `label` を使う
+  - master `index.md` も project renderer fixture一致テスト対象に戻す
+  - preview titleも project名整形に追随
+  - `go test ./...` 通過済み（2026-04-29、M8-8差分後）

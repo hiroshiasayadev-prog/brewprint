@@ -57,6 +57,42 @@ func Write(outRoot string, files []File) error {
 	return nil
 }
 
+func CleanOutRoot(outRoot string) error {
+	if outRoot == "" {
+		return fmt.Errorf("out root is required")
+	}
+	clean := filepath.Clean(outRoot)
+	if unsafeCleanOutRoot(clean) {
+		return fmt.Errorf("refuse to clean unsafe out root: %s", outRoot)
+	}
+	if err := os.RemoveAll(clean); err != nil {
+		return fmt.Errorf("clean render output directory %s: %w", clean, err)
+	}
+	if err := os.MkdirAll(clean, 0o755); err != nil {
+		return fmt.Errorf("create render output directory %s: %w", clean, err)
+	}
+	return nil
+}
+
+func unsafeCleanOutRoot(path string) bool {
+	if path == "" || path == "." || path == string(filepath.Separator) {
+		return true
+	}
+	volume := filepath.VolumeName(path)
+	if volume != "" {
+		rest := strings.TrimPrefix(path, volume)
+		if rest == "" || rest == string(filepath.Separator) {
+			return true
+		}
+	}
+	for _, part := range strings.Split(filepath.ToSlash(path), "/") {
+		if part == ".." {
+			return true
+		}
+	}
+	return false
+}
+
 func renderFiles(raw *rawyaml.Project, semanticProject *semantic.Project, resolver *placement.Resolver) ([]File, error) {
 	var files []File
 	for _, task := range sortedMainTasks(semanticProject) {
@@ -136,7 +172,7 @@ func renderFiles(raw *rawyaml.Project, semanticProject *semantic.Project, resolv
 func indexFiles(raw *rawyaml.Project, resolver *placement.Resolver, renderFiles []File) []File {
 	files := []File{{Path: "index.md", Content: masterIndexMarkdown(projectName(raw), resolver, renderFiles)}}
 	for _, group := range resolver.Groups {
-		files = append(files, File{Path: group.ID + "/index.md", Content: groupIndexMarkdown(group.ID, renderFiles)})
+		files = append(files, File{Path: group.ID + "/index.md", Content: groupIndexMarkdown(group, renderFiles)})
 	}
 	return files
 }
@@ -167,14 +203,18 @@ func masterIndexMarkdown(name string, resolver *placement.Resolver, files []File
 	return b.String()
 }
 
-func groupIndexMarkdown(groupID string, files []File) string {
-	entries := filesForGroup(groupID, files)
+func groupIndexMarkdown(group placement.Group, files []File) string {
+	entries := filesForGroup(group.ID, files)
+	label := group.Label
+	if label == "" {
+		label = group.ID
+	}
 	var b strings.Builder
-	b.WriteString("# " + groupID + " render index\n\n")
+	b.WriteString("# " + label + " render index\n\n")
 	b.WriteString("| kind | title | path |\n")
 	b.WriteString("|---|---|---|\n")
 	for _, entry := range entries {
-		fileName := strings.TrimPrefix(entry.Path, groupID+"/")
+		fileName := strings.TrimPrefix(entry.Path, group.ID+"/")
 		kind := kindForFileName(fileName)
 		if kind == "" {
 			continue
@@ -300,9 +340,48 @@ func projectName(raw *rawyaml.Project) string {
 	}
 	root := filepath.Clean(raw.Root)
 	if filepath.Base(root) == "yaml" {
-		return filepath.Base(filepath.Dir(root))
+		return humanizeProjectDir(filepath.Base(filepath.Dir(root)))
 	}
-	return filepath.Base(root)
+	return humanizeProjectDir(filepath.Base(root))
+}
+
+func humanizeProjectDir(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return ""
+	}
+	parts := strings.Split(name, "-")
+	if len(parts) > 1 && allDigits(parts[0]) {
+		parts = parts[1:]
+	}
+	for i, part := range parts {
+		parts[i] = titleWord(part)
+	}
+	return strings.Join(parts, " ")
+}
+
+func allDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func titleWord(s string) string {
+	if s == "" {
+		return ""
+	}
+	upperWords := map[string]string{"api": "API", "ec": "EC", "er": "ER", "ui": "UI", "uc": "UC"}
+	lower := strings.ToLower(s)
+	if word, ok := upperWords[lower]; ok {
+		return word
+	}
+	return strings.ToUpper(lower[:1]) + lower[1:]
 }
 
 func previewTitle(raw *rawyaml.Project) string {

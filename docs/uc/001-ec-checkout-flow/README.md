@@ -55,8 +55,10 @@ docs/uc/001-ec-checkout-flow/
       wireframe-auth-loading.html
     commerce/
       index.md
+      dag-add_to_cart.md
       dag-checkout.md
       dag-process_order.md
+      dag-process_payment.md
       dag-validate_cart.md
       seq-checkout_flow.md
       seq-payment_webhook_flow.md
@@ -65,6 +67,7 @@ docs/uc/001-ec-checkout-flow/
       wireframe-order-checkout_screen.html
     catalog/
       index.md
+      dag-get_items.md
       state-inventory.md
     _cross/
       er.md
@@ -79,6 +82,21 @@ docs/uc/001-ec-checkout-flow/
     render-seq.md
     render-api.md
     render-wireframe.md
+```
+
+## render fixture 再生成
+
+`renders/` は Go renderer の canonical fixture として管理する。
+手編集ではなく、原則として以下のコマンドで再生成する。
+
+```powershell
+brewprint render --yaml-root docs/uc/001-ec-checkout-flow/yaml --out docs/uc/001-ec-checkout-flow/renders --clean
+```
+
+再生成後は以下を確認する。
+
+```powershell
+go test ./...
 ```
 
 ## ドキュメント

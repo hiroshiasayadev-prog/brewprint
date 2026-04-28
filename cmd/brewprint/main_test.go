@@ -91,6 +91,45 @@ func TestRunRender(t *testing.T) {
 	}
 }
 
+func TestRunRenderCleanRemovesStaleFiles(t *testing.T) {
+	yamlRoot := filepath.FromSlash("../../docs/uc/001-ec-checkout-flow/yaml")
+	outRoot := t.TempDir()
+	stalePath := filepath.Join(outRoot, "stale.md")
+	if err := os.WriteFile(stalePath, []byte("stale"), 0o644); err != nil {
+		t.Fatalf("write stale file: %v", err)
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := run([]string{"render", "--yaml-root", yamlRoot, "--out", outRoot, "--clean"}, strings.NewReader(""), &stdout, &stderr); err != nil {
+		t.Fatalf("run render clean: %v\nstderr=%s", err, stderr.String())
+	}
+	if got := strings.TrimSpace(stdout.String()); got != "rendered 23 file(s)" {
+		t.Fatalf("render clean stdout = %q", got)
+	}
+	if _, err := os.Stat(stalePath); !os.IsNotExist(err) {
+		t.Fatalf("stale file still exists after --clean: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(outRoot, "index.md")); err != nil {
+		t.Fatalf("rendered index missing after --clean: %v", err)
+	}
+}
+
+func TestRunRenderCleanRejectsOutRootContainingYAMLRoot(t *testing.T) {
+	yamlRoot := filepath.FromSlash("../../docs/uc/001-ec-checkout-flow/yaml")
+	outRoot := filepath.Dir(yamlRoot)
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	err := run([]string{"render", "--yaml-root", yamlRoot, "--out", outRoot, "--clean"}, strings.NewReader(""), &stdout, &stderr)
+	if err == nil {
+		t.Fatalf("run render clean with unsafe out root returned nil error")
+	}
+	if !strings.Contains(err.Error(), "--clean out root must not contain yaml root") {
+		t.Fatalf("render clean unsafe error = %v", err)
+	}
+}
+
 func TestRunValidateInvalidProject(t *testing.T) {
 	yamlRoot := invalidValidateYAMLRoot(t)
 

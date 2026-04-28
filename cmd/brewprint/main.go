@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/hiroshiasayadev-prog/brewprint/internal/mcp"
 	"github.com/hiroshiasayadev-prog/brewprint/internal/query"
@@ -41,7 +43,7 @@ func run(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) err
 }
 
 func rootUsage() string {
-	return "usage:\n  brewprint mcp --yaml-root <path>\n  brewprint validate --yaml-root <path> [--format text|json]\n  brewprint render --yaml-root <path> --out <path>"
+	return "usage:\n  brewprint mcp --yaml-root <path>\n  brewprint validate --yaml-root <path> [--format text|json]\n  brewprint render --yaml-root <path> --out <path> [--clean]"
 }
 
 func runMCP(args []string, stdin io.Reader, stdout io.Writer) error {
@@ -93,11 +95,12 @@ func runRender(args []string, stdout io.Writer, stderr io.Writer) error {
 	flags := flag.NewFlagSet("render", flag.ContinueOnError)
 	yamlRoot := flags.String("yaml-root", "", "path to brewprint yaml root")
 	outRoot := flags.String("out", "", "path to render output directory")
+	clean := flags.Bool("clean", false, "clean render output directory before writing")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
 	if *yamlRoot == "" || *outRoot == "" {
-		return fmt.Errorf("--yaml-root and --out are required\n\nusage: brewprint render --yaml-root <path> --out <path>")
+		return fmt.Errorf("--yaml-root and --out are required\n\nusage: brewprint render --yaml-root <path> --out <path> [--clean]")
 	}
 
 	raw, project, diagnostics, err := loadProject(*yamlRoot)
@@ -117,11 +120,42 @@ func runRender(args []string, stdout io.Writer, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
+	if *clean {
+		unsafe, err := cleanOutRootWouldRemoveYAMLRoot(*outRoot, *yamlRoot)
+		if err != nil {
+			return err
+		}
+		if unsafe {
+			return fmt.Errorf("--clean out root must not contain yaml root")
+		}
+		if err := projectrender.CleanOutRoot(*outRoot); err != nil {
+			return err
+		}
+	}
 	if err := projectrender.Write(*outRoot, files); err != nil {
 		return err
 	}
 	fmt.Fprintf(stdout, "rendered %d file(s)\n", len(files))
 	return nil
+}
+
+func cleanOutRootWouldRemoveYAMLRoot(outRoot string, yamlRoot string) (bool, error) {
+	outAbs, err := filepath.Abs(outRoot)
+	if err != nil {
+		return false, fmt.Errorf("resolve out root: %w", err)
+	}
+	yamlAbs, err := filepath.Abs(yamlRoot)
+	if err != nil {
+		return false, fmt.Errorf("resolve yaml root: %w", err)
+	}
+	rel, err := filepath.Rel(outAbs, yamlAbs)
+	if err != nil {
+		return false, nil
+	}
+	if rel == "." {
+		return true, nil
+	}
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)), nil
 }
 
 func newMCPServer(yamlRoot string) (*mcp.Server, error) {

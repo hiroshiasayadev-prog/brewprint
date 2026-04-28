@@ -1,8 +1,8 @@
 # 認証 render index
 
-| type | render | source |
+| kind | title | path |
 |---|---|---|
-| DAG | [login](dag-login.md) | `yaml/auth/task/login.yaml` |
-| State | [auth](state-auth.md) | `yaml/auth/state.yaml` |
-| Wireframe | [login_screen](wireframe-auth-login_screen.html) | `yaml/auth/state.yaml#login_screen` |
-| Wireframe | [loading](wireframe-auth-loading.html) | `yaml/auth/state.yaml#loading` |
+| DAG | login | [dag-login.md](dag-login.md) |
+| State | auth | [state-auth.md](state-auth.md) |
+| Wireframe | auth-loading | [wireframe-auth-loading.html](wireframe-auth-loading.html) |
+| Wireframe | auth-login_screen | [wireframe-auth-login_screen.html](wireframe-auth-login_screen.html) |

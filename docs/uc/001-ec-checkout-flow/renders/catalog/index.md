@@ -1,5 +1,6 @@
 # カタログ render index
 
-| type | render | source |
+| kind | title | path |
 |---|---|---|
-| State | [inventory](state-inventory.md) | `yaml/inventory/state.yaml` |
+| DAG | get_items | [dag-get_items.md](dag-get_items.md) |
+| State | inventory | [state-inventory.md](state-inventory.md) |

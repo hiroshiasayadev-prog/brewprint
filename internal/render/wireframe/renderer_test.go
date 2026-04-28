@@ -79,7 +79,7 @@ func TestRenderWireframePreviewGolden(t *testing.T) {
 		}
 	}
 
-	actual := RenderPreview(project, "UC-001 Wireframe Preview")
+	actual := RenderPreview(project, "EC Checkout Flow Wireframe Preview")
 	golden.AssertEqualFile(t, filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/renders/_preview/wireframe.html"), actual)
 }
 

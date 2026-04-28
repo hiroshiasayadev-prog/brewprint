@@ -66,6 +66,47 @@ func TestRenderUC001Manifest(t *testing.T) {
 	}
 }
 
+func TestRenderUC001IndexesMatchFixtures(t *testing.T) {
+	raw, semanticProject := loadUC001(t)
+
+	files, diagnostics, err := Render(raw, semanticProject)
+	if err != nil {
+		t.Fatalf("render project: %v", err)
+	}
+	if len(diagnostics) != 0 {
+		t.Fatalf("render diagnostics = %#v", diagnostics)
+	}
+
+	byPath := map[string]string{}
+	for _, file := range files {
+		byPath[file.Path] = file.Content
+	}
+
+	for _, path := range []string{
+		"index.md",
+		"auth/index.md",
+		"catalog/index.md",
+		"commerce/index.md",
+	} {
+		want, err := os.ReadFile(filepath.Join("../../../docs/uc/001-ec-checkout-flow/renders", filepath.FromSlash(path)))
+		if err != nil {
+			t.Fatalf("read fixture %s: %v", path, err)
+		}
+		if got := byPath[path]; got != string(want) {
+			t.Fatalf("rendered index %s = %q, want %q", path, got, string(want))
+		}
+	}
+}
+
+func TestHumanizeProjectDir(t *testing.T) {
+	if got := humanizeProjectDir("001-ec-checkout-flow"); got != "EC Checkout Flow" {
+		t.Fatalf("humanizeProjectDir = %q, want EC Checkout Flow", got)
+	}
+	if got := humanizeProjectDir("sample-api"); got != "Sample API" {
+		t.Fatalf("humanizeProjectDir = %q, want Sample API", got)
+	}
+}
+
 func TestWriteCreatesNestedOutput(t *testing.T) {
 	outRoot := t.TempDir()
 	files := []File{{Path: "group/nested.md", Content: "# nested\n"}}
@@ -79,6 +120,35 @@ func TestWriteCreatesNestedOutput(t *testing.T) {
 	}
 	if string(content) != "# nested\n" {
 		t.Fatalf("written content = %q", string(content))
+	}
+}
+
+func TestCleanOutRootRemovesExistingDirectory(t *testing.T) {
+	outRoot := filepath.Join(t.TempDir(), "renders")
+	stalePath := filepath.Join(outRoot, "stale.md")
+	if err := os.MkdirAll(filepath.Dir(stalePath), 0o755); err != nil {
+		t.Fatalf("mkdir stale dir: %v", err)
+	}
+	if err := os.WriteFile(stalePath, []byte("stale"), 0o644); err != nil {
+		t.Fatalf("write stale file: %v", err)
+	}
+
+	if err := CleanOutRoot(outRoot); err != nil {
+		t.Fatalf("clean out root: %v", err)
+	}
+	if _, err := os.Stat(stalePath); !os.IsNotExist(err) {
+		t.Fatalf("stale file still exists after clean: %v", err)
+	}
+	if info, err := os.Stat(outRoot); err != nil || !info.IsDir() {
+		t.Fatalf("out root not recreated as directory: info=%v err=%v", info, err)
+	}
+}
+
+func TestCleanOutRootRejectsUnsafePaths(t *testing.T) {
+	for _, path := range []string{"", ".", string(filepath.Separator), filepath.Join("..", "renders")} {
+		if err := CleanOutRoot(path); err == nil {
+			t.Fatalf("CleanOutRoot(%q) returned nil error", path)
+		}
 	}
 }
 
