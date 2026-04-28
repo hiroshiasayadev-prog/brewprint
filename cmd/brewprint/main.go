@@ -9,6 +9,9 @@ import (
 
 	"github.com/hiroshiasayadev-prog/brewprint/internal/mcp"
 	"github.com/hiroshiasayadev-prog/brewprint/internal/query"
+	"github.com/hiroshiasayadev-prog/brewprint/internal/rawyaml"
+	"github.com/hiroshiasayadev-prog/brewprint/internal/render/placement"
+	projectrender "github.com/hiroshiasayadev-prog/brewprint/internal/render/project"
 	"github.com/hiroshiasayadev-prog/brewprint/internal/resolve"
 	"github.com/hiroshiasayadev-prog/brewprint/internal/semantic"
 	"github.com/hiroshiasayadev-prog/brewprint/internal/source"
@@ -30,13 +33,15 @@ func run(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) err
 		return runMCP(args[1:], stdin, stdout)
 	case "validate":
 		return runValidate(args[1:], stdout)
+	case "render":
+		return runRender(args[1:], stdout, stderr)
 	default:
 		return fmt.Errorf("unknown command: %s\n\n%s", args[0], rootUsage())
 	}
 }
 
 func rootUsage() string {
-	return "usage:\n  brewprint mcp --yaml-root <path>\n  brewprint validate --yaml-root <path> [--format text|json]"
+	return "usage:\n  brewprint mcp --yaml-root <path>\n  brewprint validate --yaml-root <path> [--format text|json]\n  brewprint render --yaml-root <path> --out <path>"
 }
 
 func runMCP(args []string, stdin io.Reader, stdout io.Writer) error {
@@ -70,7 +75,7 @@ func runValidate(args []string, stdout io.Writer) error {
 		return fmt.Errorf("unsupported validate format: %s", *format)
 	}
 
-	_, diagnostics, err := loadProject(*yamlRoot)
+	_, _, diagnostics, err := loadProject(*yamlRoot)
 	if err != nil {
 		return err
 	}
@@ -84,8 +89,43 @@ func runValidate(args []string, stdout io.Writer) error {
 	return nil
 }
 
+func runRender(args []string, stdout io.Writer, stderr io.Writer) error {
+	flags := flag.NewFlagSet("render", flag.ContinueOnError)
+	yamlRoot := flags.String("yaml-root", "", "path to brewprint yaml root")
+	outRoot := flags.String("out", "", "path to render output directory")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	if *yamlRoot == "" || *outRoot == "" {
+		return fmt.Errorf("--yaml-root and --out are required\n\nusage: brewprint render --yaml-root <path> --out <path>")
+	}
+
+	raw, project, diagnostics, err := loadProject(*yamlRoot)
+	if err != nil {
+		return err
+	}
+	errors, warnings := countDiagnostics(diagnostics)
+	if len(diagnostics) > 0 {
+		writeTextDiagnostics(stderr, diagnostics)
+	}
+	if errors > 0 {
+		return fmt.Errorf("validation failed: %d error(s), %d warning(s)", errors, warnings)
+	}
+
+	files, placementDiagnostics, err := projectrender.Render(raw, project)
+	writePlacementDiagnostics(stderr, placementDiagnostics)
+	if err != nil {
+		return err
+	}
+	if err := projectrender.Write(*outRoot, files); err != nil {
+		return err
+	}
+	fmt.Fprintf(stdout, "rendered %d file(s)\n", len(files))
+	return nil
+}
+
 func newMCPServer(yamlRoot string) (*mcp.Server, error) {
-	project, diagnostics, err := loadProject(yamlRoot)
+	_, project, diagnostics, err := loadProject(yamlRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -95,14 +135,14 @@ func newMCPServer(yamlRoot string) (*mcp.Server, error) {
 	return mcp.NewServer(query.NewService(project)), nil
 }
 
-func loadProject(yamlRoot string) (*semantic.Project, []semantic.Diagnostic, error) {
+func loadProject(yamlRoot string) (*rawyaml.Project, *semantic.Project, []semantic.Diagnostic, error) {
 	loader := source.Loader{}
 	raw, err := loader.Load(yamlRoot)
 	if err != nil {
-		return nil, nil, fmt.Errorf("load yaml root: %w", err)
+		return nil, nil, nil, fmt.Errorf("load yaml root: %w", err)
 	}
 	project, diagnostics := resolve.Build(raw)
-	return project, diagnostics, nil
+	return raw, project, diagnostics, nil
 }
 
 type validateOutput struct {
@@ -167,4 +207,10 @@ func formatDiagnostic(diagnostic semantic.Diagnostic) string {
 		return fmt.Sprintf("%s %s: %s", prefix, diagnostic.FileID, diagnostic.Message)
 	}
 	return fmt.Sprintf("%s: %s", prefix, diagnostic.Message)
+}
+
+func writePlacementDiagnostics(out io.Writer, diagnostics []placement.Diagnostic) {
+	for _, diagnostic := range diagnostics {
+		fmt.Fprintf(out, "%s render_index: %s\n", diagnostic.Severity, diagnostic.Message)
+	}
 }

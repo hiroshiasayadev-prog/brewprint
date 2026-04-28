@@ -56,6 +56,41 @@ func TestRunValidate(t *testing.T) {
 	}
 }
 
+func TestRunRender(t *testing.T) {
+	yamlRoot := filepath.FromSlash("../../docs/uc/001-ec-checkout-flow/yaml")
+	outRoot := t.TempDir()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	if err := run([]string{"render", "--yaml-root", yamlRoot, "--out", outRoot}, strings.NewReader(""), &stdout, &stderr); err != nil {
+		t.Fatalf("run render: %v\nstderr=%s", err, stderr.String())
+	}
+	if got := strings.TrimSpace(stdout.String()); got != "rendered 23 file(s)" {
+		t.Fatalf("render stdout = %q", got)
+	}
+	if got := strings.TrimSpace(stderr.String()); got != "" {
+		t.Fatalf("render stderr = %q", got)
+	}
+
+	for _, rel := range []string{
+		"index.md",
+		"auth/index.md",
+		"commerce/index.md",
+		"catalog/index.md",
+		"commerce/dag-add_to_cart.md",
+		"catalog/dag-get_items.md",
+		"auth/dag-login.md",
+		"commerce/dag-process_payment.md",
+		"commerce/seq-checkout_flow.md",
+		"_cross/api.md",
+		"_preview/wireframe.html",
+	} {
+		if _, err := os.Stat(filepath.Join(outRoot, filepath.FromSlash(rel))); err != nil {
+			t.Fatalf("rendered index missing %s: %v", rel, err)
+		}
+	}
+}
+
 func TestRunValidateInvalidProject(t *testing.T) {
 	yamlRoot := invalidValidateYAMLRoot(t)
 
@@ -237,6 +272,22 @@ func writeTestYAML(t *testing.T, root string, rel string, content string) {
 	}
 }
 
+func assertRenderedFileEquals(t *testing.T, outRoot string, rel string, goldenPath string) {
+	t.Helper()
+	actualPath := filepath.Join(outRoot, filepath.FromSlash(rel))
+	actual, err := os.ReadFile(actualPath)
+	if err != nil {
+		t.Fatalf("read rendered file %s: %v", rel, err)
+	}
+	golden, err := os.ReadFile(goldenPath)
+	if err != nil {
+		t.Fatalf("read golden file %s: %v", goldenPath, err)
+	}
+	if string(actual) != string(golden) {
+		t.Fatalf("rendered file %s did not match golden", rel)
+	}
+}
+
 func TestRunErrors(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -248,6 +299,9 @@ func TestRunErrors(t *testing.T) {
 	}
 	if err := run([]string{"validate"}, strings.NewReader(""), &stdout, &stderr); err == nil {
 		t.Fatalf("run validate without yaml-root returned nil error")
+	}
+	if err := run([]string{"render"}, strings.NewReader(""), &stdout, &stderr); err == nil {
+		t.Fatalf("run render without args returned nil error")
 	}
 	if err := run([]string{"validate", "--yaml-root", "unused", "--format", "yaml"}, strings.NewReader(""), &stdout, &stderr); err == nil {
 		t.Fatalf("run validate with unsupported format returned nil error")
