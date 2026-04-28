@@ -386,3 +386,11 @@ renderer と MCP wrapper が Raw YAML structs を直接読まない方針を前�
   - CLI testではUC-001を `t.TempDir()` に出力し、主要出力パスと生成件数を固定する
   - renderer本文のgolden一致は各 `internal/render/*` package testに委譲し、CLI testは一括生成・配置確認に限定する
   - `go fmt ./...` / `go test ./...` 通過済み（2026-04-29、M8-1差分後）
+
+- [x] **一括render manifest testを追加する**
+  - `internal/render/project/renderer_test.go` を追加
+  - UC-001の一括render出力23件をmanifestとして固定
+  - 全render fileのcontentが空でないことを確認する
+  - `Write` がネストした出力ディレクトリを作成して書き込めることを固定
+  - CLI testではなく一括render本体側で出力パス契約を担保する
+  - `go fmt ./...` / `go test ./...` 通過済み（2026-04-29、M8-2差分後）
