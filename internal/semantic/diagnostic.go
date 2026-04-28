@@ -8,7 +8,8 @@ const (
 )
 
 type Diagnostic struct {
-	Severity Severity
-	FileID   FileID
-	Message  string
+	Severity Severity `json:"severity"`
+	Code     string   `json:"code,omitempty"`
+	FileID   FileID   `json:"file,omitempty"`
+	Message  string   `json:"message"`
 }

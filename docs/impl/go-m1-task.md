@@ -1,8 +1,8 @@
 # Go M1 実装タスク
 
-- **status**: draft
+- **status**: completed
 - **last_updated**: 2026-04-27
-- **scope**: Go実装 Milestone 1 の実装チェックリスト
+- **scope**: Go実装 Milestone 1 の実装チェックリスト（完了済み）
 
 ---
 
@@ -21,6 +21,16 @@ ResolvedProject
   ↓ DAG renderer
 docs/uc/001-ec-checkout-flow/renders/auth/dag-login.md と比較
 ```
+
+### M1完了メモ
+
+M1は実装完了済みとして扱う。
+
+- `docs/TASKS.md` の Milestone 1 は完了済み。
+- UC-001 の `auth.task.login` は Raw YAML → ResolvedProject → DAG renderer → golden test まで到達済み。
+- `go test ./...` 通過は `docs/TASKS.md` に記録済み。
+- このファイル内の詳細タスク一覧は、M1実装前チェックリストとして残す。
+- 完了判定は「7. 受け入れ条件」の完了済みサマリを正とする。
 
 ---
 
@@ -464,17 +474,17 @@ M1ではやらないこと:
 
 M1完了条件:
 
-- [ ] `go test ./...` が通る
-- [ ] UC-001 yaml rootを読み込める
-- [ ] node file / view file / render_index.yaml を分類できる
-- [ ] view file / render_index.yaml をM1対象外としてskipできる
-- [ ] `auth.task.login` をRaw YAMLからResolvedProjectへbuildできる
-- [ ] `auth.task.login` のparams / returns / reads / writes / initializesを解決できる
-- [ ] task returnsからimplicit assetを生成できる
-- [ ] task initializesからfile-private storeを生成できる
-- [ ] store read/write indexを構築できる
-- [ ] DAG rendererが `rawyaml` をimportしていない
-- [ ] `docs/uc/001-ec-checkout-flow/renders/auth/dag-login.md` とgolden一致する
+- [x] `go test ./...` が通る
+- [x] UC-001 yaml rootを読み込める
+- [x] node file / view file / render_index.yaml を分類できる
+- [x] view file / render_index.yaml をM1対象外としてskipできる
+- [x] `auth.task.login` をRaw YAMLからResolvedProjectへbuildできる
+- [x] `auth.task.login` のparams / returns / reads / writes / initializesを解決できる
+- [x] task returnsからimplicit assetを生成できる
+- [x] task initializesからfile-private storeを生成できる
+- [x] store read/write indexを構築できる
+- [x] DAG rendererが `rawyaml` をimportしていない
+- [x] `docs/uc/001-ec-checkout-flow/renders/auth/dag-login.md` とgolden一致する
 
 ---
 

@@ -7,6 +7,8 @@ const (
 	NodeKindModel  NodeKind = "model"
 	NodeKindStore  NodeKind = "store"
 	NodeKindActor  NodeKind = "actor"
+	NodeKindState  NodeKind = "state"
+	NodeKindEvent  NodeKind = "event"
 	NodeKindBranch NodeKind = "branch"
 	NodeKindFork   NodeKind = "fork"
 	NodeKindJoin   NodeKind = "join"

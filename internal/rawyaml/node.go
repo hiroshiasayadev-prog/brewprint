@@ -15,11 +15,15 @@ type Project struct {
 }
 
 type File struct {
-	ID       string
-	Path     string
-	Kind     FileKind
-	ViewAs   string
-	NodeFile *NodeFile
+	ID               string
+	Path             string
+	Kind             FileKind
+	ViewAs           string
+	NodeFile         *NodeFile
+	RenderIndex      *RenderIndex
+	SequenceScenario *SequenceScenario
+	ERView           *ERView
+	APIView          *APIView
 }
 
 type NodeFile struct {
@@ -27,10 +31,13 @@ type NodeFile struct {
 	Models      []Model
 	Stores      []Store
 	Actors      []Actor
+	States      []State
+	Events      []Event
 	Branches    []ControlNode
 	Forks       []ControlNode
 	Joins       []ControlNode
 	Flow        []FlowEntry
+	Transitions []Transition
 	Unsupported []CommonNode
 }
 

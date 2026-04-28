@@ -36,7 +36,7 @@ func buildFlowEntry(project *semantic.Project, symbols *symbolTable, fileID sema
 	case raw.Branch != "":
 		return semantic.FlowEntry{Kind: semantic.FlowKindBranch, Branch: buildBranchFlow(project, symbols, fileID, raw)}, true
 	default:
-		symbols.addDiagnostic(semantic.SeverityWarning, fileID, "unsupported empty flow entry")
+		symbols.addDiagnosticCode(semantic.SeverityWarning, diagnosticUnsupportedFlowEntry, fileID, "unsupported empty flow entry")
 		return semantic.FlowEntry{}, false
 	}
 }
@@ -44,7 +44,7 @@ func buildFlowEntry(project *semantic.Project, symbols *symbolTable, fileID sema
 func buildStepFlow(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, id string, params map[string]string) semantic.StepFlow {
 	qid := resolveNodeQID(project, fileID, semantic.NodeKindTask, id)
 	if qid == "" {
-		symbols.addDiagnostic(semantic.SeverityError, fileID, "unresolved flow step: "+id)
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedFlowTask, fileID, "unresolved flow step: "+id)
 	}
 	return semantic.StepFlow{
 		Task:   qid,
@@ -56,7 +56,7 @@ func buildStepFlow(project *semantic.Project, symbols *symbolTable, fileID seman
 func buildForeachFlow(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, raw rawyaml.FlowEntry) semantic.ForeachFlow {
 	qid := resolveNodeQID(project, fileID, semantic.NodeKindTask, raw.Foreach)
 	if qid == "" {
-		symbols.addDiagnostic(semantic.SeverityError, fileID, "unresolved foreach task: "+raw.Foreach)
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedFlowTask, fileID, "unresolved foreach task: "+raw.Foreach)
 	}
 	mode := raw.Mode
 	if mode == "" {
@@ -75,11 +75,11 @@ func buildForeachFlow(project *semantic.Project, symbols *symbolTable, fileID se
 func buildForkFlow(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, raw rawyaml.FlowEntry) semantic.ForkFlow {
 	forkQID := resolveNodeQID(project, fileID, semantic.NodeKindFork, raw.Fork)
 	if forkQID == "" {
-		symbols.addDiagnostic(semantic.SeverityError, fileID, "unresolved fork node: "+raw.Fork)
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedFlowNode, fileID, "unresolved fork node: "+raw.Fork)
 	}
 	joinQID := resolveNodeQID(project, fileID, semantic.NodeKindJoin, raw.Join)
 	if joinQID == "" {
-		symbols.addDiagnostic(semantic.SeverityError, fileID, "unresolved join node: "+raw.Join)
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedFlowNode, fileID, "unresolved join node: "+raw.Join)
 	}
 
 	flow := semantic.ForkFlow{Fork: forkQID, ForkID: raw.Fork, Join: joinQID, JoinID: raw.Join}
@@ -87,7 +87,7 @@ func buildForkFlow(project *semantic.Project, symbols *symbolTable, fileID seman
 		branch := semantic.ForkBranchFlow{}
 		for _, rawStep := range rawBranch.Steps {
 			if rawStep.Step == "" {
-				symbols.addDiagnostic(semantic.SeverityError, fileID, "fork branch step is missing step id")
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidFlowBranch, fileID, "fork branch step is missing step id")
 				continue
 			}
 			branch.Steps = append(branch.Steps, buildStepFlow(project, symbols, fileID, rawStep.Step, rawStep.Params))
@@ -119,7 +119,7 @@ func buildJoinParamWirings(project *semantic.Project, symbols *symbolTable, file
 	for _, param := range join.Params {
 		terminal, ok := terminalByReturn[param.Name]
 		if !ok {
-			symbols.addDiagnostic(semantic.SeverityError, fileID, "join param has no matching branch return: "+param.Name)
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnmatchedJoinParam, fileID, "join param has no matching branch return: "+param.Name)
 			continue
 		}
 		out = append(out, semantic.ParamWiring{
@@ -138,7 +138,7 @@ func buildJoinParamWirings(project *semantic.Project, symbols *symbolTable, file
 func buildBranchFlow(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, raw rawyaml.FlowEntry) semantic.BranchFlow {
 	branchQID := resolveNodeQID(project, fileID, semantic.NodeKindBranch, raw.Branch)
 	if branchQID == "" {
-		symbols.addDiagnostic(semantic.SeverityError, fileID, "unresolved branch node: "+raw.Branch)
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedFlowNode, fileID, "unresolved branch node: "+raw.Branch)
 	}
 	flow := semantic.BranchFlow{
 		Branch:   branchQID,

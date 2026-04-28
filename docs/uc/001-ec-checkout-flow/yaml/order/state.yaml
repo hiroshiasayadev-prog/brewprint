@@ -240,7 +240,7 @@ nodes:
     source: external
     actor: stripe
     payload:
-      model: payment_event
+      model: payment.model.payment_event
     note: |
       Stripe webhook受信（POST /api/stripe）。
       actor: stripe はプロジェクトglobalなactors.yamlに定義（ADR-031）。
