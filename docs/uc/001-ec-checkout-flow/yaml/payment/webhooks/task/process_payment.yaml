@@ -2,7 +2,7 @@
 # - endpoint: POST /api/stripe
 # - module: payment.webhooks → task.path: stripe（single segment）
 # - writes: order.store.order_db（クロスモジュール、フルパス必須）
-# - params: event（payment_event = webhook payload）
+# - params: event（payment.model.payment_event = webhook payload）
 # - 対応event: order/state.yaml の payment_webhook_received（source: external, actor: stripe）
 #   transition.action から本タスクを呼ぶ
 
@@ -15,7 +15,7 @@ nodes:
     path: stripe
     params:
       - name: event
-        model: payment_event
+        model: payment.model.payment_event
         note: "Stripe webhook payload。同 model は event.payload.model としても再利用される"
     writes:
       - order.store.order_db
