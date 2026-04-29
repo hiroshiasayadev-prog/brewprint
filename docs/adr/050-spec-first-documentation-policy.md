@@ -258,6 +258,6 @@ ADR本文の仕様記述は「起票時点のスナップショット」であ�
 - ただし、specに書かれた仕様と implの差分が今後 [code-fix] findings として発生する可能性がある
 
 ## Evidence
-- commit: tbd
+- commit: ac69054
 - impl commit: 該当なし（doc運用方針のため）
 - 参考: 特になし

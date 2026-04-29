@@ -70,6 +70,6 @@ source層の `rawyaml.File` 構造体には `ID` と `Path` の2フィールド�
 - 既存の golden test に影響がある場合は更新する
 
 ## Evidence
-- commit: tbd
+- commit: 261ed60
 - impl commit: tbd
 - 参考: ADR-043 §1, ADR-050 §決定
