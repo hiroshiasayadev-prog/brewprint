@@ -1,15 +1,16 @@
 ---
 scope: docs/spec/project-layout.md
 status: draft
-last_updated: 2026-04-29
+last_updated: 2026-04-30
 summary: >
   brewprint プロジェクトのディレクトリ構造を定義する。
   yaml/ / renders/ / render_index.yaml の配置、render_index.yaml のスキーマ、
-  renders/ の出力構造を含む。
+  renders/ の出力構造、render output filenameと衝突時の扱いを含む。
 depends_on:
   - docs/adr/043-project-root-layout-and-render-output.md
   - docs/adr/045-render-index-schema.md
   - docs/adr/046-render-output-placement-for-state-sequence-wireframe-preview.md
+  - docs/adr/053-render-output-filename-policy-for-nested-modules.md
 ---
 
 # プロジェクトレイアウト仕様
@@ -71,7 +72,18 @@ renders/
 - `seq-{scenario-id}.md` — sequence diagram シナリオ render
 - `wireframe-{fsm-id}-{state-id}.html` — wireframe render
 
-ネストモジュール内 task の render 出力ファイル名規則は別途規定する（現状未確定、ADR-045 §8 を参照）。
+v1では、nested module の module path は出力ファイル名に含めない。render 出力ファイル名は semantic object の local ID から決定する。
+
+例:
+
+```text
+yaml/payment/webhooks/task/process_payment.yaml
+→ renders/commerce/dag-process_payment.md
+```
+
+同一 group 内で複数の render output が同一 relative path に解決される場合、renderer / placement validation は error として停止する。silent overwrite は禁止する。
+
+> 由来: ADR-053 §決定
 
 ### `_cross/` — module横断 view
 

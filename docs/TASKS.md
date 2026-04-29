@@ -469,3 +469,11 @@ renderer と MCP wrapper が Raw YAML structs を直接読まない方針を前�
   - master `index.md` も project renderer fixture一致テスト対象に戻す
   - preview titleも project名整形に追随
   - `go test ./...` 通過済み（2026-04-29、M8-8差分後）
+
+- [ ] **render output path collision validationを実装する**
+  - ADR-053 / `docs/spec/project-layout.md` に準拠
+  - v1では nested module path を出力ファイル名に含めず、local ID filenameを維持する
+  - 同一group内で複数render outputが同じrelative pathに解決された場合はerrorにする
+  - silent overwriteは禁止する
+  - collision対象source objectをerror messageに含める
+  - project renderer / placement周辺のunit testで固定する
