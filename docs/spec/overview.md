@@ -1,10 +1,10 @@
 ---
 scope: docs/spec/overview.md
-status: draft
-last_updated: 2026-04-21
+status: confirmed
+last_updated: 2026-04-30
 summary: >
   brewprintの全体概要。コンセプト・ノード種別・クロスエッジ・伝搬方向・
-  責務分離方針・未解決課題を定義する。
+  責務分離方針・今後の検討事項を定義する。
 depends_on:
   - docs/adr/001-node-type-splitting.md
   - docs/adr/002-folder-as-namespace.md
@@ -17,10 +17,10 @@ depends_on:
   - docs/adr/011-file-main-node-and-sub-nodes.md
   - docs/adr/017-diagram-layers-and-scope.md
   - docs/adr/018-event-node.md
+  - docs/adr/019-state-node.md
+  - docs/adr/020-cross-edge-management.md
   - docs/adr/028-api-table-route-composition.md
-open_issues:
-  - stateノード（FSM）のスキーマ未定（ADR-019）
-  - Edgeの別管理 vs Node内adjacency list未決
+future_issues:
   - non-functional属性（retry/idempotent/async）のfirst-class化はdogfood後に判断
 ---
 
@@ -298,12 +298,9 @@ Application → Processing → Data
 
 ---
 
-## 未解決課題
+## 今後の検討事項
 
-### stateノード（FSM）の設計
+### non-functional属性のfirst-class化
 
-State Diagram用のFSM状態ノード。`store`（データ保持）とは別概念。ADR-019にて確定済み。
-
-### Edgeの管理方式
-
-クロスエッジは `write` / `read` の2種に絞り、task nodeの `reads`/`writes` フィールドとして記述する。ADR-020にて確定済み。
+`retry` / `idempotent` / `async` などのnon-functional属性をYAML上のfirst-class fieldへ昇格させるかは、dogfood後に判断する。
+現時点では `note` による補足と実装側テストで担保する。

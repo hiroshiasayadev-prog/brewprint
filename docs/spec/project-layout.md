@@ -1,11 +1,11 @@
 ---
 scope: docs/spec/project-layout.md
-status: draft
+status: confirmed
 last_updated: 2026-04-30
 summary: >
   brewprint プロジェクトのディレクトリ構造を定義する。
   yaml/ / renders/ / render_index.yaml の配置、render_index.yaml のスキーマ、
-  renders/ の出力構造、render output filenameと衝突時の扱いを含む。
+  renders/ の出力構造、render output filename、index生成仕様、衝突時の扱いを含む。
 depends_on:
   - docs/adr/043-project-root-layout-and-render-output.md
   - docs/adr/045-render-index-schema.md
@@ -177,17 +177,97 @@ groups:
 | *(preview)* | - | - | - | [wireframe preview](_preview/wireframe.html) | - | - |
 ```
 
-group 列の表示ルール:
+master index title の `{project-name}` は project directory 名から生成する。
+`--yaml-root` の basename が `yaml` の場合は、その親 directory 名を project directory 名として扱う。
+生成規則は以下とする。
+
+1. directory 名を `-` で分割する
+2. 先頭 segment が数字のみの場合は除去する
+3. 各 segment を title case にする
+4. 既知の略語は大文字表記にする（`api` → `API`, `ec` → `EC`, `er` → `ER`, `ui` → `UI`, `uc` → `UC`）
+
+例:
+
+```text
+001-ec-checkout-flow → EC Checkout Flow
+sample-api           → Sample API
+```
+
+project name を導出できない場合は `brewprint` を fallback title とする。
+
+master index の group 列の表示ルール:
+
 - 明示 group: `label`（省略時は `id`）
 - 暗黙 group: `id`（= module 名）
 - cross 行: 固定で `*(cross)*`
 - preview 行: 固定で `*(preview)*`
 
+通常 group 行の `DAG` / `State` / `Sequence` / `Wireframe` 列には、その group に属する render file 数を表示する。0件の場合は `-` を表示する。
+通常 group 行の `ER` / `API` 列は `-` とする。
+
 master `index.md` は通常 group へのリンクのみ。個別 render への直リンクは group `index.md` が提供する。`_cross/` と `_preview/` は特殊 render ディレクトリのため、master `index.md` から `*(cross)*` / `*(preview)*` 行として直接リンクしてよい。
 
-> 由来: ADR-043 §4
+> 由来: ADR-043 §4, M8-8 project renderer fixture 固定
 
-## 6. CLI
+## 6. group index.md フォーマット
+
+```markdown
+# {group-label} render index
+
+| kind | title | path |
+|---|---|---|
+| DAG | process_order | [dag-process_order.md](dag-process_order.md) |
+| State | order | [state-order.md](state-order.md) |
+| Sequence | checkout_flow | [seq-checkout_flow.md](seq-checkout_flow.md) |
+| Wireframe | order-cart | [wireframe-order-cart.html](wireframe-order-cart.html) |
+```
+
+`{group-label}` は `render_index.yaml` の `label` を使う。`label` が省略された場合は `id` を使う。
+
+row の並び順は以下とする。
+
+1. kind 順: `DAG` → `State` → `Sequence` → `Wireframe`
+2. 同一 kind 内では render output path の昇順
+
+各列の意味:
+
+| column | 説明 |
+|---|---|
+| `kind` | render 種別。`DAG` / `State` / `Sequence` / `Wireframe` |
+| `title` | output filename から prefix と拡張子を除去した表示名 |
+| `path` | group index から見た相対リンク |
+
+`title` は以下の prefix と拡張子を取り除いて生成する。
+
+```text
+dag-process_order.md                    → process_order
+state-order.md                          → order
+seq-checkout_flow.md                    → checkout_flow
+wireframe-order-checkout_screen.html    → order-checkout_screen
+```
+
+> 由来: ADR-043 §4, M8-8 project renderer fixture 固定
+
+## 7. preview index / title
+
+wireframe preview harness は `_preview/wireframe.html` に出力する。
+HTML title と page heading は以下とする。
+
+```text
+{project-name} Wireframe Preview
+```
+
+例:
+
+```text
+001-ec-checkout-flow → EC Checkout Flow Wireframe Preview
+```
+
+project name を導出できない場合は `Wireframe Preview` を fallback title とする。
+
+> 由来: ADR-046 §5, M8-8 project renderer fixture 固定
+
+## 8. CLI
 
 `brewprint render --yaml-root <path> --out <path> [--clean]` で renders/ を生成する。
 詳細は [mcp.md](./mcp.md) および実装側の go-mN-summary.md を参照。
