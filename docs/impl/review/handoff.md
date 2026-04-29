@@ -170,10 +170,10 @@ CLI（cmd/brewprint）は query+mcp層の会話で扱う（mcp起動 / validate 
 
 | # | 層 | status | 担当 | findings file | 主なアクション |
 |---|---|---|---|---|---|
-| 1 | source | review_done / migration_pending | Sonnet (review) | findings-source.md（未作成） | F-S-001〜005 + 追加分。ADR-050方針で再整理予定 |
+| 1 | source | done | Sonnet (review) + Opus (spec移行) | [findings-source.md](./findings-source.md) | F-S-001〜008 整理完了。ADR-051/052 起票、ADR-002/030/043/045 漸進移行、spec 3本新設 |
 | 2 | rawyaml | not_started | - | - | - |
 | 3 | semantic | not_started | - | - | - |
-| 4 | resolve | not_started | - | - | - |
+| 4 | resolve | not_started | - | - | naming.md 肉付け（actor global / FK 解決 / cross-edge）も担当範囲 |
 | 5 | render | not_started | - | - | - |
 | 6 | query-mcp | not_started | - | - | - |
 
