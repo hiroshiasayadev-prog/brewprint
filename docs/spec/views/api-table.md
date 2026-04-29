@@ -1,5 +1,5 @@
 ---
-scope: docs/spec/api-table.md
+scope: docs/spec/views/api-table.md
 status: draft
 last_updated: 2026-04-25
 summary: >
