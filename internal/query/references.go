@@ -51,6 +51,13 @@ func (s *Service) referenceTarget(selector Selector) (semantic.ObjectKey, Object
 		}
 		return semantic.ScenarioObjectKey(scenario.ID), scenarioObjectRef(scenario), nil
 	}
+	if s.isTransitionSelector(selector) {
+		transition, err := s.transitionBySelector(selector)
+		if err != nil {
+			return "", ObjectRef{}, err
+		}
+		return semantic.TransitionObjectKey(transition), transitionObjectRef(transition), nil
+	}
 	node, err := s.nodeByID(selector.ID)
 	if err != nil {
 		return "", ObjectRef{}, err

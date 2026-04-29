@@ -188,6 +188,19 @@ func TestQueryServiceUC001(t *testing.T) {
 		assertHasReference(t, checkoutScenarioRefs.References, "scenario_state_file", "out", "checkout_flow", "order/state.yaml")
 		assertHasReference(t, checkoutScenarioRefs.References, "scenario_step_transition", "out", "scenario_step:checkout_flow:1", "order/state.yaml#cart:view_checkout")
 		assertHasReference(t, checkoutScenarioRefs.References, "scenario_step_transition", "out", "scenario_step:checkout_flow:2", "order/state.yaml#checkout_screen:checkout_submitted")
+
+		transitionRefs, err := service.GetReferences(GetReferencesRequest{Selector: Selector{Object: "transition", ID: "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"}, Direction: "both"})
+		if err != nil {
+			t.Fatalf("GetReferences transition: %v", err)
+		}
+		if transitionRefs.Object.Object != "transition" || transitionRefs.Object.ID != "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']" {
+			t.Fatalf("transition object = %#v", transitionRefs.Object)
+		}
+		assertHasReference(t, transitionRefs.References, "transition_from", "out", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']", "order.state.processing")
+		assertHasReference(t, transitionRefs.References, "transition_event", "out", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']", "order.event.payment_webhook_received")
+		assertHasReference(t, transitionRefs.References, "transition_to", "out", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']", "order.state.confirmed")
+		assertHasReference(t, transitionRefs.References, "transition_action", "out", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']", "payment.webhooks.task.process_payment")
+		assertHasReference(t, transitionRefs.References, "scenario_step_transition", "in", "scenario_step:payment_webhook_flow:1", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']")
 	})
 
 	t.Run("ListEndpoints", func(t *testing.T) {

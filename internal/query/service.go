@@ -66,6 +66,33 @@ func (s *Service) isScenarioSelector(selector Selector) bool {
 	return s.project.ScenariosByID[selector.ID] != nil
 }
 
+func (s *Service) transitionBySelector(selector Selector) (semantic.Transition, error) {
+	if err := s.requireProject(); err != nil {
+		return semantic.Transition{}, err
+	}
+	if selector.ID == "" {
+		return semantic.Transition{}, fmt.Errorf("selector.id is required")
+	}
+	if selector.Object != "" && selector.Object != "transition" {
+		return semantic.Transition{}, fmt.Errorf("unsupported selector object for transition: %s", selector.Object)
+	}
+	if selector.Kind != "" && selector.Kind != "transition" {
+		return semantic.Transition{}, fmt.Errorf("unsupported selector kind for transition: %s", selector.Kind)
+	}
+	for _, transitions := range s.project.TransitionsByFile {
+		for _, transition := range transitions {
+			if semantic.TransitionID(transition) == selector.ID {
+				return transition, nil
+			}
+		}
+	}
+	return semantic.Transition{}, fmt.Errorf("object not found: %s", selector.ID)
+}
+
+func (s *Service) isTransitionSelector(selector Selector) bool {
+	return selector.Object == "transition" || selector.Kind == "transition"
+}
+
 func objectRef(node semantic.Node) ObjectRef {
 	return ObjectRef{
 		Object:      "node",
@@ -87,6 +114,16 @@ func scenarioObjectRef(scenario *semantic.SequenceScenario) ObjectRef {
 		ID:     scenario.ID,
 		Label:  scenario.Title,
 		File:   scenario.FileID.String(),
+	}
+}
+
+func transitionObjectRef(transition semantic.Transition) ObjectRef {
+	return ObjectRef{
+		Object:  "transition",
+		Kind:    "transition",
+		ID:      semantic.TransitionID(transition),
+		File:    transition.FileID.String(),
+		LocalID: transition.From + ":" + transition.On,
 	}
 }
 

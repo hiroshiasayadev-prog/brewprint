@@ -340,25 +340,79 @@ MCP wrapper は引き続き QueryService を呼ぶだけにする。
 
 ---
 
-## 5. 次にやること
+## 5. Post-M9で完了したこと
+
+### Post-M9-1: GetReferences(transition)
+
+`selector.object=transition` / `selector.kind=transition` で transition synthetic ID を直接解決できるようにした。
+
+対応した問い合わせ例:
+
+```json
+{
+  "selector": {
+    "object": "transition",
+    "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+  },
+  "direction": "both"
+}
+```
+
+返せる references:
+
+- `transition_from`
+- `transition_event`
+- `transition_to`
+- `transition_action`
+- incoming `scenario_step_transition`
+
+実装内容:
+
+- `query.transitionBySelector` を追加した。
+- `query.isTransitionSelector` を追加した。
+- `query.transitionObjectRef` を追加した。
+- `GetReferences` の target resolver で transition object を扱えるようにした。
+- QueryService testで guarded transition の out/in references を固定した。
+- MCP wrapper testで `get_references_transition` を固定した。
+
+検証:
+
+```powershell
+gofmt ./...
+go test ./...
+```
+
+Post-M9-1差分後に通過済み。
+
+注意:
+
+- `go test` 実行時に `open ...\.git: The system cannot find the path specified.` が表示されるが、全packageは `ok`。
+- 現時点では Go test failure ではなく環境側メッセージとして扱っている。
+
+---
+
+## 6. 次にやること
 
 ### M9は完了
 
 Milestone 3 の QueryService 拡張は M9-4 で完了。
+Post-M9-1で transition object の direct references も問い合わせ可能になった。
 
 次候補:
 
-1. M9差分をcommitする
-2. MCP / QueryService の view object 対応をさらに広げる
-   - `GetReferences(transition)`
+1. Post-M9-1差分をcommitする
+2. MCP / QueryService の object selector 対応をさらに広げる
    - `GetReferences(file)`
+   - `GetReferences(field)`
+   - asset object references
    - ER / API view object inspect
-3. validation / diagnostics の追加強化
-4. render CLI / docs の仕上げ
+3. `inspect(transition)` を追加する
+4. validation / diagnostics の追加強化
+5. render CLI / docs の仕上げ
 
 ---
 
-## 6. 次セッション開始時の推奨コマンド
+## 7. 次セッション開始時の推奨コマンド
 
 ```powershell
 cd C:\Users\imved\projects\brewprint
@@ -377,7 +431,7 @@ open ...\.git: The system cannot find the path specified.
 
 ---
 
-## 7. commitメモ
+## 8. commitメモ
 
 この環境から `git status` は確認していない。
 次セッション冒頭で必ず確認する。
@@ -396,17 +450,19 @@ git status
    - transition/event references
    - state/event/scenario inspect
    - scenario references
+3. Post-M9 query object selector拡張
+   - `GetReferences(transition)`
 
-M9だけをcommitするなら候補:
+Post-M9-1だけをcommitするなら候補:
 
 ```powershell
 git add .
-git commit -m "feat(query): add scenario inspect"
+git commit -m "feat(query): support transition references by selector"
 ```
 
 ---
 
-## 8. 直近検証ログ
+## 9. 直近検証ログ
 
 ユーザー実行:
 

@@ -52,6 +52,22 @@ func TestServerCallTool(t *testing.T) {
 		}
 	})
 
+	t.Run("get_references_transition", func(t *testing.T) {
+		envelope := call(t, server, "get_references", `{"selector":{"object":"transition","id":"order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"},"direction":"both"}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_references transition error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["object"] != "transition" || object["id"] != "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']" {
+			t.Fatalf("transition object = %#v", object)
+		}
+		refs := result["references"].([]any)
+		if len(refs) != 5 {
+			t.Fatalf("transition references len = %d, want 5: %#v", len(refs), refs)
+		}
+	})
+
 	t.Run("inspect", func(t *testing.T) {
 		envelope := call(t, server, "inspect", `{"selector":{"id":"order.task.checkout"}}`)
 		if envelope.Error != nil {
