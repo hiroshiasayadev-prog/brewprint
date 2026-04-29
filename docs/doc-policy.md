@@ -31,7 +31,14 @@ docs/
   adr/                ← Architecture Decision Records（設計判断の根拠記録）
   uc/                 ← ユースケース集（実例YAML + 期待するrender結果）
   impl/               ← 実装作業の引継ぎ・レビューメモ
+  TASKS.md            ← milestone index。詳細taskは tasks/ を参照
+  tasks/              ← milestone別task file
+    mXX-*.md
 ```
+
+`docs/TASKS.md` は milestone index として運用する。
+詳細taskは `docs/tasks/mXX-*.md` に置き、セッション開始時は `docs/TASKS.md` のみ読む。
+作業対象 milestone が決まってから該当 task file を読み、closed milestone は原則読まない。
 
 ### 現状のspec構成
 
@@ -284,10 +291,13 @@ groups:
 ## 6. セッション開始時のClaude向け手順
 
 1. `docs/doc-policy.md`（このdoc）を読む
-2. `docs/adr/`の一覧を取得し、`accepted`なADRのタイトルを把握する
-3. 作業に関連するspec / ucを必要に応じて読む
+2. `docs/TASKS.md` を milestone index として読む。詳細task fileはまだ読まない
+3. `docs/adr/`の一覧を取得し、`accepted`なADRのタイトルを把握する
+4. 作業に関連するspec / ucを必要に応じて読む
+5. 作業対象 milestone が決まってから、該当する `docs/tasks/mXX-*.md` を読む
 
-**全docを最初から読まなくていい。** ADRタイトルで文脈を把握し、必要なものだけ読む。
+**全docを最初から読まなくていい。** ADRタイトルと `docs/TASKS.md` で文脈を把握し、必要なものだけ読む。
+**closed milestone の詳細taskは原則読まなくていい。**
 **現行仕様を把握したいときはspecを読む。** ADRは根拠を辿りたいときに参照する。
 
 ---
