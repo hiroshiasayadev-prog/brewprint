@@ -1,24 +1,21 @@
 ---
 scope: docs/spec/naming.md
-status: wip
-last_updated: 2026-04-29
+status: confirmed
+last_updated: 2026-04-30
 summary: >
   brewprint の名前空間とID解決ルールを定義する。
-  モジュール=フォルダ階層、QualifiedID形式、同モジュール内ID直書き、sentinel方式パースを含む。
-  resolve層レビューで肉付け予定（actor global / FK解決等は未収載）。
+  モジュール=フォルダ階層、QualifiedID形式、同モジュール内ID直書き、sentinel方式パース、
+  actor global namespace、FK field参照、reads/writesのstore参照解決を含む。
 depends_on:
   - docs/adr/002-folder-as-namespace.md
   - docs/adr/003-name-resolution-rules.md
+  - docs/adr/020-cross-edge-management.md
   - docs/adr/027-module-nesting-and-name-resolution.md
-open_issues:
-  - actor の global 定義 / 名前解決ルール（ADR-031 / ADR-025 由来。resolve 層レビューで追記予定）
-  - FK 解決ルール（ADR-033 由来。resolve 層レビューで追記予定）
-  - cross-edge 管理（ADR-020 由来）
+  - docs/adr/031-actor-global-definition.md
+  - docs/adr/033-fk-name-resolution.md
 ---
 
 # 名前解決仕様
-
-> このspecは最小骨格。resolve層レビューで未収載項目（actor global / FK解決 / cross-edge等）を追記する予定。
 
 ## 1. モジュールとフォルダ階層
 
@@ -109,11 +106,178 @@ edges:
 
 > 由来: ADR-003 §決定, ADR-027 §フルパス必須（同モジュール内ID直書きは継承）
 
-## 5. 未収載項目
+## 5. actor の global namespace
 
-以下は resolve 層レビューで追記される予定（現時点では関連 ADR を直接参照）:
+`actor` はプロジェクトglobalなノード種別であり、モジュールに属さない。
+そのため actor の QualifiedID は `<module-path>.actor.<id>` 形式を取らず、常に actor ID そのものを参照IDとして使う。
 
-- **actor の global 定義**: actor は global namespace を持つ（ADR-031）。プロジェクト全体で一意な actor ID を共有する仕組み
-- **actor の YAML 配置**: `actors.yaml` のようなファイルで定義する（ADR-025）
-- **FK 解決ルール**: ER における FK 参照の名前解決（ADR-033）
-- **cross-edge 管理**: モジュール跨ぎエッジの管理ルール（ADR-020）
+```yaml
+nodes:
+  - id: stripe
+    type: actor
+    note: "外部決済サービス"
+```
+
+上記の actor は、どの module からも以下のように参照する。
+
+```yaml
+actor: stripe
+```
+
+actor ID はプロジェクト全体で一意でなければならない。複数ファイルに同じ actor ID が定義された場合は validation error とする。
+
+> 由来: ADR-031 §決定, ADR-025 §決定
+
+## 6. FK field参照の解決
+
+model field の `fk:` は、参照先 model field を指す。
+FK参照には、同一module内でのみ使える bare FK と、moduleを跨ぐ場合に使う Qualified field reference の2形式がある。
+
+### 6.1 同一module内 bare FK
+
+同一module内の model field を参照する場合は、以下の短縮形式を許容する。
+
+```text
+<model-id>.<field-name>
+```
+
+例:
+
+```yaml
+# yaml/order/model/order_item.yaml
+nodes:
+  - id: order_item
+    type: model
+    kind: struct
+    fields:
+      - name: order_id
+        type: str
+        fk: order.id
+```
+
+上記の `fk: order.id` は、現在のmoduleが `order` の場合、resolve後に以下へ正規化される。
+
+```text
+order.model.order.id
+```
+
+つまり、bare FK は以下の規則で解決する。
+
+```text
+<model-id>.<field-name>
+→ <current-module>.model.<model-id>.<field-name>
+```
+
+### 6.2 module跨ぎ FK
+
+moduleを跨いで別moduleの model field を参照する場合は、Qualified field reference を必須とする。
+
+```text
+<module-path>.model.<model-id>.<field-name>
+```
+
+例:
+
+```yaml
+# yaml/payment/model/payment_event.yaml
+nodes:
+  - id: payment_event
+    type: model
+    kind: struct
+    fields:
+      - name: order_id
+        type: str
+        fk: order.model.order.id
+```
+
+nested module を参照する場合も同じ形式を使う。
+
+```yaml
+fk: commerce.order.model.order.id
+```
+
+moduleを跨ぐ参照で bare FK を使うことはできない。`fk: order.id` のようなbare FKは、常に現在のmodule内の `model.order.id` として解釈される。
+
+### 6.3 resolve後の正規化
+
+YAML上の入力が bare FK であっても、semantic model / reference index / MCP response では常に正規化済みの field ID を使う。
+
+```text
+入力: fk: order.id
+解決: order.model.order.id
+reference: field_fk from order.model.order_item.order_id to order.model.order.id
+```
+
+この正規化により、`get_references` などの逆参照取得では、bare FK と Qualified field reference を同一形式で扱える。
+
+> 由来: ADR-033 §決定, ADR-027 §命名規則を拡張する
+
+## 7. reads / writes の store参照解決
+
+`task.reads` / `task.writes` は store node を参照する。
+store参照も、同一module内は bare ID を許容し、moduleを跨ぐ場合は QualifiedID を必須とする。
+
+### 7.1 同一module内 store参照
+
+同一module内の store を参照する場合は、store ID をそのまま書ける。
+
+```yaml
+# yaml/order/task/checkout.yaml
+nodes:
+  - id: checkout
+    type: task
+    reads:
+      - order_db
+    writes:
+      - order_db
+```
+
+現在のmoduleが `order` の場合、上記は resolve後に以下へ正規化される。
+
+```text
+order.store.order_db
+```
+
+### 7.2 module跨ぎ store参照
+
+別moduleの store を参照する場合は QualifiedID を使う。
+
+```yaml
+# yaml/order/task/checkout.yaml
+nodes:
+  - id: checkout
+    type: task
+    reads:
+      - cart.store.cart_session
+      - auth.store.user_db
+    writes:
+      - order_db
+```
+
+resolve後の参照は以下になる。
+
+```text
+reads:
+  - cart.store.cart_session
+  - auth.store.user_db
+writes:
+  - order.store.order_db
+```
+
+moduleを跨ぐ参照で bare store ID を使うことはできない。bare store ID は、常に現在のmodule内の store として解釈される。
+
+> 由来: ADR-020 §決定, ADR-027 §命名規則を拡張する
+
+## 8. resolve後のID表現
+
+名前解決後の semantic model / reference index / MCP response では、入力がbare記法であっても、原則として解決済みの正規化IDを返す。
+
+| YAML上の入力 | 文脈 | resolve後 |
+|---|---|---|
+| `order_db` | `order` module内の `reads` / `writes` | `order.store.order_db` |
+| `order.id` | `order` module内の `fk:` | `order.model.order.id` |
+| `cart.store.cart_session` | module跨ぎ store参照 | `cart.store.cart_session` |
+| `commerce.order.model.order.id` | module跨ぎ FK参照 | `commerce.order.model.order.id` |
+| `stripe` | actor参照 | `stripe` |
+
+この方針により、YAML authoringでは同一module内参照を簡潔に書ける一方、実装・MCP・diagnosticsでは一意な参照IDを扱える。
