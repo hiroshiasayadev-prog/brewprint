@@ -1,13 +1,14 @@
 ---
 scope: docs/spec/diagnostics.md
 status: draft
-last_updated: 2026-04-29
+last_updated: 2026-04-30
 summary: >
   brewprint validation diagnosticsの外部向け仕様。
-  severity / code / file / message の意味と、現在のdiagnostic code一覧を定義する。
+  severity / code / file / message の意味、diagnostic file表現、現在のdiagnostic code一覧を定義する。
 depends_on:
   - docs/adr/047-go-semantic-model-query-layer-boundary.md
   - docs/adr/051-unsupported-yaml-file-warning.md
+  - docs/adr/052-source-file-path-normalization.md
 ---
 
 # Diagnostics仕様
@@ -39,8 +40,32 @@ JSON出力では、diagnosticは以下の形で表現される。
 |---|---:|---|
 | `severity` | yes | `error` または `warning` |
 | `code` | no | machine-readableなdiagnostic code。未分類の場合は省略されうる |
-| `file` | no | diagnostic対象のYAML file id |
+| `file` | no | diagnostic対象のYAML FileID |
 | `message` | yes | 人間向け説明 |
+
+## File representation
+
+Diagnostic の `file` は FileID を使う。
+
+`yaml/` 配下のファイルでは、プロジェクトルート相対pathではなく、`yaml/` prefix を除いたIDを出力する。
+
+```text
+rawyaml.File.Path: yaml/order/state.yaml
+rawyaml.File.ID:   order/state.yaml
+diagnostic.file:   order/state.yaml
+```
+
+`render_index.yaml` のように `yaml/` 外のファイルでは、FileID と Path は同じ値になる。
+
+```text
+rawyaml.File.Path: render_index.yaml
+rawyaml.File.ID:   render_index.yaml
+diagnostic.file:   render_index.yaml
+```
+
+この規約により、diagnostic出力・MCP response・renderer内部のFileID表現を揃える。
+
+> 由来: ADR-052 §決定
 
 ## Severity
 
