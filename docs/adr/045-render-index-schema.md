@@ -2,7 +2,10 @@
 
 - **status**: accepted
 - **date**: 2026-04-26
+- **migrated_to_spec**: 2026-04-29
 - **supersedes**: なし
+
+> このADRの現行仕様詳細は [docs/spec/project-layout.md](../spec/project-layout.md) §4 を参照。
 
 ## 背景
 
@@ -19,109 +22,16 @@ ADR-043でbrewprintプロジェクトのルートに `render_index.yaml` を置�
 
 ## 決定
 
-### 1. トップレベル構造
+### 決定の概要
 
-```yaml
-# render_index.yaml
-groups:
-  - id: auth
-    label: 認証
-    modules: [auth]
-  - id: commerce
-    label: 商取引
-    modules: [cart, order, payment]
-  - id: catalog
-    label: カタログ
-    modules: [catalog, inventory]
-```
-
-| フィールド | 型 | 必須 | 説明 |
-|---|---|---|---|
-| `groups` | array | 必須 | groupの定義リスト。空配列はvalidation error |
-
-### 2. group オブジェクト
-
-| フィールド | 型 | 必須 | 説明 |
-|---|---|---|---|
-| `id` | string | 必須 | group識別子。`renders/{id}/` ディレクトリ名になる |
-| `label` | string | 任意 | 人間向け表示名。省略時は `id` をそのまま使う |
-| `modules` | array[string] | 必須 | このgroupに属するmodule名のリスト。空配列はvalidation error |
-
-### 3. group id の命名規則
-
-- 使用可能文字: `[a-z0-9_]`（小文字英数字とアンダースコア）
-- アンダースコア始まり（`_` prefix）は **validation error**。`_cross/` との混同を防ぐため予約する
-- 空文字はvalidation error
-- ※ module名も同じく `_` 始まり禁止とする。暗黙group idがmodule名をそのまま使うため、module名がアンダースコア始まりだとgroup id命名規則と衝突する。詳細は理由セクション参照。
-
-```yaml
-# OK
-- id: commerce
-- id: payment_webhook
-
-# NG（validation error）
-- id: _internal
-- id: Commerce
-- id: ""
-```
-
-### 4. module 重複の禁止
-
-1つのmoduleは最大1つのgroupにしか属せない。複数のgroupに同じmodule名が現れた場合はvalidation error。
-
-```yaml
-# NG（orderが2つのgroupに属している）
-groups:
-  - id: commerce
-    modules: [cart, order]
-  - id: fulfillment
-    modules: [order, inventory]
-```
-
-### 5. uncovered module の扱い
-
-`yaml/` 配下に存在するmoduleが `render_index.yaml` のどのgroupにも属さない場合、そのmoduleは **group id = module名の暗黙groupとして扱う**。
-
-```
-# yaml/配下にmoduleが [auth, cart, order, payment, catalog, inventory] あるとする
-# render_index.yaml で以下を定義した場合:
-groups:
-  - id: commerce
-    modules: [cart, order, payment]
-
-# 結果:
-# renders/commerce/   ← 明示group
-# renders/auth/       ← 暗黙group（auth module単独）
-# renders/catalog/    ← 暗黙group（catalog module単独）
-# renders/inventory/  ← 暗黙group（inventory module単独）
-```
-
-warningは出力するが、エラーにはしない。意図的に一部だけgroupingすることを許容する。
-
-### 6. groups 配列の順序
-
-`groups` 配列の定義順が `renders/index.md` のテーブル行順および各group `index.md` の表示順と一致する。
-暗黙groupは明示groupの後にアルファベット順で追加される。
-
-### 7. ネストしたmoduleの扱い（ADR-027との整合）
-
-ADR-027のmodule nestingに基づき、`modules` フィールドに指定するのは **最上位module名のみ**とする。
-`payment/webhooks` のようなスラッシュ区切りパスはvalidation errorとする。
-
-ネストしたmodule（例: `payment/webhooks`）を親module（`payment`）でgroupに含めた場合、**子moduleも同groupに含まれる**。
-
-```yaml
-# payment を指定した場合、payment/webhooks も commerce groupに含まれる
-groups:
-  - id: commerce
-    modules: [cart, order, payment]
-```
-
-子moduleだけを別groupに分離することはできない。親moduleを分離したうえで子moduleを別途指定することも禁止する（module重複禁止ルールに抵触するため）。
-
-### 8. ネストしたmodule内taskのrender出力ファイル名
-
-ネストしたmodule内のtask（例: `payment/webhooks` 内のtask）のrender出力ファイル命名ルールは、Go実装ADRで規定する。
+1. **トップレベル構造**: `groups` 配列（仕様詳細: [project-layout.md](../spec/project-layout.md) §4.1）
+2. **group オブジェクト**: `id` / `label` / `modules`（仕様詳細: [project-layout.md](../spec/project-layout.md) §4.2）
+3. **id / module 名命名規則**: `[a-z0-9_]`、`_` 始まり禁止（仕様詳細: [project-layout.md](../spec/project-layout.md) §4.3）
+4. **module 重複の禁止**: 1 module = 1 group（仕様詳細: [project-layout.md](../spec/project-layout.md) §4.4）
+5. **uncovered module の扱い**: 暗黙 group として扱う、warning 出力（仕様詳細: [project-layout.md](../spec/project-layout.md) §4.5）
+6. **groups 配列の順序**: 定義順 = 表示順（仕様詳細: [project-layout.md](../spec/project-layout.md) §4.6）
+7. **ネスト module の扱い**: 最上位 module 名のみ指定、子 module は親に従属（仕様詳細: [project-layout.md](../spec/project-layout.md) §4.7）
+8. **ネスト module 内 task の render 出力ファイル名**: Go 実装 ADR で規定（未確定）
 
 ## 理由
 

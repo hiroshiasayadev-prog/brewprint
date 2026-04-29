@@ -2,6 +2,9 @@
 
 - **status**: accepted
 - **date**: 2026-04-22
+- **migrated_to_spec**: 2026-04-29
+
+> このADRの現行仕様詳細は [docs/spec/file-types.md](../spec/file-types.md) §1〜§3 を参照。
 
 ## 背景
 
@@ -19,7 +22,7 @@ brewprintのYAMLファイルには2種類が存在する。
 
 ## 決定
 
-**view定義ファイルのみ**、トップレベルに `as:` フィールドを必須とする。
+**view定義ファイルのみ**、トップレベルに `as:` フィールドを必須とする（仕様詳細: [file-types.md](../spec/file-types.md) §1〜§2）。
 
 ```yaml
 as: api_table
@@ -32,14 +35,14 @@ modules:
 
 ノード定義ファイルには `as:` を置かない。パーサーはトップレベルに `as:` が存在するかどうかでノード定義 vs view定義を判別する。
 
-### `as:` の値（現時点）
+### `as:` の値（起票時点スナップショット）
 
 | 値 | 対応するview |
 |----|-------------|
 | `api_table` | API Table view（ADR-028） |
 | `sequence_diagram` | Sequence Diagramシナリオ（ADR-032） |
 
-view種別が追加されるたびに本ADRの表を更新する。
+> 現行の `as:` 値一覧は [file-types.md](../spec/file-types.md) §3 を参照。view 種別が追加された際は spec 側を更新する。
 
 ## 理由
 

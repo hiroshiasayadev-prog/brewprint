@@ -2,7 +2,10 @@
 
 - **status**: accepted
 - **date**: 2026-04-26
+- **migrated_to_spec**: 2026-04-29
 - **supersedes**: なし
+
+> このADRの現行仕様詳細は [docs/spec/project-layout.md](../spec/project-layout.md) §1, §3, §5 を参照。
 
 ## 背景
 
@@ -31,93 +34,19 @@ UC-001（EC Checkout Flow）の作業を通じて、brewprintの「プロジェ�
 
 UC運用上付加されるファイル（`HANDOFF.md` / `TASKS-*.md` / `docs/coverage.md` 等）はbrewprintプロジェクト仕様の対象外であり、`doc-policy.md` 側の責務とする。
 
-### 1. プロジェクトのルートレイアウト
+### 決定の概要
 
-brewprintプロジェクトは以下のディレクトリ構造を持つ。
-
-```
-{project-root}/
-  yaml/               ← brewprint YAML群（single source of truth）
-  renders/            ← Go rendererによる自動生成物
-  render_index.yaml   ← render出力のグルーピング設定（人間が書く）
-  README.md
-```
+1. **プロジェクトルート構造**: `yaml/` / `renders/` / `render_index.yaml` / `README.md`（仕様詳細: [project-layout.md](../spec/project-layout.md) §1）
+2. **renders/ の出力構造**: `index.md` / `{group-id}/` / `_cross/` / `_preview/`（仕様詳細: [project-layout.md](../spec/project-layout.md) §3）
+3. **render_index.yaml によるグルーピング制御**: スキーマ詳細はADR-045（仕様詳細: [project-layout.md](../spec/project-layout.md) §4）
+4. **master index.md フォーマット**: group一覧テーブル形式（仕様詳細: [project-layout.md](../spec/project-layout.md) §5）
+5. **CLIインターフェース**: `brewprint render ./yaml/ --out ./renders/`（実装ADR側で確定）
 
 `renders/` はGoが生成する成果物ディレクトリであり、人間が直接編集しない。
 goldenテスト目的でgitにcommitすることは許容するが、その場合も編集権限はGo rendererのみとする。
 
-`render_index.yaml` のスキーマ詳細（id命名規則 / module重複可否 / uncovered moduleの扱い / 順序保証）はADR-045で規定する。
-
-### 2. renders/ の出力構造
-
-```
-renders/
-  index.md                  ← masterインデックス（全groupへのリンクテーブル）
-  {group-id}/
-    index.md                ← groupインデックス（group内の全render一覧テーブル）
-    dag-{task-id}.md
-    state-{fsm-id}.md
-    seq-{scenario-id}.md
-    wireframe-{fsm-id}-{state-id}.html
-  _cross/
-    er.md
-    api.md
-    （将来のcross-cutting viewも同ディレクトリ配下に配置する）
-  _preview/
-    wireframe.html          ← preview harness
-```
-
-module横断的なview（ER / API Table等）は `_cross/` に置く。
-preview harnessは `_preview/` に置く。
-アンダースコアプレフィックスはgroup IDと区別するためのconventionであり、group idにアンダースコア始まりを使うことはvalidation errorとする。
-
 State / Sequence / Wireframe / Preview の詳細な配置規則はADR-046で規定する。
-
-### 3. render_index.yaml によるグルーピング制御（概念）
-
-`render_index.yaml` をプロジェクトルートに置き、`renders/` のgroup構成を制御する。
-
-```yaml
-# render_index.yaml（例）
-groups:
-  - id: auth
-    label: 認証
-    modules: [auth]
-  - id: commerce
-    label: 商取引
-    modules: [cart, order, payment]
-```
-
-`render_index.yaml` が省略された場合のデフォルト動作は「1 module = 1 group」とする。
-スキーマの詳細はADR-045で規定する。
-
-### 4. index.md のフォーマット
-
-masterの `renders/index.md` はgroup一覧をテーブル形式で示す。
-
-```markdown
-# {project-name} render index
-
-| group | DAG | State | Sequence | Wireframe | ER | API |
-|---|---|---|---|---|---|---|
-| [認証](auth/index.md) | 1 | 1 | - | 2 | - | - |
-| [商取引](commerce/index.md) | 3 | 1 | 2 | 2 | - | - |
-| *(cross)* | - | - | - | - | [er](_cross/er.md) | [api](_cross/api.md) |
-| *(preview)* | - | - | - | [wireframe preview](_preview/wireframe.html) | - | - |
-```
-
-group列の表示ルール: 明示groupは `label`（省略時は `id`）、暗黙groupは `id`（= module名）、cross行は固定で `*(cross)*`、preview行は固定で `*(preview)*`。
-
-各groupの `{group-id}/index.md` はgroup内のrender一覧をテーブル形式で示す。master `index.md` は通常groupへのリンクのみを持ち、個別renderへの直リンクはgroup `index.md` が提供する。これによりmaster index.mdの肥大化を防ぐ。
-ただし `_cross/` と `_preview/` は通常groupではない特殊renderディレクトリであり、master `index.md` から `*(cross)*` / `*(preview)*` 行として直接リンクしてよい。
-
-### 5. CLIインターフェース（参考）
-
-```
-brewprint render ./yaml/ --out ./renders/
-```
-
-`--out` で出力先を変更可能とすることを想定する。確定はGo実装ADRで行う。
+`render_index.yaml` のスキーマ詳細はADR-045で規定する。
 
 ## 理由
 

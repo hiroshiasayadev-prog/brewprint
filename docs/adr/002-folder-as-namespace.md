@@ -2,7 +2,10 @@
 
 - **status**: accepted（一部superseded）
 - **date**: 2026-04-17
-- **partial supersede**: ADR-010により `dag.yaml` / `er.yaml` のビュー別ファイル分けは廃止。名前空間ルール（フォルダ = モジュール）は継続有効
+- **migrated_to_spec**: 2026-04-29
+- **partial supersede**: ADR-010により `dag.yaml` / `er.yaml` のビュー別ファイル分けは廃止。ADR-043により `master.yaml` は廃止。名前空間ルール（フォルダ = モジュール）は継続有効
+
+> このADRの現行仕様詳細は [docs/spec/naming.md](../spec/naming.md) §1 を参照。
 
 ## 背景
 
@@ -11,19 +14,11 @@
 
 ## 決定
 
-フォルダ階層をそのまま名前空間とする。
+フォルダ階層をそのまま名前空間とする（仕様詳細: [naming.md](../spec/naming.md) §1）。
 
-```
-modules/
-  auth/
-    dag.yaml
-    er.yaml
-  analysis/
-    dag.yaml
-    state.yaml
-```
+加えて、リポジトリルートに `master.yaml` を置く方針を当初定めた（modules一覧・エントリーポイント・グローバルなクロスエッジ・履歴管理）。
 
-加えて、リポジトリルートに`master.yaml`を置く。役割はgo.modに相当する台帳（モジュール一覧・エントリーポイント・グローバルなクロスエッジ・commit/revert履歴管理）。
+> ※ `master.yaml` は ADR-043 でプロジェクトルートレイアウトを再定義した際に廃止された。現行仕様では `master.yaml` は存在しない（[project-layout.md](../spec/project-layout.md) §1）。
 
 ## 理由
 
