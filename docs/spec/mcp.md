@@ -778,6 +778,50 @@ full pathは `list_endpoints` の `endpoints[].path` で返す。
 }
 ```
 
+### 6.9 transition signature
+
+Transitionはnodeではなくsynthetic objectとして問い合わせる。
+selectorには `object: "transition"` とTransitionIDを指定する。
+
+```json
+{
+  "selector": {
+    "object": "transition",
+    "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+  }
+}
+```
+
+```json
+{
+  "object": {
+    "object": "transition",
+    "kind": "transition",
+    "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']",
+    "file": "order/state.yaml",
+    "local_id": "processing:payment_webhook_received"
+  },
+  "signature": {
+    "state_file": "order/state.yaml",
+    "from": "processing",
+    "on": "payment_webhook_received",
+    "to": "confirmed",
+    "guard": "payload.status == 'succeeded'",
+    "action": "payment.webhooks.task.process_payment"
+  },
+  "diagnostics": []
+}
+```
+
+| フィールド | 必須 | 内容 |
+|---|---:|---|
+| `state_file` | ✓ | transition定義元のstate FileID |
+| `from` | ✓ | 遷移元state local ID |
+| `on` | ✓ | event local ID |
+| `to` | ✓ | 遷移先state local ID |
+| `guard` | 任意 | guard文字列 |
+| `action` | 任意 | 解決済みaction task QualifiedID |
+
 ---
 
 ## 7. `get_references`
@@ -1338,6 +1382,128 @@ Sequence Diagram scenarioはview objectとしてinspectできる。
       "direction": "out",
       "from": { "object": "view", "kind": "sequence_diagram", "id": "checkout_flow" },
       "to": { "object": "file", "kind": "state_file", "id": "order/state.yaml" }
+    }
+  ],
+  "diagnostics": []
+}
+```
+
+### 8.10 transition inspect
+
+Transitionはsynthetic objectとしてinspectできる。
+
+```json
+{
+  "selector": {
+    "object": "transition",
+    "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+  }
+}
+```
+
+返す内容:
+
+- transition signature
+- 解決済みfrom state
+- 解決済みevent
+- 解決済みto state
+- 解決済みaction task
+- transitionが持つdirect references
+- scenario step等からtransitionへのincoming references
+
+```json
+{
+  "object": {
+    "object": "transition",
+    "kind": "transition",
+    "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']",
+    "file": "order/state.yaml",
+    "local_id": "processing:payment_webhook_received"
+  },
+  "signature": {
+    "state_file": "order/state.yaml",
+    "from": "processing",
+    "on": "payment_webhook_received",
+    "to": "confirmed",
+    "guard": "payload.status == 'succeeded'",
+    "action": "payment.webhooks.task.process_payment"
+  },
+  "members": {
+    "from_state": {
+      "object": "node",
+      "kind": "state",
+      "id": "order.state.processing"
+    },
+    "event": {
+      "object": "node",
+      "kind": "event",
+      "id": "order.event.payment_webhook_received"
+    },
+    "to_state": {
+      "object": "node",
+      "kind": "state",
+      "id": "order.state.confirmed"
+    },
+    "action_task": {
+      "object": "node",
+      "kind": "task",
+      "id": "payment.webhooks.task.process_payment"
+    }
+  },
+  "references": [
+    {
+      "kind": "transition_from",
+      "direction": "out",
+      "from": {
+        "object": "transition",
+        "kind": "transition",
+        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+      },
+      "to": { "object": "node", "kind": "state", "id": "order.state.processing" }
+    },
+    {
+      "kind": "transition_event",
+      "direction": "out",
+      "from": {
+        "object": "transition",
+        "kind": "transition",
+        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+      },
+      "to": { "object": "node", "kind": "event", "id": "order.event.payment_webhook_received" }
+    },
+    {
+      "kind": "transition_to",
+      "direction": "out",
+      "from": {
+        "object": "transition",
+        "kind": "transition",
+        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+      },
+      "to": { "object": "node", "kind": "state", "id": "order.state.confirmed" }
+    },
+    {
+      "kind": "transition_action",
+      "direction": "out",
+      "from": {
+        "object": "transition",
+        "kind": "transition",
+        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+      },
+      "to": { "object": "node", "kind": "task", "id": "payment.webhooks.task.process_payment" }
+    },
+    {
+      "kind": "scenario_step_transition",
+      "direction": "in",
+      "from": {
+        "object": "scenario_step",
+        "kind": "sequence_step",
+        "id": "scenario_step:payment_webhook_flow:1"
+      },
+      "to": {
+        "object": "transition",
+        "kind": "transition",
+        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+      }
     }
   ],
   "diagnostics": []

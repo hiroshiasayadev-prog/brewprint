@@ -452,6 +452,36 @@ Post-M9-2差分後に通過済み。
 
 ---
 
+### Post-M9-3: docs/spec/mcp.md transition spec追随
+
+実装済みの transition object 対応に合わせて、MCP specを更新した。
+
+追加した仕様:
+
+- `get_signature` の `transition signature`
+  - selector例
+  - response例
+  - `state_file` / `from` / `on` / `to` / `guard` / `action` のfield定義
+- `inspect` の `transition inspect`
+  - selector例
+  - response例
+  - `members.from_state`
+  - `members.event`
+  - `members.to_state`
+  - `members.action_task`
+  - transition direct references
+  - incoming `scenario_step_transition`
+
+変更ファイル:
+
+- `docs/spec/mcp.md`
+
+検証:
+
+- docs only変更のため追加テストなし。
+
+---
+
 ## 6. 次にやること
 
 ### M9は完了
@@ -459,18 +489,18 @@ Post-M9-2差分後に通過済み。
 Milestone 3 の QueryService 拡張は M9-4 で完了。
 Post-M9-1で transition object の direct references も問い合わせ可能になった。
 Post-M9-2で transition object の signature / inspect も問い合わせ可能になった。
+Post-M9-3で `docs/spec/mcp.md` も transition signature / inspect に追随した。
 
 次候補:
 
-1. Post-M9-2差分をcommitする
+1. Post-M9-3 docs差分をcommitする
 2. MCP / QueryService の object selector 対応をさらに広げる
    - `GetReferences(file)`
    - `GetReferences(field)`
    - asset object references
    - ER / API view object inspect
-3. `docs/spec/mcp.md` に transition signature / inspect 節を追記する
-4. validation / diagnostics の追加強化
-5. render CLI / docs の仕上げ
+3. validation / diagnostics の追加強化
+4. render CLI / docs の仕上げ
 
 ---
 
@@ -516,12 +546,15 @@ git status
    - `GetReferences(transition)`
    - `GetSignature(transition)`
    - `Inspect(transition)`
+4. Post-M9 spec追随
+   - transition signature spec
+   - transition inspect spec
 
-Post-M9-2だけをcommitするなら候補:
+Post-M9-3だけをcommitするなら候補:
 
 ```powershell
-git add .
-git commit -m "feat(query): support transition inspect"
+git add docs/spec/mcp.md docs/impl/go-m9-summary.md
+git commit -m "docs(mcp): document transition inspect"
 ```
 
 ---
