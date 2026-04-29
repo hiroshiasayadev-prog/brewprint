@@ -15,6 +15,20 @@ implがM1スコープ（UC-001のDAG render垂直スライス）から大きく�
 レビューの主目的は **ADR / spec と impl の整合性確認**。
 コード品質や設計クリティーク自体は副次的で、「ADR/specの決定が実装に反映されているか」「実装中に変えたが ADR/spec に反映していない決定がないか」を中心に見る。
 
+### ADR-050 spec-first転換に伴う方針更新（2026-04-29）
+
+source層レビュー（Sonnet担当）でADR間の整合性問題（F-S-001 等）が表面化したことをきっかけに、ADR-050（proposed）でドキュメント運用方針を**spec-first**に転換した。
+これに伴い、本レビューの基準も以下のように変わる。
+
+- **specが「現行仕様の唯一の正」**。implが見るべきは spec
+- **ADRは「設計判断の根拠記録」**。現行仕様の記述は今後 spec に移管していく
+- 既存49 ADRは漸進移行ルールに従い、レビューで触れたタイミングで spec に移管する
+
+レビューの軸は2つに増える：
+
+1. **spec ↔ impl 整合性**: 現行仕様（spec）と実装の差分
+2. **ADR → spec 移行発掘**: ADRに書かれているが spec に書かれていない決定の発掘と移行作業
+
 ---
 
 ## 2. impl 全体俯瞰
@@ -75,26 +89,27 @@ renderer -> semantic
 
 ### A. 構造的整合
 
-- ADRで決めた型分割（例: ADR-001 node type splitting, ADR-007 asset/store boundary）が実際のpackage/typeに反映されているか
-- ADRで決めた境界（例: ADR-047 query layer boundary, ADR-048 indexes, ADR-049 reference vocabulary）が守られているか
+- ADR/specで決めた型分割（例: ADR-001 node type splitting, ADR-007 asset/store boundary）が実際のpackage/typeに反映されているか
+- ADR/specで決めた境界（例: ADR-047 query layer boundary, ADR-048 indexes, ADR-049 reference vocabulary）が守られているか
 - specで定義した構造（nodes.md / edges.md のフィールド体系）が型に反映されているか
 
 ### B. 命名整合
 
-- ADRで決めた語彙（例: ADR-049 `references` 統一）がコード上の名前と一致しているか
-- ADRで言及されている概念（QualifiedID / FileID / TransitionID など）が型として存在するか
-- 概念をリネームしたが ADR に反映されていない例がないか
+- ADR/specで決めた語彙（例: ADR-049 `references` 統一）がコード上の名前と一致しているか
+- ADR/specで言及されている概念（QualifiedID / FileID / TransitionID など）が型として存在するか
+- 概念をリネームしたが ADR/spec に反映されていない例がないか
 
 ### C. 機能整合
 
 - specで定義したMCP responseの形が query の返却型と一致するか
 - specで定義した diagnostic code が実装で出力されているか
-- ADRで決めた index 群（ADR-048）が `semantic.Project` に揃っているか
-- ADRで決めた render rule が renderer の出力で観測できるか
+- ADR/specで決めた index 群（ADR-048）が `semantic.Project` に揃っているか
+- ADR/specで決めた render rule が renderer の出力で観測できるか
 
-### D. ADRからの逸脱
+### D. ADR ↔ spec ↔ impl の三者整合（ADR-050以降の追加軸）
 
-- 「実装中に変えたが ADRに反映していない」決定がないか
+- ADR本文に「現行仕様」が書かれているがspecに反映されていないものがないか
+- spec / impl が一致しているが、その根拠ADRが見えなくなっているものがないか
 - 旧ADRが superseded されずに残っていないか
 - spec gap として一時的に残した未決事項が忘れられていないか
 
@@ -106,26 +121,32 @@ renderer -> semantic
 
 | # | レビュー会話 | 対象 impl | 突き合わせ ADR | 突き合わせ spec |
 |---|---|---|---|---|
-| 1 | source層 | `internal/source/` (3) | ADR-002, 030 | overview.md |
+| 1 | source層 | `internal/source/` (3) | ADR-002, 030 | overview.md（→ project-layout.md / file-types.md 新設候補） |
 | 2 | rawyaml層 | `internal/rawyaml/` (12) | ADR-001, 006, 011, 030 | nodes.md, edges.md |
 | 3 | semantic層 | `internal/semantic/` (17) | ADR-001, 006, 007, 011, 014, 018, 019, 021, 024, 026, 028, 029, 042, 048 | nodes.md, edges.md |
-| 4 | resolve層 | `internal/resolve/` (12) | ADR-003, 015, 020, 023, 025, 027, 031, 033, 034, 035, 040, 048 | overview.md, diagnostics.md |
-| 5 | render層 | `internal/render/` (17) | ADR-004, 005, 008, 009, 022, 024, 026, 028, 029, 035, 036, 037, 038, 039, 041, 042, 043, 044, 045, 046 | views/全部 |
+| 4 | resolve層 | `internal/resolve/` (12) | ADR-003, 015, 020, 023, 025, 027, 031, 033, 034, 035, 040, 048 | overview.md, diagnostics.md（→ naming.md 新設候補） |
+| 5 | render層 | `internal/render/` (17) | ADR-004, 005, 008, 009, 022, 024, 026, 028, 029, 035, 036, 037, 038, 039, 041, 042, 043, 044, 045, 046 | views/全部（→ project-layout.md 新設候補） |
 | 6 | query+mcp層 | `internal/query/` (7) + `internal/mcp/` (5) + `cmd/brewprint/` (2) | ADR-047, 048, 049 | mcp.md, diagnostics.md |
 
 CLI（cmd/brewprint）は query+mcp層の会話で扱う（mcp起動 / validate / render コマンド構成）。
+
+新設candidate spec（漸進移行で作成予定）:
+- `project-layout.md` — yaml/, renders/, render_index.yaml の構造（ADR-043, 045由来）
+- `file-types.md` — `as:`, `nodes:`, FileKind分類（ADR-030, 039由来）
+- `naming.md` — QualifiedID, name resolution, module nesting, FK解決（ADR-002, 003, 027, 031, 033由来）
 
 ### 会話の進め方テンプレート
 
 各レビュー会話の冒頭で：
 
-1. `docs/doc-policy.md` を読む
+1. `docs/doc-policy.md` を読む（spec-first方針を含む最新版）
 2. このファイル（`docs/impl/review/handoff.md`）を読む
 3. 該当する **対象impl** を全ファイル読む
-4. 該当する **ADR / spec** を必要に応じて読む（ADRタイトル + Decisionだけでもよい）
-5. 整合性チェックの軸 A/B/C/D に沿って所見を出す
-6. 発見事項を `docs/impl/review/findings-{layer}.md` に記録
-7. 必要に応じて ADR の修正・新規起票・spec修正を提案
+4. 該当する **spec** を読む（spec-firstなのでまずこちら）
+5. 必要に応じて **ADR** を読む（根拠を辿るため、または spec に未反映の決定を発掘するため）
+6. 整合性チェックの軸 A/B/C/D に沿って所見を出す
+7. 発見事項を `docs/impl/review/findings-{layer}.md` に記録
+8. 必要に応じて ADR の修正・新規起票・spec修正・spec新設・ADR→spec移行を提案
 
 `{layer}` は `source` / `rawyaml` / `semantic` / `resolve` / `render` / `query-mcp` のいずれか。
 
@@ -135,27 +156,28 @@ CLI（cmd/brewprint）は query+mcp層の会話で扱う（mcp起動 / validate 
 
 レビュー中に発生しうる対応を分類して、findings-{layer}.md にラベル付きで残す。
 
-- **[doc-only]** ADRやspecに書き漏れがあるだけ。コードはOK。doc追記のみ。
+- **[doc-only]** ADR/specに書き漏れがあるだけ。コードはOK。doc追記のみ。
 - **[ADR-update]** 実装が ADR の決定を更新している。ADR を修正 or supersedeする新ADR起票。
 - **[ADR-new]** 新しい設計判断が暗黙に含まれている。新ADR起票。
 - **[code-fix]** ADR/spec が正で、implが逸脱している。コード修正。
 - **[question]** 判断つかず、ユーザー確認が必要。
 - **[spec-gap]** ADR/specにも書かれず、実装にも反映されていない論点。残課題として記録。
+- **[spec-migrate]** ADR-050以降の追加。ADRに書かれた仕様記述をspecに移管する作業。
 
 ---
 
 ## 6. 進捗トラッカー
 
-| # | 層 | status | 担当会話 | findings file | 主なADR更新 |
+| # | 層 | status | 担当 | findings file | 主なアクション |
 |---|---|---|---|---|---|
-| 1 | source | not_started | - | - | - |
+| 1 | source | review_done / migration_pending | Sonnet (review) | findings-source.md（未作成） | F-S-001〜005 + 追加分。ADR-050方針で再整理予定 |
 | 2 | rawyaml | not_started | - | - | - |
 | 3 | semantic | not_started | - | - | - |
 | 4 | resolve | not_started | - | - | - |
 | 5 | render | not_started | - | - | - |
 | 6 | query-mcp | not_started | - | - | - |
 
-各会話で開始時に `not_started -> in_progress`、完了時に `in_progress -> done`、findings fileのリンクを記入。
+各会話で開始時に `not_started -> in_progress`、完了時に `in_progress -> review_done`、findings記録後に `review_done -> done`、findings fileのリンクを記入。
 
 ---
 
@@ -181,7 +203,7 @@ CLI（cmd/brewprint）は query+mcp層の会話で扱う（mcp起動 / validate 
 
 ### ADR一覧（タイトルベース）
 
-ADR-001〜049 全部 accepted。`docs/adr/` を参照。
+ADR-001〜049 全部 accepted、ADR-050（spec-first転換）proposed。`docs/adr/` を参照。
 
 ### spec一覧
 
@@ -203,16 +225,37 @@ docs/spec/
     wireframe.preview.css
 ```
 
----
-
-## 9. 次にやること
-
-1. 別会話を立ち上げて、source層レビューから開始する
-2. 進捗トラッカーを更新していく
-3. 6層分のレビューが終わったら、このファイル自体に総括セクションを追加する
+新設予定（ADR-050漸進移行で作成）:
+- `project-layout.md`
+- `file-types.md`
+- `naming.md`
 
 ---
 
-## 10. このファイルの更新履歴
+## 9. レビュアー候補
 
-- 2026-04-29: 初版。レビュー計画 + チェック軸 A/B/C/D + 進捗トラッカー作成。
+各層レビューを誰が担当するか。
+
+- **Sonnet 4.6**: 機械的な突き合わせに強い。source / rawyaml / 一部render（DAG/ER/API/state）に推奨
+- **Opus 4.7（自分）**: ADR間の関係性や暗黙の前提を読む推論力で価値が出る。semantic / resolve / sequence / wireframe / query-mcp に推奨
+- **Opus 4.6**: 試したい場合に1層で比較
+- **チャッピー**: 実装担当のため除外（書いた本人のレビューは見落としを起こす）
+
+ただし source層レビュー（Sonnet）の結果から、Sonnet は「ADR間の整合性問題の指摘」までは強いが「実装の暗黙前提の発掘」「対応案の提示」がやや弱い傾向が見えた。
+複雑な層は Opus 4.7、機械的な層は Sonnet という振り分けが現実的。
+
+---
+
+## 10. 次にやること
+
+1. ADR-050（spec-first転換）が accepted になったら、source層レビューで発見した F-S-001〜F-S-008 を spec-first 方針で改めて整理
+2. その整理に基づき `findings-source.md` を作成
+3. F-S-001 等のうち spec 移行が必要なものは、`project-layout.md` / `file-types.md` の新設と合わせて作業
+4. source層が完了したら rawyaml層レビューに進む
+
+---
+
+## 11. このファイルの更新履歴
+
+- 2026-04-29 (1): 初版。レビュー計画 + チェック軸 A/B/C/D + 進捗トラッカー作成
+- 2026-04-29 (2): ADR-050（spec-first転換）に伴う更新。レビュー軸を2軸化、漸進移行ルール反映、source層レビュー結果を進捗表に反映、レビュアー候補セクションを追加

@@ -15,6 +15,10 @@ brewprintは**人間とLLMの共通設計言語**。
 
 実装はGoで行う。YAMLのASTをGoで保持し、MCPツールとしてLLMに公開する。
 
+ドキュメント運用は **spec-first** で行う（ADR-050）。
+- **spec** が「現行仕様の唯一の正」。実装・LLM・読者はspecだけを読めば現状を把握できる
+- **ADR** は「設計判断の根拠記録」。なぜその仕様になったか、何を却下したか、トレードオフは何だったかを記録する
+
 ---
 
 ## 2. ドキュメント構成
@@ -22,22 +26,58 @@ brewprintは**人間とLLMの共通設計言語**。
 ```
 docs/
   doc-policy.md       ← このファイル。Claudeはセッション開始時に必ず読む
-  spec/               ← 言語仕様・スキーマ定義
-  adr/                ← Architecture Decision Records（設計判断の記録）
+  spec/               ← 現行仕様の唯一の正（言語仕様・スキーマ定義・MCPインターフェース）
+  adr/                ← Architecture Decision Records（設計判断の根拠記録）
   uc/                 ← ユースケース集（実例YAML + 期待するrender結果）
+  impl/               ← 実装作業の引継ぎ・レビューメモ
 ```
+
+### 現状のspec構成
+
+```
+docs/spec/
+  overview.md            ← brewprintとは何か、全体像
+  project-layout.md      ← プロジェクトディレクトリ構造、yaml/、renders/、render_index.yaml
+  file-types.md          ← ファイル分類、as:、nodes:、Unsupported扱い
+  naming.md              ← QualifiedID、名前解決、actor global、module nesting、FK解決
+  nodes.md               ← ノード種別ごとのスキーマ
+  edges.md               ← flow:、transitions:、reads/writes、$シジル
+  diagnostics.md         ← validation diagnostic
+  mcp.md                 ← MCP query layer
+  views/
+    dag.md
+    er.md
+    state-diagram.md
+    sequence-diagram.md
+    api-table.md
+    wireframe.md
+```
+
+`project-layout.md` / `file-types.md` / `naming.md` は ADR-050で新設が決まった spec。
+漸進移行ルール（§7）に従い、関連ADRに触れたタイミングで作成する。
 
 ---
 
 ## 3. ADR運用
 
-### ADRが中心である理由
+### ADRが残る理由
 
-brewprintは仕様そのものより「なぜこう決めたか」の積み重ねが重要。
-YAMLスキーマ・名前解決ルール・ノード型設計など、判断の根拠を残すことで：
+spec-firstに転換した今でも、ADRは残り続ける。
+ADRは「**なぜそう決まったか**」を残すドキュメントであり、specには書かれない設計判断のトレードオフ・却下案・歴史を記録する。
 
-- 別会話のClaudeが「これ変えていい？」を自分で判断できる
-- 後から覆す場合も根拠ベースで議論できる
+- 別会話のClaudeが「これ変えていい？」を判断する際、根拠ベースで議論できる
+- 過去の決定を覆す場合、何が動機だったかを辿れる
+- 設計判断の積み重ねがbrewprintの一貫性を支える
+
+### ADRとspecの責務境界
+
+| ドキュメント | 何を書くか | 何を書かないか |
+|---|---|---|
+| spec | 現行仕様。スキーマ、ルール、フィールド定義、構造、振る舞い | 過去の決定の経緯、却下案、議論の歴史 |
+| ADR | 決定の背景、選択肢、却下理由、トレードオフ、影響範囲 | 現行仕様の記述（表・スキーマ・ルール本体は spec から参照させる） |
+
+ADRは現行仕様の記述を**直接持たない**ことを原則とする。
+ADRの「決定」セクションには「何を決めたか」の概要を書き、詳細は対応specへのポインタとする。
 
 ### ファイル名規則
 
@@ -56,6 +96,9 @@ NNNは3桁ゼロ埋めの連番。
 - **status**: proposed / accepted / superseded
 - **date**: YYYY-MM-DD
 - **supersedes**: （該当する場合、旧ADR番号）
+- **migrated_to_spec**: YYYY-MM-DD（spec移管済みの場合のみ）
+
+> 仕様詳細: [docs/spec/xxx.md](../spec/xxx.md)
 
 ## 背景
 
@@ -63,7 +106,9 @@ NNNは3桁ゼロ埋めの連番。
 
 ## 決定
 
-何を決めたか。
+何を決めたか（概要）。詳細仕様はspec参照。
+
+> 仕様詳細: [docs/spec/xxx.md](../spec/xxx.md) §N
 
 ## 理由
 
@@ -75,7 +120,7 @@ NNNは3桁ゼロ埋めの連番。
 
 ## Evidence
 - commit: <ADR起票時のcommit hash>
-- impl commit: <実装反映時のcommit hash。未着手なら "tbd">
+- impl commit: <実装反映時のcommit hash。未着手なら "tbd"。doc運用ADR等で該当しない場合は "該当なし">
 - 参考: <"dagsterのassets参考" / "Goのinterface慣習" 程度の軽い記述。なければ省略>
 ```
 
@@ -98,7 +143,8 @@ NNNは3桁ゼロ埋めの連番。
 
 ### 対象
 
-言語仕様・YAMLスキーマ・MCPインターフェース定義など。
+言語仕様・YAMLスキーマ・MCPインターフェース定義・プロジェクトレイアウト・名前解決ルール・diagnostic定義など。
+**現行仕様の唯一の正**として扱う。
 
 ### Front Matter
 
@@ -112,9 +158,33 @@ last_updated: YYYY-MM-DD
 summary: >
   このdocが何を定義するかを3行以内で。
 depends_on:
-  - docs/adr/NNN-xxx.md   # 関連する設計判断
+  - docs/adr/NNN-xxx.md   # 関連する設計判断（複数可）
 ---
 ```
+
+### セクション末尾の由来注記
+
+特定の決定に基づくセクションには、本文中末尾に由来注記を入れる。
+
+```markdown
+## ファイル分類ルール
+
+brewprint YAMLは以下の3種別に分類される...
+
+- ノード定義ファイル: `nodes:` キーをトップレベルに持つ
+- View定義ファイル: `as:` キーをトップレベルに持つ
+- render_index.yaml: ファイル名で識別する
+
+> 由来: ADR-030 §決定, ADR-043 §2
+```
+
+Front Matterはspec全体の出自、セクション注記は局所的な決定の出自を示す。
+
+### specの責務
+
+- 現状の仕様を、可能なら**コード/ツールから直接参照できるレベルの精度**で書く
+- 「過去はこうだった」「これは却下された」のような歴史記述は書かない（ADR側の責務）
+- specが破綻していれば即修正する。specは履歴ではなく現在のスナップショット
 
 ---
 
@@ -169,7 +239,7 @@ groups:
     modules: [cart, order, payment]
 ```
 
-詳細はADR-043を参照。
+詳細はADR-043（および移行後は spec/project-layout.md）を参照。
 
 ### フォーマット（README.md）
 
@@ -202,18 +272,44 @@ groups:
 3. 作業に関連するspec / ucを必要に応じて読む
 
 **全docを最初から読まなくていい。** ADRタイトルで文脈を把握し、必要なものだけ読む。
+**現行仕様を把握したいときはspecを読む。** ADRは根拠を辿りたいときに参照する。
 
 ---
 
-## 7. Claudeが自動で行うこと
+## 7. 既存ADRの漸進移行ルール
+
+ADR-050でspec-firstに転換したため、既存49 ADR（ADR-001〜049）には現行仕様の記述が残っている。
+これらは一括書き換えせず、**触れたタイミングで漸進的に移行**する。
+
+### 移行作業の手順
+
+1. 該当ADRの「決定」セクションから、現行仕様にあたる記述（表・スキーマ・ルール本体）を抽出
+2. 対応するspecに反映（または新規specを作成）
+3. ADRの「決定」セクションを「何を決めたか」の概要 + spec参照リンクに書き換える
+4. ADR冒頭に `> 仕様詳細: [docs/spec/xxx.md](../spec/xxx.md)` を追加
+5. spec側に `> 由来: ADR-NNN §M` を該当箇所に追記
+6. ADRに `migrated_to_spec: YYYY-MM-DD` というメタ行を追加
+
+### 移行のトリガー
+
+- 整合性レビューでそのADRに触れたとき
+- そのADRに関連する新ADRを起票するとき
+- そのADRが指す仕様にバグや疑問が見つかったとき
+
+未移行のADRは「決定」セクションが現行仕様を兼ねた状態で残る。これは過渡期の措置として許容する。
+
+---
+
+## 8. Claudeが自動で行うこと
 
 - 設計決定が確定したらADRを書く（proposedで起票 → 議論完了でacceptedに更新）
 - specを新規作成・更新する場合はFront Matterも更新する
 - 既存ADRを覆す決定をした場合は旧ADRをsuperseededに更新し新ADRを起票する
+- ADRに触れて仕様詳細を更新するときは、漸進移行ルール（§7）に従ってspecへの移行を実施する
 
 ---
 
-## 8. ファイル操作方針
+## 9. ファイル操作方針
 
 - **新規ファイル作成** → `filesystem:write_file`
 - **既存ファイルの部分更新** → `str-replace:str_replace_in_file` を優先する（全文書き直しはtokenの無駄）
@@ -223,7 +319,7 @@ str-replaceはold_strがファイル内に1箇所だけ存在する必要があ�
 
 ---
 
-## 9. md-sectionを使ったdoc読み込みパターン
+## 10. md-sectionを使ったdoc読み込みパターン
 
 `md-section` MCPツールが使える場合、全文読みよりtoken効率がよい。
 
@@ -247,7 +343,7 @@ md-section:read_section
 
 ---
 
-## 10. 未解決事項
+## 11. 未解決事項
 
 以下は方針未定。議論が進み次第このdocを更新すること。
 
