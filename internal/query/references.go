@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Service) GetReferences(req GetReferencesRequest) (GetReferencesResponse, error) {
-	node, err := s.nodeByID(req.Selector.ID)
+	key, object, err := s.referenceTarget(req.Selector)
 	if err != nil {
 		return GetReferencesResponse{}, err
 	}
@@ -25,7 +25,6 @@ func (s *Service) GetReferences(req GetReferencesRequest) (GetReferencesResponse
 		kindFilter[kind] = struct{}{}
 	}
 
-	key := semantic.NodeObjectKey(node.GetQID())
 	var refs []Reference
 	if direction == string(semantic.ReferenceDirectionOut) || direction == string(semantic.ReferenceDirectionBoth) {
 		refs = append(refs, s.referencesFromIndex(s.project.ReferencesBySource[key], string(semantic.ReferenceDirectionOut), kindFilter)...)
@@ -36,12 +35,27 @@ func (s *Service) GetReferences(req GetReferencesRequest) (GetReferencesResponse
 
 	sortReferences(refs)
 	return GetReferencesResponse{
-		Object:      objectRef(node),
+		Object:      object,
 		Direction:   direction,
 		Depth:       1,
 		References:  refs,
 		Diagnostics: []semantic.Diagnostic{},
 	}, nil
+}
+
+func (s *Service) referenceTarget(selector Selector) (semantic.ObjectKey, ObjectRef, error) {
+	if s.isScenarioSelector(selector) {
+		scenario, err := s.scenarioBySelector(selector)
+		if err != nil {
+			return "", ObjectRef{}, err
+		}
+		return semantic.ScenarioObjectKey(scenario.ID), scenarioObjectRef(scenario), nil
+	}
+	node, err := s.nodeByID(selector.ID)
+	if err != nil {
+		return "", ObjectRef{}, err
+	}
+	return semantic.NodeObjectKey(node.GetQID()), objectRef(node), nil
 }
 
 func (s *Service) referencesFromIndex(in []semantic.Reference, direction string, kindFilter map[string]struct{}) []Reference {

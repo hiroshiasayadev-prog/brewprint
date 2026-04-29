@@ -64,6 +64,23 @@ func TestServerCallTool(t *testing.T) {
 		}
 	})
 
+	t.Run("inspect_scenario", func(t *testing.T) {
+		envelope := call(t, server, "inspect", `{"selector":{"object":"view","kind":"sequence_diagram","id":"checkout_flow"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("inspect scenario error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["object"] != "view" || object["kind"] != "sequence_diagram" || object["id"] != "checkout_flow" {
+			t.Fatalf("inspect scenario object = %#v", object)
+		}
+		members := result["members"].(map[string]any)
+		steps := members["steps"].([]any)
+		if len(steps) != 2 {
+			t.Fatalf("inspect scenario steps len = %d, want 2: %#v", len(steps), steps)
+		}
+	})
+
 	t.Run("list_endpoints", func(t *testing.T) {
 		envelope := call(t, server, "list_endpoints", `{"api_table_id":"ec_api"}`)
 		if envelope.Error != nil {

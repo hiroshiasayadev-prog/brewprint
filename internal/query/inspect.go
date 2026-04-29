@@ -11,6 +11,10 @@ func (s *Service) Inspect(req InspectRequest) (InspectResponse, error) {
 		return InspectResponse{}, errUnsupportedDetail(req.Detail)
 	}
 
+	if s.isScenarioSelector(req.Selector) {
+		return s.inspectScenario(req)
+	}
+
 	node, err := s.nodeByID(req.Selector.ID)
 	if err != nil {
 		return InspectResponse{}, err
@@ -151,6 +155,47 @@ func (s *Service) stateMembers(state *semantic.State) map[string]any {
 		members["outgoing_transitions"] = outgoing
 	}
 	return members
+}
+
+func (s *Service) inspectScenario(req InspectRequest) (InspectResponse, error) {
+	scenario, err := s.scenarioBySelector(req.Selector)
+	if err != nil {
+		return InspectResponse{}, err
+	}
+	refs, err := s.GetReferences(GetReferencesRequest{Selector: req.Selector, Direction: string(semantic.ReferenceDirectionBoth)})
+	if err != nil {
+		return InspectResponse{}, err
+	}
+	return InspectResponse{
+		Object:      scenarioObjectRef(scenario),
+		Signature:   signatureForScenario(scenario),
+		Source:      sourceMap(scenario.FileID),
+		Members:     map[string]any{"steps": scenarioStepRefs(scenario)},
+		References:  refs.References,
+		Diagnostics: []semantic.Diagnostic{},
+	}, nil
+}
+
+func scenarioStepRefs(scenario *semantic.SequenceScenario) []ScenarioStepRef {
+	out := make([]ScenarioStepRef, 0, len(scenario.Steps))
+	for i, step := range scenario.Steps {
+		transition := transitionRefFromSemantic(step.Transition)
+		var action *string
+		if transition.Action != "" {
+			value := transition.Action
+			action = &value
+		}
+		out = append(out, ScenarioStepRef{
+			Index:           i + 1,
+			FromState:       step.FromState,
+			Via:             step.Via,
+			Guard:           step.Guard,
+			GuardExactMatch: step.Guard == step.Transition.Guard,
+			Transition:      transition,
+			Action:          action,
+		})
+	}
+	return out
 }
 
 func (s *Service) eventMembers(event *semantic.Event) map[string]any {

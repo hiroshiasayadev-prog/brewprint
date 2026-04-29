@@ -201,6 +201,27 @@ func buildReferences(project *semantic.Project) {
 		}
 	}
 
+	for _, scenario := range project.ScenariosByID {
+		scenarioKey := semantic.ScenarioObjectKey(scenario.ID)
+		addReference(project, semantic.Reference{
+			Kind:      semantic.ReferenceKindScenarioStateFile,
+			SourceKey: scenarioKey,
+			TargetKey: semantic.StateFileObjectKey(scenario.StateFile),
+			From:      scenarioEndpoint(scenario),
+			To:        stateFileEndpoint(scenario.StateFile),
+		})
+		for i, step := range scenario.Steps {
+			transition := step.Transition
+			addReference(project, semantic.Reference{
+				Kind:      semantic.ReferenceKindScenarioStepTransition,
+				SourceKey: scenarioKey,
+				TargetKey: semantic.TransitionObjectKey(transition),
+				From:      scenarioStepEndpoint(scenario, i+1),
+				To:        transitionEndpoint(transition),
+			})
+		}
+	}
+
 	for _, model := range project.ModelsByQID {
 		module := moduleForFileID(model.FileID)
 		for _, field := range model.Fields {
@@ -271,6 +292,42 @@ func actorEndpoint(project *semantic.Project, actorID string) semantic.Reference
 		return nodeEndpoint(actor)
 	}
 	return semantic.ReferenceEndpoint{Object: "node", Kind: "actor", ID: actorID, QualifiedID: semantic.QualifiedID(actorID), Name: actorID}
+}
+
+func scenarioEndpoint(scenario *semantic.SequenceScenario) semantic.ReferenceEndpoint {
+	if scenario == nil {
+		return semantic.ReferenceEndpoint{}
+	}
+	return semantic.ReferenceEndpoint{
+		Object: "view",
+		Kind:   "sequence_diagram",
+		ID:     scenario.ID,
+		Name:   scenario.Title,
+		File:   scenario.FileID,
+	}
+}
+
+func scenarioStepEndpoint(scenario *semantic.SequenceScenario, index int) semantic.ReferenceEndpoint {
+	if scenario == nil {
+		return semantic.ReferenceEndpoint{}
+	}
+	return semantic.ReferenceEndpoint{
+		Object:  "scenario_step",
+		Kind:    "sequence_step",
+		ID:      string(semantic.ScenarioStepObjectKey(scenario.ID, index)),
+		Name:    scenario.ID,
+		File:    scenario.FileID,
+		LocalID: scenario.ID,
+	}
+}
+
+func stateFileEndpoint(fileID semantic.FileID) semantic.ReferenceEndpoint {
+	return semantic.ReferenceEndpoint{
+		Object: "file",
+		Kind:   "state_file",
+		ID:     fileID.String(),
+		File:   fileID,
+	}
 }
 
 func transitionEndpoint(transition semantic.Transition) semantic.ReferenceEndpoint {

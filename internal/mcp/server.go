@@ -86,7 +86,11 @@ func objectSchema(properties map[string]any, required []string) map[string]any {
 
 func selectorSchema() map[string]any {
 	return objectSchema(map[string]any{
-		"id": map[string]any{"type": "string"},
+		"id":       map[string]any{"type": "string"},
+		"object":   enumStringSchema("node", "view", "transition", "asset", "field", "file", "primitive"),
+		"kind":     map[string]any{"type": "string"},
+		"file":     map[string]any{"type": "string"},
+		"local_id": map[string]any{"type": "string"},
 	}, []string{"id"})
 }
 

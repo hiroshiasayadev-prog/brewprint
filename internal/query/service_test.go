@@ -85,6 +85,17 @@ func TestQueryServiceUC001(t *testing.T) {
 		if payload["model"] != "payment.model.payment_event" {
 			t.Fatalf("event payload signature = %#v", payload)
 		}
+
+		scenario, err := service.GetSignature(GetSignatureRequest{Selector: Selector{Object: "view", Kind: "sequence_diagram", ID: "checkout_flow"}})
+		if err != nil {
+			t.Fatalf("GetSignature scenario: %v", err)
+		}
+		if scenario.Object.Object != "view" || scenario.Object.Kind != "sequence_diagram" || scenario.Object.ID != "checkout_flow" {
+			t.Fatalf("scenario object = %#v", scenario.Object)
+		}
+		if scenario.Signature["id"] != "checkout_flow" || scenario.Signature["title"] != "チェックアウトフロー" || scenario.Signature["state_file"] != "order/state.yaml" {
+			t.Fatalf("scenario signature = %#v", scenario.Signature)
+		}
 	})
 
 	t.Run("GetReferences", func(t *testing.T) {
@@ -169,6 +180,14 @@ func TestQueryServiceUC001(t *testing.T) {
 		assertHasReference(t, processingStateRefs.References, "transition_to", "in", "order/state.yaml#checkout_screen:checkout_submitted", "order.state.processing")
 		assertHasReference(t, processingStateRefs.References, "transition_from", "in", "order/state.yaml#processing:payment_webhook_received[payload.status == 'failed']", "order.state.processing")
 		assertHasReference(t, processingStateRefs.References, "transition_from", "in", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']", "order.state.processing")
+
+		checkoutScenarioRefs, err := service.GetReferences(GetReferencesRequest{Selector: Selector{Object: "view", Kind: "sequence_diagram", ID: "checkout_flow"}, Direction: "out"})
+		if err != nil {
+			t.Fatalf("GetReferences checkout scenario: %v", err)
+		}
+		assertHasReference(t, checkoutScenarioRefs.References, "scenario_state_file", "out", "checkout_flow", "order/state.yaml")
+		assertHasReference(t, checkoutScenarioRefs.References, "scenario_step_transition", "out", "scenario_step:checkout_flow:1", "order/state.yaml#cart:view_checkout")
+		assertHasReference(t, checkoutScenarioRefs.References, "scenario_step_transition", "out", "scenario_step:checkout_flow:2", "order/state.yaml#checkout_screen:checkout_submitted")
 	})
 
 	t.Run("ListEndpoints", func(t *testing.T) {
@@ -278,6 +297,34 @@ func TestQueryServiceUC001(t *testing.T) {
 		hints := event.Members["sequence_hints"].(map[string]any)
 		if hints["participant"] != "Actor" || hints["actor"] != "stripe" || hints["message_label_source"] != "METHOD path" {
 			t.Fatalf("payment event sequence hints = %#v", hints)
+		}
+
+		checkoutScenario, err := service.Inspect(InspectRequest{Selector: Selector{Object: "view", Kind: "sequence_diagram", ID: "checkout_flow"}})
+		if err != nil {
+			t.Fatalf("Inspect checkout scenario: %v", err)
+		}
+		checkoutSteps := checkoutScenario.Members["steps"].([]ScenarioStepRef)
+		if len(checkoutSteps) != 2 {
+			t.Fatalf("checkout scenario steps = %#v", checkoutSteps)
+		}
+		if checkoutSteps[0].Index != 1 || checkoutSteps[0].Transition.ID != "order/state.yaml#cart:view_checkout" || checkoutSteps[0].Action != nil {
+			t.Fatalf("checkout step 1 = %#v", checkoutSteps[0])
+		}
+		if checkoutSteps[1].Index != 2 || checkoutSteps[1].Transition.ID != "order/state.yaml#checkout_screen:checkout_submitted" || checkoutSteps[1].Action == nil || *checkoutSteps[1].Action != "order.task.checkout" {
+			t.Fatalf("checkout step 2 = %#v", checkoutSteps[1])
+		}
+		assertHasReference(t, checkoutScenario.References, "scenario_state_file", "out", "checkout_flow", "order/state.yaml")
+
+		paymentScenario, err := service.Inspect(InspectRequest{Selector: Selector{Object: "view", Kind: "sequence_diagram", ID: "payment_webhook_flow"}})
+		if err != nil {
+			t.Fatalf("Inspect payment scenario: %v", err)
+		}
+		paymentSteps := paymentScenario.Members["steps"].([]ScenarioStepRef)
+		if len(paymentSteps) != 1 {
+			t.Fatalf("payment scenario steps = %#v", paymentSteps)
+		}
+		if paymentSteps[0].Guard != "payload.status == 'succeeded'" || !paymentSteps[0].GuardExactMatch || paymentSteps[0].Transition.ID != "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']" || paymentSteps[0].Action == nil || *paymentSteps[0].Action != "payment.webhooks.task.process_payment" {
+			t.Fatalf("payment scenario step = %#v", paymentSteps[0])
 		}
 	})
 }

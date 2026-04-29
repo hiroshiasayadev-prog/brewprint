@@ -209,12 +209,14 @@ renderer と MCP wrapper が Raw YAML structs を直接読まない方針を前�
   - UC-001で state/event signature / inspect をtest固定する
   - `gofmt ./...` / `go test ./...` 通過済み（2026-04-29、M9-3差分後）
 
-- [ ] **inspect(scenario) を実装する**
+- [x] **inspect(scenario) を実装する**
   - selectorで sequence scenario view object を解決する
   - scenario signatureで id / title / state_file を返す
   - members.steps に resolved transition / action task / guard exact match結果を返す
-  - scenario_state_file / scenario_step_transition reference を検討する
+  - scenario_state_file / scenario_step_transition reference を追加する
   - UC-001の checkout_flow / payment_webhook_flow でtest固定する
+  - MCP selector schemaを `object` / `kind` / `file` / `local_id` 対応へ拡張する
+  - `gofmt ./...` / `go test ./...` 通過済み（2026-04-29、M9-4差分後）
 
 ### Milestone 4: render_index / output placement を実装する
 

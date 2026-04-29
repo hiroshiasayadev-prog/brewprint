@@ -7,6 +7,18 @@ import (
 )
 
 func (s *Service) GetSignature(req GetSignatureRequest) (GetSignatureResponse, error) {
+	if s.isScenarioSelector(req.Selector) {
+		scenario, err := s.scenarioBySelector(req.Selector)
+		if err != nil {
+			return GetSignatureResponse{}, err
+		}
+		return GetSignatureResponse{
+			Object:      scenarioObjectRef(scenario),
+			Signature:   signatureForScenario(scenario),
+			Diagnostics: []semantic.Diagnostic{},
+		}, nil
+	}
+
 	node, err := s.nodeByID(req.Selector.ID)
 	if err != nil {
 		return GetSignatureResponse{}, err
@@ -21,6 +33,14 @@ func (s *Service) GetSignature(req GetSignatureRequest) (GetSignatureResponse, e
 		Doc:         doc,
 		Diagnostics: []semantic.Diagnostic{},
 	}, nil
+}
+
+func signatureForScenario(scenario *semantic.SequenceScenario) Signature {
+	return Signature{
+		"id":         scenario.ID,
+		"title":      scenario.Title,
+		"state_file": scenario.StateFile.String(),
+	}
 }
 
 func (s *Service) signatureForNode(node semantic.Node) (Signature, string, error) {

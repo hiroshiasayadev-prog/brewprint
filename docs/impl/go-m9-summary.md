@@ -1,9 +1,9 @@
 # Go M9 QueryService state/event/scenario handoff
 
-- **status**: in progress
+- **status**: complete
 - **last_updated**: 2026-04-29
 - **repo**: `C:\Users\imved\projects\brewprint`
-- **verified**: `gofmt ./...` / `go test ./...` 通過済み（2026-04-29、M9-3差分後）
+- **verified**: `gofmt ./...` / `go test ./...` 通過済み（2026-04-29、M9-4差分後）
 
 ---
 
@@ -190,6 +190,64 @@ M9-3差分後に通過済み。
 
 ---
 
+### M9-4: inspect(scenario) と scenario references
+
+`GetSignature` 対応:
+
+- `sequence_diagram` view object
+  - `id`
+  - `title`
+  - `state_file`
+
+`Inspect` 対応:
+
+- `sequence_diagram` view object
+  - `members.steps`
+  - step `index`
+  - `from_state`
+  - `via`
+  - `guard`
+  - `guard_exact_match`
+  - resolved `transition`
+  - resolved `action`
+
+`GetReferences` 対応:
+
+- `scenario_state_file`
+- `scenario_step_transition`
+
+実装内容:
+
+- `query.Selector` に `object` / `kind` / `file` / `local_id` を追加した。
+- `selector.object=view` / `selector.kind=sequence_diagram` で scenario view object を解決できるようにした。
+- `semantic.ReferenceKindScenarioStateFile` / `semantic.ReferenceKindScenarioStepTransition` を追加した。
+- `resolve.buildReferences` で scenario reference を index に追加した。
+- MCP selector schema を `docs/spec/mcp.md` の Object selector に寄せて拡張した。
+
+UC-001で固定した test:
+
+- `GetSignature(checkout_flow)`
+- `GetReferences(checkout_flow)`
+- `Inspect(checkout_flow)`
+- `Inspect(payment_webhook_flow)`
+- MCP `inspect` で `checkout_flow` を view selector 指定
+
+検証:
+
+```powershell
+gofmt ./...
+go test ./...
+```
+
+M9-4差分後に通過済み。
+
+注意:
+
+- `go test` 実行時に `open ...\.git: The system cannot find the path specified.` が表示されるが、全packageは `ok`。
+- 現時点では Go test failure ではなく環境側メッセージとして扱っている。
+
+---
+
 ## 3. 現在の実装境界
 
 維持する境界:
@@ -227,8 +285,10 @@ MCP wrapper は引き続き QueryService を呼ぶだけにする。
   - `TransitionKey` / `TransitionEventKey` / `TransitionRef` を追加
 - `internal/semantic/reference.go`
   - transition/event reference kind を追加
+  - scenario reference kind を追加
   - transition endpoint fields を追加
   - `TransitionID` / `TransitionObjectKey` を追加
+  - `ScenarioObjectKey` / `ScenarioStepObjectKey` / `StateFileObjectKey` を追加
 
 ### resolve
 
@@ -238,29 +298,43 @@ MCP wrapper は引き続き QueryService を呼ぶだけにする。
   - scenario step 解決を transition index lookup に変更
 - `internal/resolve/references.go`
   - transition/event direct references を追加
+  - scenario state file / scenario step transition references を追加
 
 ### query
 
 - `internal/query/types.go`
+  - `Selector` に view selector fields を追加
   - `TransitionRef`
+  - `ScenarioStepRef`
   - transition endpoint fields
+- `internal/query/service.go`
+  - scenario selector 解決を追加
 - `internal/query/signature.go`
   - state/event signature 対応
+  - scenario signature 対応
 - `internal/query/references.go`
   - transition endpoint fields を response に反映
+  - scenario object の reference lookup 対応
 - `internal/query/inspect.go`
   - task action transition
   - state inspect
   - event inspect
+  - scenario inspect
   - sequence hints
 - `internal/query/service_test.go`
-  - M9-1〜M9-3 の UC-001 test を追加
+  - M9-1〜M9-4 の UC-001 test を追加
+
+### mcp
+
+- `internal/mcp/server.go`
+  - selector inputSchema を `object` / `kind` / `file` / `local_id` 対応へ拡張
+- `internal/mcp/server_test.go`
+  - `inspect_scenario` test を追加
 
 ### docs
 
 - `docs/TASKS.md`
-  - M9-1〜M9-3完了
-  - 次候補 `inspect(scenario)` 追加
+  - M9-1〜M9-4完了
 - `docs/impl/go-m9-summary.md`
   - この引継ぎファイル
 
@@ -268,52 +342,19 @@ MCP wrapper は引き続き QueryService を呼ぶだけにする。
 
 ## 5. 次にやること
 
-### 最優先候補: inspect(scenario) を実装する
+### M9は完了
 
-`docs/spec/mcp.md` には scenario inspect が定義済み。
-次はこれを QueryService に通す。
+Milestone 3 の QueryService 拡張は M9-4 で完了。
 
-候補スコープ:
+次候補:
 
-1. selectorで sequence scenario view object を解決する
-   - 既存 `nodeByID` は node 専用なので拡張または別 resolver が必要
-   - selector.object / selector.kind は raw structに存在するが、Go `Selector` は現状 `ID` だけなので注意
-2. scenario signature を返す
-   - `id`
-   - `title`
-   - `state_file`
-3. `members.steps` を返す
-   - `index`
-   - `from_state`
-   - `via`
-   - `guard`
-   - `transition` as `TransitionRef`
-   - `action` as task QualifiedID or empty/null相当
-4. references を検討する
-   - `scenario_state_file`
-   - `scenario_step_transition`
-
-実装候補ファイル:
-
-- `internal/query/types.go`
-  - `Selector` に `Object` / `Kind` を足すか検討
-  - `ScenarioStepRef` などを足すか検討
-- `internal/query/inspect.go`
-  - scenario inspect entrypoint
-- `internal/query/signature.go`
-  - scenario signature helper
-- `internal/query/references.go`
-  - view/scenario reference を `GetReferences` に入れるか、scenario inspect 内だけにするか判断
-- `internal/query/service_test.go`
-  - `checkout_flow`
-  - `payment_webhook_flow`
-
-注意:
-
-- 現状 `GetReferences` は `nodeByID` 前提。
-- scenario は `semantic.Project.ScenariosByID` に入っているが node ではない。
-- まず `Inspect` 専用で view object selector を扱い、`GetReferences(view)` は後続に分けるのが安全。
-- `docs/spec/mcp.md` では selector.object / selector.kind が定義されているが、Go `Selector` はまだ `ID` のみ。ここを拡張すると MCP schema / wrapper test に影響する可能性がある。
+1. M9差分をcommitする
+2. MCP / QueryService の view object 対応をさらに広げる
+   - `GetReferences(transition)`
+   - `GetReferences(file)`
+   - ER / API view object inspect
+3. validation / diagnostics の追加強化
+4. render CLI / docs の仕上げ
 
 ---
 
@@ -353,13 +394,14 @@ git status
 2. M9 query 拡張まとめ
    - reverse lookup index
    - transition/event references
-   - state/event inspect
+   - state/event/scenario inspect
+   - scenario references
 
 M9だけをcommitするなら候補:
 
 ```powershell
 git add .
-git commit -m "feat(query): add transition references and state event inspect"
+git commit -m "feat(query): add scenario inspect"
 ```
 
 ---

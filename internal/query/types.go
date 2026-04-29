@@ -3,7 +3,11 @@ package query
 import "github.com/hiroshiasayadev-prog/brewprint/internal/semantic"
 
 type Selector struct {
-	ID string `json:"id"`
+	ID      string `json:"id"`
+	Object  string `json:"object,omitempty"`
+	Kind    string `json:"kind,omitempty"`
+	File    string `json:"file,omitempty"`
+	LocalID string `json:"local_id,omitempty"`
 }
 
 type ObjectRef struct {
@@ -41,6 +45,16 @@ type TransitionRef struct {
 	To        string `json:"to"`
 	Guard     string `json:"guard,omitempty"`
 	Action    string `json:"action,omitempty"`
+}
+
+type ScenarioStepRef struct {
+	Index           int           `json:"index"`
+	FromState       string        `json:"from_state"`
+	Via             string        `json:"via"`
+	Guard           string        `json:"guard,omitempty"`
+	GuardExactMatch bool          `json:"guard_exact_match"`
+	Transition      TransitionRef `json:"transition"`
+	Action          *string       `json:"action"`
 }
 
 type ReferenceEndpoint struct {

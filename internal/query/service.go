@@ -36,6 +36,36 @@ func (s *Service) nodeByID(id string) (semantic.Node, error) {
 	return node, nil
 }
 
+func (s *Service) scenarioBySelector(selector Selector) (*semantic.SequenceScenario, error) {
+	if err := s.requireProject(); err != nil {
+		return nil, err
+	}
+	if selector.ID == "" {
+		return nil, fmt.Errorf("selector.id is required")
+	}
+	if selector.Object != "" && selector.Object != "view" {
+		return nil, fmt.Errorf("unsupported selector object for scenario: %s", selector.Object)
+	}
+	if selector.Kind != "" && selector.Kind != "sequence_diagram" {
+		return nil, fmt.Errorf("unsupported selector kind for scenario: %s", selector.Kind)
+	}
+	scenario := s.project.ScenariosByID[selector.ID]
+	if scenario == nil {
+		return nil, fmt.Errorf("object not found: %s", selector.ID)
+	}
+	return scenario, nil
+}
+
+func (s *Service) isScenarioSelector(selector Selector) bool {
+	if selector.Object == "view" || selector.Kind == "sequence_diagram" {
+		return true
+	}
+	if s == nil || s.project == nil || selector.ID == "" {
+		return false
+	}
+	return s.project.ScenariosByID[selector.ID] != nil
+}
+
 func objectRef(node semantic.Node) ObjectRef {
 	return ObjectRef{
 		Object:      "node",
@@ -44,6 +74,19 @@ func objectRef(node semantic.Node) ObjectRef {
 		QualifiedID: node.GetQID().String(),
 		Label:       node.GetID(),
 		File:        node.GetFileID().String(),
+	}
+}
+
+func scenarioObjectRef(scenario *semantic.SequenceScenario) ObjectRef {
+	if scenario == nil {
+		return ObjectRef{}
+	}
+	return ObjectRef{
+		Object: "view",
+		Kind:   "sequence_diagram",
+		ID:     scenario.ID,
+		Label:  scenario.Title,
+		File:   scenario.FileID.String(),
 	}
 }
 

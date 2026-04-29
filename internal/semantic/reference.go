@@ -1,5 +1,7 @@
 package semantic
 
+import "strconv"
+
 type ObjectKey string
 
 type ReferenceKind string
@@ -17,9 +19,11 @@ const (
 	ReferenceKindTransitionFrom   ReferenceKind = "transition_from"
 	ReferenceKindTransitionTo     ReferenceKind = "transition_to"
 	ReferenceKindTransitionAction ReferenceKind = "transition_action"
-	ReferenceKindEventPayload     ReferenceKind = "event_payload"
-	ReferenceKindEventActor       ReferenceKind = "event_actor"
-	ReferenceKindEventWatches     ReferenceKind = "event_watches"
+	ReferenceKindEventPayload           ReferenceKind = "event_payload"
+	ReferenceKindEventActor             ReferenceKind = "event_actor"
+	ReferenceKindEventWatches           ReferenceKind = "event_watches"
+	ReferenceKindScenarioStateFile      ReferenceKind = "scenario_state_file"
+	ReferenceKindScenarioStepTransition ReferenceKind = "scenario_step_transition"
 )
 
 type ReferenceDirection string
@@ -80,6 +84,27 @@ func PrimitiveObjectKey(name string) ObjectKey {
 		return ""
 	}
 	return ObjectKey("primitive:" + name)
+}
+
+func ScenarioObjectKey(id string) ObjectKey {
+	if id == "" {
+		return ""
+	}
+	return ObjectKey("scenario:" + id)
+}
+
+func ScenarioStepObjectKey(scenarioID string, index int) ObjectKey {
+	if scenarioID == "" || index <= 0 {
+		return ""
+	}
+	return ObjectKey("scenario_step:" + scenarioID + ":" + strconv.Itoa(index))
+}
+
+func StateFileObjectKey(fileID FileID) ObjectKey {
+	if fileID == "" {
+		return ""
+	}
+	return ObjectKey("file:" + fileID.String())
 }
 
 func TransitionObjectKey(transition Transition) ObjectKey {
