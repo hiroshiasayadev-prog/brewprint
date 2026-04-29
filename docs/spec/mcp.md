@@ -1906,6 +1906,7 @@ MCP v1では以下を未定義とする。
 | flow wiring references | DAG上のflow step / param wiringをreferenceとして扱う | medium |
 | `get_source` | `inspect.getsource` 相当。対象semantic objectのYAML snippetを返す | medium |
 | `get_reference_tree` | depth指定つきreference traversal。変更影響範囲を辿る | medium |
+| `analyze_impact` | 変更種別つき影響分析。direct references / reference tree / flow wiring / render output mapping を材料に、影響範囲・重要度・確認事項を返す | medium |
 | `search_notes` | note/docに対するsemantic search | low |
 
 これらは必要になった時点で `docs/spec/mcp.md` を更新し、実装タスクは `docs/TASKS.md` で管理する。
