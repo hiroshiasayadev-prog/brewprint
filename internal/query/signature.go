@@ -18,6 +18,18 @@ func (s *Service) GetSignature(req GetSignatureRequest) (GetSignatureResponse, e
 			Diagnostics: []semantic.Diagnostic{},
 		}, nil
 	}
+	if s.isTransitionSelector(req.Selector) {
+		transition, err := s.transitionBySelector(req.Selector)
+		if err != nil {
+			return GetSignatureResponse{}, err
+		}
+		return GetSignatureResponse{
+			Object:      transitionObjectRef(transition),
+			Signature:   signatureForTransition(transition),
+			Doc:         transition.Note,
+			Diagnostics: []semantic.Diagnostic{},
+		}, nil
+	}
 
 	node, err := s.nodeByID(req.Selector.ID)
 	if err != nil {
@@ -41,6 +53,22 @@ func signatureForScenario(scenario *semantic.SequenceScenario) Signature {
 		"title":      scenario.Title,
 		"state_file": scenario.StateFile.String(),
 	}
+}
+
+func signatureForTransition(transition semantic.Transition) Signature {
+	sig := Signature{
+		"state_file": transition.FileID.String(),
+		"from":       transition.From,
+		"on":         transition.On,
+		"to":         transition.To,
+	}
+	if transition.Guard != "" {
+		sig["guard"] = transition.Guard
+	}
+	if transition.ActionTask != "" {
+		sig["action"] = transition.ActionTask.String()
+	}
+	return sig
 }
 
 func (s *Service) signatureForNode(node semantic.Node) (Signature, string, error) {

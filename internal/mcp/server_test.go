@@ -97,6 +97,26 @@ func TestServerCallTool(t *testing.T) {
 		}
 	})
 
+	t.Run("inspect_transition", func(t *testing.T) {
+		envelope := call(t, server, "inspect", `{"selector":{"object":"transition","id":"order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("inspect transition error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["object"] != "transition" || object["id"] != "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']" {
+			t.Fatalf("inspect transition object = %#v", object)
+		}
+		signature := result["signature"].(map[string]any)
+		if signature["guard"] != "payload.status == 'succeeded'" || signature["action"] != "payment.webhooks.task.process_payment" {
+			t.Fatalf("inspect transition signature = %#v", signature)
+		}
+		members := result["members"].(map[string]any)
+		if members["from_state"].(map[string]any)["id"] != "order.state.processing" || members["event"].(map[string]any)["id"] != "order.event.payment_webhook_received" || members["to_state"].(map[string]any)["id"] != "order.state.confirmed" || members["action_task"].(map[string]any)["id"] != "payment.webhooks.task.process_payment" {
+			t.Fatalf("inspect transition members = %#v", members)
+		}
+	})
+
 	t.Run("list_endpoints", func(t *testing.T) {
 		envelope := call(t, server, "list_endpoints", `{"api_table_id":"ec_api"}`)
 		if envelope.Error != nil {

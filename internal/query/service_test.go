@@ -96,6 +96,17 @@ func TestQueryServiceUC001(t *testing.T) {
 		if scenario.Signature["id"] != "checkout_flow" || scenario.Signature["title"] != "チェックアウトフロー" || scenario.Signature["state_file"] != "order/state.yaml" {
 			t.Fatalf("scenario signature = %#v", scenario.Signature)
 		}
+
+		transition, err := service.GetSignature(GetSignatureRequest{Selector: Selector{Object: "transition", ID: "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"}})
+		if err != nil {
+			t.Fatalf("GetSignature transition: %v", err)
+		}
+		if transition.Object.Object != "transition" || transition.Object.ID != "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']" {
+			t.Fatalf("transition object = %#v", transition.Object)
+		}
+		if transition.Signature["from"] != "processing" || transition.Signature["on"] != "payment_webhook_received" || transition.Signature["to"] != "confirmed" || transition.Signature["guard"] != "payload.status == 'succeeded'" || transition.Signature["action"] != "payment.webhooks.task.process_payment" {
+			t.Fatalf("transition signature = %#v", transition.Signature)
+		}
 	})
 
 	t.Run("GetReferences", func(t *testing.T) {
@@ -339,6 +350,22 @@ func TestQueryServiceUC001(t *testing.T) {
 		if paymentSteps[0].Guard != "payload.status == 'succeeded'" || !paymentSteps[0].GuardExactMatch || paymentSteps[0].Transition.ID != "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']" || paymentSteps[0].Action == nil || *paymentSteps[0].Action != "payment.webhooks.task.process_payment" {
 			t.Fatalf("payment scenario step = %#v", paymentSteps[0])
 		}
+
+		transition, err := service.Inspect(InspectRequest{Selector: Selector{Object: "transition", ID: "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"}})
+		if err != nil {
+			t.Fatalf("Inspect transition: %v", err)
+		}
+		if transition.Signature["guard"] != "payload.status == 'succeeded'" || transition.Signature["action"] != "payment.webhooks.task.process_payment" {
+			t.Fatalf("transition signature = %#v", transition.Signature)
+		}
+		fromState := transition.Members["from_state"].(ObjectRef)
+		eventRef := transition.Members["event"].(ObjectRef)
+		toState := transition.Members["to_state"].(ObjectRef)
+		actionTask := transition.Members["action_task"].(ObjectRef)
+		if fromState.ID != "order.state.processing" || eventRef.ID != "order.event.payment_webhook_received" || toState.ID != "order.state.confirmed" || actionTask.ID != "payment.webhooks.task.process_payment" {
+			t.Fatalf("transition members = %#v", transition.Members)
+		}
+		assertHasReference(t, transition.References, "scenario_step_transition", "in", "scenario_step:payment_webhook_flow:1", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']")
 	})
 }
 

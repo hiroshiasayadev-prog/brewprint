@@ -14,6 +14,9 @@ func (s *Service) Inspect(req InspectRequest) (InspectResponse, error) {
 	if s.isScenarioSelector(req.Selector) {
 		return s.inspectScenario(req)
 	}
+	if s.isTransitionSelector(req.Selector) {
+		return s.inspectTransition(req)
+	}
 
 	node, err := s.nodeByID(req.Selector.ID)
 	if err != nil {
@@ -153,6 +156,43 @@ func (s *Service) stateMembers(state *semantic.State) map[string]any {
 	}
 	if len(outgoing) > 0 {
 		members["outgoing_transitions"] = outgoing
+	}
+	return members
+}
+
+func (s *Service) inspectTransition(req InspectRequest) (InspectResponse, error) {
+	transition, err := s.transitionBySelector(req.Selector)
+	if err != nil {
+		return InspectResponse{}, err
+	}
+	refs, err := s.GetReferences(GetReferencesRequest{Selector: req.Selector, Direction: string(semantic.ReferenceDirectionBoth)})
+	if err != nil {
+		return InspectResponse{}, err
+	}
+	return InspectResponse{
+		Object:      transitionObjectRef(transition),
+		Signature:   signatureForTransition(transition),
+		Doc:         transition.Note,
+		Source:      sourceMap(transition.FileID),
+		Members:     s.transitionMembers(transition),
+		References:  refs.References,
+		Diagnostics: []semantic.Diagnostic{},
+	}, nil
+}
+
+func (s *Service) transitionMembers(transition semantic.Transition) map[string]any {
+	members := map[string]any{}
+	if state := s.project.StatesByQID[transition.FromState]; state != nil {
+		members["from_state"] = objectRef(state)
+	}
+	if event := s.project.EventsByQID[transition.Event]; event != nil {
+		members["event"] = objectRef(event)
+	}
+	if state := s.project.StatesByQID[transition.ToState]; state != nil {
+		members["to_state"] = objectRef(state)
+	}
+	if task := s.project.TasksByQID[transition.ActionTask]; task != nil {
+		members["action_task"] = objectRef(task)
 	}
 	return members
 }
