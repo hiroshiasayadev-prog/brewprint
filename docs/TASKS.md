@@ -477,3 +477,80 @@ renderer と MCP wrapper が Raw YAML structs を直接読まない方針を前�
   - silent overwriteは禁止する
   - collision対象source objectをerror messageに含める
   - project renderer / placement周辺のunit testで固定する
+
+### Milestone 10: MCP project exploration / view inspect を拡張する
+
+- [ ] **`list_objects` を実装する**
+  - ADR-054 / `docs/spec/mcp.md` の設計対話coverageに準拠
+  - project内の主要semantic objectを一覧・絞り込みできるようにする
+  - object kind / module / file / label / source を返す
+  - node / view / transition / field を対象に含める
+  - asset / private sub node はM11で直接selector対応するまで対象外または任意扱いにする
+  - MCP tool inputSchema / server wrapper testを追加する
+  - QueryService unit testでUC-001の一覧を固定する
+  - 実装後に `docs/spec/mcp.md` の tool仕様を追記する
+
+- [ ] **`inspect(file)` を実装する**
+  - FileID selectorで YAML file単位の定義内容を返す
+  - node fileでは main node / sub nodes / flow summary / diagnostics を返す
+  - state fileでは states / events / transitions / wireframe presence を返す
+  - view fileでは view kind / id / target files or modules を返す
+  - `render_index.yaml` は group summary / uncovered module warning 等を返す候補として扱う
+  - `get_references(file)` の既存 `state_file` partial対応と整合させる
+  - MCP wrapper test / QueryService testで代表fileを固定する
+  - 実装後に `docs/spec/mcp.md` の selector support matrixを更新する
+
+- [ ] **`inspect(view: api_table)` を実装する**
+  - API Table view objectを直接inspectできるようにする
+  - `http_root_path` / modules / include_submodules / collected endpoints / computed routes を返す
+  - `list_endpoints` との役割分担を明確にする
+  - excluded endpoint候補や収集対象0件sectionの扱いは実装時に判断し、必要ならspecへ追記する
+  - UC-001の API Table view でQueryService / MCP wrapper testを追加する
+
+- [ ] **`inspect(view: er_diagram)` を実装する**
+  - ER Diagram view objectを直接inspectできるようにする
+  - 対象modules / included stores / included models / FK relations / excluded refs summary を返す
+  - default module単位ERと view YAMLによる横断ERの扱いを整理する
+  - UC-001の ER view でQueryService / MCP wrapper testを追加する
+  - 実装後に `docs/spec/mcp.md` の view inspect仕様を追記する
+
+### Milestone 11: MCP diagram element query を拡張する
+
+- [ ] **implicit asset selectorを実装する**
+  - DAG上のasset nodeを直接queryできるようにする
+  - selector形式は producer + name を基本候補とし、stable synthetic IDが必要か実装時に決める
+  - asset signatureで name / producer / model / scope_file を返す
+  - asset referencesで producer / consumer task への関係を返す
+  - `produces_asset` との整合を保つ
+  - UC-001のDAG assetでQueryService / MCP wrapper testを追加する
+  - 実装後に `docs/spec/mcp.md` の AssetRef / selector support matrixを更新する
+
+- [ ] **private sub node selectorを実装する**
+  - file-local task / branch / fork / join を直接queryできるようにする
+  - selectorは `<file-id>#<local-id>` または `file` + `local_id` を使う
+  - get_signature / get_references / inspect の対応範囲を決める
+  - main task inspect内の `members.sub_tasks` と同じObjectRef表現に揃える
+  - UC-001の checkout sub task / branch / fork / join 相当でtestを追加する
+
+- [ ] **flow wiring referencesを実装する**
+  - DAG上のflow step / param wiringをMCP referenceとして辿れるようにする
+  - reference kind候補: `flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over`
+  - 既存方針「MCP v1ではflow wiringをget_referencesに返さない」を変更するため、必要なら小ADRまたはspec更新で扱う
+  - `inspect(task).members.flow.entries` のdraft schemaと整合させる
+  - DAG rendererのview modelとQueryServiceの責務境界を崩さない
+
+### Milestone 12: MCP impact traversal / source assist を拡張する
+
+- [ ] **`get_source` を実装する**
+  - semantic objectに対応するYAML snippetを返す
+  - Raw YAML AST全体公開ではなく、ResolvedProject objectのsource補助情報として扱う
+  - selector / source range / fallback挙動を `docs/spec/mcp.md` に定義する
+  - source line/columnが未取得の場合の返却形式を決める
+  - MCP wrapper test / QueryService testを追加する
+
+- [ ] **`get_reference_tree` または depth指定つきreference traversalを設計する**
+  - direct referencesだけでは不足する変更影響範囲を辿れるようにする
+  - 別tool `get_reference_tree` にするか、`get_references` に `depth` inputを追加するかを比較する
+  - cycle detection / max depth / kind filter / direction の仕様を決める
+  - ADR-049のdirect reference方針をどう拡張するか整理し、必要なら新ADRを起票する
+  - 設計確定後に実装タスクを分割する
