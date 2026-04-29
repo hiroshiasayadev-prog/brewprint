@@ -68,6 +68,38 @@ func TestServerCallTool(t *testing.T) {
 		}
 	})
 
+	t.Run("get_references_field", func(t *testing.T) {
+		envelope := call(t, server, "get_references", `{"selector":{"object":"field","id":"order.model.order","local_id":"id"},"direction":"both"}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_references field error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["object"] != "field" || object["id"] != "order.model.order.id" || object["local_id"] != "id" {
+			t.Fatalf("field object = %#v", object)
+		}
+		refs := result["references"].([]any)
+		if len(refs) != 2 {
+			t.Fatalf("field references len = %d, want 2: %#v", len(refs), refs)
+		}
+	})
+
+	t.Run("get_references_file", func(t *testing.T) {
+		envelope := call(t, server, "get_references", `{"selector":{"object":"file","kind":"state_file","id":"order/state.yaml"},"direction":"in"}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_references file error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["object"] != "file" || object["kind"] != "state_file" || object["id"] != "order/state.yaml" {
+			t.Fatalf("file object = %#v", object)
+		}
+		refs := result["references"].([]any)
+		if len(refs) != 2 {
+			t.Fatalf("file references len = %d, want 2: %#v", len(refs), refs)
+		}
+	})
+
 	t.Run("inspect", func(t *testing.T) {
 		envelope := call(t, server, "inspect", `{"selector":{"id":"order.task.checkout"}}`)
 		if envelope.Error != nil {

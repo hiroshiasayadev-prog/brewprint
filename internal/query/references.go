@@ -58,6 +58,24 @@ func (s *Service) referenceTarget(selector Selector) (semantic.ObjectKey, Object
 		}
 		return semantic.TransitionObjectKey(transition), transitionObjectRef(transition), nil
 	}
+	if s.isFieldSelector(selector) {
+		model, field, err := s.modelFieldBySelector(selector)
+		if err != nil {
+			return "", ObjectRef{}, err
+		}
+		return semantic.ModelFieldObjectKey(model.QID, field.Name), fieldObjectRef(model, field), nil
+	}
+	if s.isFileSelector(selector) {
+		fileID, err := s.fileBySelector(selector)
+		if err != nil {
+			return "", ObjectRef{}, err
+		}
+		kind := selector.Kind
+		if kind == "" && s.project.TransitionsByFile[fileID] != nil {
+			kind = "state_file"
+		}
+		return semantic.StateFileObjectKey(fileID), fileObjectRef(fileID, kind), nil
+	}
 	node, err := s.nodeByID(selector.ID)
 	if err != nil {
 		return "", ObjectRef{}, err

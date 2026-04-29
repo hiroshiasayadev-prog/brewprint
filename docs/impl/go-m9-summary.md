@@ -482,6 +482,74 @@ Post-M9-2差分後に通過済み。
 
 ---
 
+### Post-M9-4: GetReferences(field/file)
+
+`get_references` の object selector 対応を field / file に広げた。
+
+対応した selector:
+
+```json
+{
+  "selector": {
+    "object": "field",
+    "id": "order.model.order",
+    "local_id": "id"
+  },
+  "direction": "both"
+}
+```
+
+```json
+{
+  "selector": {
+    "object": "file",
+    "kind": "state_file",
+    "id": "order/state.yaml"
+  },
+  "direction": "in"
+}
+```
+
+返せる references:
+
+- field selector
+  - `field_type`
+  - `field_fk`
+- file / state_file selector
+  - incoming `scenario_state_file`
+
+実装内容:
+
+- `query.modelFieldBySelector` を追加した。
+- `query.isFieldSelector` を追加した。
+- `query.fileBySelector` を追加した。
+- `query.isFileSelector` を追加した。
+- `query.fieldObjectRef` を追加した。
+- `query.fileObjectRef` を追加した。
+- `GetReferences` の target resolver で field / file object を扱えるようにした。
+- QueryService testで `order.model.order.id` の field references を固定した。
+- QueryService testで `order/state.yaml` の incoming `scenario_state_file` references を固定した。
+- MCP wrapper testで `get_references_field` / `get_references_file` を固定した。
+
+検証:
+
+```powershell
+gofmt ./...
+go test ./...
+```
+
+Post-M9-4差分後に通過済み。
+
+注意:
+
+- `order.model.order.id` に対する incoming `field_fk` は、現状 `payment.model.payment_event.order_id` のみ確認される。
+- `order.model.order_item.order_id` の `fk: order.id` は、現状のreference indexでは `order.model.order.id` へ正規化されていない。
+- bare FK正規化は次候補として扱う。
+- `go test` 実行時に `open ...\.git: The system cannot find the path specified.` が表示されるが、全packageは `ok`。
+- 現時点では Go test failure ではなく環境側メッセージとして扱っている。
+
+---
+
 ## 6. 次にやること
 
 ### M9は完了
@@ -490,17 +558,20 @@ Milestone 3 の QueryService 拡張は M9-4 で完了。
 Post-M9-1で transition object の direct references も問い合わせ可能になった。
 Post-M9-2で transition object の signature / inspect も問い合わせ可能になった。
 Post-M9-3で `docs/spec/mcp.md` も transition signature / inspect に追随した。
+Post-M9-4で field / file object の direct references も問い合わせ可能になった。
 
 次候補:
 
-1. Post-M9-3 docs差分をcommitする
-2. MCP / QueryService の object selector 対応をさらに広げる
-   - `GetReferences(file)`
-   - `GetReferences(field)`
+1. Post-M9-4差分をcommitする
+2. bare FK正規化を追加する
+   - 例: `fk: order.id` を `order.model.order.id` へ解決する
+3. MCP / QueryService の object selector 対応をさらに広げる
    - asset object references
+   - `inspect(field)`
+   - `inspect(file)`
    - ER / API view object inspect
-3. validation / diagnostics の追加強化
-4. render CLI / docs の仕上げ
+4. validation / diagnostics の追加強化
+5. render CLI / docs の仕上げ
 
 ---
 
@@ -549,12 +620,15 @@ git status
 4. Post-M9 spec追随
    - transition signature spec
    - transition inspect spec
+5. Post-M9 field/file references
+   - `GetReferences(field)`
+   - `GetReferences(file)`
 
-Post-M9-3だけをcommitするなら候補:
+Post-M9-4だけをcommitするなら候補:
 
 ```powershell
-git add docs/spec/mcp.md docs/impl/go-m9-summary.md
-git commit -m "docs(mcp): document transition inspect"
+git add .
+git commit -m "feat(query): support field and file references by selector"
 ```
 
 ---

@@ -93,6 +93,77 @@ func (s *Service) isTransitionSelector(selector Selector) bool {
 	return selector.Object == "transition" || selector.Kind == "transition"
 }
 
+func (s *Service) modelFieldBySelector(selector Selector) (*semantic.Model, semantic.ModelField, error) {
+	if err := s.requireProject(); err != nil {
+		return nil, semantic.ModelField{}, err
+	}
+	modelID := selector.ID
+	fieldName := selector.LocalID
+	if selector.File != "" && selector.LocalID != "" {
+		modelID = selector.File
+		fieldName = selector.LocalID
+	}
+	if modelID == "" || fieldName == "" {
+		return nil, semantic.ModelField{}, fmt.Errorf("selector.id and selector.local_id are required for field")
+	}
+	if selector.Object != "" && selector.Object != "field" {
+		return nil, semantic.ModelField{}, fmt.Errorf("unsupported selector object for field: %s", selector.Object)
+	}
+	if selector.Kind != "" && selector.Kind != "field" {
+		return nil, semantic.ModelField{}, fmt.Errorf("unsupported selector kind for field: %s", selector.Kind)
+	}
+	model := s.project.ModelsByQID[semantic.QualifiedID(modelID)]
+	if model == nil {
+		return nil, semantic.ModelField{}, fmt.Errorf("object not found: %s", modelID)
+	}
+	for _, field := range model.Fields {
+		if field.Name == fieldName {
+			return model, field, nil
+		}
+	}
+	return nil, semantic.ModelField{}, fmt.Errorf("object not found: %s.%s", modelID, fieldName)
+}
+
+func (s *Service) isFieldSelector(selector Selector) bool {
+	return selector.Object == "field" || selector.Kind == "field"
+}
+
+func (s *Service) fileBySelector(selector Selector) (semantic.FileID, error) {
+	if err := s.requireProject(); err != nil {
+		return "", err
+	}
+	id := selector.ID
+	if id == "" {
+		id = selector.File
+	}
+	if id == "" {
+		return "", fmt.Errorf("selector.id is required")
+	}
+	if selector.Object != "" && selector.Object != "file" {
+		return "", fmt.Errorf("unsupported selector object for file: %s", selector.Object)
+	}
+	if selector.Kind != "" && selector.Kind != "state_file" {
+		return "", fmt.Errorf("unsupported selector kind for file: %s", selector.Kind)
+	}
+	fileID := semantic.FileID(id)
+	if _, ok := s.project.TransitionsByFile[fileID]; ok {
+		return fileID, nil
+	}
+	if _, ok := s.project.NodesByFile[fileID]; ok {
+		return fileID, nil
+	}
+	for _, scenario := range s.project.ScenariosByID {
+		if scenario.StateFile == fileID || scenario.FileID == fileID {
+			return fileID, nil
+		}
+	}
+	return "", fmt.Errorf("object not found: %s", id)
+}
+
+func (s *Service) isFileSelector(selector Selector) bool {
+	return selector.Object == "file" || selector.Kind == "state_file"
+}
+
 func objectRef(node semantic.Node) ObjectRef {
 	return ObjectRef{
 		Object:      "node",
@@ -124,6 +195,33 @@ func transitionObjectRef(transition semantic.Transition) ObjectRef {
 		ID:      semantic.TransitionID(transition),
 		File:    transition.FileID.String(),
 		LocalID: transition.From + ":" + transition.On,
+	}
+}
+
+func fieldObjectRef(model *semantic.Model, field semantic.ModelField) ObjectRef {
+	if model == nil {
+		return ObjectRef{}
+	}
+	return ObjectRef{
+		Object:      "field",
+		Kind:        "field",
+		ID:          model.QID.String() + "." + field.Name,
+		QualifiedID: model.QID.String(),
+		Label:       field.Name,
+		File:        model.FileID.String(),
+		LocalID:     field.Name,
+	}
+}
+
+func fileObjectRef(fileID semantic.FileID, kind string) ObjectRef {
+	if kind == "" {
+		kind = "file"
+	}
+	return ObjectRef{
+		Object: "file",
+		Kind:   kind,
+		ID:     fileID.String(),
+		File:   fileID.String(),
 	}
 }
 

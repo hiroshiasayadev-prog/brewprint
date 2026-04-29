@@ -212,6 +212,26 @@ func TestQueryServiceUC001(t *testing.T) {
 		assertHasReference(t, transitionRefs.References, "transition_to", "out", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']", "order.state.confirmed")
 		assertHasReference(t, transitionRefs.References, "transition_action", "out", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']", "payment.webhooks.task.process_payment")
 		assertHasReference(t, transitionRefs.References, "scenario_step_transition", "in", "scenario_step:payment_webhook_flow:1", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']")
+
+		fieldRefs, err := service.GetReferences(GetReferencesRequest{Selector: Selector{Object: "field", ID: "order.model.order", LocalID: "id"}, Direction: "both"})
+		if err != nil {
+			t.Fatalf("GetReferences field: %v", err)
+		}
+		if fieldRefs.Object.Object != "field" || fieldRefs.Object.ID != "order.model.order.id" || fieldRefs.Object.LocalID != "id" {
+			t.Fatalf("field object = %#v", fieldRefs.Object)
+		}
+		assertHasReference(t, fieldRefs.References, "field_type", "out", "order.model.order.id", "str")
+		assertHasReference(t, fieldRefs.References, "field_fk", "in", "payment.model.payment_event.order_id", "order.model.order.id")
+
+		stateFileRefs, err := service.GetReferences(GetReferencesRequest{Selector: Selector{Object: "file", Kind: "state_file", ID: "order/state.yaml"}, Direction: "in"})
+		if err != nil {
+			t.Fatalf("GetReferences state file: %v", err)
+		}
+		if stateFileRefs.Object.Object != "file" || stateFileRefs.Object.Kind != "state_file" || stateFileRefs.Object.ID != "order/state.yaml" {
+			t.Fatalf("state file object = %#v", stateFileRefs.Object)
+		}
+		assertHasReference(t, stateFileRefs.References, "scenario_state_file", "in", "checkout_flow", "order/state.yaml")
+		assertHasReference(t, stateFileRefs.References, "scenario_state_file", "in", "payment_webhook_flow", "order/state.yaml")
 	})
 
 	t.Run("ListEndpoints", func(t *testing.T) {
