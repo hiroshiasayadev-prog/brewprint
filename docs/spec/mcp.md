@@ -1,11 +1,12 @@
 ---
 scope: docs/spec/mcp.md
 status: draft
-last_updated: 2026-04-27
+last_updated: 2026-04-30
 summary: >
   brewprintのMCP query tool外部仕様。
   Python inspectに近い語彙で、ResolvedProject上のsemantic objectに対する
-  signature / references / inspect / endpoint query のinput/outputを定義する。
+  signature / references / inspect / endpoint query のinput/outputと、
+  設計対話に必要なquery coverageを定義する。
 depends_on:
   - docs/adr/017-diagram-layers-and-scope.md
   - docs/adr/018-event-node.md
@@ -23,6 +24,7 @@ depends_on:
   - docs/adr/047-go-semantic-model-query-layer-boundary.md
   - docs/adr/048-resolved-project-index-strategy.md
   - docs/adr/049-mcp-query-reference-vocabulary.md
+  - docs/adr/054-mcp-query-coverage-for-design-conversation.md
 ---
 
 # MCP仕様
@@ -132,6 +134,31 @@ ADR-048 / ADR-049に従い、MCP v1では完全なtransitive dependency graphを
 
 transitive closure / depth指定 / dependency graph cacheは、QueryService vertical sliceで実需が出た時点で別途拡張する。
 
+### 2.6 設計対話 coverage を拡張判断基準にする
+
+MCP / QueryService は、単なる実装補助APIではなく、DAG / State Diagram / Sequence Diagram / ER / API Table / Wireframe などの図・viewを見ながらLLMと設計対話するためのquery layerである。
+
+そのため、renderされた図やviewに現れる主要semantic objectは、原則としてMCPからquery可能にする。
+
+対象例:
+
+- task / model / store / state / event / actor
+- model field
+- transition
+- sequence scenario view
+- API Table view
+- ER Diagram view
+- implicit asset
+- file-local sub task / branch / fork / join
+- flow entry / flow wiring
+- source file
+
+すべてをMCP v1で即時実装する必要はない。ただし、今後のMCP拡張では「そのobjectが図やview上で利用者に見えており、会話対象になりうるか」を優先判断基準とする。
+
+MCP responseは引き続きRaw YAML ASTを公開せず、ResolvedProject上のsemantic object queryとして返す。source snippet取得が必要な場合も、semantic objectに対応するsource補助情報として扱う。
+
+> 由来: ADR-054 §決定
+
 ---
 
 ## 3. Common schema
@@ -183,7 +210,42 @@ private sub nodeを直接問い合わせる必要がある場合は、synthetic 
 MCP v1では、private sub nodeの直接問い合わせは実装任意とする。
 ただし `inspect(main task)` の `members.sub_tasks` には、同一ファイル内のsub task情報を含める。
 
-### 3.2 QualifiedID
+### 3.2 Selector support matrix
+
+MCP v1のselector対応範囲は以下とする。
+
+| object / kind | `get_signature` | `get_references` | `inspect` | status |
+|---|---:|---:|---:|---|
+| `node: task` | yes | yes | yes | supported |
+| `node: model` | yes | yes | yes | supported |
+| `node: store` | yes | yes | yes | supported |
+| `node: state` | yes | yes | yes | supported |
+| `node: event` | yes | yes | yes | supported |
+| `node: actor` | yes | yes | limited | supported / limited inspect |
+| `view: sequence_diagram` | yes | yes | yes | supported |
+| `transition` | yes | yes | yes | supported |
+| `field` | yes | yes | yes | supported |
+| `file: state_file` | no | yes | no | partial |
+| `asset` | no | no | no | future |
+| `view: api_table` | no | no | no | future; `list_endpoints` は実装済み |
+| `view: er_diagram` | no | no | no | future |
+| private sub node | optional | optional | via `inspect(main task)` | v1 optional |
+| `primitive` | no | no | no | reference target only |
+
+statusの意味:
+
+| status | 意味 |
+|---|---|
+| `supported` | MCP v1でquery対象として扱う |
+| `supported / limited inspect` | signature / references は扱うが、専用inspectの情報量は限定的 |
+| `partial` | 一部toolのみ対応する |
+| `future` | 設計対話coverage上は候補だが、現時点では未実装 |
+| `v1 optional` | spec上は許容するが、実装必須ではない |
+| `reference target only` | reference targetとして返すが、直接query対象ではない |
+
+> 由来: ADR-054 §決定
+
+### 3.3 QualifiedID
 
 モジュールスコープを持つnodeのQualifiedIDは、ADR-027に従う。
 
@@ -226,7 +288,7 @@ MCP responseでは、actorにも `qualified_id` フィールドを返すが、�
 }
 ```
 
-### 3.3 FileID
+### 3.4 FileID
 
 FileIDは、ADR-043で定義されるbrewprint projectの `yaml/` ディレクトリからの相対パスをslash正規化した文字列とする。
 
@@ -238,7 +300,7 @@ views/scenarios/checkout_flow.yaml
 
 Windows上の `\\` はMCP responseでは `/` に正規化する。
 
-### 3.4 Synthetic ID
+### 3.5 Synthetic ID
 
 QualifiedIDを持たないfile-local objectには、MCP response上の安定参照としてsynthetic IDを使う。
 
@@ -279,7 +341,7 @@ guard文字列はYAML decode後の文字列をそのまま使う。
 trim、空白正規化、Unicode正規化、式AST比較は行わない。
 これはADR-035 / ADR-048のguard exact match方針と一致する。
 
-### 3.5 SourceLocation
+### 3.6 SourceLocation
 
 ```json
 {
@@ -301,7 +363,7 @@ trim、空白正規化、Unicode正規化、式AST比較は行わない。
 
 line / column が取得できない実装では `file` のみ返してよい。
 
-### 3.6 ObjectRef
+### 3.7 ObjectRef
 
 MCP response内でobjectを指す共通形式。
 
@@ -371,7 +433,7 @@ model fieldは以下のように表す。
 }
 ```
 
-### 3.7 TransitionRef
+### 3.8 TransitionRef
 
 TransitionRefは、transitionを表すObjectRef拡張である。
 
@@ -409,7 +471,7 @@ TransitionRefは、transitionを表すObjectRef拡張である。
 state / event / taskへのObjectRefが必要な場合は、`references` に `transition_from` / `transition_event` / `transition_to` / `transition_action` として返す。
 TransitionRef本体の `from` / `on` / `to` は、state diagram / scenario stepを読みやすくするための短縮情報である。
 
-### 3.8 AssetRef
+### 3.9 AssetRef
 
 `asset` はYAML上に独立ファイルを持たず、taskの `returns` から暗黙生成される。
 MCP v1では、implicit assetをグローバルにselectableなQualifiedIDとしては要求しない。
@@ -437,7 +499,7 @@ MCP v1では、implicit assetをグローバルにselectableなQualifiedIDとし
 
 将来、implicit assetを直接query対象にする必要が出た場合は、stable synthetic ID形式を別途spec/ADRで定義する。
 
-### 3.9 Diagnostic
+### 3.10 Diagnostic
 
 ```json
 {
@@ -1831,13 +1893,20 @@ MCP v1では以下を未定義とする。
 - renderer outputを返すMCP tool
 - code generation用tool
 
-将来候補:
+設計対話coverageを広げるための将来候補:
 
-| 候補tool | 目的 |
-|---|---|
-| `get_source` | `inspect.getsource` 相当。対象objectのYAML snippetを返す |
-| `get_reference_tree` | depth指定つきreference traversal |
-| `list_objects` | project内objectの検索・一覧 |
-| `search_notes` | note/docに対するsemantic search |
+| 候補tool / selector | 目的 | 優先度 |
+|---|---|---:|
+| `list_objects` | project内objectの検索・一覧。LLMがquery対象を発見する入口 | high |
+| `inspect(file)` | YAML file単位で定義内容・main node・sub node・view種別・diagnosticsを把握する | high |
+| `inspect(view: api_table)` | API Table viewが集約するmodules / endpoints / computed routesを把握する | high |
+| `inspect(view: er_diagram)` | ER Diagram viewが集約するmodules / stores / models / FKを把握する | high |
+| `asset` selector | DAG上のasset nodeを直接queryし、producer / consumers / modelを把握する | high |
+| private sub node selector | DAG内のfile-local task / branch / fork / joinを直接queryする | medium |
+| flow wiring references | DAG上のflow step / param wiringをreferenceとして扱う | medium |
+| `get_source` | `inspect.getsource` 相当。対象semantic objectのYAML snippetを返す | medium |
+| `get_reference_tree` | depth指定つきreference traversal。変更影響範囲を辿る | medium |
+| `search_notes` | note/docに対するsemantic search | low |
 
-これらは必要になった時点でspec更新またはADR起票を行う。
+これらは必要になった時点で `docs/spec/mcp.md` を更新し、実装タスクは `docs/TASKS.md` で管理する。
+既存ADRの方針を変更するほどの設計転換がある場合のみ、新ADRを起票する。
