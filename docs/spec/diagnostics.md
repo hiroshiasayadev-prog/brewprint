@@ -1,12 +1,13 @@
 ---
 scope: docs/spec/diagnostics.md
 status: draft
-last_updated: 2026-04-28
+last_updated: 2026-04-29
 summary: >
   brewprint validation diagnosticsの外部向け仕様。
   severity / code / file / message の意味と、現在のdiagnostic code一覧を定義する。
 depends_on:
   - docs/adr/047-go-semantic-model-query-layer-boundary.md
+  - docs/adr/051-unsupported-yaml-file-warning.md
 ---
 
 # Diagnostics仕様
@@ -151,6 +152,14 @@ Sort key:
 | `duplicate_view_module` | error | API View / ER View内のmodule定義が重複している |
 | `unresolved_sequence_step` | error | sequence scenario stepがtransitionへ解決できない |
 | `non_continuous_sequence` | error | sequence scenario stepが前stepのto stateから連続していない |
+
+### File classification validation
+
+| code | severity | description |
+|---|---|---|
+| `unsupported_file` | warning | YAMLファイルが種別判定不能（`as:` も `nodes:` も持たず、`render_index.yaml` でもない）。`as:` の書き忘れ等を検出する。詳細は [file-types.md](./file-types.md) §4 |
+
+> 由来: ADR-051
 
 ### Generic fallback
 
