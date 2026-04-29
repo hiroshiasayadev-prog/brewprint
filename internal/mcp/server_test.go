@@ -79,8 +79,8 @@ func TestServerCallTool(t *testing.T) {
 			t.Fatalf("field object = %#v", object)
 		}
 		refs := result["references"].([]any)
-		if len(refs) != 2 {
-			t.Fatalf("field references len = %d, want 2: %#v", len(refs), refs)
+		if len(refs) != 3 {
+			t.Fatalf("field references len = %d, want 3: %#v", len(refs), refs)
 		}
 	})
 

@@ -238,7 +238,7 @@ func buildReferences(project *semantic.Project) {
 				})
 			}
 			if field.FK != "" {
-				fkModel, fkField := splitFK(field.FK)
+				fkModel, fkField := resolveFK(module, field.FK)
 				addReference(project, semantic.Reference{
 					Kind:      semantic.ReferenceKindFieldFK,
 					SourceKey: fieldKey,
@@ -404,12 +404,20 @@ func modelOrPrimitiveEndpoint(project *semantic.Project, qid semantic.QualifiedI
 	return semantic.ReferenceEndpoint{Object: "primitive", Kind: "primitive", ID: raw, Name: raw}
 }
 
-func splitFK(fk string) (semantic.QualifiedID, string) {
+func resolveFK(module string, fk string) (semantic.QualifiedID, string) {
 	parts := strings.Split(fk, ".")
 	if len(parts) < 2 {
 		return "", fk
 	}
 	fieldName := parts[len(parts)-1]
-	modelQID := strings.Join(parts[:len(parts)-1], ".")
-	return semantic.QualifiedID(modelQID), fieldName
+	modelParts := parts[:len(parts)-1]
+	for _, part := range modelParts {
+		if part == "model" {
+			return semantic.QualifiedID(strings.Join(modelParts, ".")), fieldName
+		}
+	}
+	if len(modelParts) == 1 && module != "" {
+		return semantic.QualifiedID(module + ".model." + modelParts[0]), fieldName
+	}
+	return semantic.QualifiedID(strings.Join(modelParts, ".")), fieldName
 }

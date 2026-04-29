@@ -550,6 +550,48 @@ Post-M9-4差分後に通過済み。
 
 ---
 
+### Post-M9-5: bare FK normalization
+
+ADR-033に従い、同モジュール内FKのbare記法をreference index / validationで正規化するようにした。
+
+対象例:
+
+```yaml
+# order/model/order_item.yaml
+fk: order.id
+```
+
+正規化後:
+
+```text
+order.model.order.id
+```
+
+実装内容:
+
+- `resolveFK(module, fk)` を追加した。
+- `references.go` の `field_fk` reference構築で `resolveFK` を使うようにした。
+- `validation.go` の `fieldExists` でも `resolveFK` を使うようにした。
+- reference index と validation のFK解決ルールを揃えた。
+- `order.model.order.id` の incoming `field_fk` に `order.model.order_item.order_id` が含まれることをQueryService testで固定した。
+- MCP wrapper testの `get_references_field` 期待件数を3件に更新した。
+
+検証:
+
+```powershell
+gofmt ./...
+go test ./...
+```
+
+Post-M9-5差分後に通過済み。
+
+注意:
+
+- `go test` 実行時に `open ...\.git: The system cannot find the path specified.` が表示されるが、全packageは `ok`。
+- 現時点では Go test failure ではなく環境側メッセージとして扱っている。
+
+---
+
 ## 6. 次にやること
 
 ### M9は完了
@@ -559,19 +601,18 @@ Post-M9-1で transition object の direct references も問い合わせ可能に
 Post-M9-2で transition object の signature / inspect も問い合わせ可能になった。
 Post-M9-3で `docs/spec/mcp.md` も transition signature / inspect に追随した。
 Post-M9-4で field / file object の direct references も問い合わせ可能になった。
+Post-M9-5で同モジュール内bare FK正規化もreference index / validationに反映した。
 
 次候補:
 
-1. Post-M9-4差分をcommitする
-2. bare FK正規化を追加する
-   - 例: `fk: order.id` を `order.model.order.id` へ解決する
-3. MCP / QueryService の object selector 対応をさらに広げる
+1. Post-M9-5差分をcommitする
+2. MCP / QueryService の object selector 対応をさらに広げる
    - asset object references
    - `inspect(field)`
    - `inspect(file)`
    - ER / API view object inspect
-4. validation / diagnostics の追加強化
-5. render CLI / docs の仕上げ
+3. validation / diagnostics の追加強化
+4. render CLI / docs の仕上げ
 
 ---
 
@@ -623,12 +664,14 @@ git status
 5. Post-M9 field/file references
    - `GetReferences(field)`
    - `GetReferences(file)`
+6. Post-M9 FK解決改善
+   - same-module bare FK normalization
 
-Post-M9-4だけをcommitするなら候補:
+Post-M9-5だけをcommitするなら候補:
 
 ```powershell
 git add .
-git commit -m "feat(query): support field and file references by selector"
+git commit -m "fix(resolve): normalize same-module fk references"
 ```
 
 ---

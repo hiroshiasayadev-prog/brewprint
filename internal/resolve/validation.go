@@ -264,11 +264,10 @@ func modelExists(project *semantic.Project, qid semantic.QualifiedID) bool {
 }
 
 func fieldExists(project *semantic.Project, module string, raw string) bool {
-	modelRef, fieldName := splitFK(raw)
-	if modelRef == "" || fieldName == "" {
+	modelQID, fieldName := resolveFK(module, raw)
+	if modelQID == "" || fieldName == "" {
 		return false
 	}
-	modelQID := resolveModelQID(module, modelRef.String())
 	model := project.ModelsByQID[modelQID]
 	if model == nil {
 		return false

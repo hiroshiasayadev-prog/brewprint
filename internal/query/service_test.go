@@ -222,6 +222,7 @@ func TestQueryServiceUC001(t *testing.T) {
 		}
 		assertHasReference(t, fieldRefs.References, "field_type", "out", "order.model.order.id", "str")
 		assertHasReference(t, fieldRefs.References, "field_fk", "in", "payment.model.payment_event.order_id", "order.model.order.id")
+		assertHasReference(t, fieldRefs.References, "field_fk", "in", "order.model.order_item.order_id", "order.model.order.id")
 
 		stateFileRefs, err := service.GetReferences(GetReferencesRequest{Selector: Selector{Object: "file", Kind: "state_file", ID: "order/state.yaml"}, Direction: "in"})
 		if err != nil {
