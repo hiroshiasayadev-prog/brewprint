@@ -17,6 +17,9 @@ func (s *Service) Inspect(req InspectRequest) (InspectResponse, error) {
 	if s.isTransitionSelector(req.Selector) {
 		return s.inspectTransition(req)
 	}
+	if s.isFieldSelector(req.Selector) {
+		return s.inspectField(req)
+	}
 
 	node, err := s.nodeByID(req.Selector.ID)
 	if err != nil {
@@ -156,6 +159,37 @@ func (s *Service) stateMembers(state *semantic.State) map[string]any {
 	}
 	if len(outgoing) > 0 {
 		members["outgoing_transitions"] = outgoing
+	}
+	return members
+}
+
+func (s *Service) inspectField(req InspectRequest) (InspectResponse, error) {
+	model, field, err := s.modelFieldBySelector(req.Selector)
+	if err != nil {
+		return InspectResponse{}, err
+	}
+	refs, err := s.GetReferences(GetReferencesRequest{Selector: req.Selector, Direction: string(semantic.ReferenceDirectionBoth)})
+	if err != nil {
+		return InspectResponse{}, err
+	}
+	return InspectResponse{
+		Object:      fieldObjectRef(model, field),
+		Signature:   signatureForField(field),
+		Doc:         field.Note,
+		Source:      sourceMap(model.FileID),
+		Members:     s.fieldMembers(model, field),
+		References:  refs.References,
+		Diagnostics: []semantic.Diagnostic{},
+	}, nil
+}
+
+func (s *Service) fieldMembers(model *semantic.Model, field semantic.ModelField) map[string]any {
+	members := map[string]any{"model": objectRef(model)}
+	if field.Type != "" {
+		members["type"] = field.Type
+	}
+	if field.FK != "" {
+		members["fk"] = field.FK
 	}
 	return members
 }

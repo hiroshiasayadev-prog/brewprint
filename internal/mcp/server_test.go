@@ -40,6 +40,22 @@ func TestServerCallTool(t *testing.T) {
 		}
 	})
 
+	t.Run("get_signature_field", func(t *testing.T) {
+		envelope := call(t, server, "get_signature", `{"selector":{"object":"field","id":"order.model.order","local_id":"id"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_signature field error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["object"] != "field" || object["id"] != "order.model.order.id" {
+			t.Fatalf("field object = %#v", object)
+		}
+		signature := result["signature"].(map[string]any)
+		if signature["name"] != "id" || signature["type"] != "str" || signature["pk"] != true {
+			t.Fatalf("field signature = %#v", signature)
+		}
+	})
+
 	t.Run("get_references", func(t *testing.T) {
 		envelope := call(t, server, "get_references", `{"selector":{"id":"auth.task.login"},"kinds":["reads"]}`)
 		if envelope.Error != nil {
@@ -146,6 +162,30 @@ func TestServerCallTool(t *testing.T) {
 		members := result["members"].(map[string]any)
 		if members["from_state"].(map[string]any)["id"] != "order.state.processing" || members["event"].(map[string]any)["id"] != "order.event.payment_webhook_received" || members["to_state"].(map[string]any)["id"] != "order.state.confirmed" || members["action_task"].(map[string]any)["id"] != "payment.webhooks.task.process_payment" {
 			t.Fatalf("inspect transition members = %#v", members)
+		}
+	})
+
+	t.Run("inspect_field", func(t *testing.T) {
+		envelope := call(t, server, "inspect", `{"selector":{"object":"field","id":"order.model.order","local_id":"id"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("inspect field error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["object"] != "field" || object["id"] != "order.model.order.id" {
+			t.Fatalf("inspect field object = %#v", object)
+		}
+		signature := result["signature"].(map[string]any)
+		if signature["name"] != "id" || signature["type"] != "str" || signature["pk"] != true {
+			t.Fatalf("inspect field signature = %#v", signature)
+		}
+		members := result["members"].(map[string]any)
+		if members["model"].(map[string]any)["id"] != "order.model.order" || members["type"] != "str" {
+			t.Fatalf("inspect field members = %#v", members)
+		}
+		refs := result["references"].([]any)
+		if len(refs) != 3 {
+			t.Fatalf("inspect field references len = %d, want 3: %#v", len(refs), refs)
 		}
 	})
 

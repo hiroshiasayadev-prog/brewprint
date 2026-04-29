@@ -592,6 +592,66 @@ Post-M9-5差分後に通過済み。
 
 ---
 
+### Post-M9-6: inspect(field)
+
+`selector.object=field` で model field を直接 `get_signature` / `inspect` できるようにした。
+
+対応した selector:
+
+```json
+{
+  "selector": {
+    "object": "field",
+    "id": "order.model.order",
+    "local_id": "id"
+  }
+}
+```
+
+`GetSignature(field)` で返せる内容:
+
+- `name`
+- `type`
+- `pk`
+- `fk`
+- `unique`
+
+`Inspect(field)` で返せる内容:
+
+- field signature
+- parent `model`
+- `type`
+- `fk`
+- references
+  - `field_type`
+  - incoming `field_fk`
+
+実装内容:
+
+- `GetSignature` の field selector 分岐を追加した。
+- `signatureForField` を追加した。
+- `Inspect` の field selector 分岐を追加した。
+- `inspectField` を追加した。
+- `fieldMembers` を追加した。
+- QueryService testで `GetSignature(field)` / `Inspect(field)` を固定した。
+- MCP wrapper testで `get_signature_field` / `inspect_field` を固定した。
+
+検証:
+
+```powershell
+gofmt ./...
+go test ./...
+```
+
+Post-M9-6差分後に通過済み。
+
+注意:
+
+- `go test` 実行時に `open ...\.git: The system cannot find the path specified.` が表示されるが、全packageは `ok`。
+- 現時点では Go test failure ではなく環境側メッセージとして扱っている。
+
+---
+
 ## 6. 次にやること
 
 ### M9は完了
@@ -602,17 +662,18 @@ Post-M9-2で transition object の signature / inspect も問い合わせ可能�
 Post-M9-3で `docs/spec/mcp.md` も transition signature / inspect に追随した。
 Post-M9-4で field / file object の direct references も問い合わせ可能になった。
 Post-M9-5で同モジュール内bare FK正規化もreference index / validationに反映した。
+Post-M9-6で field object の signature / inspect も問い合わせ可能になった。
 
 次候補:
 
-1. Post-M9-5差分をcommitする
+1. Post-M9-6差分をcommitする
 2. MCP / QueryService の object selector 対応をさらに広げる
    - asset object references
-   - `inspect(field)`
    - `inspect(file)`
    - ER / API view object inspect
-3. validation / diagnostics の追加強化
-4. render CLI / docs の仕上げ
+3. `docs/spec/mcp.md` に field signature / inspect 節を追記する
+4. validation / diagnostics の追加強化
+5. render CLI / docs の仕上げ
 
 ---
 
@@ -666,12 +727,15 @@ git status
    - `GetReferences(file)`
 6. Post-M9 FK解決改善
    - same-module bare FK normalization
+7. Post-M9 field inspect
+   - `GetSignature(field)`
+   - `Inspect(field)`
 
-Post-M9-5だけをcommitするなら候補:
+Post-M9-6だけをcommitするなら候補:
 
 ```powershell
 git add .
-git commit -m "fix(resolve): normalize same-module fk references"
+git commit -m "feat(query): support field inspect"
 ```
 
 ---

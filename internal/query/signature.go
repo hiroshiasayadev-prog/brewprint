@@ -30,6 +30,18 @@ func (s *Service) GetSignature(req GetSignatureRequest) (GetSignatureResponse, e
 			Diagnostics: []semantic.Diagnostic{},
 		}, nil
 	}
+	if s.isFieldSelector(req.Selector) {
+		model, field, err := s.modelFieldBySelector(req.Selector)
+		if err != nil {
+			return GetSignatureResponse{}, err
+		}
+		return GetSignatureResponse{
+			Object:      fieldObjectRef(model, field),
+			Signature:   signatureForField(field),
+			Doc:         field.Note,
+			Diagnostics: []semantic.Diagnostic{},
+		}, nil
+	}
 
 	node, err := s.nodeByID(req.Selector.ID)
 	if err != nil {
@@ -67,6 +79,23 @@ func signatureForTransition(transition semantic.Transition) Signature {
 	}
 	if transition.ActionTask != "" {
 		sig["action"] = transition.ActionTask.String()
+	}
+	return sig
+}
+
+func signatureForField(field semantic.ModelField) Signature {
+	sig := Signature{
+		"name": field.Name,
+		"type": field.Type,
+	}
+	if field.PK {
+		sig["pk"] = true
+	}
+	if field.FK != "" {
+		sig["fk"] = field.FK
+	}
+	if field.Unique {
+		sig["unique"] = true
 	}
 	return sig
 }

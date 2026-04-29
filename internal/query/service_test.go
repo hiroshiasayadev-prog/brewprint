@@ -107,6 +107,17 @@ func TestQueryServiceUC001(t *testing.T) {
 		if transition.Signature["from"] != "processing" || transition.Signature["on"] != "payment_webhook_received" || transition.Signature["to"] != "confirmed" || transition.Signature["guard"] != "payload.status == 'succeeded'" || transition.Signature["action"] != "payment.webhooks.task.process_payment" {
 			t.Fatalf("transition signature = %#v", transition.Signature)
 		}
+
+		field, err := service.GetSignature(GetSignatureRequest{Selector: Selector{Object: "field", ID: "order.model.order", LocalID: "id"}})
+		if err != nil {
+			t.Fatalf("GetSignature field: %v", err)
+		}
+		if field.Object.Object != "field" || field.Object.ID != "order.model.order.id" || field.Object.LocalID != "id" {
+			t.Fatalf("field object = %#v", field.Object)
+		}
+		if field.Signature["name"] != "id" || field.Signature["type"] != "str" || field.Signature["pk"] != true {
+			t.Fatalf("field signature = %#v", field.Signature)
+		}
 	})
 
 	t.Run("GetReferences", func(t *testing.T) {
@@ -387,6 +398,21 @@ func TestQueryServiceUC001(t *testing.T) {
 			t.Fatalf("transition members = %#v", transition.Members)
 		}
 		assertHasReference(t, transition.References, "scenario_step_transition", "in", "scenario_step:payment_webhook_flow:1", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']")
+
+		field, err := service.Inspect(InspectRequest{Selector: Selector{Object: "field", ID: "order.model.order", LocalID: "id"}})
+		if err != nil {
+			t.Fatalf("Inspect field: %v", err)
+		}
+		if field.Signature["name"] != "id" || field.Signature["type"] != "str" || field.Signature["pk"] != true {
+			t.Fatalf("field signature = %#v", field.Signature)
+		}
+		fieldModel := field.Members["model"].(ObjectRef)
+		if fieldModel.ID != "order.model.order" || field.Members["type"] != "str" {
+			t.Fatalf("field members = %#v", field.Members)
+		}
+		assertHasReference(t, field.References, "field_type", "out", "order.model.order.id", "str")
+		assertHasReference(t, field.References, "field_fk", "in", "order.model.order_item.order_id", "order.model.order.id")
+		assertHasReference(t, field.References, "field_fk", "in", "payment.model.payment_event.order_id", "order.model.order.id")
 	})
 }
 
