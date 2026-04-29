@@ -822,6 +822,50 @@ selectorには `object: "transition"` とTransitionIDを指定する。
 | `guard` | 任意 | guard文字列 |
 | `action` | 任意 | 解決済みaction task QualifiedID |
 
+### 6.10 field signature
+
+Model fieldはsynthetic objectとして問い合わせる。
+selectorには `object: "field"`、親model QualifiedID、field local IDを指定する。
+
+```json
+{
+  "selector": {
+    "object": "field",
+    "id": "order.model.order",
+    "local_id": "id"
+  }
+}
+```
+
+```json
+{
+  "object": {
+    "object": "field",
+    "kind": "field",
+    "id": "order.model.order.id",
+    "qualified_id": "order.model.order",
+    "label": "id",
+    "file": "order/model/order.yaml",
+    "local_id": "id"
+  },
+  "signature": {
+    "name": "id",
+    "type": "str",
+    "pk": true
+  },
+  "doc": "注文ID（PK）。order_item.order_id / payment_event.order_id のFK参照先",
+  "diagnostics": []
+}
+```
+
+| フィールド | 必須 | 内容 |
+|---|---:|---|
+| `name` | ✓ | field local ID |
+| `type` | ✓ | YAML上のfield type |
+| `pk` | 任意 | primary keyならtrue |
+| `fk` | 任意 | YAML上のFK指定。bare FKの場合も元の記述を返す |
+| `unique` | 任意 | uniqueならtrue |
+
 ---
 
 ## 7. `get_references`
@@ -1506,6 +1550,115 @@ Transitionはsynthetic objectとしてinspectできる。
       }
     }
   ],
+  "diagnostics": []
+}
+```
+
+### 8.11 field inspect
+
+Model fieldはsynthetic objectとしてinspectできる。
+
+```json
+{
+  "selector": {
+    "object": "field",
+    "id": "order.model.order",
+    "local_id": "id"
+  }
+}
+```
+
+返す内容:
+
+- field signature
+- parent model
+- field type
+- FK指定
+- fieldが持つdirect references
+- 他fieldからのincoming FK references
+
+```json
+{
+  "object": {
+    "object": "field",
+    "kind": "field",
+    "id": "order.model.order.id",
+    "qualified_id": "order.model.order",
+    "label": "id",
+    "file": "order/model/order.yaml",
+    "local_id": "id"
+  },
+  "signature": {
+    "name": "id",
+    "type": "str",
+    "pk": true
+  },
+  "members": {
+    "model": {
+      "object": "node",
+      "kind": "model",
+      "id": "order.model.order",
+      "qualified_id": "order.model.order",
+      "label": "order",
+      "file": "order/model/order.yaml"
+    },
+    "type": "str"
+  },
+  "references": [
+    {
+      "kind": "field_type",
+      "direction": "out",
+      "from": {
+        "object": "model_field",
+        "kind": "field",
+        "id": "order.model.order.id",
+        "qualified_id": "order.model.order",
+        "name": "id",
+        "file": "order/model/order.yaml"
+      },
+      "to": { "object": "primitive", "kind": "primitive", "id": "str", "name": "str" }
+    },
+    {
+      "kind": "field_fk",
+      "direction": "in",
+      "from": {
+        "object": "model_field",
+        "kind": "field",
+        "id": "order.model.order_item.order_id",
+        "qualified_id": "order.model.order_item",
+        "name": "order_id",
+        "file": "order/model/order_item.yaml"
+      },
+      "to": {
+        "object": "model_field",
+        "kind": "field",
+        "id": "order.model.order.id",
+        "qualified_id": "order.model.order",
+        "name": "id"
+      }
+    },
+    {
+      "kind": "field_fk",
+      "direction": "in",
+      "from": {
+        "object": "model_field",
+        "kind": "field",
+        "id": "payment.model.payment_event.order_id",
+        "qualified_id": "payment.model.payment_event",
+        "name": "order_id",
+        "file": "payment/model/payment_event.yaml"
+      },
+      "to": {
+        "object": "model_field",
+        "kind": "field",
+        "id": "order.model.order.id",
+        "qualified_id": "order.model.order",
+        "name": "id"
+      }
+    }
+  ],
+  "doc": "注文ID（PK）。order_item.order_id / payment_event.order_id のFK参照先",
+  "source": { "file": "order/model/order.yaml" },
   "diagnostics": []
 }
 ```

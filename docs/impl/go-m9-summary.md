@@ -652,6 +652,34 @@ Post-M9-6差分後に通過済み。
 
 ---
 
+### Post-M9-7: docs/spec/mcp.md field spec追随
+
+実装済みの field object 対応に合わせて、MCP specを更新した。
+
+追加した仕様:
+
+- `get_signature` の `field signature`
+  - selector例
+  - response例
+  - `name` / `type` / `pk` / `fk` / `unique` のfield定義
+- `inspect` の `field inspect`
+  - selector例
+  - response例
+  - `members.model`
+  - `members.type`
+  - field direct references
+  - incoming `field_fk`
+
+変更ファイル:
+
+- `docs/spec/mcp.md`
+
+検証:
+
+- docs only変更のため追加テストなし。
+
+---
+
 ## 6. 次にやること
 
 ### M9は完了
@@ -663,17 +691,17 @@ Post-M9-3で `docs/spec/mcp.md` も transition signature / inspect に追随し�
 Post-M9-4で field / file object の direct references も問い合わせ可能になった。
 Post-M9-5で同モジュール内bare FK正規化もreference index / validationに反映した。
 Post-M9-6で field object の signature / inspect も問い合わせ可能になった。
+Post-M9-7で `docs/spec/mcp.md` も field signature / inspect に追随した。
 
 次候補:
 
-1. Post-M9-6差分をcommitする
+1. Post-M9-7 docs差分をcommitする
 2. MCP / QueryService の object selector 対応をさらに広げる
    - asset object references
    - `inspect(file)`
    - ER / API view object inspect
-3. `docs/spec/mcp.md` に field signature / inspect 節を追記する
-4. validation / diagnostics の追加強化
-5. render CLI / docs の仕上げ
+3. validation / diagnostics の追加強化
+4. render CLI / docs の仕上げ
 
 ---
 
@@ -730,12 +758,15 @@ git status
 7. Post-M9 field inspect
    - `GetSignature(field)`
    - `Inspect(field)`
+8. Post-M9 spec追随
+   - field signature spec
+   - field inspect spec
 
-Post-M9-6だけをcommitするなら候補:
+Post-M9-7だけをcommitするなら候補:
 
 ```powershell
-git add .
-git commit -m "feat(query): support field inspect"
+git add docs/spec/mcp.md docs/impl/go-m9-summary.md
+git commit -m "docs(mcp): document field inspect"
 ```
 
 ---
