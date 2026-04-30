@@ -68,10 +68,11 @@ func loadFile(path, fileID string) (rawyaml.File, error) {
 	class := classifyFile(fileID, root)
 
 	file := rawyaml.File{
-		ID:     fileID,
-		Path:   path,
-		Kind:   class.kind,
-		ViewAs: class.viewAs,
+		ID:      fileID,
+		Path:    path,
+		Content: string(data),
+		Kind:    class.kind,
+		ViewAs:  class.viewAs,
 	}
 	if class.kind == rawyaml.FileKindRenderIndex {
 		renderIndex, err := decodeRenderIndex(root)

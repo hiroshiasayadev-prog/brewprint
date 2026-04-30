@@ -114,6 +114,32 @@ type FieldSignature struct {
 
 type Signature map[string]any
 
+type SourceLocation struct {
+	File      string `json:"file"`
+	Line      int    `json:"line,omitempty"`
+	Column    int    `json:"column,omitempty"`
+	EndLine   int    `json:"end_line,omitempty"`
+	EndColumn int    `json:"end_column,omitempty"`
+}
+
+type SourceSnippet struct {
+	Language string `json:"language"`
+	Text     string `json:"text"`
+}
+
+type GetSourceRequest struct {
+	Selector Selector `json:"selector"`
+	Fallback string   `json:"fallback,omitempty"`
+}
+
+type GetSourceResponse struct {
+	Object      ObjectRef             `json:"object"`
+	Source      SourceLocation        `json:"source"`
+	Snippet     SourceSnippet         `json:"snippet"`
+	Fallback    string                `json:"fallback,omitempty"`
+	Diagnostics []semantic.Diagnostic `json:"diagnostics"`
+}
+
 type GetSignatureRequest struct {
 	Selector Selector `json:"selector"`
 }

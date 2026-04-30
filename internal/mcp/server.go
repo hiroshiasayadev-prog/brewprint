@@ -53,6 +53,14 @@ func (s *Server) Tools() []Tool {
 			}, []string{"selector"}),
 		},
 		{
+			Name:        "get_source",
+			Description: "Return the YAML source snippet for a semantic object.",
+			InputSchema: objectSchema(map[string]any{
+				"selector": selectorSchema(),
+				"fallback": enumStringSchema("file", "error"),
+			}, []string{"selector"}),
+		},
+		{
 			Name:        "get_references",
 			Description: "Return direct references for a semantic object.",
 			InputSchema: objectSchema(map[string]any{
@@ -140,6 +148,16 @@ func (s *Server) CallTool(name string, args []byte) Envelope {
 			return errorEnvelope("invalid_args", name, err.Error(), args)
 		}
 		res, err := s.service.GetSignature(req)
+		if err != nil {
+			return errorEnvelope(errorCode(err), name, err.Error(), args)
+		}
+		return Envelope{Result: res}
+	case "get_source":
+		var req query.GetSourceRequest
+		if err := decodeArgs(args, &req); err != nil {
+			return errorEnvelope("invalid_args", name, err.Error(), args)
+		}
+		res, err := s.service.GetSource(req)
 		if err != nil {
 			return errorEnvelope(errorCode(err), name, err.Error(), args)
 		}

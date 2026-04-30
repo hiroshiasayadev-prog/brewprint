@@ -5,7 +5,7 @@ last_updated: 2026-04-30
 summary: >
   brewprintのMCP query tool外部仕様。
   Python inspectに近い語彙で、ResolvedProject上のsemantic objectに対する
-  signature / references / inspect / endpoint query のinput/outputと、
+  signature / source / references / inspect / endpoint query のinput/outputと、
   設計対話に必要なquery coverageを定義する。
 depends_on:
   - docs/adr/017-diagram-layers-and-scope.md
@@ -647,12 +647,13 @@ M11ではこの方針を維持し、`flow_step` / `flow_param` / `flow_branch_ca
 
 ## 5. Tool overview
 
-MCP v1のquery toolは以下の5つとする。
+MCP v1のquery toolは以下の6つとする。
 
 | tool | 目的 | 主な利用場面 |
 |---|---|---|
 | `list_objects` | project内のsemantic object一覧を取得する | 実装・設計対話の起点として対象objectを探す |
 | `get_signature` | object単体の外形を取得する | 実装前にtask/model/store等の型・I/Oを確認する |
+| `get_source` | semantic objectに対応するYAML snippetを取得する | 設計対話中に定義元YAMLを確認する |
 | `get_references` | objectの直接referenceを取得する | 影響範囲・依存・逆参照を確認する |
 | `inspect` | object kind別に実装判断用の文脈を取得する | Claude Code等が実装・修正時に読む |
 | `list_endpoints` | API Table viewに基づくendpoint一覧を取得する | API実装・ルーティング確認 |
@@ -1022,15 +1023,120 @@ selectorには `object: "field"`、親model QualifiedID、field local IDを指�
 
 ---
 
-## 7. `get_references`
+## 7. `get_source`
 
 ### 7.1 Purpose
+
+`get_source` は、対象semantic objectに対応するYAML source snippetを返す。
+
+返すもの:
+
+- object identity
+- source file / range
+- YAML snippet
+- fallbackした場合の理由を示すdiagnostic
+
+返さないもの:
+
+- Raw YAML AST
+- semantic build前の未解決構造全体
+- project外fileの内容
+- renderer output
+
+`get_source` はADR-054の方針に従い、Raw YAML AST公開APIではなく、ResolvedProject上のsemantic objectに紐づくsource補助情報として扱う。
+
+### 7.2 Input
+
+```json
+{
+  "selector": {
+    "id": "auth.task.login"
+  },
+  "fallback": "file"
+}
+```
+
+| フィールド | 必須 | 内容 |
+|---|---:|---|
+| `selector` | ✓ | Object selector |
+| `fallback` | 任意 | `file` / `error`。省略時は `file` と同等 |
+
+`fallback=file` または省略時は、object単位のrangeが特定できない場合に、同じFileIDのYAML全体を返し、`diagnostics[]` に `source_range_unavailable` warningを入れる。
+`fallback=error` の場合は、object単位のrangeが特定できないとtool errorを返す。
+
+### 7.3 Output
+
+```json
+{
+  "object": {
+    "object": "node",
+    "kind": "task",
+    "id": "auth.task.login",
+    "qualified_id": "auth.task.login",
+    "label": "login",
+    "file": "auth/task/login.yaml"
+  },
+  "source": {
+    "file": "auth/task/login.yaml",
+    "line": 3,
+    "column": 5,
+    "end_line": 18,
+    "end_column": 1
+  },
+  "snippet": {
+    "language": "yaml",
+    "text": "  - id: login\n    type: task\n    ..."
+  },
+  "diagnostics": []
+}
+```
+
+| フィールド | 必須 | 内容 |
+|---|---:|---|
+| `object` | ✓ | 対象ObjectRef |
+| `source` | ✓ | SourceLocation。line / columnが取得できない場合は `file` のみでもよい |
+| `snippet` | ✓ | `language: yaml` と snippet text |
+| `fallback` | 任意 | fallbackした場合は `file` |
+| `diagnostics` | ✓ | Diagnostic list |
+
+### 7.4 Selector support
+
+`get_source` は、MCP v1でquery可能なsemantic objectを対象にする。
+
+初期実装でsnippet rangeを返す対象:
+
+- `node` / private sub node: `nodes[]` 内の該当item
+- `field`: parent modelの `fields[]` 内の該当item
+- `transition`: `transitions[]` 内の該当item
+- `asset`: producer nodeの `returns` block。特定不能時はproducer nodeへfallbackしてよい
+- `view`: view file全体
+- `file`: file全体
+
+source line/columnが取得できない実装、または対応objectの局所rangeを特定できない実装では、`fallback=file` により同一FileID全体を返してよい。
+この場合は `diagnostics[]` に以下を入れる。
+
+```json
+{
+  "severity": "warning",
+  "code": "source_range_unavailable",
+  "file": "auth/task/login.yaml",
+  "message": "source range is unavailable; returned whole file"
+}
+```
+
+> 由来: ADR-054 §決定 §5
+
+---
+
+## 8. `get_references`
+
+### 8.1 Purpose
 
 `get_references` は、対象objectの直接referenceを返す。
 
 MCP v1ではdirect referencesのみを返す。
 
-### 7.2 Input
+### 8.2 Input
 
 ```json
 {
@@ -1048,7 +1154,7 @@ MCP v1ではdirect referencesのみを返す。
 | `direction` | 任意 | `out` / `in` / `both`。省略時は `out` |
 | `kinds` | 任意 | reference kind filter。省略時は全kind |
 
-### 7.3 Output
+### 8.3 Output
 
 ```json
 {
@@ -1092,7 +1198,7 @@ MCP v1ではdirect referencesのみを返す。
 }
 ```
 
-### 7.4 depth
+### 8.4 depth
 
 `depth` は常に `1` を返す。
 
@@ -1104,15 +1210,15 @@ MCP v1では、inputに `depth` を持たない。
 
 ---
 
-## 8. `inspect`
+## 9. `inspect`
 
-### 8.1 Purpose
+### 9.1 Purpose
 
 `inspect` は、対象objectの実装判断に必要な周辺文脈をkind別にまとめて返す。
 
 `get_signature` が薄い外形確認であるのに対し、`inspect` はLLMが実装・修正・レビュー時に読む濃い文脈取得toolである。
 
-### 8.2 Input
+### 9.2 Input
 
 ```json
 {
@@ -1139,7 +1245,7 @@ MCP v1では、inputに `depth` を持たない。
 MCP v1では、`detail` による厳密な返却差分は実装任意とする。
 ただし未知の値はerrorとする。
 
-### 8.3 Common output shape
+### 9.3 Common output shape
 
 ```json
 {
@@ -1163,7 +1269,7 @@ MCP v1では、`detail` による厳密な返却差分は実装任意とする�
 | `references` | 任意 | 主要reference |
 | `diagnostics` | ✓ | Diagnostic list |
 
-### 8.4 task inspect
+### 9.4 task inspect
 
 `task` の `inspect` は以下を返す。
 
@@ -1353,7 +1459,7 @@ ADR-038により、Sequence Diagram生成ではmain taskと同一ファイル内
 }
 ```
 
-### 8.5 store inspect
+### 9.5 store inspect
 
 `store` の `inspect` は以下を返す。
 
@@ -1404,7 +1510,7 @@ ADR-038により、Sequence Diagram生成ではmain taskと同一ファイル内
 }
 ```
 
-### 8.6 model inspect
+### 9.6 model inspect
 
 `model` の `inspect` は以下を返す。
 
@@ -1440,7 +1546,7 @@ ADR-038により、Sequence Diagram生成ではmain taskと同一ファイル内
 }
 ```
 
-### 8.7 state inspect
+### 9.7 state inspect
 
 `state` の `inspect` は以下を返す。
 
@@ -1494,7 +1600,7 @@ ADR-038により、Sequence Diagram生成ではmain taskと同一ファイル内
 state inspectでは、incoming / outgoing transitions が中心情報であるため `members` に置く。
 一方、`get_references(state)` は `transition_from` / `transition_to` を `references` として返す。
 
-### 8.8 event inspect
+### 9.8 event inspect
 
 `event` の `inspect` は以下を返す。
 
@@ -1548,7 +1654,7 @@ state inspectでは、incoming / outgoing transitions が中心情報である�
 これはLLMがeventのsequence上の意味を理解するためのadvisory情報であり、ResolvedProjectの中核semantic relationではない。
 Rendererのnormativeな出力規則は `docs/spec/views/sequence-diagram.md` に従う。
 
-### 8.9 scenario inspect
+### 9.9 scenario inspect
 
 Sequence Diagram scenarioはview objectとしてinspectできる。
 
@@ -1629,7 +1735,7 @@ Sequence Diagram scenarioはview objectとしてinspectできる。
 }
 ```
 
-### 8.10 transition inspect
+### 9.10 transition inspect
 
 Transitionはsynthetic objectとしてinspectできる。
 
@@ -1751,7 +1857,7 @@ Transitionはsynthetic objectとしてinspectできる。
 }
 ```
 
-### 8.11 field inspect
+### 9.11 field inspect
 
 Model fieldはsynthetic objectとしてinspectできる。
 
@@ -1860,7 +1966,7 @@ Model fieldはsynthetic objectとしてinspectできる。
 }
 ```
 
-### 8.12 API Table inspect
+### 9.12 API Table inspect
 
 API Table viewはview objectとしてinspectできる。
 
@@ -1933,7 +2039,7 @@ API Table viewはview objectとしてinspectできる。
 収集対象endpointが0件のmodule-entryは、API Table render / `list_endpoints` と同様に `sections` には出さない。
 ただし `members.modules[]` には `endpoint_count: 0` として残してよい。
 
-### 8.13 ER Diagram inspect
+### 9.13 ER Diagram inspect
 
 ER Diagram viewはview objectとしてinspectできる。
 
@@ -2004,7 +2110,7 @@ view内に含まれないmodelへのFKは `fk_relations` には含めず、`excl
 
 ---
 
-### 8.14 file inspect
+### 9.14 file inspect
 
 `inspect(file)` は、FileID単位の実装判断用コンテキストを返す。
 Raw YAML ASTは返さず、ResolvedProject上に構築済みのsemantic情報をfile単位に要約する。
@@ -2044,15 +2150,15 @@ render index fileでは `members.groups` を返す。
 
 ---
 
-## 9. `list_endpoints`
+## 10. `list_endpoints`
 
-### 9.1 Purpose
+### 10.1 Purpose
 
 `list_endpoints` は、API Table view YAMLに基づいてendpoint一覧を返す。
 
 `task(endpoint=true)` を単純列挙するだけではなく、ADR-028のroute合成規則に従いfull pathを返す。
 
-### 9.2 Input
+### 10.2 Input
 
 ```json
 {
@@ -2066,7 +2172,7 @@ render index fileでは `members.groups` を返す。
 
 API Tableが複数存在し、`api_table_id` が省略された場合は、全API Tableを `tables[]` に分けて返す。
 
-### 9.3 Output
+### 10.3 Output
 
 ```json
 {
@@ -2103,7 +2209,7 @@ API Tableが複数存在し、`api_table_id` が省略された場合は、全AP
 そのためfull pathは `/api/auth/login` ではなく `/api/login` になる。
 `/api/auth/login` を返したい場合は、API Table view側で `http_root_path: /api/auth` とするか、section起点moduleを上位moduleにする。
 
-### 9.4 endpoint object
+### 10.4 endpoint object
 
 | フィールド | 必須 | 内容 |
 |---|---:|---|
@@ -2117,9 +2223,9 @@ API Tableが複数存在し、`api_table_id` が省略された場合は、全AP
 
 ---
 
-## 10. Error model
+## 11. Error model
 
-### 10.1 MCP-level error vs diagnostic
+### 11.1 MCP-level error vs diagnostic
 
 MCP toolの実行自体が成立しない場合はtool errorを返す。
 
@@ -2139,7 +2245,7 @@ MCP toolの実行自体が成立しない場合はtool errorを返す。
 - noteが存在しない
 - optionalな周辺情報が未実装
 
-### 10.2 Error code
+### 11.2 Error code
 
 MCP v1で定義するerror code:
 
@@ -2155,7 +2261,7 @@ MCP v1で定義するerror code:
 | `unsupported_direction` | `direction` の値が未対応 |
 | `internal_error` | 実装内部エラー |
 
-### 10.3 Error payload
+### 11.3 Error payload
 
 ```json
 {
@@ -2179,13 +2285,14 @@ MCP v1で定義するerror code:
 
 ---
 
-## 11. Tool selection guidance for LLM
+## 12. Tool selection guidance for LLM
 
 LLMは以下の使い分けを基本とする。
 
 | 状況 | 使うtool |
 |---|---|
 | 対象nodeのI/Oだけ確認したい | `get_signature` |
+| 対象objectの定義元YAML snippetを確認したい | `get_source` |
 | 何に依存しているか / 何から参照されているか確認したい | `get_references` |
 | 実装・修正・レビューのために周辺文脈が必要 | `inspect` |
 | API route一覧が必要 | `list_endpoints` |
@@ -2195,15 +2302,14 @@ LLMは以下の使い分けを基本とする。
 - 実装前にはまず `inspect` を使う
 - 小さな型確認だけなら `get_signature` を使う
 - 影響範囲確認では `get_references(direction="in")` または `both` を使う
-- Raw YAMLを直接読むのは、MCP responseのsource位置を確認したあとでよい
+- Raw YAMLを直接読む前に、まず `get_source` でsemantic objectに対応するsnippetを確認する
 
 ---
 
-## 12. Versioning / future extensions
+## 13. Versioning / future extensions
 
 MCP v1では以下を未定義とする。
 
-- `get_source`
 - transitive references
 - reference graphの永続cache
 - renderer outputを返すMCP tool
@@ -2218,7 +2324,6 @@ MCP v1では以下を未定義とする。
 | `inspect(view: api_table)` | API Table viewが集約するmodules / endpoints / computed routesを把握する | high |
 | `inspect(view: er_diagram)` | ER Diagram viewが集約するmodules / stores / models / FKを把握する | high |
 | flow wiring references | DAG上のflow step / param wiringをreferenceとして扱う | medium |
-| `get_source` | `inspect.getsource` 相当。対象semantic objectのYAML snippetを返す | medium |
 | `get_reference_tree` | depth指定つきreference traversal。変更影響範囲を辿る | medium |
 | `analyze_impact` | 変更種別つき影響分析。direct references / reference tree / flow wiring / render output mapping を材料に、影響範囲・重要度・確認事項を返す | medium |
 | `search_notes` | note/docに対するsemantic search | low |

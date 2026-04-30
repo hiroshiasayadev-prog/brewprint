@@ -9,7 +9,7 @@
 
 ## Tasks
 
-- [ ] **`get_source` を実装する**
+- [x] **`get_source` を実装する**
   - semantic objectに対応するYAML snippetを返す
   - Raw YAML AST全体公開ではなく、ResolvedProject objectのsource補助情報として扱う
   - selector / source range / fallback挙動を `docs/spec/mcp.md` に定義する

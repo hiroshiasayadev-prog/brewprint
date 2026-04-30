@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -26,8 +27,8 @@ func TestHandleJSONRPC(t *testing.T) {
 		}
 		result := resultMapAny(t, res.Result)
 		tools := result["tools"].([]any)
-		if len(tools) != 5 {
-			t.Fatalf("tools len = %d, want 5: %#v", len(tools), tools)
+		if len(tools) != 6 {
+			t.Fatalf("tools len = %d, want 6: %#v", len(tools), tools)
 		}
 		firstTool := tools[0].(map[string]any)
 		if _, ok := firstTool["inputSchema"]; !ok {
@@ -44,6 +45,22 @@ func TestHandleJSONRPC(t *testing.T) {
 		object := content["object"].(map[string]any)
 		if object["id"] != "auth.task.login" {
 			t.Fatalf("tool result object = %#v", object)
+		}
+	})
+
+	t.Run("tools_call_get_source", func(t *testing.T) {
+		res := handleLine(t, server, `{"jsonrpc":"2.0","id":"source","method":"tools/call","params":{"name":"get_source","arguments":{"selector":{"id":"auth.task.login"}}}}`)
+		if res.Error != nil {
+			t.Fatalf("tools/call get_source error: %#v", res.Error)
+		}
+		content := toolTextMap(t, res)
+		source := content["source"].(map[string]any)
+		if source["file"] != "auth/task/login.yaml" {
+			t.Fatalf("get_source source = %#v", source)
+		}
+		snippet := content["snippet"].(map[string]any)
+		if snippet["language"] != "yaml" || !strings.Contains(snippet["text"].(string), "id: login") {
+			t.Fatalf("get_source snippet = %#v", snippet)
 		}
 	})
 

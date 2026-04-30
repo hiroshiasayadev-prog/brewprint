@@ -12,9 +12,10 @@ func Build(raw *rawyaml.Project) (*semantic.Project, []semantic.Diagnostic) {
 	for _, file := range raw.Files {
 		fileID := semantic.FileID(file.ID)
 		project.SourceFilesByID[fileID] = semantic.SourceFile{
-			ID:     fileID,
-			Kind:   string(file.Kind),
-			ViewAs: file.ViewAs,
+			ID:      fileID,
+			Kind:    string(file.Kind),
+			ViewAs:  file.ViewAs,
+			Content: file.Content,
 		}
 		if file.RenderIndex != nil {
 			for _, group := range file.RenderIndex.Groups {

@@ -2,6 +2,7 @@ package query
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/hiroshiasayadev-prog/brewprint/internal/resolve"
@@ -170,6 +171,43 @@ func TestQueryServiceUC001(t *testing.T) {
 		}
 		if field.Signature["name"] != "id" || field.Signature["type"] != "str" || field.Signature["pk"] != true {
 			t.Fatalf("field signature = %#v", field.Signature)
+		}
+	})
+
+	t.Run("GetSource", func(t *testing.T) {
+		login, err := service.GetSource(GetSourceRequest{Selector: Selector{ID: "auth.task.login"}})
+		if err != nil {
+			t.Fatalf("GetSource login: %v", err)
+		}
+		if login.Object.ID != "auth.task.login" || login.Source.File != "auth/task/login.yaml" || login.Snippet.Language != "yaml" {
+			t.Fatalf("login source envelope = %#v", login)
+		}
+		if !strings.Contains(login.Snippet.Text, "id: login") || !strings.Contains(login.Snippet.Text, "type: task") || !strings.Contains(login.Snippet.Text, "returns:") {
+			t.Fatalf("login source snippet = %q", login.Snippet.Text)
+		}
+
+		field, err := service.GetSource(GetSourceRequest{Selector: Selector{Object: "field", ID: "order.model.order", LocalID: "id"}})
+		if err != nil {
+			t.Fatalf("GetSource field: %v", err)
+		}
+		if field.Object.ID != "order.model.order.id" || !strings.Contains(field.Snippet.Text, "name: id") || !strings.Contains(field.Snippet.Text, "pk: true") {
+			t.Fatalf("field source = %#v", field)
+		}
+
+		transition, err := service.GetSource(GetSourceRequest{Selector: Selector{Object: "transition", ID: "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"}})
+		if err != nil {
+			t.Fatalf("GetSource transition: %v", err)
+		}
+		if transition.Object.ID != "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']" || !strings.Contains(transition.Snippet.Text, "from: processing") || !strings.Contains(transition.Snippet.Text, "payload.status == 'succeeded'") {
+			t.Fatalf("transition source = %#v", transition)
+		}
+
+		fileSource, err := service.GetSource(GetSourceRequest{Selector: Selector{Object: "file", ID: "views/api_table.yaml"}})
+		if err != nil {
+			t.Fatalf("GetSource file: %v", err)
+		}
+		if fileSource.Object.Object != "file" || fileSource.Source.File != "views/api_table.yaml" || !strings.Contains(fileSource.Snippet.Text, "as: api_table") {
+			t.Fatalf("file source = %#v", fileSource)
 		}
 	})
 

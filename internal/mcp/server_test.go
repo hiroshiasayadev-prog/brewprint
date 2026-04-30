@@ -3,6 +3,7 @@ package mcp
 import (
 	"encoding/json"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/hiroshiasayadev-prog/brewprint/internal/query"
@@ -14,7 +15,7 @@ import (
 func TestServerTools(t *testing.T) {
 	server := newUC001Server(t)
 	tools := server.Tools()
-	want := []string{"list_objects", "get_signature", "get_references", "inspect", "list_endpoints"}
+	want := []string{"list_objects", "get_signature", "get_source", "get_references", "inspect", "list_endpoints"}
 	if len(tools) != len(want) {
 		t.Fatalf("tools len = %d, want %d: %#v", len(tools), len(want), tools)
 	}
@@ -104,6 +105,27 @@ func TestServerCallTool(t *testing.T) {
 		signature := result["signature"].(map[string]any)
 		if signature["name"] != "id" || signature["type"] != "str" || signature["pk"] != true {
 			t.Fatalf("field signature = %#v", signature)
+		}
+	})
+
+	t.Run("get_source", func(t *testing.T) {
+		envelope := call(t, server, "get_source", `{"selector":{"id":"auth.task.login"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_source error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["kind"] != "task" || object["id"] != "auth.task.login" {
+			t.Fatalf("get_source object = %#v", object)
+		}
+		source := result["source"].(map[string]any)
+		if source["file"] != "auth/task/login.yaml" {
+			t.Fatalf("get_source source = %#v", source)
+		}
+		snippet := result["snippet"].(map[string]any)
+		text := snippet["text"].(string)
+		if snippet["language"] != "yaml" || !strings.Contains(text, "id: login") || !strings.Contains(text, "type: task") {
+			t.Fatalf("get_source snippet = %#v", snippet)
 		}
 	})
 

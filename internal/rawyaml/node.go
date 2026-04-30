@@ -17,6 +17,7 @@ type Project struct {
 type File struct {
 	ID               string
 	Path             string
+	Content          string
 	Kind             FileKind
 	ViewAs           string
 	NodeFile         *NodeFile
