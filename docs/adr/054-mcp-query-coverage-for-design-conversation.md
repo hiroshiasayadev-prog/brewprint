@@ -203,6 +203,6 @@ MCP拡張によって `internal/mcp` が Raw YAML や renderer を直接読む�
 必要な情報は QueryService / semantic model / index に追加する。
 
 ## Evidence
-- commit: tbd
+- commit: 0ea083b
 - impl commit: tbd
 - 参考: 特になし

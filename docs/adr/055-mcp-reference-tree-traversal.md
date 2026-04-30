@@ -489,6 +489,6 @@ M12の `get_reference_tree または depth指定つきreference traversalを設�
 
 ## Evidence
 
-- commit: tbd
+- commit: 8a6bc19
 - impl commit: tbd
 - 参考: ADR-049, ADR-054, docs/spec/mcp.md

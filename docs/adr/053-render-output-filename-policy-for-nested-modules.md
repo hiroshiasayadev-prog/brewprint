@@ -109,6 +109,6 @@ module path を filename や directory に反映すると collision には強く
 - 将来 path-preserving 方式へ移行する場合、本ADRを supersede する新ADRを起票する
 
 ## Evidence
-- commit: tbd
+- commit: ff0143b
 - impl commit: tbd
 - 参考: ドキュメント生成ツールの安定出力path慣習
