@@ -618,7 +618,10 @@ MCP v1で返すreference kindは以下とする。
 | `scenario_step_transition` | scenario step | transition | sequence scenario stepがtransitionを参照する |
 
 flow wiring（`flow_step` / `flow_param` 相当の情報）はMCP v1の `get_references` では返さない。
-flow wiringはDAG file内部の局所構造であり、MCP v1では `inspect(task).members.flow.entries` のdraft schema内に閉じる。
+flow wiringはDAG file内部の局所構造であり、MCP v1では `inspect(task).members.flow.entries` に閉じる。
+
+M11ではこの方針を維持し、`flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over` は `Reference.kind` ではなく、flow inspect用の語彙として扱う。
+これらは将来の `get_reference_tree` / `analyze_impact` の traversal 材料になりうるが、direct references v1 の返却対象には含めない。
 
 ### 4.3 Direction
 
@@ -1236,10 +1239,28 @@ MCP v1では、`detail` による厳密な返却差分は実装任意とする�
     "flow": {
       "file": "order/task/checkout.yaml",
       "entries": [
-        { "kind": "step", "step": "build_order" },
-        { "kind": "step", "step": "reserve_inventory" }
+        {
+          "kind": "step",
+          "step": "build_order",
+          "params": [
+            {
+              "name": "request",
+              "source": { "kind": "main_param", "path": "$params.request" }
+            }
+          ]
+        },
+        {
+          "kind": "step",
+          "step": "reserve_inventory",
+          "params": [
+            {
+              "name": "order",
+              "source": { "kind": "node_return", "node": "build_order" }
+            }
+          ]
+        }
       ],
-      "schema_status": "draft"
+      "schema_status": "confirmed"
     }
   },
   "references": [
@@ -1273,14 +1294,39 @@ MCP v1では、`detail` による厳密な返却差分は実装任意とする�
 
 #### flow.entries schema status
 
-`members.flow.entries` の詳細schemaはMCP v1ではdraft扱いとする。
-DAG vertical slice実装中に、`step` / `branch` / `fork` / `foreach` のview-specific modelと合わせて確定する。
+M11で `members.flow.entries` の最小schemaを確定する。
 
-MCP v1で保証するのは以下のみ。
+MCP v1で保証するのは以下。
 
 - `members.flow.file` はflow定義元FileID
-- `members.flow.entries[]` はflow内に登場するentryの概略順序
+- `members.flow.entries[]` はflow内に登場するentryの概略順序を保持する
 - 各entryは少なくとも `kind` を持つ
+- `step` / `branch` / `fork` / `foreach` のflow構文は、QueryService側で正規化したflow entryとして返す
+- wiring情報は `entries[].params[]` / `entries[].over` / `entries[].cases[]` など、flow inspect用schemaに閉じる
+- flow inspect用の語彙として `flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over` を使ってよい
+- 上記語彙は `Reference.kind` ではなく、`get_references` の返却対象にはしない
+
+`entries[].params[]` は、task paramへのwiringを表す。
+
+```json
+{
+  "name": "request",
+  "source": { "kind": "main_param", "path": "$params.request" }
+}
+```
+
+`source.kind` は以下を使う。
+
+| source.kind | 意味 |
+|---|---|
+| `node_return` | 同一flow内の前段nodeの `returns` 全体 |
+| `main_param` | `$params.<field>` によるmain task param参照 |
+| `foreach_item` | `$item` によるforeach current item参照 |
+| `implicit_join` | fork join.params の同名解決 |
+
+`node_return` はreturns内部のfieldを直接参照しない。flow wiringの単位は `docs/spec/edges.md` と同じくtaskのreturns全体とする。
+
+`branch` / `fork` / `foreach` は制御フロー構文であり、flow inspectではentryとして返してよい。ただし、それ自体をMCP selector化することはM11の範囲外とする。
 
 #### sub task reads/writes
 

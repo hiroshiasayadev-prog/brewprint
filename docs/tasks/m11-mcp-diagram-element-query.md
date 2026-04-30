@@ -1,6 +1,6 @@
 # Milestone 11: MCP diagram element query を拡張する
 
-- **status**: open
+- **status**: closed
 - **scope**: MCP / QueryService
 - **source**: migrated from docs/TASKS.md
 - **last_updated**: 2026-04-30
@@ -25,10 +25,11 @@
   - main task inspect内の `members.sub_tasks` と同じObjectRef表現に揃える
   - UC-001の checkout sub task / fork 相当でQueryService / MCP wrapper testを追加済み
 
-- [ ] **flow wiring queryを設計する**
-  - DAG上のflow step / param wiringをMCPから辿れるようにする
-  - `get_references` に含めるか、`inspect(task)` / `inspect(file)` / `get_reference_tree` / `analyze_impact` の材料に留めるかを決める
-  - relation kind候補: `flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over`
-  - 既存方針「MCP v1ではflow wiringをget_referencesに返さない」を変更する場合は、小ADRまたはspec更新で扱う
-  - `inspect(task).members.flow.entries` のdraft schemaと整合させる
-  - DAG rendererのview modelとQueryServiceの責務境界を崩さない
+- [x] **flow wiring queryを設計する**
+  - DAG上のflow step / param wiringは、MCP v1の `get_references` には含めない
+  - flow wiringは `inspect(task).members.flow.entries` のflow inspect用schemaに閉じる
+  - `flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over` は `Reference.kind` ではなく、flow inspect用の語彙として扱う
+  - 将来の `get_reference_tree` / `analyze_impact` では traversal 材料として利用可能
+  - `inspect(task).members.flow.entries` の最小schemaを `docs/spec/mcp.md` に追記済み
+  - DAG rendererのview modelとQueryServiceの責務境界は維持する
+  - 既存方針を覆していないため、新規ADRは不要
