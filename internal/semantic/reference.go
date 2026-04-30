@@ -10,6 +10,7 @@ const (
 	ReferenceKindParamModel    ReferenceKind = "param_model"
 	ReferenceKindReturnModel   ReferenceKind = "return_model"
 	ReferenceKindProducesAsset ReferenceKind = "produces_asset"
+	ReferenceKindConsumesAsset ReferenceKind = "consumes_asset"
 	ReferenceKindReads         ReferenceKind = "reads"
 	ReferenceKindWrites        ReferenceKind = "writes"
 	ReferenceKindStoreOf       ReferenceKind = "store_of"

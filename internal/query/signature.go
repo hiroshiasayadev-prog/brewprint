@@ -42,6 +42,33 @@ func (s *Service) GetSignature(req GetSignatureRequest) (GetSignatureResponse, e
 			Diagnostics: []semantic.Diagnostic{},
 		}, nil
 	}
+	if s.isAssetSelector(req.Selector) {
+		asset, err := s.assetBySelector(req.Selector)
+		if err != nil {
+			return GetSignatureResponse{}, err
+		}
+		return GetSignatureResponse{
+			Object:      assetObjectRef(asset),
+			Signature:   signatureForAsset(asset),
+			Diagnostics: []semantic.Diagnostic{},
+		}, nil
+	}
+	if s.isPrivateSubNodeSelector(req.Selector) {
+		node, err := s.privateSubNodeBySelector(req.Selector)
+		if err != nil {
+			return GetSignatureResponse{}, err
+		}
+		sig, doc, err := s.signatureForNode(node)
+		if err != nil {
+			return GetSignatureResponse{}, err
+		}
+		return GetSignatureResponse{
+			Object:      objectRef(node),
+			Signature:   sig,
+			Doc:         doc,
+			Diagnostics: []semantic.Diagnostic{},
+		}, nil
+	}
 
 	node, err := s.nodeByID(req.Selector.ID)
 	if err != nil {
@@ -98,6 +125,18 @@ func signatureForField(field semantic.ModelField) Signature {
 		sig["unique"] = true
 	}
 	return sig
+}
+
+func signatureForAsset(asset *semantic.Asset) Signature {
+	if asset == nil {
+		return Signature{}
+	}
+	return Signature{
+		"name":       asset.Name,
+		"producer":   asset.ProducedBy.String(),
+		"model":      asset.Model.String(),
+		"scope_file": asset.FileID.String(),
+	}
 }
 
 func (s *Service) signatureForNode(node semantic.Node) (Signature, string, error) {

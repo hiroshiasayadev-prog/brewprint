@@ -65,6 +65,20 @@ func (s *Service) referenceTarget(selector Selector) (semantic.ObjectKey, Object
 		}
 		return semantic.ModelFieldObjectKey(model.QID, field.Name), fieldObjectRef(model, field), nil
 	}
+	if s.isAssetSelector(selector) {
+		asset, err := s.assetBySelector(selector)
+		if err != nil {
+			return "", ObjectRef{}, err
+		}
+		return semantic.AssetObjectKey(asset), assetObjectRef(asset), nil
+	}
+	if s.isPrivateSubNodeSelector(selector) {
+		node, err := s.privateSubNodeBySelector(selector)
+		if err != nil {
+			return "", ObjectRef{}, err
+		}
+		return semantic.NodeObjectKey(node.GetQID()), objectRef(node), nil
+	}
 	if s.isFileSelector(selector) {
 		fileID, err := s.fileBySelector(selector)
 		if err != nil {

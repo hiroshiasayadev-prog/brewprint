@@ -9,21 +9,21 @@
 
 ## Tasks
 
-- [ ] **implicit asset selectorを実装する**
+- [x] **implicit asset selectorを実装する**
   - DAG上のasset nodeを直接queryできるようにする
-  - selector形式は producer + name を基本候補とし、stable synthetic IDが必要か実装時に決める
+  - selector形式は `<producer>#<name>` のstable synthetic IDを採用
   - asset signatureで name / producer / model / scope_file を返す
   - asset referencesで producer / consumer task への関係を返す
   - `produces_asset` との整合を保つ
-  - UC-001のDAG assetでQueryService / MCP wrapper testを追加する
-  - 実装後に `docs/spec/mcp.md` の AssetRef / selector support matrixを更新する
+  - UC-001のDAG assetでQueryService / MCP wrapper testを追加済み
+  - `docs/spec/mcp.md` の AssetRef / selector support matrixを更新済み
 
-- [ ] **private sub node selectorを実装する**
+- [x] **private sub node selectorを実装する**
   - file-local task / branch / fork / join を直接queryできるようにする
   - selectorは `<file-id>#<local-id>` または `file` + `local_id` を使う
-  - get_signature / get_references / inspect の対応範囲を決める
+  - get_signature / get_references / inspect に対応
   - main task inspect内の `members.sub_tasks` と同じObjectRef表現に揃える
-  - UC-001の checkout sub task / branch / fork / join 相当でtestを追加する
+  - UC-001の checkout sub task / fork 相当でQueryService / MCP wrapper testを追加済み
 
 - [ ] **flow wiring queryを設計する**
   - DAG上のflow step / param wiringをMCPから辿れるようにする

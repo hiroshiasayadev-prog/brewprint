@@ -222,6 +222,8 @@ func buildReferences(project *semantic.Project) {
 		}
 	}
 
+	buildAssetConsumerReferences(project)
+
 	for _, model := range project.ModelsByQID {
 		module := moduleForFileID(model.FileID)
 		for _, field := range model.Fields {
@@ -263,6 +265,16 @@ func nodeEndpoint(node semantic.Node) semantic.ReferenceEndpoint {
 	if node == nil {
 		return semantic.ReferenceEndpoint{}
 	}
+	if isPrivateSubNode(node) {
+		return semantic.ReferenceEndpoint{
+			Object:  "node",
+			Kind:    string(node.GetKind()),
+			ID:      semantic.PrivateNodeID(node.GetFileID(), node.GetID()),
+			Name:    node.GetID(),
+			File:    node.GetFileID(),
+			LocalID: node.GetID(),
+		}
+	}
 	return semantic.ReferenceEndpoint{
 		Object:      "node",
 		Kind:        string(node.GetKind()),
@@ -270,6 +282,18 @@ func nodeEndpoint(node semantic.Node) semantic.ReferenceEndpoint {
 		QualifiedID: node.GetQID(),
 		Name:        node.GetID(),
 		File:        node.GetFileID(),
+	}
+}
+
+func isPrivateSubNode(node semantic.Node) bool {
+	if node == nil || node.IsMain() {
+		return false
+	}
+	switch node.GetKind() {
+	case semantic.NodeKindTask, semantic.NodeKindBranch, semantic.NodeKindFork, semantic.NodeKindJoin:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -352,11 +376,73 @@ func assetEndpoint(asset *semantic.Asset) semantic.ReferenceEndpoint {
 	}
 	return semantic.ReferenceEndpoint{
 		Object:    "asset",
+		Kind:      "asset",
+		ID:        semantic.AssetID(asset.ProducedBy, asset.Name),
 		Name:      asset.Name,
 		Producer:  asset.ProducedBy,
 		Model:     asset.Model,
 		ScopeFile: asset.FileID,
 	}
+}
+
+func buildAssetConsumerReferences(project *semantic.Project) {
+	for _, entries := range project.FlowByFile {
+		for _, entry := range entries {
+			switch entry.Kind {
+			case semantic.FlowKindStep:
+				addAssetConsumerReferences(project, entry.Step.Task, entry.Step.Params)
+			case semantic.FlowKindForeach:
+				addAssetConsumerReference(project, entry.Foreach.Task, entry.Foreach.Over)
+				addAssetConsumerReferences(project, entry.Foreach.Task, entry.Foreach.Params)
+			case semantic.FlowKindFork:
+				for _, branch := range entry.Fork.Branches {
+					for _, step := range branch.Steps {
+						addAssetConsumerReferences(project, step.Task, step.Params)
+					}
+				}
+				addAssetConsumerReferences(project, entry.Fork.Join, entry.Fork.JoinParams)
+			case semantic.FlowKindBranch:
+				addAssetConsumerReferences(project, entry.Branch.Branch, entry.Branch.Params)
+				for _, branchCase := range entry.Branch.Cases {
+					addAssetConsumerReferences(project, branchCase.Step.Task, branchCase.Step.Params)
+				}
+			}
+		}
+	}
+}
+
+func addAssetConsumerReferences(project *semantic.Project, consumerID semantic.QualifiedID, wirings []semantic.ParamWiring) {
+	for _, wiring := range wirings {
+		addAssetConsumerReference(project, consumerID, wiring.Source)
+	}
+}
+
+func addAssetConsumerReference(project *semantic.Project, consumerID semantic.QualifiedID, source semantic.FlowSource) {
+	if source.Kind != semantic.FlowSourceNode || source.Node == "" || source.AssetName == "" || consumerID == "" {
+		return
+	}
+	asset := assetByProducerAndName(project, source.Node, source.AssetName)
+	consumer := project.NodesByQID[consumerID]
+	if asset == nil || consumer == nil {
+		return
+	}
+	addReference(project, semantic.Reference{
+		Kind:      semantic.ReferenceKindConsumesAsset,
+		SourceKey: semantic.AssetObjectKey(asset),
+		TargetKey: semantic.NodeObjectKey(consumer.GetQID()),
+		From:      assetEndpoint(asset),
+		To:        nodeEndpoint(consumer),
+	})
+}
+
+func assetByProducerAndName(project *semantic.Project, producer semantic.QualifiedID, name string) *semantic.Asset {
+	if task := project.TasksByQID[producer]; task != nil && task.Returns != nil && task.Returns.Asset != nil && task.Returns.Asset.Name == name {
+		return task.Returns.Asset
+	}
+	if join := project.JoinsByQID[producer]; join != nil && join.Returns != nil && join.Returns.Asset != nil && join.Returns.Asset.Name == name {
+		return join.Returns.Asset
+	}
+	return nil
 }
 
 func modelFieldEndpoint(model *semantic.Model, fieldName string) semantic.ReferenceEndpoint {
