@@ -12,6 +12,59 @@ import (
 func TestQueryServiceUC001(t *testing.T) {
 	service := newUC001Service(t)
 
+	t.Run("ListObjects", func(t *testing.T) {
+		orderTasks, err := service.ListObjects(ListObjectsRequest{Object: "node", Kind: "task", Module: "order"})
+		if err != nil {
+			t.Fatalf("ListObjects order tasks: %v", err)
+		}
+		checkout := assertHasObject(t, orderTasks.Objects, "node", "task", "order.task.checkout")
+		if checkout.Module != "order" || checkout.Source["file"] != "order/task/checkout.yaml" {
+			t.Fatalf("checkout object = %#v", checkout)
+		}
+
+		fields, err := service.ListObjects(ListObjectsRequest{Object: "field", Module: "order"})
+		if err != nil {
+			t.Fatalf("ListObjects order fields: %v", err)
+		}
+		assertHasObject(t, fields.Objects, "field", "field", "order.model.order.id")
+
+		views, err := service.ListObjects(ListObjectsRequest{Object: "view"})
+		if err != nil {
+			t.Fatalf("ListObjects views: %v", err)
+		}
+		assertHasObject(t, views.Objects, "view", "api_table", "ec_api")
+
+		transitions, err := service.ListObjects(ListObjectsRequest{Object: "transition", File: "order/state.yaml"})
+		if err != nil {
+			t.Fatalf("ListObjects transitions: %v", err)
+		}
+		assertHasObject(t, transitions.Objects, "transition", "transition", "order/state.yaml#checkout_screen:checkout_submitted")
+	})
+
+	t.Run("InspectFile", func(t *testing.T) {
+		stateFile, err := service.Inspect(InspectRequest{Selector: Selector{Object: "file", Kind: "state_file", ID: "order/state.yaml"}})
+		if err != nil {
+			t.Fatalf("Inspect state file: %v", err)
+		}
+		if stateFile.Object.Kind != "state_file" || stateFile.Signature["kind"] != "state_file" {
+			t.Fatalf("state file inspect = %#v", stateFile)
+		}
+		if len(stateFile.Members["states"].([]ObjectRef)) != 5 || len(stateFile.Members["events"].([]ObjectRef)) != 4 || len(stateFile.Members["transitions"].([]TransitionRef)) != 5 {
+			t.Fatalf("state file members = %#v", stateFile.Members)
+		}
+
+		checkoutFile, err := service.Inspect(InspectRequest{Selector: Selector{Object: "file", ID: "order/task/checkout.yaml"}})
+		if err != nil {
+			t.Fatalf("Inspect checkout file: %v", err)
+		}
+		if checkoutFile.Object.Kind != "node" || checkoutFile.Members["main_node"].(ObjectRef).ID != "order.task.checkout" {
+			t.Fatalf("checkout file inspect = %#v", checkoutFile)
+		}
+		if _, ok := checkoutFile.Members["flow"]; !ok {
+			t.Fatalf("checkout file flow missing: %#v", checkoutFile.Members)
+		}
+	})
+
 	t.Run("GetSignature", func(t *testing.T) {
 		login, err := service.GetSignature(GetSignatureRequest{Selector: Selector{ID: "auth.task.login"}})
 		if err != nil {
@@ -555,6 +608,17 @@ func loadUC001Project(t *testing.T) *semantic.Project {
 		}
 	}
 	return project
+}
+
+func assertHasObject(t *testing.T, refs []ObjectRef, object, kind, id string) ObjectRef {
+	t.Helper()
+	for _, ref := range refs {
+		if ref.Object == object && ref.Kind == kind && ref.ID == id {
+			return ref
+		}
+	}
+	t.Fatalf("object not found object=%s kind=%s id=%s in %#v", object, kind, id, refs)
+	return ObjectRef{}
 }
 
 func assertHasEndpoint(t *testing.T, sections []EndpointSection, module, task, method, path string) {

@@ -11,17 +11,20 @@ type Selector struct {
 }
 
 type ObjectRef struct {
-	Object      string `json:"object"`
-	Kind        string `json:"kind"`
-	ID          string `json:"id"`
-	QualifiedID string `json:"qualified_id,omitempty"`
-	Label       string `json:"label,omitempty"`
-	File        string `json:"file,omitempty"`
-	LocalID     string `json:"local_id,omitempty"`
+	Object      string            `json:"object"`
+	Kind        string            `json:"kind"`
+	ID          string            `json:"id"`
+	QualifiedID string            `json:"qualified_id,omitempty"`
+	Label       string            `json:"label,omitempty"`
+	Module      string            `json:"module,omitempty"`
+	File        string            `json:"file,omitempty"`
+	LocalID     string            `json:"local_id,omitempty"`
+	Source      map[string]string `json:"source,omitempty"`
 }
 
 type AssetRef struct {
 	Object    string `json:"object"`
+	ID        string `json:"id,omitempty"`
 	Name      string `json:"name"`
 	Producer  string `json:"producer"`
 	Model     string `json:"model"`
@@ -133,6 +136,18 @@ type GetReferencesResponse struct {
 	Direction   string                `json:"direction"`
 	Depth       int                   `json:"depth"`
 	References  []Reference           `json:"references"`
+	Diagnostics []semantic.Diagnostic `json:"diagnostics"`
+}
+
+type ListObjectsRequest struct {
+	Object string `json:"object,omitempty"`
+	Kind   string `json:"kind,omitempty"`
+	Module string `json:"module,omitempty"`
+	File   string `json:"file,omitempty"`
+}
+
+type ListObjectsResponse struct {
+	Objects     []ObjectRef           `json:"objects"`
 	Diagnostics []semantic.Diagnostic `json:"diagnostics"`
 }
 

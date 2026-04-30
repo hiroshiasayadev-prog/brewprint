@@ -36,6 +36,16 @@ func NewServer(service *query.Service) *Server {
 func (s *Server) Tools() []Tool {
 	return []Tool{
 		{
+			Name:        "list_objects",
+			Description: "List semantic objects in the project.",
+			InputSchema: objectSchema(map[string]any{
+				"object": enumStringSchema("node", "view", "transition", "field"),
+				"kind":   map[string]any{"type": "string"},
+				"module": map[string]any{"type": "string"},
+				"file":   map[string]any{"type": "string"},
+			}, nil),
+		},
+		{
 			Name:        "get_signature",
 			Description: "Return the signature for a semantic object.",
 			InputSchema: objectSchema(map[string]any{
@@ -91,7 +101,7 @@ func selectorSchema() map[string]any {
 		"kind":     map[string]any{"type": "string"},
 		"file":     map[string]any{"type": "string"},
 		"local_id": map[string]any{"type": "string"},
-	}, []string{"id"})
+	}, nil)
 }
 
 func enumStringSchema(values ...string) map[string]any {
@@ -114,6 +124,16 @@ func (s *Server) CallToolJSON(name string, args []byte) []byte {
 
 func (s *Server) CallTool(name string, args []byte) Envelope {
 	switch name {
+	case "list_objects":
+		var req query.ListObjectsRequest
+		if err := decodeArgs(args, &req); err != nil {
+			return errorEnvelope("invalid_args", name, err.Error(), args)
+		}
+		res, err := s.service.ListObjects(req)
+		if err != nil {
+			return errorEnvelope(errorCode(err), name, err.Error(), args)
+		}
+		return Envelope{Result: res}
 	case "get_signature":
 		var req query.GetSignatureRequest
 		if err := decodeArgs(args, &req); err != nil {
@@ -191,6 +211,9 @@ func errorCode(err error) string {
 	}
 	if strings.Contains(message, "unsupported direction") {
 		return "unsupported_direction"
+	}
+	if strings.Contains(message, "kind mismatch") {
+		return "kind_mismatch"
 	}
 	if strings.Contains(message, "unsupported") {
 		return "unsupported_object"

@@ -1,6 +1,6 @@
 # Milestone 10: MCP project exploration / view inspect を拡張する
 
-- **status**: open
+- **status**: closed
 - **scope**: MCP / QueryService
 - **source**: migrated from docs/TASKS.md
 - **last_updated**: 2026-04-30
@@ -9,7 +9,7 @@
 
 ## Tasks
 
-- [ ] **`list_objects` を実装する**
+- [x] **`list_objects` を実装する**
   - ADR-054 / `docs/spec/mcp.md` の設計対話coverageに準拠
   - project内の主要semantic objectを一覧・絞り込みできるようにする
   - object kind / module / file / label / source を返す
@@ -19,7 +19,7 @@
   - QueryService unit testでUC-001の一覧を固定する
   - 実装後に `docs/spec/mcp.md` の tool仕様を追記する
 
-- [ ] **`inspect(file)` を実装する**
+- [x] **`inspect(file)` を実装する**
   - FileID selectorで YAML file単位の定義内容を返す
   - node fileでは main node / sub nodes / flow summary / diagnostics を返す
   - state fileでは states / events / transitions / wireframe presence を返す

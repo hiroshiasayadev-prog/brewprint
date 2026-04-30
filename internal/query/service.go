@@ -209,7 +209,7 @@ func (s *Service) fileBySelector(selector Selector) (semantic.FileID, error) {
 	}
 	fileID := semantic.FileID(id)
 	if _, ok := s.project.SourceFilesByID[fileID]; ok {
-		if selector.Kind != "" && selector.Kind != s.fileKind(fileID) && !(selector.Kind == "state_file" && s.isStateFile(fileID)) {
+		if selector.Kind != "" && selector.Kind != "file" && selector.Kind != s.fileKind(fileID) && !(selector.Kind == "state_file" && s.isStateFile(fileID)) {
 			return "", fmt.Errorf("unsupported selector kind for file: %s", selector.Kind)
 		}
 		return fileID, nil

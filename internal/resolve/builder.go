@@ -10,6 +10,24 @@ func Build(raw *rawyaml.Project) (*semantic.Project, []semantic.Diagnostic) {
 	symbols := newSymbolTable(project)
 
 	for _, file := range raw.Files {
+		fileID := semantic.FileID(file.ID)
+		project.SourceFilesByID[fileID] = semantic.SourceFile{
+			ID:     fileID,
+			Kind:   string(file.Kind),
+			ViewAs: file.ViewAs,
+		}
+		if file.RenderIndex != nil {
+			for _, group := range file.RenderIndex.Groups {
+				project.RenderGroups = append(project.RenderGroups, semantic.RenderGroup{
+					ID:      group.ID,
+					Label:   group.Label,
+					Modules: group.Modules,
+				})
+			}
+		}
+	}
+
+	for _, file := range raw.Files {
 		if file.Kind != rawyaml.FileKindNode || file.NodeFile == nil {
 			continue
 		}

@@ -28,6 +28,29 @@ func TestServerTools(t *testing.T) {
 func TestServerCallTool(t *testing.T) {
 	server := newUC001Server(t)
 
+	t.Run("list_objects", func(t *testing.T) {
+		envelope := call(t, server, "list_objects", `{"object":"node","kind":"task","module":"order"}`)
+		if envelope.Error != nil {
+			t.Fatalf("list_objects error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		objects := result["objects"].([]any)
+		found := false
+		for _, item := range objects {
+			object := item.(map[string]any)
+			if object["id"] != "order.task.checkout" {
+				continue
+			}
+			found = true
+			if object["module"] != "order" || object["source"].(map[string]any)["file"] != "order/task/checkout.yaml" {
+				t.Fatalf("list_objects checkout object = %#v", object)
+			}
+		}
+		if !found {
+			t.Fatalf("order.task.checkout not found in %#v", objects)
+		}
+	})
+
 	t.Run("get_signature", func(t *testing.T) {
 		envelope := call(t, server, "get_signature", `{"selector":{"id":"auth.task.login"}}`)
 		if envelope.Error != nil {
@@ -172,6 +195,22 @@ func TestServerCallTool(t *testing.T) {
 		}
 	})
 
+	t.Run("inspect_file", func(t *testing.T) {
+		envelope := call(t, server, "inspect", `{"selector":{"object":"file","kind":"state_file","id":"order/state.yaml"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("inspect file error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["object"] != "file" || object["kind"] != "state_file" || object["id"] != "order/state.yaml" {
+			t.Fatalf("inspect file object = %#v", object)
+		}
+		members := result["members"].(map[string]any)
+		if len(members["states"].([]any)) != 5 || len(members["events"].([]any)) != 4 || len(members["transitions"].([]any)) != 5 {
+			t.Fatalf("inspect file members = %#v", members)
+		}
+	})
+
 	t.Run("inspect_scenario", func(t *testing.T) {
 		envelope := call(t, server, "inspect", `{"selector":{"object":"view","kind":"sequence_diagram","id":"checkout_flow"}}`)
 		if envelope.Error != nil {
@@ -206,6 +245,22 @@ func TestServerCallTool(t *testing.T) {
 		members := result["members"].(map[string]any)
 		if members["from_state"].(map[string]any)["id"] != "order.state.processing" || members["event"].(map[string]any)["id"] != "order.event.payment_webhook_received" || members["to_state"].(map[string]any)["id"] != "order.state.confirmed" || members["action_task"].(map[string]any)["id"] != "payment.webhooks.task.process_payment" {
 			t.Fatalf("inspect transition members = %#v", members)
+		}
+	})
+
+	t.Run("inspect_m11_private_sub_node", func(t *testing.T) {
+		envelope := call(t, server, "inspect", `{"selector":{"object":"node","id":"order/task/checkout.yaml#build_order"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("inspect private sub node error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["id"] != "order/task/checkout.yaml#build_order" || object["local_id"] != "build_order" {
+			t.Fatalf("inspect private sub node object = %#v", object)
+		}
+		refs := result["references"].([]any)
+		if len(refs) == 0 {
+			t.Fatalf("inspect private sub node references empty: %#v", result)
 		}
 	})
 

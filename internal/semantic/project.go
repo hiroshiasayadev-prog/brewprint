@@ -1,6 +1,21 @@
 package semantic
 
+type SourceFile struct {
+	ID     FileID
+	Kind   string
+	ViewAs string
+}
+
+type RenderGroup struct {
+	ID      string
+	Label   string
+	Modules []string
+}
+
 type Project struct {
+	SourceFilesByID map[FileID]SourceFile
+	RenderGroups    []RenderGroup
+
 	NodesByQID     map[QualifiedID]Node
 	NodesByFile    map[FileID][]Node
 	MainNodeByFile map[FileID]QualifiedID
@@ -38,6 +53,7 @@ type Project struct {
 
 func NewProject() *Project {
 	return &Project{
+		SourceFilesByID:    map[FileID]SourceFile{},
 		NodesByQID:         map[QualifiedID]Node{},
 		NodesByFile:        map[FileID][]Node{},
 		MainNodeByFile:     map[FileID]QualifiedID{},

@@ -179,7 +179,7 @@ MCP responseは引き続きRaw YAML ASTを公開せず、ResolvedProject上のse
 
 | フィールド | 必須 | 型 | 内容 |
 |---|---:|---|---|
-| `id` | ✓ | string | 対象objectのID。通常はQualifiedID。actorはglobal actor ID。scenario等のview objectはview固有ID。transitionやprivate sub nodeは後述のsynthetic IDを使う |
+| `id` | 任意 | string | 対象objectのID。通常はQualifiedID。actorはglobal actor ID。scenario等のview objectはview固有ID。transition / asset / private sub nodeは後述のsynthetic IDを使う。`file` + `local_id` で指定できるobjectでは省略できる |
 | `object` | 任意 | enum | `node` / `view` / `transition` / `asset` / `field` / `file` / `primitive`。省略時は `node` として解決を試みる |
 | `kind` | 任意 | string | 期待するkind。指定時、解決結果のkindが一致しなければerror |
 | `file` | 任意 | FileID | private sub node等、file-local objectを指定する場合に使う |
@@ -207,8 +207,19 @@ private sub nodeを直接問い合わせる必要がある場合は、synthetic 
 }
 ```
 
-MCP v1では、private sub nodeの直接問い合わせは実装任意とする。
-ただし `inspect(main task)` の `members.sub_tasks` には、同一ファイル内のsub task情報を含める。
+assetを直接問い合わせる場合は、producerとasset nameからなるsynthetic ID、または `id` + `local_id` の形式を使う。
+
+```json
+{
+  "selector": {
+    "object": "asset",
+    "id": "order.task.build_order#draft_order"
+  }
+}
+```
+
+private sub nodeの直接問い合わせは `get_signature` / `get_references` / `inspect` で対応する。
+`inspect(main task)` の `members.sub_tasks` も同じObjectRef表現を使う。
 
 ### 3.2 Selector support matrix
 
@@ -225,11 +236,16 @@ MCP v1のselector対応範囲は以下とする。
 | `view: sequence_diagram` | yes | yes | yes | supported |
 | `transition` | yes | yes | yes | supported |
 | `field` | yes | yes | yes | supported |
-| `file: state_file` | no | yes | no | partial |
-| `asset` | no | no | no | future |
+| `file: node` | no | limited | yes | supported / limited references |
+| `file: state_file` | no | yes | yes | supported |
+| `file: sequence_diagram` | no | no | yes | supported |
+| `file: api_table` | no | no | yes | supported |
+| `file: er_diagram` | no | no | yes | supported |
+| `file: render_index` | no | no | yes | supported |
+| `asset` | yes | yes | yes | supported |
 | `view: api_table` | no | no | yes | supported; `list_endpoints` はcomputed route一覧専用 |
 | `view: er_diagram` | no | no | yes | supported |
-| private sub node | optional | optional | via `inspect(main task)` | v1 optional |
+| private sub node | yes | yes | yes | supported |
 | `primitive` | no | no | no | reference target only |
 
 statusの意味:
@@ -320,6 +336,23 @@ order/task/checkout.yaml#reserve_inventory
 ```
 
 sub nodeは外部モジュールから参照不可だが、MCP response内では `inspect(main task)` のmembersやreference targetとして識別する必要があるため、synthetic IDを返す。
+
+#### asset ID
+
+implicit assetのsynthetic IDは以下とする。
+
+```text
+<producer-qualified-id>#<asset-name>
+```
+
+例:
+
+```text
+order.task.build_order#draft_order
+auth.task.login#auth_token
+```
+
+assetはtask / join の `returns` から暗黙生成される。直接queryする場合はこのsynthetic ID、またはproducerを `id`、asset nameを `local_id` として指定する。
 
 #### transition ID
 
@@ -474,12 +507,13 @@ TransitionRef本体の `from` / `on` / `to` は、state diagram / scenario step�
 ### 3.9 AssetRef
 
 `asset` はYAML上に独立ファイルを持たず、taskの `returns` から暗黙生成される。
-MCP v1では、implicit assetをグローバルにselectableなQualifiedIDとしては要求しない。
-代わりに、`AssetRef` としてproducer contextつきで返す。
+implicit assetはQualifiedIDを持たないため、producerとasset nameからなるsynthetic IDで直接queryできる。
+`AssetRef` はproducer contextつきで返す。
 
 ```json
 {
   "object": "asset",
+  "id": "auth.task.login#auth_token",
   "name": "auth_token",
   "producer": "auth.task.login",
   "model": "auth.model.token",
@@ -490,14 +524,14 @@ MCP v1では、implicit assetをグローバルにselectableなQualifiedIDとし
 | フィールド | 必須 | 内容 |
 |---|---:|---|
 | `object` | ✓ | `asset` 固定 |
+| `id` | ✓ | `<producer>#<name>` のasset synthetic ID |
 | `name` | ✓ | `task.returns.name` |
 | `producer` | ✓ | assetを生成するtaskのQualifiedIDまたはfile-local synthetic ID |
 | `model` | ✓ | assetのmodel QualifiedIDまたはprimitive |
 | `scope_file` | 任意 | assetが生じるFileID |
 
-`task.returns.name` はDAG / MCP上のasset IDとして扱うが、sub taskや別fileで同名returnsがあり得るため、MCP responseではproducer contextと一緒に返す。
-
-将来、implicit assetを直接query対象にする必要が出た場合は、stable synthetic ID形式を別途spec/ADRで定義する。
+`task.returns.name` はDAG上のasset labelとして扱うが、sub taskや別fileで同名returnsがあり得るため、MCP responseではproducer contextと一緒に返す。
+直接query用のIDは `<producer>#<name>` のsynthetic IDを使う。
 
 ### 3.10 Diagnostic
 
@@ -567,6 +601,7 @@ MCP v1で返すreference kindは以下とする。
 | `param_model` | task / branch / join | model / primitive | paramがmodelまたはprimitiveを型参照する |
 | `return_model` | task / join | model / primitive | returnsがmodelまたはprimitiveを型参照する |
 | `produces_asset` | task / join | asset | returnsによりimplicit assetを生成する |
+| `consumes_asset` | asset | task / join | flow wiringでimplicit assetがconsumer nodeへ渡される |
 | `reads` | task | store | taskがstoreを読む |
 | `writes` | task | store | taskがstoreへ書く |
 | `store_of` | store | model | storeがmodelを保持する |
@@ -609,14 +644,68 @@ flow wiringはDAG file内部の局所構造であり、MCP v1では `inspect(tas
 
 ## 5. Tool overview
 
-MCP v1のquery toolは以下の4つとする。
+MCP v1のquery toolは以下の5つとする。
 
 | tool | 目的 | 主な利用場面 |
 |---|---|---|
+| `list_objects` | project内のsemantic object一覧を取得する | 実装・設計対話の起点として対象objectを探す |
 | `get_signature` | object単体の外形を取得する | 実装前にtask/model/store等の型・I/Oを確認する |
 | `get_references` | objectの直接referenceを取得する | 影響範囲・依存・逆参照を確認する |
 | `inspect` | object kind別に実装判断用の文脈を取得する | Claude Code等が実装・修正時に読む |
 | `list_endpoints` | API Table viewに基づくendpoint一覧を取得する | API実装・ルーティング確認 |
+
+---
+
+### 5.1 `list_objects`
+
+#### 5.1.1 Purpose
+
+`list_objects` は、project内のsemantic object一覧を返す。
+
+返す対象:
+
+- `node`
+- `view`
+- `transition`
+- `field`
+
+`list_objects` は探索用toolであり、各objectの詳細なsignature / references / inspect情報は返さない。詳細が必要な場合は、返された `object` / `kind` / `id` をselectorとして `get_signature` / `get_references` / `inspect` を呼ぶ。
+
+#### 5.1.2 Input
+```json
+{
+  "object": "node",
+  "kind": "task",
+  "module": "order",
+  "file": "order/task/checkout.yaml"
+}
+```
+
+| フィールド | 必須 | 内容 |
+|---|---:|---|
+| `object` | 任意 | `node` / `view` / `transition` / `field` |
+| `kind` | 任意 | `task` / `model` / `api_table` / `transition` / `field` 等 |
+| `module` | 任意 | module path。例: `order`, `payment.webhooks` |
+| `file` | 任意 | FileID |
+
+#### 5.1.3 Output
+```json
+{
+  "objects": [
+    {
+      "object": "node",
+      "kind": "task",
+      "id": "order.task.checkout",
+      "qualified_id": "order.task.checkout",
+      "label": "checkout",
+      "module": "order",
+      "file": "order/task/checkout.yaml",
+      "source": { "file": "order/task/checkout.yaml" }
+    }
+  ],
+  "diagnostics": []
+}
+```
 
 ---
 
@@ -1869,6 +1958,46 @@ view内に含まれないmodelへのFKは `fk_relations` には含めず、`excl
 
 ---
 
+### 8.14 file inspect
+
+`inspect(file)` は、FileID単位の実装判断用コンテキストを返す。
+Raw YAML ASTは返さず、ResolvedProject上に構築済みのsemantic情報をfile単位に要約する。
+
+input例:
+
+```json
+{
+  "selector": {
+    "object": "file",
+    "kind": "state_file",
+    "id": "order/state.yaml"
+  }
+}
+```
+
+node fileでは以下を返す。
+
+- `members.nodes`: file内のnode一覧
+- `members.main_node`: main nodeがある場合のObjectRef
+- `members.flow`: flow entry summaryがある場合
+
+state fileでは以下を返す。
+
+- `members.states`
+- `members.events`
+- `members.transitions`
+- `members.wireframes`: stateごとのwireframe有無
+
+view fileでは、view種別に応じて以下を返す。
+
+- `sequence_diagram`: `view`, `state_file`, `steps`
+- `api_table`: `view`, `http_root_path`, `modules`
+- `er_diagram`: `view`, `modules`
+
+render index fileでは `members.groups` を返す。
+
+---
+
 ## 9. `list_endpoints`
 
 ### 9.1 Purpose
@@ -2031,7 +2160,6 @@ MCP v1では以下を未定義とする。
 - `get_source`
 - transitive references
 - reference graphの永続cache
-- implicit assetの直接selector
 - renderer outputを返すMCP tool
 - code generation用tool
 
@@ -2043,8 +2171,6 @@ MCP v1では以下を未定義とする。
 | `inspect(file)` | YAML file単位で定義内容・main node・sub node・view種別・diagnosticsを把握する | high |
 | `inspect(view: api_table)` | API Table viewが集約するmodules / endpoints / computed routesを把握する | high |
 | `inspect(view: er_diagram)` | ER Diagram viewが集約するmodules / stores / models / FKを把握する | high |
-| `asset` selector | DAG上のasset nodeを直接queryし、producer / consumers / modelを把握する | high |
-| private sub node selector | DAG内のfile-local task / branch / fork / joinを直接queryする | medium |
 | flow wiring references | DAG上のflow step / param wiringをreferenceとして扱う | medium |
 | `get_source` | `inspect.getsource` 相当。対象semantic objectのYAML snippetを返す | medium |
 | `get_reference_tree` | depth指定つきreference traversal。変更影響範囲を辿る | medium |
