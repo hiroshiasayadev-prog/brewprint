@@ -109,7 +109,7 @@ func TestHumanizeProjectDir(t *testing.T) {
 
 func TestWriteCreatesNestedOutput(t *testing.T) {
 	outRoot := t.TempDir()
-	files := []File{{Path: "group/nested.md", Content: "# nested\n"}}
+	files := []File{{Path: "group/nested.md", Content: "# nested\n", Source: "test source"}}
 
 	if err := Write(outRoot, files); err != nil {
 		t.Fatalf("write renders: %v", err)
@@ -120,6 +120,48 @@ func TestWriteCreatesNestedOutput(t *testing.T) {
 	}
 	if string(content) != "# nested\n" {
 		t.Fatalf("written content = %q", string(content))
+	}
+}
+
+func TestValidateFilePathCollisionsReportsSourceObjects(t *testing.T) {
+	files := []File{
+		{Path: "commerce/dag-process_payment.md", Content: "first", Source: "task payment.task.process_payment (payment/task/process_payment.yaml)"},
+		{Path: "commerce/dag-process_payment.md", Content: "second", Source: "task payment.webhooks.task.process_payment (payment/webhooks/task/process_payment.yaml)"},
+	}
+
+	err := validateFilePathCollisions(files)
+	if err == nil {
+		t.Fatalf("validateFilePathCollisions returned nil error")
+	}
+	message := err.Error()
+	for _, want := range []string{
+		"render output path collision",
+		"commerce/dag-process_payment.md",
+		"payment/task/process_payment.yaml",
+		"payment/webhooks/task/process_payment.yaml",
+	} {
+		if !strings.Contains(message, want) {
+			t.Fatalf("collision error missing %q: %s", want, message)
+		}
+	}
+}
+
+func TestWriteRejectsDuplicatePathsBeforeOverwrite(t *testing.T) {
+	outRoot := t.TempDir()
+	files := []File{
+		{Path: "commerce/dag-process_payment.md", Content: "first\n", Source: "first source"},
+		{Path: "commerce/dag-process_payment.md", Content: "second\n", Source: "second source"},
+	}
+
+	err := Write(outRoot, files)
+	if err == nil {
+		t.Fatalf("Write with duplicate paths returned nil error")
+	}
+	if !strings.Contains(err.Error(), "first source") || !strings.Contains(err.Error(), "second source") {
+		t.Fatalf("duplicate path error does not include both sources: %v", err)
+	}
+	if _, statErr := os.Stat(filepath.Join(outRoot, "commerce", "dag-process_payment.md")); !os.IsNotExist(statErr) {
+		t.Fatalf("duplicate path write created output file: %v", statErr)
 	}
 }
 

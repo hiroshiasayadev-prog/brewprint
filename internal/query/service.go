@@ -3,6 +3,7 @@ package query
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/hiroshiasayadev-prog/brewprint/internal/semantic"
 )
@@ -34,6 +35,70 @@ func (s *Service) nodeByID(id string) (semantic.Node, error) {
 		return nil, fmt.Errorf("object not found: %s", id)
 	}
 	return node, nil
+}
+
+func (s *Service) privateSubNodeBySelector(selector Selector) (semantic.Node, error) {
+	if err := s.requireProject(); err != nil {
+		return nil, err
+	}
+	if selector.Object != "" && selector.Object != "node" {
+		return nil, fmt.Errorf("unsupported selector object for private sub node: %s", selector.Object)
+	}
+	fileID := semantic.FileID(selector.File)
+	localID := selector.LocalID
+	if selector.ID != "" {
+		if file, local, ok := splitSyntheticID(selector.ID); ok {
+			fileID = semantic.FileID(file)
+			localID = local
+		}
+	}
+	if fileID == "" || localID == "" {
+		return nil, fmt.Errorf("selector.id or selector.file and selector.local_id are required for private sub node")
+	}
+	for _, node := range s.project.NodesByFile[fileID] {
+		if node.GetID() != localID {
+			continue
+		}
+		if node.IsMain() || !isPrivateSubNodeKind(node.GetKind()) {
+			return nil, fmt.Errorf("object not found: %s", semantic.PrivateNodeID(fileID, localID))
+		}
+		if selector.Kind != "" && selector.Kind != string(node.GetKind()) {
+			return nil, fmt.Errorf("kind mismatch: selector kind %s, object kind %s", selector.Kind, node.GetKind())
+		}
+		return node, nil
+	}
+	return nil, fmt.Errorf("object not found: %s", semantic.PrivateNodeID(fileID, localID))
+}
+
+func (s *Service) isPrivateSubNodeSelector(selector Selector) bool {
+	if selector.Object != "" && selector.Object != "node" {
+		return false
+	}
+	if selector.File != "" && selector.LocalID != "" {
+		return true
+	}
+	if selector.ID == "" {
+		return false
+	}
+	_, _, ok := splitSyntheticID(selector.ID)
+	return ok
+}
+
+func isPrivateSubNodeKind(kind semantic.NodeKind) bool {
+	switch kind {
+	case semantic.NodeKindTask, semantic.NodeKindBranch, semantic.NodeKindFork, semantic.NodeKindJoin:
+		return true
+	default:
+		return false
+	}
+}
+
+func splitSyntheticID(id string) (string, string, bool) {
+	idx := strings.LastIndex(id, "#")
+	if idx <= 0 || idx == len(id)-1 {
+		return "", "", false
+	}
+	return id[:idx], id[idx+1:], true
 }
 
 func (s *Service) scenarioBySelector(selector Selector) (*semantic.SequenceScenario, error) {
@@ -142,10 +207,13 @@ func (s *Service) fileBySelector(selector Selector) (semantic.FileID, error) {
 	if selector.Object != "" && selector.Object != "file" {
 		return "", fmt.Errorf("unsupported selector object for file: %s", selector.Object)
 	}
-	if selector.Kind != "" && selector.Kind != "state_file" {
-		return "", fmt.Errorf("unsupported selector kind for file: %s", selector.Kind)
-	}
 	fileID := semantic.FileID(id)
+	if _, ok := s.project.SourceFilesByID[fileID]; ok {
+		if selector.Kind != "" && selector.Kind != s.fileKind(fileID) && !(selector.Kind == "state_file" && s.isStateFile(fileID)) {
+			return "", fmt.Errorf("unsupported selector kind for file: %s", selector.Kind)
+		}
+		return fileID, nil
+	}
 	if _, ok := s.project.TransitionsByFile[fileID]; ok {
 		return fileID, nil
 	}
@@ -161,10 +229,66 @@ func (s *Service) fileBySelector(selector Selector) (semantic.FileID, error) {
 }
 
 func (s *Service) isFileSelector(selector Selector) bool {
-	return selector.Object == "file" || selector.Kind == "state_file"
+	return selector.Object == "file" || selector.Kind == "state_file" || selector.Kind == "file"
+}
+
+func (s *Service) assetBySelector(selector Selector) (*semantic.Asset, error) {
+	if err := s.requireProject(); err != nil {
+		return nil, err
+	}
+	if selector.Object != "" && selector.Object != "asset" {
+		return nil, fmt.Errorf("unsupported selector object for asset: %s", selector.Object)
+	}
+	if selector.Kind != "" && selector.Kind != "asset" {
+		return nil, fmt.Errorf("unsupported selector kind for asset: %s", selector.Kind)
+	}
+	producer := semantic.QualifiedID(selector.ID)
+	name := selector.LocalID
+	if selector.ID != "" {
+		if rawProducer, rawName, ok := splitSyntheticID(selector.ID); ok {
+			producer = semantic.QualifiedID(rawProducer)
+			name = rawName
+		}
+	}
+	if producer == "" || name == "" {
+		return nil, fmt.Errorf("selector.id with synthetic asset id or selector.id and selector.local_id are required for asset")
+	}
+	asset := s.assetByProducerAndName(producer, name)
+	if asset == nil {
+		return nil, fmt.Errorf("object not found: %s", semantic.AssetID(producer, name))
+	}
+	return asset, nil
+}
+
+func (s *Service) isAssetSelector(selector Selector) bool {
+	return selector.Object == "asset" || selector.Kind == "asset"
+}
+
+func (s *Service) assetByProducerAndName(producer semantic.QualifiedID, name string) *semantic.Asset {
+	if task := s.project.TasksByQID[producer]; task != nil && task.Returns != nil && task.Returns.Asset != nil && task.Returns.Asset.Name == name {
+		return task.Returns.Asset
+	}
+	if join := s.project.JoinsByQID[producer]; join != nil && join.Returns != nil && join.Returns.Asset != nil && join.Returns.Asset.Name == name {
+		return join.Returns.Asset
+	}
+	return nil
 }
 
 func objectRef(node semantic.Node) ObjectRef {
+	if node == nil {
+		return ObjectRef{}
+	}
+	if isPrivateSubNodeKind(node.GetKind()) && !node.IsMain() {
+		return ObjectRef{
+			Object:  "node",
+			Kind:    string(node.GetKind()),
+			ID:      semantic.PrivateNodeID(node.GetFileID(), node.GetID()),
+			Label:   node.GetID(),
+			File:    node.GetFileID().String(),
+			LocalID: node.GetID(),
+			Source:  sourceMap(node.GetFileID()),
+		}
+	}
 	return ObjectRef{
 		Object:      "node",
 		Kind:        string(node.GetKind()),
@@ -172,6 +296,7 @@ func objectRef(node semantic.Node) ObjectRef {
 		QualifiedID: node.GetQID().String(),
 		Label:       node.GetID(),
 		File:        node.GetFileID().String(),
+		Source:      sourceMap(node.GetFileID()),
 	}
 }
 
@@ -232,12 +357,28 @@ func sourceMap(fileID semantic.FileID) map[string]string {
 	return map[string]string{"file": fileID.String()}
 }
 
+func assetObjectRef(asset *semantic.Asset) ObjectRef {
+	if asset == nil {
+		return ObjectRef{}
+	}
+	return ObjectRef{
+		Object:  "asset",
+		Kind:    "asset",
+		ID:      semantic.AssetID(asset.ProducedBy, asset.Name),
+		Label:   asset.Name,
+		File:    asset.FileID.String(),
+		LocalID: asset.Name,
+		Source:  sourceMap(asset.FileID),
+	}
+}
+
 func assetRef(asset *semantic.Asset) *AssetRef {
 	if asset == nil {
 		return nil
 	}
 	return &AssetRef{
 		Object:    "asset",
+		ID:        semantic.AssetID(asset.ProducedBy, asset.Name),
 		Name:      asset.Name,
 		Producer:  asset.ProducedBy.String(),
 		Model:     asset.Model.String(),

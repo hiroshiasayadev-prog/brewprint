@@ -21,6 +21,7 @@ import (
 type File struct {
 	Path    string
 	Content string
+	Source  string
 }
 
 func Render(raw *rawyaml.Project, semanticProject *semantic.Project) ([]File, []placement.Diagnostic, error) {
@@ -34,6 +35,9 @@ func Render(raw *rawyaml.Project, semanticProject *semantic.Project) ([]File, []
 		return nil, diagnostics, err
 	}
 	files = append(indexFiles(raw, resolver, files), files...)
+	if err := validateFilePathCollisions(files); err != nil {
+		return nil, diagnostics, err
+	}
 	sort.Slice(files, func(i, j int) bool { return files[i].Path < files[j].Path })
 	return files, diagnostics, nil
 }
@@ -41,6 +45,9 @@ func Render(raw *rawyaml.Project, semanticProject *semantic.Project) ([]File, []
 func Write(outRoot string, files []File) error {
 	if outRoot == "" {
 		return fmt.Errorf("out root is required")
+	}
+	if err := validateFilePathCollisions(files); err != nil {
+		return err
 	}
 	for _, file := range files {
 		if file.Path == "" {
@@ -104,7 +111,7 @@ func renderFiles(raw *rawyaml.Project, semanticProject *semantic.Project, resolv
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, File{Path: path, Content: content})
+		files = append(files, File{Path: path, Content: content, Source: taskSource(task)})
 	}
 
 	for _, fileID := range sortedStateFileIDs(semanticProject) {
@@ -116,7 +123,7 @@ func renderFiles(raw *rawyaml.Project, semanticProject *semantic.Project, resolv
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, File{Path: groupID + "/state-" + fsmID(fileID) + ".md", Content: content})
+		files = append(files, File{Path: groupID + "/state-" + fsmID(fileID) + ".md", Content: content, Source: "state file " + fileID.String()})
 	}
 
 	for _, scenarioID := range sortedScenarioIDs(semanticProject) {
@@ -129,7 +136,7 @@ func renderFiles(raw *rawyaml.Project, semanticProject *semantic.Project, resolv
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, File{Path: groupID + "/seq-" + scenario.ID + ".md", Content: content})
+		files = append(files, File{Path: groupID + "/seq-" + scenario.ID + ".md", Content: content, Source: "sequence scenario " + scenario.ID + " (" + scenario.FileID.String() + ")"})
 	}
 
 	erIDs := sortedERViewIDs(semanticProject)
@@ -138,7 +145,7 @@ func renderFiles(raw *rawyaml.Project, semanticProject *semantic.Project, resolv
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, File{Path: crossViewPath("er", erIDs, viewID), Content: content})
+		files = append(files, File{Path: crossViewPath("er", erIDs, viewID), Content: content, Source: "er view " + viewID})
 	}
 
 	apiIDs := sortedAPIViewIDs(semanticProject)
@@ -147,7 +154,7 @@ func renderFiles(raw *rawyaml.Project, semanticProject *semantic.Project, resolv
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, File{Path: crossViewPath("api", apiIDs, viewID), Content: content})
+		files = append(files, File{Path: crossViewPath("api", apiIDs, viewID), Content: content, Source: "api view " + viewID})
 	}
 
 	wireframeStates := sortedWireframeStates(semanticProject)
@@ -160,19 +167,19 @@ func renderFiles(raw *rawyaml.Project, semanticProject *semantic.Project, resolv
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, File{Path: groupID + "/wireframe-" + fsmID(state.FileID) + "-" + state.ID + ".html", Content: content})
+		files = append(files, File{Path: groupID + "/wireframe-" + fsmID(state.FileID) + "-" + state.ID + ".html", Content: content, Source: "wireframe state " + state.QID.String() + " (" + state.FileID.String() + ")"})
 	}
 
 	if len(wireframeStates) > 0 {
-		files = append(files, File{Path: "_preview/wireframe.html", Content: wireframerender.RenderPreview(semanticProject, previewTitle(raw))})
+		files = append(files, File{Path: "_preview/wireframe.html", Content: wireframerender.RenderPreview(semanticProject, previewTitle(raw)), Source: "wireframe preview"})
 	}
 	return files, nil
 }
 
 func indexFiles(raw *rawyaml.Project, resolver *placement.Resolver, renderFiles []File) []File {
-	files := []File{{Path: "index.md", Content: masterIndexMarkdown(projectName(raw), resolver, renderFiles)}}
+	files := []File{{Path: "index.md", Content: masterIndexMarkdown(projectName(raw), resolver, renderFiles), Source: "master index"}}
 	for _, group := range resolver.Groups {
-		files = append(files, File{Path: group.ID + "/index.md", Content: groupIndexMarkdown(group, renderFiles)})
+		files = append(files, File{Path: group.ID + "/index.md", Content: groupIndexMarkdown(group, renderFiles), Source: "group index " + group.ID})
 	}
 	return files
 }
@@ -495,6 +502,36 @@ func safePathID(id string) string {
 	id = strings.ReplaceAll(id, "/", "-")
 	id = strings.ReplaceAll(id, "\\", "-")
 	return id
+}
+
+func validateFilePathCollisions(files []File) error {
+	seen := map[string]File{}
+	for _, file := range files {
+		if file.Path == "" {
+			return fmt.Errorf("render output path is empty")
+		}
+		previous, ok := seen[file.Path]
+		if ok {
+			return fmt.Errorf("render output path collision: %s is produced by %s and %s", file.Path, fileSource(previous), fileSource(file))
+		}
+		seen[file.Path] = file
+	}
+	return nil
+}
+
+func fileSource(file File) string {
+	source := strings.TrimSpace(file.Source)
+	if source == "" {
+		return "unknown source"
+	}
+	return source
+}
+
+func taskSource(task *semantic.Task) string {
+	if task == nil {
+		return "task <nil>"
+	}
+	return "task " + task.QID.String() + " (" + task.FileID.String() + ")"
 }
 
 func countPlacementErrors(diagnostics []placement.Diagnostic) int {
