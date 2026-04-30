@@ -11,6 +11,15 @@ func (s *Service) Inspect(req InspectRequest) (InspectResponse, error) {
 		return InspectResponse{}, errUnsupportedDetail(req.Detail)
 	}
 
+	if s.isFileSelector(req.Selector) {
+		return s.inspectFile(req)
+	}
+	if s.isAPIViewSelector(req.Selector) {
+		return s.inspectAPIView(req)
+	}
+	if s.isERViewSelector(req.Selector) {
+		return s.inspectERView(req)
+	}
 	if s.isScenarioSelector(req.Selector) {
 		return s.inspectScenario(req)
 	}
@@ -19,6 +28,12 @@ func (s *Service) Inspect(req InspectRequest) (InspectResponse, error) {
 	}
 	if s.isFieldSelector(req.Selector) {
 		return s.inspectField(req)
+	}
+	if s.isAssetSelector(req.Selector) {
+		return s.inspectAsset(req)
+	}
+	if s.isPrivateSubNodeSelector(req.Selector) {
+		return s.inspectPrivateSubNode(req)
 	}
 
 	node, err := s.nodeByID(req.Selector.ID)
@@ -93,18 +108,19 @@ func (s *Service) taskMembers(task *semantic.Task) map[string]any {
 		if !ok || sub.QID == task.QID || sub.Main {
 			continue
 		}
+		subRef := objectRef(sub)
 		subTasks = append(subTasks, map[string]any{
-			"object":   "node",
-			"kind":     "task",
-			"id":       sub.QID.String(),
-			"file":     sub.FileID.String(),
-			"local_id": sub.ID,
-			"label":    sub.ID,
+			"object":   subRef.Object,
+			"kind":     subRef.Kind,
+			"id":       subRef.ID,
+			"file":     subRef.File,
+			"local_id": subRef.LocalID,
+			"label":    subRef.Label,
 			"signature": Signature{
 				"reads":  storeIDs(sub.Reads),
 				"writes": storeIDs(sub.Writes),
 			},
-			"source": sourceMap(sub.FileID),
+			"source": subRef.Source,
 		})
 	}
 	sort.Slice(subTasks, func(i, j int) bool { return subTasks[i]["id"].(string) < subTasks[j]["id"].(string) })
@@ -272,6 +288,63 @@ func scenarioStepRefs(scenario *semantic.SequenceScenario) []ScenarioStepRef {
 	return out
 }
 
+func (s *Service) inspectAsset(req InspectRequest) (InspectResponse, error) {
+	asset, err := s.assetBySelector(req.Selector)
+	if err != nil {
+		return InspectResponse{}, err
+	}
+	refs, err := s.GetReferences(GetReferencesRequest{Selector: req.Selector, Direction: string(semantic.ReferenceDirectionBoth)})
+	if err != nil {
+		return InspectResponse{}, err
+	}
+	return InspectResponse{
+		Object:      assetObjectRef(asset),
+		Signature:   signatureForAsset(asset),
+		Source:      sourceMap(asset.FileID),
+		References:  refs.References,
+		Diagnostics: []semantic.Diagnostic{},
+	}, nil
+}
+
+func (s *Service) inspectPrivateSubNode(req InspectRequest) (InspectResponse, error) {
+	node, err := s.privateSubNodeBySelector(req.Selector)
+	if err != nil {
+		return InspectResponse{}, err
+	}
+	sig, doc, err := s.signatureForNode(node)
+	if err != nil {
+		return InspectResponse{}, err
+	}
+	refs, err := s.GetReferences(GetReferencesRequest{Selector: req.Selector, Direction: string(semantic.ReferenceDirectionBoth)})
+	if err != nil {
+		return InspectResponse{}, err
+	}
+	return InspectResponse{
+		Object:      objectRef(node),
+		Signature:   sig,
+		Doc:         doc,
+		Source:      sourceMap(node.GetFileID()),
+		References:  refs.References,
+		Diagnostics: []semantic.Diagnostic{},
+	}, nil
+}
+
+func (s *Service) inspectFile(req InspectRequest) (InspectResponse, error) {
+	fileID, err := s.fileBySelector(req.Selector)
+	if err != nil {
+		return InspectResponse{}, err
+	}
+	kind := s.fileKind(fileID)
+	members := s.fileMembers(fileID, kind)
+	return InspectResponse{
+		Object:      fileObjectRef(fileID, kind),
+		Signature:   Signature{"kind": kind},
+		Source:      sourceMap(fileID),
+		Members:     members,
+		Diagnostics: []semantic.Diagnostic{},
+	}, nil
+}
+
 func (s *Service) eventMembers(event *semantic.Event) map[string]any {
 	members := map[string]any{}
 	var triggering []TransitionRef
@@ -290,6 +363,22 @@ func (s *Service) eventMembers(event *semantic.Event) map[string]any {
 		members["sequence_hints"] = hints
 	}
 	return members
+}
+
+func (s *Service) fileKind(fileID semantic.FileID) string {
+	if source, ok := s.project.SourceFilesByID[fileID]; ok {
+		if source.Kind == "node" && s.isStateFile(fileID) {
+			return "state_file"
+		}
+		if source.Kind == "view" && source.ViewAs != "" {
+			return source.ViewAs
+		}
+		return source.Kind
+	}
+	if s.isStateFile(fileID) {
+		return "state_file"
+	}
+	return "file"
 }
 
 func sequenceHintsForEvent(event *semantic.Event) map[string]any {

@@ -14,7 +14,7 @@ import (
 func TestServerTools(t *testing.T) {
 	server := newUC001Server(t)
 	tools := server.Tools()
-	want := []string{"get_signature", "get_references", "inspect", "list_endpoints"}
+	want := []string{"list_objects", "get_signature", "get_references", "inspect", "list_endpoints"}
 	if len(tools) != len(want) {
 		t.Fatalf("tools len = %d, want %d: %#v", len(tools), len(want), tools)
 	}
@@ -37,6 +37,34 @@ func TestServerCallTool(t *testing.T) {
 		object := result["object"].(map[string]any)
 		if object["kind"] != "task" || object["id"] != "auth.task.login" {
 			t.Fatalf("get_signature object = %#v", object)
+		}
+	})
+
+	t.Run("get_signature_m11_private_sub_node", func(t *testing.T) {
+		envelope := call(t, server, "get_signature", `{"selector":{"object":"node","file":"order/task/checkout.yaml","local_id":"build_order"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_signature private sub node error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["id"] != "order/task/checkout.yaml#build_order" || object["kind"] != "task" || object["local_id"] != "build_order" {
+			t.Fatalf("private sub node object = %#v", object)
+		}
+	})
+
+	t.Run("get_signature_m11_asset", func(t *testing.T) {
+		envelope := call(t, server, "get_signature", `{"selector":{"object":"asset","id":"order.task.build_order#draft_order"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_signature asset error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["object"] != "asset" || object["id"] != "order.task.build_order#draft_order" {
+			t.Fatalf("asset object = %#v", object)
+		}
+		signature := result["signature"].(map[string]any)
+		if signature["producer"] != "order.task.build_order" || signature["model"] != "order.model.order" || signature["scope_file"] != "order/task/checkout.yaml" {
+			t.Fatalf("asset signature = %#v", signature)
 		}
 	})
 
@@ -81,6 +109,22 @@ func TestServerCallTool(t *testing.T) {
 		refs := result["references"].([]any)
 		if len(refs) != 5 {
 			t.Fatalf("transition references len = %d, want 5: %#v", len(refs), refs)
+		}
+	})
+
+	t.Run("get_references_m11_asset", func(t *testing.T) {
+		envelope := call(t, server, "get_references", `{"selector":{"object":"asset","id":"order.task.build_order#draft_order"},"direction":"out","kinds":["consumes_asset"]}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_references asset error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["object"] != "asset" || object["id"] != "order.task.build_order#draft_order" {
+			t.Fatalf("asset references object = %#v", object)
+		}
+		refs := result["references"].([]any)
+		if len(refs) != 2 {
+			t.Fatalf("asset references len = %d, want 2: %#v", len(refs), refs)
 		}
 	})
 
@@ -186,6 +230,45 @@ func TestServerCallTool(t *testing.T) {
 		refs := result["references"].([]any)
 		if len(refs) != 3 {
 			t.Fatalf("inspect field references len = %d, want 3: %#v", len(refs), refs)
+		}
+	})
+
+	t.Run("inspect_api_table", func(t *testing.T) {
+		envelope := call(t, server, "inspect", `{"selector":{"object":"view","kind":"api_table","id":"ec_api"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("inspect API table error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["object"] != "view" || object["kind"] != "api_table" || object["id"] != "ec_api" {
+			t.Fatalf("inspect API table object = %#v", object)
+		}
+		signature := result["signature"].(map[string]any)
+		if signature["http_root_path"] != "/api" {
+			t.Fatalf("inspect API table signature = %#v", signature)
+		}
+		members := result["members"].(map[string]any)
+		endpoints := members["collected_endpoints"].([]any)
+		if len(endpoints) == 0 {
+			t.Fatalf("inspect API table endpoints empty: %#v", members)
+		}
+	})
+
+	t.Run("inspect_er_diagram", func(t *testing.T) {
+		envelope := call(t, server, "inspect", `{"selector":{"object":"view","kind":"er_diagram","id":"ec_er"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("inspect ER diagram error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["object"] != "view" || object["kind"] != "er_diagram" || object["id"] != "ec_er" {
+			t.Fatalf("inspect ER diagram object = %#v", object)
+		}
+		members := result["members"].(map[string]any)
+		models := members["included_models"].([]any)
+		relations := members["fk_relations"].([]any)
+		if len(models) == 0 || len(relations) == 0 {
+			t.Fatalf("inspect ER diagram members = %#v", members)
 		}
 	})
 

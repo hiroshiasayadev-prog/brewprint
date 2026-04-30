@@ -246,6 +246,59 @@ func TestQueryServiceUC001(t *testing.T) {
 		assertHasReference(t, stateFileRefs.References, "scenario_state_file", "in", "payment_webhook_flow", "order/state.yaml")
 	})
 
+	t.Run("M11Selectors", func(t *testing.T) {
+		buildOrderSelector := Selector{Object: "node", ID: "order/task/checkout.yaml#build_order"}
+		buildOrder, err := service.GetSignature(GetSignatureRequest{Selector: buildOrderSelector})
+		if err != nil {
+			t.Fatalf("GetSignature private sub task: %v", err)
+		}
+		if buildOrder.Object.ID != "order/task/checkout.yaml#build_order" || buildOrder.Object.Kind != "task" || buildOrder.Object.LocalID != "build_order" || buildOrder.Object.QualifiedID != "" {
+			t.Fatalf("private sub task object = %#v", buildOrder.Object)
+		}
+		ret := buildOrder.Signature["returns"].(*ReturnSignature)
+		if ret.Name != "draft_order" || ret.Asset == nil || ret.Asset.ID != "order.task.build_order#draft_order" {
+			t.Fatalf("private sub task returns = %#v", ret)
+		}
+
+		fork, err := service.GetSignature(GetSignatureRequest{Selector: Selector{Object: "node", Kind: "fork", File: "order/task/checkout.yaml", LocalID: "parallel_processing"}})
+		if err != nil {
+			t.Fatalf("GetSignature private fork: %v", err)
+		}
+		if fork.Object.ID != "order/task/checkout.yaml#parallel_processing" || fork.Object.Kind != "fork" {
+			t.Fatalf("private fork object = %#v", fork.Object)
+		}
+
+		assetSelector := Selector{Object: "asset", ID: "order.task.build_order#draft_order"}
+		asset, err := service.GetSignature(GetSignatureRequest{Selector: assetSelector})
+		if err != nil {
+			t.Fatalf("GetSignature asset: %v", err)
+		}
+		if asset.Object.ID != "order.task.build_order#draft_order" || asset.Object.Object != "asset" || asset.Signature["producer"] != "order.task.build_order" || asset.Signature["model"] != "order.model.order" || asset.Signature["scope_file"] != "order/task/checkout.yaml" {
+			t.Fatalf("asset signature = object %#v signature %#v", asset.Object, asset.Signature)
+		}
+
+		assetRefs, err := service.GetReferences(GetReferencesRequest{Selector: assetSelector, Direction: "out", Kinds: []string{"consumes_asset"}})
+		if err != nil {
+			t.Fatalf("GetReferences asset consumers: %v", err)
+		}
+		assertHasReference(t, assetRefs.References, "consumes_asset", "out", "order.task.build_order#draft_order", "order/task/checkout.yaml#reserve_inventory")
+		assertHasReference(t, assetRefs.References, "consumes_asset", "out", "order.task.build_order#draft_order", "order/task/checkout.yaml#notify_payment_gateway")
+
+		buildOrderRefs, err := service.GetReferences(GetReferencesRequest{Selector: buildOrderSelector, Direction: "out", Kinds: []string{"produces_asset"}})
+		if err != nil {
+			t.Fatalf("GetReferences private sub task: %v", err)
+		}
+		assertHasReference(t, buildOrderRefs.References, "produces_asset", "out", "order/task/checkout.yaml#build_order", "order.task.build_order#draft_order")
+
+		inspected, err := service.Inspect(InspectRequest{Selector: buildOrderSelector})
+		if err != nil {
+			t.Fatalf("Inspect private sub task: %v", err)
+		}
+		if inspected.Object.ID != "order/task/checkout.yaml#build_order" || inspected.Source["file"] != "order/task/checkout.yaml" || len(inspected.References) == 0 {
+			t.Fatalf("private sub task inspect = %#v", inspected)
+		}
+	})
+
 	t.Run("ListEndpoints", func(t *testing.T) {
 		endpoints, err := service.ListEndpoints(ListEndpointsRequest{APITableID: "ec_api"})
 		if err != nil {
@@ -413,6 +466,37 @@ func TestQueryServiceUC001(t *testing.T) {
 		assertHasReference(t, field.References, "field_type", "out", "order.model.order.id", "str")
 		assertHasReference(t, field.References, "field_fk", "in", "order.model.order_item.order_id", "order.model.order.id")
 		assertHasReference(t, field.References, "field_fk", "in", "payment.model.payment_event.order_id", "order.model.order.id")
+
+		apiTable, err := service.Inspect(InspectRequest{Selector: Selector{Object: "view", Kind: "api_table", ID: "ec_api"}})
+		if err != nil {
+			t.Fatalf("Inspect API table: %v", err)
+		}
+		if apiTable.Object.Object != "view" || apiTable.Object.Kind != "api_table" || apiTable.Object.ID != "ec_api" {
+			t.Fatalf("API table object = %#v", apiTable.Object)
+		}
+		if apiTable.Signature["http_root_path"] != "/api" {
+			t.Fatalf("API table signature = %#v", apiTable.Signature)
+		}
+		apiModules := apiTable.Members["modules"].([]apiInspectModule)
+		if len(apiModules) != 5 {
+			t.Fatalf("API table modules = %#v", apiModules)
+		}
+		apiEndpoints := apiTable.Members["collected_endpoints"].([]apiInspectEndpoint)
+		assertHasAPIInspectEndpoint(t, apiEndpoints, "auth.task.login", "POST", "/api/login")
+		assertHasAPIInspectEndpoint(t, apiEndpoints, "payment.webhooks.task.process_payment", "POST", "/api/stripe")
+
+		erView, err := service.Inspect(InspectRequest{Selector: Selector{Object: "view", Kind: "er_diagram", ID: "ec_er"}})
+		if err != nil {
+			t.Fatalf("Inspect ER view: %v", err)
+		}
+		if erView.Object.Object != "view" || erView.Object.Kind != "er_diagram" || erView.Object.ID != "ec_er" {
+			t.Fatalf("ER view object = %#v", erView.Object)
+		}
+		includedModels := erView.Members["included_models"].([]ObjectRef)
+		assertHasObjectRef(t, includedModels, "auth.model.credential")
+		assertHasObjectRef(t, includedModels, "order.model.order")
+		relations := erView.Members["fk_relations"].([]erInspectFKRelation)
+		assertHasERInspectRelation(t, relations, "order.model.order", "user_id", "auth.model.credential", "username")
 	})
 }
 
@@ -504,4 +588,34 @@ func assertHasReference(t *testing.T, refs []Reference, kind, direction, fromID,
 	}
 	t.Fatalf("reference not found kind=%s direction=%s from=%s to=%s in %#v", kind, direction, fromID, toID, refs)
 	return Reference{}
+}
+
+func assertHasAPIInspectEndpoint(t *testing.T, endpoints []apiInspectEndpoint, task, method, path string) {
+	t.Helper()
+	for _, endpoint := range endpoints {
+		if endpoint.Task == task && endpoint.Method == method && endpoint.Path == path {
+			return
+		}
+	}
+	t.Fatalf("API inspect endpoint not found task=%s method=%s path=%s in %#v", task, method, path, endpoints)
+}
+
+func assertHasObjectRef(t *testing.T, refs []ObjectRef, id string) {
+	t.Helper()
+	for _, ref := range refs {
+		if ref.ID == id {
+			return
+		}
+	}
+	t.Fatalf("object ref not found id=%s in %#v", id, refs)
+}
+
+func assertHasERInspectRelation(t *testing.T, relations []erInspectFKRelation, fromModel, fromField, toModel, toField string) {
+	t.Helper()
+	for _, relation := range relations {
+		if relation.FromModel == fromModel && relation.FromField == fromField && relation.ToModel == toModel && relation.ToField == toField {
+			return
+		}
+	}
+	t.Fatalf("ER inspect relation not found from=%s.%s to=%s.%s in %#v", fromModel, fromField, toModel, toField, relations)
 }

@@ -29,14 +29,14 @@
   - MCP wrapper test / QueryService testで代表fileを固定する
   - 実装後に `docs/spec/mcp.md` の selector support matrixを更新する
 
-- [ ] **`inspect(view: api_table)` を実装する**
+- [x] **`inspect(view: api_table)` を実装する**
   - API Table view objectを直接inspectできるようにする
   - `http_root_path` / modules / include_submodules / collected endpoints / computed routes を返す
   - `list_endpoints` との役割分担を明確にする
   - excluded endpoint候補や収集対象0件sectionの扱いは実装時に判断し、必要ならspecへ追記する
   - UC-001の API Table view でQueryService / MCP wrapper testを追加する
 
-- [ ] **`inspect(view: er_diagram)` を実装する**
+- [x] **`inspect(view: er_diagram)` を実装する**
   - ER Diagram view objectを直接inspectできるようにする
   - 対象modules / included stores / included models / FK relations / excluded refs summary を返す
   - default module単位ERと view YAMLによる横断ERの扱いを整理する

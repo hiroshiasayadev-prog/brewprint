@@ -227,8 +227,8 @@ MCP v1のselector対応範囲は以下とする。
 | `field` | yes | yes | yes | supported |
 | `file: state_file` | no | yes | no | partial |
 | `asset` | no | no | no | future |
-| `view: api_table` | no | no | no | future; `list_endpoints` は実装済み |
-| `view: er_diagram` | no | no | no | future |
+| `view: api_table` | no | no | yes | supported; `list_endpoints` はcomputed route一覧専用 |
+| `view: er_diagram` | no | no | yes | supported |
 | private sub node | optional | optional | via `inspect(main task)` | v1 optional |
 | `primitive` | no | no | no | reference target only |
 
@@ -1724,6 +1724,148 @@ Model fieldはsynthetic objectとしてinspectできる。
   "diagnostics": []
 }
 ```
+
+### 8.12 API Table inspect
+
+API Table viewはview objectとしてinspectできる。
+
+```json
+{
+  "selector": {
+    "object": "view",
+    "kind": "api_table",
+    "id": "ec_api"
+  }
+}
+```
+
+返す内容:
+
+- API Table ID / `http_root_path`
+- 対象modules / `include_submodules`
+- moduleごとのendpoint件数
+- `list_endpoints` と同じroute合成規則で計算したsections / endpoints
+
+```json
+{
+  "object": {
+    "object": "view",
+    "kind": "api_table",
+    "id": "ec_api"
+  },
+  "signature": {
+    "id": "ec_api",
+    "http_root_path": "/api",
+    "modules": [
+      { "module": "auth", "include_submodules": false }
+    ]
+  },
+  "members": {
+    "modules": [
+      { "module": "auth", "include_submodules": false, "endpoint_count": 1 }
+    ],
+    "sections": [
+      {
+        "module": "auth",
+        "include_submodules": false,
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/api/login",
+            "leaf_path": "login",
+            "task": "auth.task.login"
+          }
+        ]
+      }
+    ],
+    "collected_endpoints": [
+      {
+        "module": "auth",
+        "task": "auth.task.login",
+        "method": "POST",
+        "path": "/api/login",
+        "leaf_path": "login"
+      }
+    ]
+  },
+  "diagnostics": []
+}
+```
+
+`inspect(view: api_table)` は、view定義が何を集約しているかを説明するための文脈取得である。
+実装やroute確認でcomputed endpoint一覧だけが必要な場合は、`list_endpoints` を使う。
+
+収集対象endpointが0件のmodule-entryは、API Table render / `list_endpoints` と同様に `sections` には出さない。
+ただし `members.modules[]` には `endpoint_count: 0` として残してよい。
+
+### 8.13 ER Diagram inspect
+
+ER Diagram viewはview objectとしてinspectできる。
+
+```json
+{
+  "selector": {
+    "object": "view",
+    "kind": "er_diagram",
+    "id": "ec_er"
+  }
+}
+```
+
+返す内容:
+
+- ER Diagram ID
+- 対象modules
+- included stores
+- included models
+- view内でrelationとして描画されるFK relations
+- view対象外のmodelへ向くFKのsummary
+
+```json
+{
+  "object": {
+    "object": "view",
+    "kind": "er_diagram",
+    "id": "ec_er"
+  },
+  "signature": {
+    "id": "ec_er",
+    "modules": [
+      { "module": "auth" },
+      { "module": "order" }
+    ]
+  },
+  "members": {
+    "modules": [
+      { "module": "auth", "store_count": 1, "model_count": 1 }
+    ],
+    "included_stores": [
+      { "object": "node", "kind": "store", "id": "order.store.order_db" }
+    ],
+    "included_models": [
+      { "object": "node", "kind": "model", "id": "order.model.order" }
+    ],
+    "fk_relations": [
+      {
+        "from_model": "order.model.order_item",
+        "from_field": "order_id",
+        "to_model": "order.model.order",
+        "to_field": "id",
+        "fk": "order.id",
+        "cardinality": "many_to_one"
+      }
+    ],
+    "excluded_refs_summary": {
+      "count": 0
+    }
+  },
+  "diagnostics": []
+}
+```
+
+view YAMLによる横断ERでは、`modules[]` に明示されたmodule直下の `store.kind: db` のみを対象にする。
+サブモジュールは自動では含めない。
+view内に含まれないmodelへのFKは `fk_relations` には含めず、`excluded_refs_summary` に入れる。
 
 ---
 

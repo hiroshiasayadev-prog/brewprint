@@ -26,8 +26,8 @@ func TestHandleJSONRPC(t *testing.T) {
 		}
 		result := resultMapAny(t, res.Result)
 		tools := result["tools"].([]any)
-		if len(tools) != 4 {
-			t.Fatalf("tools len = %d, want 4: %#v", len(tools), tools)
+		if len(tools) != 5 {
+			t.Fatalf("tools len = %d, want 5: %#v", len(tools), tools)
 		}
 		firstTool := tools[0].(map[string]any)
 		if _, ok := firstTool["inputSchema"]; !ok {
