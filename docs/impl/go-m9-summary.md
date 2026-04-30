@@ -16,7 +16,7 @@
 3. `docs/impl/go-m8-summary.md`
 4. `docs/impl/go-m9-summary.md`（このファイル）
 5. `docs/TASKS.md` の Milestone 3 付近
-6. `docs/spec/mcp.md` の以下
+6. `docs/spec/mcp/schema.md` / `docs/spec/mcp/tools/inspect.md` の以下
    - `Reference kind`
    - `state inspect`
    - `event inspect`
@@ -222,7 +222,7 @@ M9-3差分後に通過済み。
 - `selector.object=view` / `selector.kind=sequence_diagram` で scenario view object を解決できるようにした。
 - `semantic.ReferenceKindScenarioStateFile` / `semantic.ReferenceKindScenarioStepTransition` を追加した。
 - `resolve.buildReferences` で scenario reference を index に追加した。
-- MCP selector schema を `docs/spec/mcp.md` の Object selector に寄せて拡張した。
+- MCP selector schema を `docs/spec/mcp/schema.md` の Object selector に寄せて拡張した。
 
 UC-001で固定した test:
 
@@ -452,7 +452,7 @@ Post-M9-2差分後に通過済み。
 
 ---
 
-### Post-M9-3: docs/spec/mcp.md transition spec追随
+### Post-M9-3: docs/spec/mcp/tools/get-signature.md / inspect.md transition spec追随
 
 実装済みの transition object 対応に合わせて、MCP specを更新した。
 
@@ -474,7 +474,8 @@ Post-M9-2差分後に通過済み。
 
 変更ファイル:
 
-- `docs/spec/mcp.md`
+- `docs/spec/mcp/tools/get-signature.md`
+- `docs/spec/mcp/tools/inspect.md`
 
 検証:
 
@@ -652,7 +653,7 @@ Post-M9-6差分後に通過済み。
 
 ---
 
-### Post-M9-7: docs/spec/mcp.md field spec追随
+### Post-M9-7: docs/spec/mcp/tools/get-signature.md / inspect.md field spec追随
 
 実装済みの field object 対応に合わせて、MCP specを更新した。
 
@@ -672,7 +673,8 @@ Post-M9-6差分後に通過済み。
 
 変更ファイル:
 
-- `docs/spec/mcp.md`
+- `docs/spec/mcp/tools/get-signature.md`
+- `docs/spec/mcp/tools/inspect.md`
 
 検証:
 
@@ -687,11 +689,11 @@ Post-M9-6差分後に通過済み。
 Milestone 3 の QueryService 拡張は M9-4 で完了。
 Post-M9-1で transition object の direct references も問い合わせ可能になった。
 Post-M9-2で transition object の signature / inspect も問い合わせ可能になった。
-Post-M9-3で `docs/spec/mcp.md` も transition signature / inspect に追随した。
+Post-M9-3で `docs/spec/mcp/tools/get-signature.md` / `docs/spec/mcp/tools/inspect.md` も transition signature / inspect に追随した。
 Post-M9-4で field / file object の direct references も問い合わせ可能になった。
 Post-M9-5で同モジュール内bare FK正規化もreference index / validationに反映した。
 Post-M9-6で field object の signature / inspect も問い合わせ可能になった。
-Post-M9-7で `docs/spec/mcp.md` も field signature / inspect に追随した。
+Post-M9-7で `docs/spec/mcp/tools/get-signature.md` / `docs/spec/mcp/tools/inspect.md` も field signature / inspect に追随した。
 
 次候補:
 
@@ -765,7 +767,7 @@ git status
 Post-M9-7だけをcommitするなら候補:
 
 ```powershell
-git add docs/spec/mcp.md docs/impl/go-m9-summary.md
+git add docs/spec/mcp/tools/get-signature.md docs/spec/mcp/tools/inspect.md docs/impl/go-m9-summary.md
 git commit -m "docs(mcp): document field inspect"
 ```
 

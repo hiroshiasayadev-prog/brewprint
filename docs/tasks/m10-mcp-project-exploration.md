@@ -10,14 +10,14 @@
 ## Tasks
 
 - [x] **`list_objects` を実装する**
-  - ADR-054 / `docs/spec/mcp.md` の設計対話coverageに準拠
+  - ADR-054 / `docs/spec/mcp/overview.md` の設計対話coverageに準拠
   - project内の主要semantic objectを一覧・絞り込みできるようにする
   - object kind / module / file / label / source を返す
   - node / view / transition / field を対象に含める
   - asset / private sub node はM11で直接selector対応するまで対象外または任意扱いにする
   - MCP tool inputSchema / server wrapper testを追加する
   - QueryService unit testでUC-001の一覧を固定する
-  - 実装後に `docs/spec/mcp.md` の tool仕様を追記する
+  - 実装後に `docs/spec/mcp/tools/list-objects.md` の tool仕様を追記する
 
 - [x] **`inspect(file)` を実装する**
   - FileID selectorで YAML file単位の定義内容を返す
@@ -27,7 +27,7 @@
   - `render_index.yaml` は group summary / uncovered module warning 等を返す候補として扱う
   - `get_references(file)` の既存 `state_file` partial対応と整合させる
   - MCP wrapper test / QueryService testで代表fileを固定する
-  - 実装後に `docs/spec/mcp.md` の selector support matrixを更新する
+  - 実装後に `docs/spec/mcp/schema.md` の selector support matrixを更新する
 
 - [x] **`inspect(view: api_table)` を実装する**
   - API Table view objectを直接inspectできるようにする
@@ -41,4 +41,4 @@
   - 対象modules / included stores / included models / FK relations / excluded refs summary を返す
   - default module単位ERと view YAMLによる横断ERの扱いを整理する
   - UC-001の ER view でQueryService / MCP wrapper testを追加する
-  - 実装後に `docs/spec/mcp.md` の view inspect仕様を追記する
+  - 実装後に `docs/spec/mcp/tools/inspect.md` の view inspect仕様を追記する

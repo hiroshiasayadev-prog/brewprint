@@ -12,7 +12,7 @@
 - [x] **`get_source` を実装する**
   - semantic objectに対応するYAML snippetを返す
   - Raw YAML AST全体公開ではなく、ResolvedProject objectのsource補助情報として扱う
-  - selector / source range / fallback挙動を `docs/spec/mcp.md` に定義する
+  - selector / source range / fallback挙動を `docs/spec/mcp/tools/get-source.md` に定義する
   - source line/columnが未取得の場合の返却形式を決める
   - MCP wrapper test / QueryService testを追加する
 
@@ -23,7 +23,7 @@
   - ADR-055で `get_references` direct only維持 + `get_reference_tree` 別toolを採用済み
   - ADR-055で cycle detection / max depth / kind filter / direction の方針を確定済み
   - ADR-049のdirect reference方針はsupersedeせず、ADR-055で拡張する
-  - `docs/spec/mcp.md` へ正式仕様を反映済み
+  - `docs/spec/mcp/tools/get-reference-tree.md` へ正式仕様を反映済み
   - 実装タスクは次セッション以降で分割する
 
 - [ ] **`analyze_impact` を設計する**
@@ -43,4 +43,4 @@
     - `recommended_action`
   - 初期対象は field / model / task / transition 程度に絞る
   - flow wiring と render output impact は段階的に追加する
-  - 実装前に `docs/spec/mcp.md` へtool仕様案を追記する
+  - 実装前に `docs/spec/mcp/overview.md` へtool仕様案を追記する

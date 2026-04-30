@@ -16,7 +16,7 @@
   - asset referencesで producer / consumer task への関係を返す
   - `produces_asset` との整合を保つ
   - UC-001のDAG assetでQueryService / MCP wrapper testを追加済み
-  - `docs/spec/mcp.md` の AssetRef / selector support matrixを更新済み
+  - `docs/spec/mcp/schema.md` の AssetRef / selector support matrixを更新済み
 
 - [x] **private sub node selectorを実装する**
   - file-local task / branch / fork / join を直接queryできるようにする
@@ -30,6 +30,6 @@
   - flow wiringは `inspect(task).members.flow.entries` のflow inspect用schemaに閉じる
   - `flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over` は `Reference.kind` ではなく、flow inspect用の語彙として扱う
   - 将来の `get_reference_tree` / `analyze_impact` では traversal 材料として利用可能
-  - `inspect(task).members.flow.entries` の最小schemaを `docs/spec/mcp.md` に追記済み
+  - `inspect(task).members.flow.entries` の最小schemaを `docs/spec/mcp/tools/inspect.md` に追記済み
   - DAG rendererのview modelとQueryServiceの責務境界は維持する
   - 既存方針を覆していないため、新規ADRは不要

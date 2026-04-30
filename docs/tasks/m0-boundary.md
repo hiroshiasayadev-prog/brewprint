@@ -34,7 +34,7 @@
   - `get_deps` / `GetDeps` は採用しない
   - MCP responseの中心語彙を `references` とする
 
-- [x] **docs/spec/mcp.md を薄く作る**
+- [x] **docs/spec/mcp/overview.md / schema.md / tools/*.md の元仕様を作る**
   - `get_signature` / `get_references` / `inspect` / `list_endpoints` の input / output を決める
   - QualifiedID / FileID / TransitionID / private sub node synthetic ID の指定形式を決める
   - ObjectRef / TransitionRef / AssetRef / Diagnostic / Reference の共通schemaを決める

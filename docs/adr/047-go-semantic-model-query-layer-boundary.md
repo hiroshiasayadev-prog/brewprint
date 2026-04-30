@@ -149,7 +149,7 @@ name resolution と derived model build は semantic validation と同じbuild p
 - `ResolvedProject` が保持する具体的なreverse lookup index一覧
   - ADR-048で決める
 - `get_signature` / `get_deps` / `inspect` の具体的なinput / output schema
-  - `docs/spec/mcp.md` で決める
+  - `docs/spec/mcp/overview.md` および `docs/spec/mcp/tools/*.md` で決める
 - DAG / State / Sequence / ER / API / Wireframeごとの具体的なview model型
   - 各rendererのvertical slice実装中に固める
 - Go package名、struct名、interface名の最終形
@@ -202,7 +202,7 @@ Rendererが `ResolvedProject` を直接読めば、初期実装は単純にな�
 - DAG vertical sliceでは、まず `auth.task.login` を Raw YAML → ResolvedProject → Renderer の経路で通す。
 - QueryService vertical sliceでは、`ResolvedProject` を入力に `GetSignature` / `Inspect` / `GetDeps` を実装する。
 - ADR-048で `ResolvedProject` のindex strategyを続けて決める必要がある。
-- `docs/spec/mcp.md` でMCP toolの外部仕様を別途定義する必要がある。
+- `docs/spec/mcp/overview.md` および `docs/spec/mcp/tools/*.md` でMCP toolの外部仕様を別途定義する必要がある。
 
 ## Evidence
 - commit: da28fa9

@@ -54,12 +54,12 @@ QueryServiceは将来MCP toolから呼ばれる前提のGo APIだが、M3の検�
 - `docs/adr/047-go-semantic-model-query-layer-boundary.md`
 - `docs/adr/048-resolved-project-index-strategy.md`
 - `docs/adr/049-mcp-query-reference-vocabulary.md`
-- `docs/spec/mcp.md` の以下の範囲
+- `docs/spec/mcp/schema.md` の以下の範囲
   - Common schema
   - Reference schema
-  - `get_signature`
-  - `get_references`
-  - `inspect`
+- `docs/spec/mcp/tools/get-signature.md`
+- `docs/spec/mcp/tools/get-references.md`
+- `docs/spec/mcp/tools/inspect.md`
 - `docs/spec/nodes.md` の task / model / store / branch / fork / join 範囲
 - `docs/uc/001-ec-checkout-flow/yaml/auth/task/login.yaml`
 - `docs/uc/001-ec-checkout-flow/yaml/cart/task/validate_cart.yaml`
@@ -302,7 +302,7 @@ func (s *Service) Inspect(req InspectRequest) (InspectResponse, error)
 注意:
 
 - MCP transport向けのJSON schemaをそのままGo型に固定しすぎない。
-- ただしfield名と語彙は `docs/spec/mcp.md` と揃える。
+- ただしfield名と語彙は `docs/spec/mcp/schema.md` および該当する `docs/spec/mcp/tools/*.md` と揃える。
 - errorはまず通常のGo errorでよい。MCP-level error変換はMCP wrapper側で行う。
 
 完了条件:

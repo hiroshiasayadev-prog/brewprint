@@ -98,7 +98,7 @@ LLMが project を自律的に理解するには、個別object問い合わせ�
 
 ### 4. direct references v1方針は維持しつつ、impact traversalを将来拡張する
 
-ADR-049 / `docs/spec/mcp.md` で定義した通り、現在の `get_references` は direct references を返す。
+ADR-049 / `docs/spec/mcp/tools/get-references.md` で定義した通り、現在の `get_references` は direct references を返す。
 この方針は維持する。
 
 ただし、設計変更相談では transitive impact traversal が必要になるため、将来的には以下のどちらかで拡張する。
@@ -149,7 +149,7 @@ YAML source は必要に応じて補助情報として返すに留める。
 ### 具体実装をTASKSで管理する理由
 
 本ADRは、MCP拡張の判断基準を固定するための方針ADRである。
-個別toolやselectorのschemaは、実装しながら `docs/spec/mcp.md` に追随する。
+個別toolやselectorのschemaは、実装しながら `docs/spec/mcp/schema.md` および該当する `docs/spec/mcp/tools/*.md` に追随する。
 
 最初から全selector / 全toolをADR本文に固定すると、実装しづらくなる。
 そのため、ADRでは方向性と原則を定め、具体的なmilestoneは `docs/TASKS.md` で管理する。
@@ -175,7 +175,7 @@ YAML source は必要に応じて補助情報として返すに留める。
 
 ### specへの影響
 
-`docs/spec/mcp.md` は、実装済みselector / toolの範囲を明確にする必要がある。
+`docs/spec/mcp/schema.md` および `docs/spec/mcp/tools/*.md` は、実装済みselector / toolの範囲を明確にする必要がある。
 特に、selector support matrix を追加し、以下を区別する。
 
 - supported

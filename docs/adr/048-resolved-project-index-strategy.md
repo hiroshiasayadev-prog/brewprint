@@ -247,7 +247,7 @@ ADR-048では、Milestone 1〜3で必要になる最小限のindexに絞る。
 - RendererはRaw YAML structsではなく、index / accessorまたはview-specific view modelを使う。
 - Milestone 1のDAG vertical sliceでは、最低限 `nodesByQID` / `nodesByFile` / `mainNodeByFile` / `tasksReadingStore` / `tasksWritingStore` を実装する。
 - Milestone 3のQueryService vertical sliceでは、本ADRのreverse lookup indexを利用する。特に `GetReferences` / MCP `get_references` は `referencesBySource` / `referencesByTarget` を主材料にする。
-- `docs/spec/mcp.md` では、本ADRのindex方針を前提に `get_signature` / `get_references` / `inspect` の外部I/Oを定義する。
+- `docs/spec/mcp/overview.md` および `docs/spec/mcp/tools/*.md` では、本ADRのindex方針を前提に `get_signature` / `get_references` / `inspect` の外部I/Oを定義する。
 
 ## Evidence
 - commit: da28fa9

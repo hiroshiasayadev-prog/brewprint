@@ -34,7 +34,7 @@ TASKS上で M9 が欠番に見えると実装再開時に迷うため、この�
 - same-module bare FK normalization
 - GetSignature(field)
 - Inspect(field)
-- `docs/spec/mcp.md` の transition / field spec追随
+- `docs/spec/mcp/tools/get-signature.md` / `docs/spec/mcp/tools/inspect.md` の transition / field spec追随
 
 ---
 

@@ -10,7 +10,7 @@
 ADR-047では、QueryService の責務として `GetSignature` / `GetDeps` / `Inspect` を仮置きした。
 ADR-048でも、MCP tool が `get_deps` を返却材料として使う前提の記述が残っている。
 
-しかし `docs/spec/mcp.md` の設計中に、brewprint MCPが返す関係は単なる dependency より広いことが明確になった。
+しかし `docs/spec/mcp/overview.md` / `docs/spec/mcp/schema.md` / `docs/spec/mcp/tools/get-references.md` の設計中に、brewprint MCPが返す関係は単なる dependency より広いことが明確になった。
 
 例:
 
@@ -135,8 +135,8 @@ ADR-047のQueryService境界、ADR-048のResolvedProject index strategyは継続
 
 ## 影響
 
-- `docs/spec/mcp.md` は `get_references` を正式tool名として定義する。
-- `docs/spec/mcp.md` のresponse語彙は `references` を中心にする。
+- `docs/spec/mcp/tools/get-references.md` は `get_references` を正式tool名として定義する。
+- `docs/spec/mcp/schema.md` のresponse語彙は `references` を中心にする。
 - ADR-047の `GetDeps` 記述は `GetReferences` と読み替える。
 - ADR-048の `get_deps` / `GetDeps` 記述は `get_references` / `GetReferences` と読み替える。
 - TASKS.md 等に `get_deps` 表記があれば `get_references` に更新する。
