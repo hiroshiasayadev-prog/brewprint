@@ -16,14 +16,15 @@
   - source line/columnが未取得の場合の返却形式を決める
   - MCP wrapper test / QueryService testを追加する
 
-- [ ] **`get_reference_tree` または depth指定つきreference traversalを設計する**
+- [x] **`get_reference_tree` または depth指定つきreference traversalを設計する**
   - direct referencesだけでは不足する変更影響範囲を辿れるようにする
   - ただし、このtaskは「参照グラフ traversal」までを扱い、変更種別ごとの解釈は `analyze_impact` に分ける
   - 別tool `get_reference_tree` にするか、`get_references` に `depth` inputを追加するかを比較する
-  - 現時点の推奨は `get_references` direct only維持 + `get_reference_tree` 別tool
-  - cycle detection / max depth / kind filter / direction の仕様を決める
-  - ADR-049のdirect reference方針をどう拡張するか整理し、必要なら新ADRを起票する
-  - 設計確定後に実装タスクを分割する
+  - ADR-055で `get_references` direct only維持 + `get_reference_tree` 別toolを採用済み
+  - ADR-055で cycle detection / max depth / kind filter / direction の方針を確定済み
+  - ADR-049のdirect reference方針はsupersedeせず、ADR-055で拡張する
+  - `docs/spec/mcp.md` へ正式仕様を反映済み
+  - 実装タスクは次セッション以降で分割する
 
 - [ ] **`analyze_impact` を設計する**
   - 設計変更相談向けに、対象objectと変更種別から影響範囲を返す上位toolとして扱う

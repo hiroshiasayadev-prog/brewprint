@@ -25,6 +25,7 @@ depends_on:
   - docs/adr/048-resolved-project-index-strategy.md
   - docs/adr/049-mcp-query-reference-vocabulary.md
   - docs/adr/054-mcp-query-coverage-for-design-conversation.md
+  - docs/adr/055-mcp-reference-tree-traversal.md
 ---
 
 # MCP仕様
@@ -225,28 +226,28 @@ private sub nodeの直接問い合わせは `get_signature` / `get_references` /
 
 MCP v1のselector対応範囲は以下とする。
 
-| object / kind | `get_signature` | `get_references` | `inspect` | status |
-|---|---:|---:|---:|---|
-| `node: task` | yes | yes | yes | supported |
-| `node: model` | yes | yes | yes | supported |
-| `node: store` | yes | yes | yes | supported |
-| `node: state` | yes | yes | yes | supported |
-| `node: event` | yes | yes | yes | supported |
-| `node: actor` | yes | yes | limited | supported / limited inspect |
-| `view: sequence_diagram` | yes | yes | yes | supported |
-| `transition` | yes | yes | yes | supported |
-| `field` | yes | yes | yes | supported |
-| `file: node` | no | limited | yes | supported / limited references |
-| `file: state_file` | no | yes | yes | supported |
-| `file: sequence_diagram` | no | no | yes | supported |
-| `file: api_table` | no | no | yes | supported |
-| `file: er_diagram` | no | no | yes | supported |
-| `file: render_index` | no | no | yes | supported |
-| `asset` | yes | yes | yes | supported |
-| `view: api_table` | no | no | yes | supported; `list_endpoints` はcomputed route一覧専用 |
-| `view: er_diagram` | no | no | yes | supported |
-| private sub node | yes | yes | yes | supported |
-| `primitive` | no | no | no | reference target only |
+| object / kind | `get_signature` | `get_references` | `get_reference_tree` | `inspect` | status |
+|---|---:|---:|---:|---:|---|
+| `node: task` | yes | yes | yes | yes | supported |
+| `node: model` | yes | yes | yes | yes | supported |
+| `node: store` | yes | yes | yes | yes | supported |
+| `node: state` | yes | yes | yes | yes | supported |
+| `node: event` | yes | yes | yes | yes | supported |
+| `node: actor` | yes | yes | yes | limited | supported / limited inspect |
+| `view: sequence_diagram` | yes | yes | yes | yes | supported |
+| `transition` | yes | yes | yes | yes | supported |
+| `field` | yes | yes | yes | yes | supported |
+| `file: node` | no | limited | limited | yes | supported / limited references |
+| `file: state_file` | no | yes | yes | yes | supported |
+| `file: sequence_diagram` | no | no | no | yes | supported |
+| `file: api_table` | no | no | no | yes | supported |
+| `file: er_diagram` | no | no | no | yes | supported |
+| `file: render_index` | no | no | no | yes | supported |
+| `asset` | yes | yes | yes | yes | supported |
+| `view: api_table` | no | no | no | yes | supported; `list_endpoints` はcomputed route一覧専用 |
+| `view: er_diagram` | no | no | no | yes | supported |
+| private sub node | yes | yes | yes | yes | supported |
+| `primitive` | no | no | no | no | reference target only |
 
 statusの意味:
 
@@ -258,6 +259,9 @@ statusの意味:
 | `future` | 設計対話coverage上は候補だが、現時点では未実装 |
 | `v1 optional` | spec上は許容するが、実装必須ではない |
 | `reference target only` | reference targetとして返すが、直接query対象ではない |
+
+`get_reference_tree` における `file: node` の `limited` は、`get_references(file: node)` の対応範囲に従い、file内nodeへのreferenceのみ展開することを意味する。
+`primitive` はreference targetとして到達可能だが、traversal rootとしては扱わない。
 
 > 由来: ADR-054 §決定
 
@@ -647,7 +651,7 @@ M11ではこの方針を維持し、`flow_step` / `flow_param` / `flow_branch_ca
 
 ## 5. Tool overview
 
-MCP v1のquery toolは以下の6つとする。
+MCP v1のquery toolは以下の7つとする。
 
 | tool | 目的 | 主な利用場面 |
 |---|---|---|
@@ -655,6 +659,7 @@ MCP v1のquery toolは以下の6つとする。
 | `get_signature` | object単体の外形を取得する | 実装前にtask/model/store等の型・I/Oを確認する |
 | `get_source` | semantic objectに対応するYAML snippetを取得する | 設計対話中に定義元YAMLを確認する |
 | `get_references` | objectの直接referenceを取得する | 影響範囲・依存・逆参照を確認する |
+| `get_reference_tree` | objectからdepth制限つきでreference graphを辿る | 変更影響範囲や周辺objectをN hopで確認する |
 | `inspect` | object kind別に実装判断用の文脈を取得する | Claude Code等が実装・修正時に読む |
 | `list_endpoints` | API Table viewに基づくendpoint一覧を取得する | API実装・ルーティング確認 |
 
@@ -1202,23 +1207,308 @@ MCP v1ではdirect referencesのみを返す。
 
 `depth` は常に `1` を返す。
 
-MCP v1では、inputに `depth` を持たない。
-将来、transitive referencesが必要になった場合は以下のどちらかで拡張する。
-
-- `depth` inputを追加する
-- `get_reference_tree` 等の別toolを追加する
+MCP v1では、`get_references` inputに `depth` を持たない。
+transitive reference traversal は、ADR-055に従い、別tool `get_reference_tree` で扱う。
 
 ---
 
-## 9. `inspect`
+## 9. `get_reference_tree`
 
 ### 9.1 Purpose
+
+`get_reference_tree` は、対象objectをrootとして、direct referencesをdepth制限つきでBFS traversalする。
+
+tool名は `tree` だが、返却形式は純粋な木ではなく、`nodes[]` / `edges[]` からなる bounded reference graph とする。
+
+返すもの:
+
+- root object
+- traversal direction / depth
+- 到達したobjects
+- traversalで辿ったreferences
+- truncation情報
+- diagnostics
+
+返さないもの:
+
+- 変更種別ごとのimpact severity
+- recommended action
+- renderer output mapping
+- flow wiring references
+- Raw YAML AST
+
+変更種別を含む影響判断は、将来の `analyze_impact` で扱う。
+
+### 9.2 Input
+
+```json
+{
+  "selector": {
+    "object": "transition",
+    "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+  },
+  "direction": "out",
+  "depth": 1,
+  "kinds": ["transition_from", "transition_event", "transition_to", "transition_action"],
+  "max_nodes": 200,
+  "max_edges": 500
+}
+```
+
+| フィールド | 必須 | 内容 |
+|---|---:|---|
+| `selector` | ✓ | traversal root object |
+| `direction` | ✓ | `out` / `in` / `both` |
+| `depth` | ✓ | `0..4` |
+| `kinds` | 任意 | traversal / return対象のreference kind filter |
+| `max_nodes` | 任意 | node返却上限。省略時 `200` |
+| `max_edges` | 任意 | edge返却上限。省略時 `500` |
+
+`depth < 0` または `depth > 4` は `invalid_depth` error とする。
+`direction` は探索範囲を暗黙化しないため必須とする。
+
+`kinds` を指定した場合、指定されたreference kindのみを traversal 経路として辿り、`edges[]` に含める。
+指定外kindでしか到達できないobjectには到達しない。
+
+### 9.3 Output
+
+```json
+{
+  "root": {
+    "object": "transition",
+    "kind": "transition",
+    "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']",
+    "file": "order/state.yaml",
+    "local_id": "processing:payment_webhook_received"
+  },
+  "direction": "out",
+  "depth": 1,
+  "nodes": [
+    {
+      "object": {
+        "object": "transition",
+        "kind": "transition",
+        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+      },
+      "depth": 0,
+      "via": []
+    },
+    {
+      "object": {
+        "object": "node",
+        "kind": "state",
+        "id": "order.state.processing"
+      },
+      "depth": 1,
+      "via": ["transition_from"]
+    },
+    {
+      "object": {
+        "object": "node",
+        "kind": "event",
+        "id": "order.event.payment_webhook_received"
+      },
+      "depth": 1,
+      "via": ["transition_event"]
+    },
+    {
+      "object": {
+        "object": "node",
+        "kind": "state",
+        "id": "order.state.confirmed"
+      },
+      "depth": 1,
+      "via": ["transition_to"]
+    },
+    {
+      "object": {
+        "object": "node",
+        "kind": "task",
+        "id": "payment.webhooks.task.process_payment"
+      },
+      "depth": 1,
+      "via": ["transition_action"]
+    }
+  ],
+  "edges": [
+    {
+      "kind": "transition_from",
+      "direction": "out",
+      "from": {
+        "object": "transition",
+        "kind": "transition",
+        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+      },
+      "to": {
+        "object": "node",
+        "kind": "state",
+        "id": "order.state.processing"
+      },
+      "depth": 1
+    },
+    {
+      "kind": "transition_event",
+      "direction": "out",
+      "from": {
+        "object": "transition",
+        "kind": "transition",
+        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+      },
+      "to": {
+        "object": "node",
+        "kind": "event",
+        "id": "order.event.payment_webhook_received"
+      },
+      "depth": 1
+    },
+    {
+      "kind": "transition_to",
+      "direction": "out",
+      "from": {
+        "object": "transition",
+        "kind": "transition",
+        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+      },
+      "to": {
+        "object": "node",
+        "kind": "state",
+        "id": "order.state.confirmed"
+      },
+      "depth": 1
+    },
+    {
+      "kind": "transition_action",
+      "direction": "out",
+      "from": {
+        "object": "transition",
+        "kind": "transition",
+        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
+      },
+      "to": {
+        "object": "node",
+        "kind": "task",
+        "id": "payment.webhooks.task.process_payment"
+      },
+      "depth": 1
+    }
+  ],
+  "truncated": false,
+  "truncated_reasons": [],
+  "diagnostics": []
+}
+```
+
+| フィールド | 必須 | 内容 |
+|---|---:|---|
+| `root` | ✓ | traversal root ObjectRef |
+| `direction` | ✓ | 実際に使ったdirection |
+| `depth` | ✓ | 実際に使ったmax traversal depth |
+| `nodes` | ✓ | 到達object一覧 |
+| `edges` | ✓ | traversalで辿ったReference一覧 |
+| `truncated` | ✓ | `max_nodes` / `max_edges` により打ち切ったか |
+| `truncated_reasons` | ✓ | `max_nodes` / `max_edges` |
+| `diagnostics` | ✓ | Diagnostic list |
+
+### 9.4 Node entry
+
+`nodes[]` の各entryは以下の形を持つ。
+
+```json
+{
+  "object": {
+    "object": "node",
+    "kind": "model",
+    "id": "order.model.order"
+  },
+  "depth": 2,
+  "via": ["writes", "store_of"]
+}
+```
+
+| フィールド | 必須 | 内容 |
+|---|---:|---|
+| `object` | ✓ | 到達したObjectRef |
+| `depth` | ✓ | rootからの最短到達hop数 |
+| `via` | ✓ | rootから最初に到達したBFS経路のReference.kind列 |
+
+同一nodeへ複数経路が存在する場合、`nodes[].via` は最短かつ最初に探索された経路のみを表す。
+完全な経路復元には `edges[]` を使う。
+
+### 9.5 Edge entry
+
+`edges[]` は `Reference` と同じ基本形に `depth` を加えたものとする。
+
+`edges[].depth` は、そのedgeを発見した traversal hop を表す。
+rootから1 hop目で発見されたedgeは `depth: 1` とする。
+
+### 9.6 Traversal semantics
+
+- traversal は BFS 固定とする
+- `depth=0` はrootのみを返す
+- `depth=N` は `0..N` hop までの到達nodeとedgeを返す
+- rootは常に `nodes[]` に含める
+- 同一objectへの再訪は行わない
+- 同一objectへの再訪停止は正常動作であり、`diagnostics[]` には記録しない
+- 循環の有無を知りたい場合は、返却された `edges[]` から推論する
+- `direction=out` は現在nodeがreferenceの `from` であるedgeを辿り、`to` へ進む
+- `direction=in` は現在nodeがreferenceの `to` であるedgeを辿り、`from` へ進む
+- `direction=both` は `out` / `in` の両方を辿る
+
+### 9.7 Selector support
+
+`get_reference_tree` のroot selectorは、基本的に `get_references` の対応selectorを起点にする。
+
+起点として supported:
+
+- `node: task`
+- `node: model`
+- `node: store`
+- `node: state`
+- `node: event`
+- `node: actor`
+- `view: sequence_diagram`
+- `transition`
+- `field`
+- `file: node` limited
+- `file: state_file`
+- `asset`
+- private sub node
+
+起点として unsupported:
+
+- `primitive`
+- `view: api_table`
+- `view: er_diagram`
+- `file: sequence_diagram`
+- `file: api_table`
+- `file: er_diagram`
+- `file: render_index`
+
+`primitive` は reference target として到達可能だが、traversal rootにはできない。
+`file: node` をrootにした場合は、`get_references(file: node)` の limited 対応範囲に従い、file内nodeへのreferenceのみ展開する。
+
+actorをrootにして `direction=in` を指定すると、多数の `event_actor` reference に到達しやすい。
+必要に応じて `kinds` / `max_nodes` / `max_edges` を指定する。
+
+### 9.8 Flow wiring references
+
+`get_reference_tree` v1は、新しいreference kindを追加しない。
+
+flow wiring（`flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over`）は、引き続き `inspect(task).members.flow.entries` 内のflow inspect用語彙として扱い、`get_reference_tree` のtraversal対象には含めない。
+
+将来、flow wiringを影響分析に含める場合は、`get_reference_tree` のreference kind拡張、または `analyze_impact` 側の補完材料として扱う。
+
+---
+
+## 10. `inspect`
+
+### 10.1 Purpose
 
 `inspect` は、対象objectの実装判断に必要な周辺文脈をkind別にまとめて返す。
 
 `get_signature` が薄い外形確認であるのに対し、`inspect` はLLMが実装・修正・レビュー時に読む濃い文脈取得toolである。
 
-### 9.2 Input
+### 10.2 Input
 
 ```json
 {
@@ -1245,7 +1535,7 @@ MCP v1では、inputに `depth` を持たない。
 MCP v1では、`detail` による厳密な返却差分は実装任意とする。
 ただし未知の値はerrorとする。
 
-### 9.3 Common output shape
+### 10.3 Common output shape
 
 ```json
 {
@@ -1269,7 +1559,7 @@ MCP v1では、`detail` による厳密な返却差分は実装任意とする�
 | `references` | 任意 | 主要reference |
 | `diagnostics` | ✓ | Diagnostic list |
 
-### 9.4 task inspect
+### 10.4 task inspect
 
 `task` の `inspect` は以下を返す。
 
@@ -1459,7 +1749,7 @@ ADR-038により、Sequence Diagram生成ではmain taskと同一ファイル内
 }
 ```
 
-### 9.5 store inspect
+### 10.5 store inspect
 
 `store` の `inspect` は以下を返す。
 
@@ -1510,7 +1800,7 @@ ADR-038により、Sequence Diagram生成ではmain taskと同一ファイル内
 }
 ```
 
-### 9.6 model inspect
+### 10.6 model inspect
 
 `model` の `inspect` は以下を返す。
 
@@ -1546,7 +1836,7 @@ ADR-038により、Sequence Diagram生成ではmain taskと同一ファイル内
 }
 ```
 
-### 9.7 state inspect
+### 10.7 state inspect
 
 `state` の `inspect` は以下を返す。
 
@@ -1600,7 +1890,7 @@ ADR-038により、Sequence Diagram生成ではmain taskと同一ファイル内
 state inspectでは、incoming / outgoing transitions が中心情報であるため `members` に置く。
 一方、`get_references(state)` は `transition_from` / `transition_to` を `references` として返す。
 
-### 9.8 event inspect
+### 10.8 event inspect
 
 `event` の `inspect` は以下を返す。
 
@@ -1654,7 +1944,7 @@ state inspectでは、incoming / outgoing transitions が中心情報である�
 これはLLMがeventのsequence上の意味を理解するためのadvisory情報であり、ResolvedProjectの中核semantic relationではない。
 Rendererのnormativeな出力規則は `docs/spec/views/sequence-diagram.md` に従う。
 
-### 9.9 scenario inspect
+### 10.9 scenario inspect
 
 Sequence Diagram scenarioはview objectとしてinspectできる。
 
@@ -1735,7 +2025,7 @@ Sequence Diagram scenarioはview objectとしてinspectできる。
 }
 ```
 
-### 9.10 transition inspect
+### 10.10 transition inspect
 
 Transitionはsynthetic objectとしてinspectできる。
 
@@ -1857,7 +2147,7 @@ Transitionはsynthetic objectとしてinspectできる。
 }
 ```
 
-### 9.11 field inspect
+### 10.11 field inspect
 
 Model fieldはsynthetic objectとしてinspectできる。
 
@@ -1966,7 +2256,7 @@ Model fieldはsynthetic objectとしてinspectできる。
 }
 ```
 
-### 9.12 API Table inspect
+### 10.12 API Table inspect
 
 API Table viewはview objectとしてinspectできる。
 
@@ -2039,7 +2329,7 @@ API Table viewはview objectとしてinspectできる。
 収集対象endpointが0件のmodule-entryは、API Table render / `list_endpoints` と同様に `sections` には出さない。
 ただし `members.modules[]` には `endpoint_count: 0` として残してよい。
 
-### 9.13 ER Diagram inspect
+### 10.13 ER Diagram inspect
 
 ER Diagram viewはview objectとしてinspectできる。
 
@@ -2110,7 +2400,7 @@ view内に含まれないmodelへのFKは `fk_relations` には含めず、`excl
 
 ---
 
-### 9.14 file inspect
+### 10.14 file inspect
 
 `inspect(file)` は、FileID単位の実装判断用コンテキストを返す。
 Raw YAML ASTは返さず、ResolvedProject上に構築済みのsemantic情報をfile単位に要約する。
@@ -2150,15 +2440,15 @@ render index fileでは `members.groups` を返す。
 
 ---
 
-## 10. `list_endpoints`
+## 11. `list_endpoints`
 
-### 10.1 Purpose
+### 11.1 Purpose
 
 `list_endpoints` は、API Table view YAMLに基づいてendpoint一覧を返す。
 
 `task(endpoint=true)` を単純列挙するだけではなく、ADR-028のroute合成規則に従いfull pathを返す。
 
-### 10.2 Input
+### 11.2 Input
 
 ```json
 {
@@ -2172,7 +2462,7 @@ render index fileでは `members.groups` を返す。
 
 API Tableが複数存在し、`api_table_id` が省略された場合は、全API Tableを `tables[]` に分けて返す。
 
-### 10.3 Output
+### 11.3 Output
 
 ```json
 {
@@ -2209,7 +2499,7 @@ API Tableが複数存在し、`api_table_id` が省略された場合は、全AP
 そのためfull pathは `/api/auth/login` ではなく `/api/login` になる。
 `/api/auth/login` を返したい場合は、API Table view側で `http_root_path: /api/auth` とするか、section起点moduleを上位moduleにする。
 
-### 10.4 endpoint object
+### 11.4 endpoint object
 
 | フィールド | 必須 | 内容 |
 |---|---:|---|
@@ -2223,9 +2513,9 @@ API Tableが複数存在し、`api_table_id` が省略された場合は、全AP
 
 ---
 
-## 11. Error model
+## 12. Error model
 
-### 11.1 MCP-level error vs diagnostic
+### 12.1 MCP-level error vs diagnostic
 
 MCP toolの実行自体が成立しない場合はtool errorを返す。
 
@@ -2245,7 +2535,7 @@ MCP toolの実行自体が成立しない場合はtool errorを返す。
 - noteが存在しない
 - optionalな周辺情報が未実装
 
-### 11.2 Error code
+### 12.2 Error code
 
 MCP v1で定義するerror code:
 
@@ -2259,9 +2549,10 @@ MCP v1で定義するerror code:
 | `unsupported_object` | v1ではquery対象外のobject |
 | `unsupported_detail` | `detail` の値が未対応 |
 | `unsupported_direction` | `direction` の値が未対応 |
+| `invalid_depth` | traversal depth が未対応範囲外 |
 | `internal_error` | 実装内部エラー |
 
-### 11.3 Error payload
+### 12.3 Error payload
 
 ```json
 {
@@ -2285,7 +2576,7 @@ MCP v1で定義するerror code:
 
 ---
 
-## 12. Tool selection guidance for LLM
+## 13. Tool selection guidance for LLM
 
 LLMは以下の使い分けを基本とする。
 
@@ -2294,6 +2585,7 @@ LLMは以下の使い分けを基本とする。
 | 対象nodeのI/Oだけ確認したい | `get_signature` |
 | 対象objectの定義元YAML snippetを確認したい | `get_source` |
 | 何に依存しているか / 何から参照されているか確認したい | `get_references` |
+| 変更影響範囲や周辺objectをN hopで確認したい | `get_reference_tree` |
 | 実装・修正・レビューのために周辺文脈が必要 | `inspect` |
 | API route一覧が必要 | `list_endpoints` |
 
@@ -2301,16 +2593,17 @@ LLMは以下の使い分けを基本とする。
 
 - 実装前にはまず `inspect` を使う
 - 小さな型確認だけなら `get_signature` を使う
-- 影響範囲確認では `get_references(direction="in")` または `both` を使う
+- 直接参照確認では `get_references(direction="in")` または `both` を使う
+- N hopの影響範囲確認では `get_reference_tree` を使い、`direction` と `depth` を明示する
 - Raw YAMLを直接読む前に、まず `get_source` でsemantic objectに対応するsnippetを確認する
 
 ---
 
-## 13. Versioning / future extensions
+## 14. Versioning / future extensions
 
 MCP v1では以下を未定義とする。
 
-- transitive references
+- unbounded transitive references
 - reference graphの永続cache
 - renderer outputを返すMCP tool
 - code generation用tool
@@ -2324,7 +2617,6 @@ MCP v1では以下を未定義とする。
 | `inspect(view: api_table)` | API Table viewが集約するmodules / endpoints / computed routesを把握する | high |
 | `inspect(view: er_diagram)` | ER Diagram viewが集約するmodules / stores / models / FKを把握する | high |
 | flow wiring references | DAG上のflow step / param wiringをreferenceとして扱う | medium |
-| `get_reference_tree` | depth指定つきreference traversal。変更影響範囲を辿る | medium |
 | `analyze_impact` | 変更種別つき影響分析。direct references / reference tree / flow wiring / render output mapping を材料に、影響範囲・重要度・確認事項を返す | medium |
 | `search_notes` | note/docに対するsemantic search | low |
 
