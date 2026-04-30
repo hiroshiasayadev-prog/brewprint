@@ -35,7 +35,7 @@ brewprintの積みタスク一覧。
 | M5: renderers | closed | [tasks/m5-renderers.md](tasks/m5-renderers.md) | State / Sequence / ER / API / Wireframe |
 | M6: MCP wrapper | closed | [tasks/m6-mcp-wrapper.md](tasks/m6-mcp-wrapper.md) | stdio JSON-RPC |
 | M7: diagnostics | closed | [tasks/m7-diagnostics.md](tasks/m7-diagnostics.md) | validate CLI / diagnostic codes |
-| M8: render CLI / pipeline | open | [tasks/m8-render-cli.md](tasks/m8-render-cli.md) | collision validation未完了 |
+| M8: render CLI / pipeline | closed | [tasks/m8-render-cli.md](tasks/m8-render-cli.md) | M8 tasks completed |
 | M9: QueryService state/event/scenario expansion | closed | [tasks/m9-query-service-expansion.md](tasks/m9-query-service-expansion.md) | `docs/impl/go-m9-summary.md` |
 | M10: MCP project exploration / view inspect | open | [tasks/m10-mcp-project-exploration.md](tasks/m10-mcp-project-exploration.md) | ADR-054 |
 | M11: MCP diagram element query | open | [tasks/m11-mcp-diagram-element-query.md](tasks/m11-mcp-diagram-element-query.md) | ADR-054 |

@@ -1,6 +1,6 @@
 # Milestone 8: render CLI / 一括render pipeline を実装する
 
-- **status**: open
+- **status**: closed
 - **scope**: render CLI / render pipeline
 - **source**: migrated from docs/TASKS.md
 - **last_updated**: 2026-04-30
@@ -75,10 +75,12 @@
   - preview titleも project名整形に追随
   - `go test ./...` 通過済み（2026-04-29、M8-8差分後）
 
-- [ ] **render output path collision validationを実装する**
+- [x] **render output path collision validationを実装する**
   - ADR-053 / `docs/spec/project-layout.md` に準拠
   - v1では nested module path を出力ファイル名に含めず、local ID filenameを維持する
   - 同一group内で複数render outputが同じrelative pathに解決された場合はerrorにする
   - silent overwriteは禁止する
   - collision対象source objectをerror messageに含める
-  - project renderer / placement周辺のunit testで固定する
+  - `internal/render/project` で render / write 双方のduplicate pathを拒否する
+  - project renderer unit testで error message と write-before-overwrite 防止を固定する
+  - `gofmt` / `go test ./...` 通過済み（2026-04-30、M8 collision validation差分後）
