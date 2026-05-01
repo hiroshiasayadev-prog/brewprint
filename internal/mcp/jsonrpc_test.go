@@ -27,8 +27,8 @@ func TestHandleJSONRPC(t *testing.T) {
 		}
 		result := resultMapAny(t, res.Result)
 		tools := result["tools"].([]any)
-		if len(tools) != 7 {
-			t.Fatalf("tools len = %d, want 7: %#v", len(tools), tools)
+		if len(tools) != 8 {
+			t.Fatalf("tools len = %d, want 8: %#v", len(tools), tools)
 		}
 		firstTool := tools[0].(map[string]any)
 		if _, ok := firstTool["inputSchema"]; !ok {
@@ -36,6 +36,9 @@ func TestHandleJSONRPC(t *testing.T) {
 		}
 		if !hasToolName(tools, "get_reference_tree") {
 			t.Fatalf("get_reference_tree missing from tools/list: %#v", tools)
+		}
+		if !hasToolName(tools, "analyze_impact") {
+			t.Fatalf("analyze_impact missing from tools/list: %#v", tools)
 		}
 	})
 
@@ -75,6 +78,21 @@ func TestHandleJSONRPC(t *testing.T) {
 		content := toolTextMap(t, res)
 		if _, ok := content["tables"]; !ok {
 			t.Fatalf("list_endpoints tables missing: %#v", content)
+		}
+	})
+
+	t.Run("tools_call_analyze_impact", func(t *testing.T) {
+		res := handleLine(t, server, `{"jsonrpc":"2.0","id":"impact","method":"tools/call","params":{"name":"analyze_impact","arguments":{"selector":{"id":"auth.task.login"},"change":{"kind":"rename","new_id":"auth.task.sign_in"}}}}`)
+		if res.Error != nil {
+			t.Fatalf("tools/call analyze_impact protocol error: %#v", res.Error)
+		}
+		content := toolTextMap(t, res)
+		target := content["target"].(map[string]any)
+		if target["id"] != "auth.task.login" {
+			t.Fatalf("analyze_impact target = %#v", target)
+		}
+		if _, ok := content["coverage"]; !ok {
+			t.Fatalf("analyze_impact coverage missing: %#v", content)
 		}
 	})
 }

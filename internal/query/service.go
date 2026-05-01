@@ -168,6 +168,11 @@ func (s *Service) modelFieldBySelector(selector Selector) (*semantic.Model, sema
 		modelID = selector.File
 		fieldName = selector.LocalID
 	}
+	if modelID != "" && fieldName == "" {
+		if model, field, ok := s.modelFieldByFullID(modelID); ok {
+			return model, field, nil
+		}
+	}
 	if modelID == "" || fieldName == "" {
 		return nil, semantic.ModelField{}, fmt.Errorf("selector.id and selector.local_id are required for field")
 	}
@@ -187,6 +192,25 @@ func (s *Service) modelFieldBySelector(selector Selector) (*semantic.Model, sema
 		}
 	}
 	return nil, semantic.ModelField{}, fmt.Errorf("object not found: %s.%s", modelID, fieldName)
+}
+
+func (s *Service) modelFieldByFullID(id string) (*semantic.Model, semantic.ModelField, bool) {
+	for _, model := range s.project.ModelsByQID {
+		prefix := model.QID.String() + "."
+		if !strings.HasPrefix(id, prefix) {
+			continue
+		}
+		fieldName := strings.TrimPrefix(id, prefix)
+		if fieldName == "" || strings.Contains(fieldName, ".") {
+			continue
+		}
+		for _, field := range model.Fields {
+			if field.Name == fieldName {
+				return model, field, true
+			}
+		}
+	}
+	return nil, semantic.ModelField{}, false
 }
 
 func (s *Service) isFieldSelector(selector Selector) bool {

@@ -199,6 +199,70 @@ type GetReferenceTreeResponse struct {
 	Diagnostics      []semantic.Diagnostic `json:"diagnostics"`
 }
 
+type AnalyzeImpactChange struct {
+	Kind      string `json:"kind"`
+	NewID     string `json:"new_id,omitempty"`
+	NewType   string `json:"new_type,omitempty"`
+	Note      string `json:"note,omitempty"`
+	NewTo     string `json:"new_to,omitempty"`
+	NewAction string `json:"new_action,omitempty"`
+	AddedID   string `json:"added_id,omitempty"`
+	rawKeys   map[string]struct{}
+}
+
+type AnalyzeImpactRequest struct {
+	Selector     Selector            `json:"selector"`
+	Change       AnalyzeImpactChange `json:"change"`
+	ScopeModules []string            `json:"scope_modules,omitempty"`
+	MaxImpacts   int                 `json:"max_impacts,omitempty"`
+}
+
+type ImpactSummary struct {
+	BySeverity   map[string]int `json:"by_severity"`
+	ByFixability map[string]int `json:"by_fixability"`
+	ByKind       map[string]int `json:"by_kind"`
+}
+
+type SuggestedFix struct {
+	Kind       string          `json:"kind"`
+	Confidence string          `json:"confidence"`
+	From       string          `json:"from,omitempty"`
+	To         string          `json:"to,omitempty"`
+	Source     *SourceLocation `json:"source,omitempty"`
+	Note       string          `json:"note,omitempty"`
+}
+
+type ImpactEntry struct {
+	ID                string          `json:"id"`
+	Kind              string          `json:"kind"`
+	Severity          string          `json:"severity"`
+	Fixability        string          `json:"fixability"`
+	Object            ObjectRef       `json:"object"`
+	Reason            string          `json:"reason"`
+	Via               []string        `json:"via"`
+	Source            *SourceLocation `json:"source,omitempty"`
+	RecommendedAction string          `json:"recommended_action"`
+	SuggestedFixes    []SuggestedFix  `json:"suggested_fixes,omitempty"`
+}
+
+type ImpactCoverage struct {
+	Analyzed    []string `json:"analyzed"`
+	NotAnalyzed []string `json:"not_analyzed"`
+	Note        string   `json:"note,omitempty"`
+}
+
+type AnalyzeImpactResponse struct {
+	Target           ObjectRef             `json:"target"`
+	Change           AnalyzeImpactChange    `json:"change"`
+	Summary          ImpactSummary          `json:"summary"`
+	Impacts          []ImpactEntry          `json:"impacts"`
+	Coverage         ImpactCoverage         `json:"coverage"`
+	Assumptions      []string               `json:"assumptions"`
+	Truncated        bool                   `json:"truncated"`
+	TruncatedReasons []string               `json:"truncated_reasons"`
+	Diagnostics      []semantic.Diagnostic  `json:"diagnostics"`
+}
+
 type ListObjectsRequest struct {
 	Object string `json:"object,omitempty"`
 	Kind   string `json:"kind,omitempty"`

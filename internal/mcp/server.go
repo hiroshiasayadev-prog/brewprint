@@ -88,6 +88,27 @@ func (s *Server) Tools() []Tool {
 			}, []string{"selector", "direction", "depth"}),
 		},
 		{
+			Name:        "analyze_impact",
+			Description: "Return semantic impact analysis for a proposed change.",
+			InputSchema: objectSchema(map[string]any{
+				"selector": selectorSchema(),
+				"change": objectSchema(map[string]any{
+					"kind":       enumStringSchema("rename", "remove", "change_type", "change_contract", "change_transition_target", "add"),
+					"new_id":     map[string]any{"type": "string"},
+					"new_type":   map[string]any{"type": "string"},
+					"note":       map[string]any{"type": "string"},
+					"new_to":     map[string]any{"type": "string"},
+					"new_action": map[string]any{"type": "string"},
+					"added_id":   map[string]any{"type": "string"},
+				}, []string{"kind"}),
+				"scope_modules": map[string]any{
+					"type":  "array",
+					"items": map[string]any{"type": "string"},
+				},
+				"max_impacts": map[string]any{"type": "integer", "minimum": 1},
+			}, []string{"selector", "change"}),
+		},
+		{
 			Name:        "inspect",
 			Description: "Return implementation context for a semantic object.",
 			InputSchema: objectSchema(map[string]any{
@@ -197,6 +218,16 @@ func (s *Server) CallTool(name string, args []byte) Envelope {
 			return errorEnvelope(errorCode(err), name, err.Error(), args)
 		}
 		return Envelope{Result: res}
+	case "analyze_impact":
+		var req query.AnalyzeImpactRequest
+		if err := decodeArgs(args, &req); err != nil {
+			return errorEnvelope("invalid_args", name, err.Error(), args)
+		}
+		res, err := s.service.AnalyzeImpact(req)
+		if err != nil {
+			return errorEnvelope(errorCode(err), name, err.Error(), args)
+		}
+		return Envelope{Result: res}
 	case "inspect":
 		var req query.InspectRequest
 		if err := decodeArgs(args, &req); err != nil {
@@ -257,6 +288,9 @@ func errorCode(err error) string {
 	}
 	if strings.Contains(message, "invalid depth") {
 		return "invalid_depth"
+	}
+	if strings.Contains(message, "invalid change payload") {
+		return "invalid_change_payload"
 	}
 	if strings.Contains(message, "kind mismatch") {
 		return "kind_mismatch"

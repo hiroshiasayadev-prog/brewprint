@@ -15,7 +15,7 @@ import (
 func TestServerTools(t *testing.T) {
 	server := newUC001Server(t)
 	tools := server.Tools()
-	want := []string{"list_objects", "get_signature", "get_source", "get_references", "get_reference_tree", "inspect", "list_endpoints"}
+	want := []string{"list_objects", "get_signature", "get_source", "get_references", "get_reference_tree", "analyze_impact", "inspect", "list_endpoints"}
 	if len(tools) != len(want) {
 		t.Fatalf("tools len = %d, want %d: %#v", len(tools), len(want), tools)
 	}
@@ -225,6 +225,36 @@ func TestServerCallTool(t *testing.T) {
 		}
 	})
 
+	t.Run("analyze_impact", func(t *testing.T) {
+		envelope := call(t, server, "analyze_impact", `{"selector":{"id":"auth.task.login"},"change":{"kind":"rename","new_id":"auth.task.sign_in"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("analyze_impact error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		target := result["target"].(map[string]any)
+		if target["id"] != "auth.task.login" {
+			t.Fatalf("analyze_impact target = %#v", target)
+		}
+		if len(result["impacts"].([]any)) != 0 || result["truncated"] != false {
+			t.Fatalf("analyze_impact result = %#v", result)
+		}
+		if _, ok := result["summary"].(map[string]any)["by_severity"]; !ok {
+			t.Fatalf("analyze_impact summary missing: %#v", result)
+		}
+	})
+
+	t.Run("analyze_impact_unsupported_selector", func(t *testing.T) {
+		envelope := call(t, server, "analyze_impact", `{"selector":{"object":"view","kind":"api_table","id":"ec_api"},"change":{"kind":"remove"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("analyze_impact unsupported selector protocol error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		diagnostics := result["diagnostics"].([]any)
+		if len(diagnostics) != 1 || diagnostics[0].(map[string]any)["code"] != "unsupported_selector" {
+			t.Fatalf("analyze_impact unsupported selector result = %#v", result)
+		}
+	})
+
 	t.Run("inspect", func(t *testing.T) {
 		envelope := call(t, server, "inspect", `{"selector":{"id":"order.task.checkout"}}`)
 		if envelope.Error != nil {
@@ -410,6 +440,13 @@ func TestServerCallToolErrors(t *testing.T) {
 		envelope := call(t, server, "get_reference_tree", `{"selector":{"id":"auth.task.login"},"direction":"out","depth":5}`)
 		if envelope.Error == nil || envelope.Error.Code != "invalid_depth" {
 			t.Fatalf("invalid depth envelope = %#v", envelope)
+		}
+	})
+
+	t.Run("invalid_change_payload", func(t *testing.T) {
+		envelope := call(t, server, "analyze_impact", `{"selector":{"id":"auth.task.login"},"change":{"kind":"rename"}}`)
+		if envelope.Error == nil || envelope.Error.Code != "invalid_change_payload" {
+			t.Fatalf("invalid change payload envelope = %#v", envelope)
 		}
 	})
 }

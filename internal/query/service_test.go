@@ -1,6 +1,7 @@
 package query
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -378,6 +379,62 @@ func TestQueryServiceUC001(t *testing.T) {
 
 		if _, err := service.GetReferenceTree(GetReferenceTreeRequest{Selector: transitionSelector, Direction: "out", Depth: 5}); err == nil {
 			t.Fatalf("GetReferenceTree depth 5 expected error")
+		}
+	})
+
+	t.Run("AnalyzeImpactCore", func(t *testing.T) {
+		res, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{ID: "auth.task.login"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeRename, NewID: "auth.task.sign_in"},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact rename skeleton: %v", err)
+		}
+		if res.Target.ID != "auth.task.login" || res.Change.Kind != AnalyzeImpactChangeRename || len(res.Impacts) != 0 || res.Truncated {
+			t.Fatalf("AnalyzeImpact response = %#v", res)
+		}
+		if res.Summary.BySeverity["breaking"] != 0 || res.Summary.ByFixability["mechanical"] != 0 || len(res.Coverage.NotAnalyzed) == 0 || len(res.Assumptions) == 0 {
+			t.Fatalf("AnalyzeImpact summary/coverage = %#v", res)
+		}
+
+		unsupported, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{Object: "view", Kind: "api_table", ID: "ec_api"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeRemove},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact unsupported selector should not error: %v", err)
+		}
+		if len(unsupported.Impacts) != 0 || len(unsupported.Diagnostics) != 1 || unsupported.Diagnostics[0].Code != "unsupported_selector" {
+			t.Fatalf("AnalyzeImpact unsupported response = %#v", unsupported)
+		}
+
+		if _, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{ID: "auth.task.login"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeRename},
+		}); err == nil || !strings.Contains(err.Error(), "invalid change payload") {
+			t.Fatalf("AnalyzeImpact missing new_id error = %v", err)
+		}
+
+		var invalidPayload AnalyzeImpactRequest
+		if err := json.Unmarshal([]byte(`{"selector":{"id":"auth.task.login"},"change":{"kind":"remove","new_id":"auth.task.sign_in"}}`), &invalidPayload); err != nil {
+			t.Fatalf("unmarshal invalid analyze impact payload: %v", err)
+		}
+		if _, err := service.AnalyzeImpact(invalidPayload); err == nil || !strings.Contains(err.Error(), "invalid change payload") {
+			t.Fatalf("AnalyzeImpact extra payload error = %v", err)
+		}
+
+		fakeImpacts := []ImpactEntry{
+			{Kind: "field_consumer", Severity: "breaking", Fixability: "manual_review"},
+			{Kind: "render_output", Severity: "info", Fixability: "unknown"},
+		}
+		truncated, didTruncate, reasons := truncateImpacts(fakeImpacts, 1)
+		assignImpactIDs(truncated)
+		if !didTruncate || len(reasons) != 1 || reasons[0] != "max_impacts" || len(truncated) != 1 || truncated[0].ID != "impact-001" {
+			t.Fatalf("AnalyzeImpact truncation helpers = impacts %#v truncated %v reasons %#v", truncated, didTruncate, reasons)
+		}
+		summary := summarizeImpacts(fakeImpacts)
+		if summary.BySeverity["breaking"] != 1 || summary.BySeverity["info"] != 1 || summary.ByFixability["manual_review"] != 1 || summary.ByKind["field_consumer"] != 1 {
+			t.Fatalf("AnalyzeImpact summary helper = %#v", summary)
 		}
 	})
 
