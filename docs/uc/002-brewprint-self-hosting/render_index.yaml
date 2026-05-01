@@ -1,0 +1,4 @@
+groups:
+  - id: mcp
+    label: MCP公開contract
+    modules: [mcp]

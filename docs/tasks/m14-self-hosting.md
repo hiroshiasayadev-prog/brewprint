@@ -103,26 +103,28 @@ self-hosting中に浮かび上がるeditor / viewer要件は以下に蓄積す�
 
 ### UC-002骨格整備
 
-- [ ] **UC-002 ディレクトリ骨格を作成する**
+- [x] **UC-002 ディレクトリ骨格を作成する**
   - `docs/uc/002-brewprint-self-hosting/` を新設する
   - `docs/uc/002-brewprint-self-hosting/yaml/` を新設する
   - `docs/uc/002-brewprint-self-hosting/renders/` を新設する（renderer出力先。手書きしない）
 
-- [ ] **UC-002 README.md を起票する**
+- [x] **UC-002 README.md を起票する**
   - doc-policy.md §uc運用のフォーマットに従う
   - 概要 / ファイル構成 / TODO/spec gap セクションを含む
   - UC-001のREADME.mdを参考形式とする
+  - render fixture再生成コマンドを記載する
 
-- [ ] **UC-002 render_index.yaml を起票する**
+- [x] **UC-002 render_index.yaml を起票する**
   - Phase A / Phase B の進行に合わせて段階的にgroupを追加する想定
   - 初期はMCPレイヤーのgroupだけ定義する
   - ADR-045 / ADR-046に従う
 
-- [ ] **TASKS-UC-002.md を起票する**
+- [x] **TASKS-UC-002.md を起票する**
   - spec gap発見ログの追跡に使う
   - 形式はUC-001のTASKS-UC-001.mdに揃える
+  - Phase A の YAML が入った後に `docs/coverage.md` を起票する方針を記録する
 
-- [ ] **editor-viewer-notes.md を起票する**
+- [x] **editor-viewer-notes.md を起票する**
   - 起票時は空のスケルトン + このM14への参照リンクのみで可
   - self-hosting作業中に追記していく
 
