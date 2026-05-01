@@ -62,19 +62,43 @@ func (s *Service) AnalyzeImpact(req AnalyzeImpactRequest) (AnalyzeImpactResponse
 }
 
 func (s *Service) collectAnalyzeImpacts(req AnalyzeImpactRequest, targetKey semantic.ObjectKey, target ObjectRef) ([]ImpactEntry, []semantic.Diagnostic) {
-	if taskImpacts, taskDiagnostics := s.collectTaskAnalyzeImpacts(req, targetKey, target); taskImpacts != nil || taskDiagnostics != nil {
-		return taskImpacts, taskDiagnostics
-	}
-	if target.Object == "field" || req.Selector.Object == "field" || req.Selector.Kind == "field" {
-		return s.collectFieldAnalyzeImpacts(req, target)
-	}
-	if target.Object != "transition" {
-		return []ImpactEntry{}, []semantic.Diagnostic{}
-	}
-	if req.Change.Kind != AnalyzeImpactChangeTransitionTarget && req.Change.Kind != AnalyzeImpactChangeRename && req.Change.Kind != AnalyzeImpactChangeRemove {
-		return []ImpactEntry{}, []semantic.Diagnostic{}
+	if req.Change.Kind == AnalyzeImpactChangeAdd {
+		return s.collectAddAnalyzeImpacts(req, target)
 	}
 
+	var impacts []ImpactEntry
+	var diagnostics []semantic.Diagnostic
+
+	if taskImpacts, taskDiagnostics := s.collectTaskAnalyzeImpacts(req, targetKey, target); taskImpacts != nil || taskDiagnostics != nil {
+		impacts = append(impacts, taskImpacts...)
+		diagnostics = append(diagnostics, taskDiagnostics...)
+	} else if target.Object == "field" || req.Selector.Object == "field" || req.Selector.Kind == "field" {
+		fieldImpacts, fieldDiagnostics := s.collectFieldAnalyzeImpacts(req, target)
+		impacts = append(impacts, fieldImpacts...)
+		diagnostics = append(diagnostics, fieldDiagnostics...)
+	} else if target.Object == "transition" && (req.Change.Kind == AnalyzeImpactChangeTransitionTarget || req.Change.Kind == AnalyzeImpactChangeRename || req.Change.Kind == AnalyzeImpactChangeRemove) {
+		transitionImpacts, transitionDiagnostics := s.collectTransitionAnalyzeImpacts(req, target)
+		impacts = append(impacts, transitionImpacts...)
+		diagnostics = append(diagnostics, transitionDiagnostics...)
+	}
+
+	renderImpacts, renderDiagnostics := s.collectRenderAnalyzeImpacts(req, targetKey, target)
+	impacts = append(impacts, renderImpacts...)
+	diagnostics = append(diagnostics, renderDiagnostics...)
+
+	sort.SliceStable(impacts, func(i, j int) bool {
+		if impacts[i].Kind != impacts[j].Kind {
+			return impacts[i].Kind < impacts[j].Kind
+		}
+		if impacts[i].Object.ID != impacts[j].Object.ID {
+			return impacts[i].Object.ID < impacts[j].Object.ID
+		}
+		return sourceSortKey(impacts[i].Source) < sourceSortKey(impacts[j].Source)
+	})
+	return impacts, diagnostics
+}
+
+func (s *Service) collectTransitionAnalyzeImpacts(req AnalyzeImpactRequest, target ObjectRef) ([]ImpactEntry, []semantic.Diagnostic) {
 	transition, err := s.transitionBySelector(req.Selector)
 	if err != nil {
 		return []ImpactEntry{}, []semantic.Diagnostic{}
@@ -92,23 +116,51 @@ func (s *Service) collectAnalyzeImpacts(req AnalyzeImpactRequest, targetKey sema
 		impacts = append(impacts, impact)
 	}
 
+	if impact, ok := s.collectTransitionTargetResolutionImpact(transition, req.Change); ok {
+		addImpact(impact)
+	}
 	for _, impact := range s.collectTransitionScenarioStepImpacts(transition, req.Change) {
 		addImpact(impact)
 	}
 	if impact, ok := s.collectTransitionActionTaskImpact(transition, req.Change); ok {
 		addImpact(impact)
 	}
-
-	sort.SliceStable(impacts, func(i, j int) bool {
-		if impacts[i].Kind != impacts[j].Kind {
-			return impacts[i].Kind < impacts[j].Kind
-		}
-		if impacts[i].Object.ID != impacts[j].Object.ID {
-			return impacts[i].Object.ID < impacts[j].Object.ID
-		}
-		return sourceSortKey(impacts[i].Source) < sourceSortKey(impacts[j].Source)
-	})
 	return impacts, diagnostics
+}
+
+func (s *Service) collectTransitionTargetResolutionImpact(transition semantic.Transition, change AnalyzeImpactChange) (ImpactEntry, bool) {
+	if change.Kind != AnalyzeImpactChangeTransitionTarget {
+		return ImpactEntry{}, false
+	}
+	transitionID := semantic.TransitionID(transition)
+	var problems []string
+	if change.NewTo != "" {
+		if _, ok := s.project.StatesByQID[semantic.QualifiedID(change.NewTo)]; !ok {
+			problems = append(problems, fmt.Sprintf("new_to %q cannot be resolved as state", change.NewTo))
+		}
+	}
+	if change.NewAction != "" {
+		if _, ok := s.project.TasksByQID[semantic.QualifiedID(change.NewAction)]; !ok {
+			problems = append(problems, fmt.Sprintf("new_action %q cannot be resolved as task", change.NewAction))
+		}
+	}
+	if len(problems) == 0 {
+		return ImpactEntry{}, false
+	}
+	return ImpactEntry{
+		Kind:       "transition_target_resolution",
+		Severity:   "breaking",
+		Fixability: "manual_review",
+		Object:     transitionObjectRef(transition),
+		Reason: fmt.Sprintf(
+			"transition '%s' の変更先解決に失敗した: %s",
+			transitionID,
+			strings.Join(problems, "; "),
+		),
+		Via:               []string{"transition_target_resolution"},
+		Source:            sourceLocationFromBlock(transition.FileID, s.findTransitionSource(transition)),
+		RecommendedAction: "new_to / new_action が既存 state / task を指すように修正する",
+	}, true
 }
 
 func (s *Service) collectTransitionScenarioStepImpacts(transition semantic.Transition, change AnalyzeImpactChange) []ImpactEntry {
@@ -377,13 +429,14 @@ func analyzeImpactCoverage(change AnalyzeImpactChange, selector Selector) Impact
 			coverage.Analyzed = append(coverage.Analyzed, "model_field_resolution")
 		}
 	case AnalyzeImpactChangeType:
-		coverage.Analyzed = append(coverage.Analyzed, "model_field_resolution", "flow_param_field_resolution", "type_signature_identity")
+		coverage.Analyzed = append(coverage.Analyzed, "model_field_resolution", "flow_param_field_resolution", "type_signature_identity", "render_output_files")
 	case AnalyzeImpactChangeContract:
-		coverage.Analyzed = append(coverage.Analyzed, "flow_step_task_resolution", "flow_param_field_resolution", "sequence_step_task_resolution")
+		coverage.Analyzed = append(coverage.Analyzed, "flow_step_task_resolution", "flow_param_field_resolution", "sequence_step_task_resolution", "render_output_files")
 	case AnalyzeImpactChangeTransitionTarget:
-		coverage.Analyzed = append(coverage.Analyzed, "transition_action_resolution", "sequence_step_task_resolution")
+		coverage.Analyzed = append(coverage.Analyzed, "transition_action_resolution", "sequence_step_task_resolution", "render_output_files")
 	case AnalyzeImpactChangeAdd:
-		coverage.Analyzed = []string{"name_collision", "type_resolution", "writer_coverage"}
+		coverage.Analyzed = []string{"name_collision"}
+		coverage.NotAnalyzed = append(coverage.NotAnalyzed, "type_resolution", "writer_coverage")
 	}
 
 	if unsupportedAnalyzeImpactSelector(selector) {

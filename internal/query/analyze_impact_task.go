@@ -258,14 +258,26 @@ func (c *taskImpactCollector) makeTaskReferenceImpact(kind string, object Object
 	case AnalyzeImpactChangeRename:
 		impact.Severity = "breaking"
 		impact.Fixability = "suggested"
-		if source != nil && source.Line > 0 && source.Column > 0 {
-			impact.SuggestedFixes = []SuggestedFix{{
+		if sourceLocationPrecise(source) {
+			fix := SuggestedFix{
 				Kind:       "replace_reference",
 				Confidence: "medium",
 				From:       c.taskIDString,
 				To:         c.request.Change.NewID,
 				Source:     source,
-			}}
+			}
+			gate := c.service.mechanicalJudgementGate(mechanicalJudgementInput{
+				From:                    c.taskIDString,
+				To:                      c.request.Change.NewID,
+				Source:                  source,
+				YAMLStructurePreserving: true,
+				ReferenceStable:         false,
+			})
+			if gate.Mechanical {
+				impact.Fixability = "mechanical"
+				fix.Confidence = "high"
+			}
+			impact.SuggestedFixes = []SuggestedFix{fix}
 		}
 	case AnalyzeImpactChangeRemove:
 		impact.Severity = "breaking"

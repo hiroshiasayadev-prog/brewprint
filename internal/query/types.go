@@ -166,7 +166,7 @@ type GetReferencesResponse struct {
 }
 
 type GetReferenceTreeRequest struct {
-	Selector Selector `json:"selector"`
+	Selector  Selector `json:"selector"`
 	Direction string   `json:"direction"`
 	Depth     int      `json:"depth"`
 	Kinds     []string `json:"kinds,omitempty"`
@@ -253,14 +253,14 @@ type ImpactCoverage struct {
 
 type AnalyzeImpactResponse struct {
 	Target           ObjectRef             `json:"target"`
-	Change           AnalyzeImpactChange    `json:"change"`
-	Summary          ImpactSummary          `json:"summary"`
-	Impacts          []ImpactEntry          `json:"impacts"`
-	Coverage         ImpactCoverage         `json:"coverage"`
-	Assumptions      []string               `json:"assumptions"`
-	Truncated        bool                   `json:"truncated"`
-	TruncatedReasons []string               `json:"truncated_reasons"`
-	Diagnostics      []semantic.Diagnostic  `json:"diagnostics"`
+	Change           AnalyzeImpactChange   `json:"change"`
+	Summary          ImpactSummary         `json:"summary"`
+	Impacts          []ImpactEntry         `json:"impacts"`
+	Coverage         ImpactCoverage        `json:"coverage"`
+	Assumptions      []string              `json:"assumptions"`
+	Truncated        bool                  `json:"truncated"`
+	TruncatedReasons []string              `json:"truncated_reasons"`
+	Diagnostics      []semantic.Diagnostic `json:"diagnostics"`
 }
 
 type ListObjectsRequest struct {

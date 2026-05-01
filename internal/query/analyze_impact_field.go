@@ -47,6 +47,9 @@ func (s *Service) collectFieldAnalyzeImpacts(req AnalyzeImpactRequest, target Ob
 
 	impacts := make([]ImpactEntry, 0, len(candidates))
 	diagnostics := []semantic.Diagnostic{}
+	flowImpacts, flowDiagnostics := s.collectFlowParamFieldAnalyzeImpacts(req, target, model, field, oldTypeID, newTypeID)
+	impacts = append(impacts, flowImpacts...)
+	diagnostics = append(diagnostics, flowDiagnostics...)
 	diagnosticFiles := map[string]struct{}{}
 	for _, candidate := range candidates {
 		if candidate.Object.ID == "" || candidate.Object.ID == target.ID {

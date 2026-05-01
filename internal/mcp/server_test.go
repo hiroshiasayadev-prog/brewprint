@@ -236,7 +236,7 @@ func TestServerCallTool(t *testing.T) {
 			t.Fatalf("analyze_impact target = %#v", target)
 		}
 		impacts := result["impacts"].([]any)
-		if len(impacts) != 2 || result["truncated"] != false {
+		if len(impacts) < 3 || result["truncated"] != false {
 			t.Fatalf("analyze_impact result = %#v", result)
 		}
 		if !hasImpactMap(impacts, "transition_scenario_step", "payment_webhook_flow") {
@@ -244,6 +244,9 @@ func TestServerCallTool(t *testing.T) {
 		}
 		if !hasImpactMap(impacts, "transition_action_task", "payment.webhooks.task.process_payment") {
 			t.Fatalf("analyze_impact action impact missing: %#v", impacts)
+		}
+		if !hasImpactMap(impacts, "render_output", "commerce/state-order.md") {
+			t.Fatalf("analyze_impact render output impact missing: %#v", impacts)
 		}
 		if _, ok := result["summary"].(map[string]any)["by_severity"]; !ok {
 			t.Fatalf("analyze_impact summary missing: %#v", result)

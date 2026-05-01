@@ -401,7 +401,11 @@ func TestQueryServiceUC001(t *testing.T) {
 		if removedScenario.Severity != "breaking" || removedScenario.Fixability != "manual_review" || strings.Join(removedScenario.Via, ",") != "scenario_step_transition,transition_action" {
 			t.Fatalf("task remove sequence impact = %#v", removedScenario)
 		}
-		if taskRemove.Summary.BySeverity["breaking"] != len(taskRemove.Impacts) || taskRemove.Summary.ByKind["transition_action"] != 1 || taskRemove.Summary.ByKind["sequence_step_action"] != 1 {
+		removedRender := assertHasImpact(t, taskRemove.Impacts, "render_output", "commerce/dag-process_payment.md")
+		if removedRender.Severity != "warning" || removedRender.Fixability == "mechanical" || !strings.Contains(removedRender.Reason, "commerce/dag-process_payment.md") || !strings.Contains(removedRender.RecommendedAction, "brewprint render") {
+			t.Fatalf("task remove render output impact = %#v", removedRender)
+		}
+		if taskRemove.Summary.BySeverity["breaking"] == 0 || taskRemove.Summary.BySeverity["warning"] == 0 || taskRemove.Summary.ByKind["transition_action"] != 1 || taskRemove.Summary.ByKind["sequence_step_action"] != 1 || taskRemove.Summary.ByKind["render_output"] == 0 {
 			t.Fatalf("task remove summary = %#v impacts=%#v", taskRemove.Summary, taskRemove.Impacts)
 		}
 
@@ -438,7 +442,11 @@ func TestQueryServiceUC001(t *testing.T) {
 		if flowImpact.Severity != "breaking" || flowImpact.Fixability != "suggested" || len(flowImpact.SuggestedFixes) == 0 {
 			t.Fatalf("task rename flow impact = %#v", flowImpact)
 		}
-		if flowRename.Summary.ByKind["flow_step_task"] != 1 || flowRename.Summary.BySeverity["breaking"] != 1 || flowRename.Summary.ByFixability["suggested"] != 1 {
+		flowRender := assertHasImpact(t, flowRename.Impacts, "render_output", "commerce/dag-checkout.md")
+		if flowRender.Severity != "info" || flowRender.Fixability == "mechanical" || !strings.Contains(flowRender.Reason, "commerce/dag-checkout.md") {
+			t.Fatalf("task rename flow render impact = %#v", flowRender)
+		}
+		if flowRename.Summary.ByKind["flow_step_task"] != 1 || flowRename.Summary.ByKind["render_output"] == 0 || flowRename.Summary.BySeverity["breaking"] != 1 || flowRename.Summary.BySeverity["info"] == 0 || flowRename.Summary.ByFixability["suggested"] != 1 {
 			t.Fatalf("task rename flow summary = %#v impacts=%#v", flowRename.Summary, flowRename.Impacts)
 		}
 
@@ -451,7 +459,7 @@ func TestQueryServiceUC001(t *testing.T) {
 		}
 		assertHasImpact(t, contract.Impacts, "transition_action", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']")
 		assertHasImpact(t, contract.Impacts, "sequence_step_action", "payment_webhook_flow")
-		if contract.Summary.BySeverity["warning"] != len(contract.Impacts) || contract.Summary.ByFixability["manual_review"] != len(contract.Impacts) {
+		if contract.Summary.BySeverity["warning"] == 0 || contract.Summary.ByKind["render_output"] == 0 || contract.Summary.ByFixability["manual_review"] == 0 {
 			t.Fatalf("task change_contract summary = %#v impacts=%#v", contract.Summary, contract.Impacts)
 		}
 
@@ -482,8 +490,24 @@ func TestQueryServiceUC001(t *testing.T) {
 		if len(transitionImpact.Diagnostics) != 0 {
 			t.Fatalf("transition impact diagnostics = %#v", transitionImpact.Diagnostics)
 		}
-		if transitionImpact.Summary.ByKind["transition_scenario_step"] != 1 || transitionImpact.Summary.ByKind["transition_action_task"] != 1 || transitionImpact.Summary.ByFixability["manual_review"] != 2 {
+		transitionRender := assertHasImpact(t, transitionImpact.Impacts, "render_output", "commerce/state-order.md")
+		if transitionRender.Severity != "info" || transitionRender.Fixability == "mechanical" || !strings.Contains(transitionRender.RecommendedAction, "brewprint render") {
+			t.Fatalf("transition render output impact = %#v", transitionRender)
+		}
+		if transitionImpact.Summary.ByKind["transition_scenario_step"] != 1 || transitionImpact.Summary.ByKind["transition_action_task"] != 1 || transitionImpact.Summary.ByKind["render_output"] == 0 || transitionImpact.Summary.ByFixability["manual_review"] < 2 {
 			t.Fatalf("transition impact summary = %#v", transitionImpact.Summary)
+		}
+
+		transitionInvalidTarget, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{Object: "transition", ID: "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeTransitionTarget, NewTo: "order.state.missing"},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact transition invalid target: %v", err)
+		}
+		resolutionImpact := assertHasImpact(t, transitionInvalidTarget.Impacts, "transition_target_resolution", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']")
+		if resolutionImpact.Severity != "breaking" || resolutionImpact.Fixability != "manual_review" || !strings.Contains(resolutionImpact.Reason, "new_to") {
+			t.Fatalf("transition target resolution impact = %#v", resolutionImpact)
 		}
 
 		transitionRemove, err := service.AnalyzeImpact(AnalyzeImpactRequest{
@@ -508,7 +532,15 @@ func TestQueryServiceUC001(t *testing.T) {
 		if fieldRename.Target.ID != "order.model.order.id" || len(fieldRename.Impacts) == 0 {
 			t.Fatalf("AnalyzeImpact field rename response = %#v", fieldRename)
 		}
-		if fieldRename.Summary.BySeverity["breaking"] == 0 || fieldRename.Summary.ByFixability["unknown"] == 0 || fieldRename.Summary.ByKind["field_consumer"] == 0 {
+		fieldRender := assertHasImpact(t, fieldRename.Impacts, "render_output", "_cross/er.md")
+		if fieldRender.Severity != "info" || fieldRender.Fixability == "mechanical" || !strings.Contains(fieldRender.Reason, "_cross/er.md") || !strings.Contains(fieldRender.RecommendedAction, "brewprint render") {
+			t.Fatalf("field rename render output impact = %#v", fieldRender)
+		}
+		flowParamImpact := assertHasImpact(t, fieldRename.Impacts, "flow_param_field", "order.task.checkout")
+		if flowParamImpact.Severity != "breaking" || flowParamImpact.Fixability != "unknown" || strings.Join(flowParamImpact.Via, ",") != "flow_param_field_resolution" {
+			t.Fatalf("field rename flow param impact = %#v", flowParamImpact)
+		}
+		if fieldRename.Summary.BySeverity["breaking"] == 0 || fieldRename.Summary.BySeverity["info"] == 0 || fieldRename.Summary.ByFixability["unknown"] == 0 || fieldRename.Summary.ByKind["field_consumer"] == 0 || fieldRename.Summary.ByKind["render_output"] == 0 || fieldRename.Summary.ByKind["flow_param_field"] == 0 {
 			t.Fatalf("AnalyzeImpact field rename summary = %#v impacts=%#v", fieldRename.Summary, fieldRename.Impacts)
 		}
 		foundFileOnlySource := false
@@ -530,6 +562,77 @@ func TestQueryServiceUC001(t *testing.T) {
 		}
 		if !foundSourceDiagnostic {
 			t.Fatalf("AnalyzeImpact field rename diagnostics = %#v", fieldRename.Diagnostics)
+		}
+
+		fieldTypeChange, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{Object: "field", ID: "order.model.order", LocalID: "id"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeType, NewType: "int"},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact field change_type: %v", err)
+		}
+		fieldTypeRender := assertHasImpact(t, fieldTypeChange.Impacts, "render_output", "_cross/er.md")
+		if fieldTypeRender.Severity != "info" || fieldTypeRender.Fixability == "mechanical" || !strings.Contains(fieldTypeRender.Reason, "_cross/er.md") {
+			t.Fatalf("field change_type render output impact = %#v", fieldTypeRender)
+		}
+		if fieldTypeChange.Summary.ByKind["render_output"] == 0 || fieldTypeChange.Summary.BySeverity["info"] == 0 {
+			t.Fatalf("AnalyzeImpact field change_type summary = %#v impacts=%#v", fieldTypeChange.Summary, fieldTypeChange.Impacts)
+		}
+
+		modelRename, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{ID: "order.model.order"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeRename, NewID: "order.model.order_v2"},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact model rename: %v", err)
+		}
+		modelRender := assertHasImpact(t, modelRename.Impacts, "render_output", "commerce/dag-checkout.md")
+		if modelRender.Severity != "info" || modelRender.Fixability == "mechanical" || !strings.Contains(modelRender.Reason, "commerce/dag-checkout.md") {
+			t.Fatalf("model rename render output impact = %#v", modelRender)
+		}
+		if modelRename.Summary.ByKind["render_output"] == 0 || modelRename.Summary.BySeverity["info"] == 0 {
+			t.Fatalf("AnalyzeImpact model rename summary = %#v impacts=%#v", modelRename.Summary, modelRename.Impacts)
+		}
+
+		addTaskCollision, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{ID: "order.task.checkout"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeAdd, AddedID: "order.task.checkout"},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact add task collision: %v", err)
+		}
+		addTaskImpact := assertHasImpact(t, addTaskCollision.Impacts, "name_collision", "order.task.checkout")
+		if addTaskImpact.Severity != "breaking" || addTaskImpact.Fixability != "manual_review" || strings.Join(addTaskImpact.Via, ",") != "name_collision" {
+			t.Fatalf("AnalyzeImpact add task collision impact = %#v", addTaskImpact)
+		}
+		if addTaskCollision.Summary.ByKind["name_collision"] != 1 || addTaskCollision.Summary.BySeverity["breaking"] != 1 {
+			t.Fatalf("AnalyzeImpact add task collision summary = %#v impacts=%#v", addTaskCollision.Summary, addTaskCollision.Impacts)
+		}
+
+		addFieldCollision, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{ID: "order.task.checkout"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeAdd, AddedID: "order.model.order.id"},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact add field collision: %v", err)
+		}
+		addFieldImpact := assertHasImpact(t, addFieldCollision.Impacts, "name_collision", "order.model.order.id")
+		if addFieldImpact.Object.Object != "field" || addFieldImpact.Severity != "breaking" || addFieldImpact.Fixability != "manual_review" {
+			t.Fatalf("AnalyzeImpact add field collision impact = %#v", addFieldImpact)
+		}
+
+		addNoCollision, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{ID: "order.task.checkout"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeAdd, AddedID: "order.task.missing_future_task"},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact add no collision: %v", err)
+		}
+		if len(addNoCollision.Impacts) != 0 || addNoCollision.Summary.BySeverity["breaking"] != 0 || addNoCollision.Summary.ByFixability["manual_review"] != 0 {
+			t.Fatalf("AnalyzeImpact add no collision = %#v", addNoCollision)
+		}
+		if strings.Join(addNoCollision.Coverage.Analyzed, ",") != "name_collision" || !hasString(addNoCollision.Coverage.NotAnalyzed, "type_resolution") || !hasString(addNoCollision.Coverage.NotAnalyzed, "writer_coverage") {
+			t.Fatalf("AnalyzeImpact add coverage = %#v", addNoCollision.Coverage)
 		}
 
 		unsupported, err := service.AnalyzeImpact(AnalyzeImpactRequest{
@@ -882,6 +985,15 @@ func loadUC001Project(t *testing.T) *semantic.Project {
 		}
 	}
 	return project
+}
+
+func hasString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
 }
 
 func assertHasObject(t *testing.T, refs []ObjectRef, object, kind, id string) ObjectRef {
