@@ -103,6 +103,22 @@ v1 で扱う `kind` は以下。
 
 `add` を投げた場合、 `coverage.analyzed` は他 kind と異なる（§7 参照）。
 
+### validation
+
+`change.kind` ごとの必須payloadは以下とする。
+
+| kind | 必須payload | optional payload | validation |
+|---|---|---|---|
+| `rename` | `new_id` | - | `new_id` が空なら `invalid_change_payload` |
+| `remove` | - | - | 追加payloadは無視せず `invalid_change_payload` |
+| `change_type` | `new_type` | - | `new_type` が空なら `invalid_change_payload` |
+| `change_contract` | - | `note` | payloadなしでも有効 |
+| `change_transition_target` | - | `new_to`, `new_action` | `new_to` / `new_action` の少なくとも一方が必要 |
+| `add` | `added_id` | - | `added_id` が空なら `invalid_change_payload` |
+
+kind と payload の不正な組み合わせは tool error として `invalid_change_payload` を返す。
+unsupported selector は tool error ではなく、空 `impacts`、`unsupported_selector` diagnostic、coverage を含む通常responseとして返す。
+
 > 由来: ADR-056 §決定 §2
 
 ---
@@ -426,7 +442,7 @@ LLM が人間に提示する文言の素材となる。
 
 ## 9. SourceLocation
 
-`source` は file / line / column を inline で必須に持つ。
+`source` は file / line / column を inline で持つ。
 YAML snippet 全文は含めない。
 
 ```jsonc
@@ -442,10 +458,14 @@ YAML snippet 全文は含めない。
 | フィールド | 必須 | 内容 |
 |---|---:|---|
 | `file` | ✓ | project root 相対 path |
-| `line` | ✓ | 1-based line number |
-| `column` | ✓ | 1-based column number |
+| `line` | 条件付き | 1-based line number。取得できる場合は必ず返す |
+| `column` | 条件付き | 1-based column number。取得できる場合は必ず返す |
 | `end_line` | 任意 | range end |
 | `end_column` | 任意 | range end |
+
+実装が line / column を取得できない場合も、impact 自体は落とさず `source.file` だけで返してよい。
+その場合、該当impactは `fixability=unknown` または `manual_review` に下げ、`diagnostics[]` に `source_location_unavailable` を含める。
+`fixability=mechanical` を返すには、file / line / column range が一意に特定できている必要がある。
 
 完全な YAML snippet が必要な場合、 LLM は `get_source` を別途呼ぶ。
 `source_preview` として短い行範囲を optional に持ってもよいが、 `analyze_impact` v1 では必須としない。

@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/mcp/schema.md
 status: draft
-last_updated: 2026-04-30
+last_updated: 2026-05-01
 summary: >
   MCP toolで共通利用するschemaを定義する。
   selector、ObjectRef、Reference、Diagnosticなどの共通表現を規定する。
@@ -12,6 +12,7 @@ depends_on:
   - docs/adr/043-project-root-layout-and-render-output.md
   - docs/adr/048-resolved-project-index-strategy.md
   - docs/adr/054-mcp-query-coverage-for-design-conversation.md
+  - docs/adr/056-mcp-analyze-impact-tool-design.md
 ---
 
 # MCP schema
@@ -80,28 +81,28 @@ private sub nodeの直接問い合わせは `get_signature` / `get_references` /
 
 MCP v1のselector対応範囲は以下とする。
 
-| object / kind | [`get_signature`](tools/get-signature.md) | [`get_references`](tools/get-references.md) | [`get_reference_tree`](tools/get-reference-tree.md) | [`inspect`](tools/inspect.md) | status |
-|---|---:|---:|---:|---:|---|
-| `node: task` | yes | yes | yes | yes | supported |
-| `node: model` | yes | yes | yes | yes | supported |
-| `node: store` | yes | yes | yes | yes | supported |
-| `node: state` | yes | yes | yes | yes | supported |
-| `node: event` | yes | yes | yes | yes | supported |
-| `node: actor` | yes | yes | yes | limited | supported / limited inspect |
-| `view: sequence_diagram` | yes | yes | yes | yes | supported |
-| `transition` | yes | yes | yes | yes | supported |
-| `field` | yes | yes | yes | yes | supported |
-| `file: node` | no | limited | limited | yes | supported / limited references |
-| `file: state_file` | no | yes | yes | yes | supported |
-| `file: sequence_diagram` | no | no | no | yes | supported |
-| `file: api_table` | no | no | no | yes | supported |
-| `file: er_diagram` | no | no | no | yes | supported |
-| `file: render_index` | no | no | no | yes | supported |
-| `asset` | yes | yes | yes | yes | supported |
-| `view: api_table` | no | no | no | yes | supported; `list_endpoints` はcomputed route一覧専用 |
-| `view: er_diagram` | no | no | no | yes | supported |
-| private sub node | yes | yes | yes | yes | supported |
-| `primitive` | no | no | no | no | reference target only |
+| object / kind | [`get_signature`](tools/get-signature.md) | [`get_references`](tools/get-references.md) | [`get_reference_tree`](tools/get-reference-tree.md) | [`analyze_impact`](tools/analyze-impact.md) | [`inspect`](tools/inspect.md) | status |
+|---|---:|---:|---:|---:|---:|---|
+| `node: task` | yes | yes | yes | yes | yes | supported |
+| `node: model` | yes | yes | yes | yes | yes | supported |
+| `node: store` | yes | yes | yes | yes | yes | supported |
+| `node: state` | yes | yes | yes | yes | yes | supported |
+| `node: event` | yes | yes | yes | yes | yes | supported |
+| `node: actor` | yes | yes | yes | yes | limited | supported / limited inspect |
+| `view: sequence_diagram` | yes | yes | yes | no | yes | supported |
+| `transition` | yes | yes | yes | yes | yes | supported |
+| `field` | yes | yes | yes | yes | yes | supported |
+| `file: node` | no | limited | limited | no | yes | supported / limited references |
+| `file: state_file` | no | yes | yes | no | yes | supported |
+| `file: sequence_diagram` | no | no | no | no | yes | supported |
+| `file: api_table` | no | no | no | no | yes | supported |
+| `file: er_diagram` | no | no | no | no | yes | supported |
+| `file: render_index` | no | no | no | no | yes | supported |
+| `asset` | yes | yes | yes | no | yes | supported |
+| `view: api_table` | no | no | no | no | yes | supported; `list_endpoints` はcomputed route一覧専用 |
+| `view: er_diagram` | no | no | no | no | yes | supported |
+| private sub node | yes | yes | yes | no | yes | supported |
+| `primitive` | no | no | no | no | no | reference target only |
 
 statusの意味:
 
@@ -115,6 +116,7 @@ statusの意味:
 | `reference target only` | reference targetとして返すが、直接query対象ではない |
 
 `get_reference_tree` における `file: node` の `limited` は、`get_references(file: node)` の対応範囲に従い、file内nodeへのreferenceのみ展開することを意味する。
+`analyze_impact` の `no` は、tool error ではなく空 `impacts` と `unsupported_selector` diagnostic を返す対象を表す。
 `primitive` はreference targetとして到達可能だが、traversal rootとしては扱わない。
 
 > 由来: ADR-054 §決定

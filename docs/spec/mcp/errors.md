@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/mcp/errors.md
 status: draft
-last_updated: 2026-04-30
+last_updated: 2026-05-01
 summary: >
   MCP toolのerror modelを定義する。
   tool errorとdiagnosticの使い分け、およびerror codeとpayloadを規定する。
@@ -38,7 +38,9 @@ MCP v1で定義するerror code:
 | code | 意味 |
 |---|---|
 | `project_invalid` | semantic buildに失敗しておりqueryできない |
+| `invalid_args` | tool input JSON または input schema が不正 |
 | `invalid_selector` | selectorの形式が不正 |
+| `invalid_change_payload` | `analyze_impact.change` の kind / payload の組み合わせが不正 |
 | `not_found` | 対象objectが存在しない |
 | `kind_mismatch` | selector.kind と解決結果のkindが一致しない |
 | `ambiguous` | 候補が複数あり一意に解決できない |
@@ -47,6 +49,10 @@ MCP v1で定義するerror code:
 | `unsupported_direction` | `direction` の値が未対応 |
 | `invalid_depth` | traversal depth が未対応範囲外 |
 | `internal_error` | 実装内部エラー |
+
+`analyze_impact` では、unsupported selector は tool error にしない。
+空 `impacts`、`coverage`、および `unsupported_selector` diagnostic を含む通常responseとして返す。
+一方、`change.kind` に対して必須payloadが欠けている場合や、kind と payload の組み合わせが不正な場合は `invalid_change_payload` を返す。
 
 ## 3. Error payload
 
