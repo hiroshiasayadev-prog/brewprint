@@ -15,7 +15,7 @@ import (
 func TestServerTools(t *testing.T) {
 	server := newUC001Server(t)
 	tools := server.Tools()
-	want := []string{"list_objects", "get_signature", "get_source", "get_references", "inspect", "list_endpoints"}
+	want := []string{"list_objects", "get_signature", "get_source", "get_references", "get_reference_tree", "inspect", "list_endpoints"}
 	if len(tools) != len(want) {
 		t.Fatalf("tools len = %d, want %d: %#v", len(tools), len(want), tools)
 	}
@@ -205,6 +205,26 @@ func TestServerCallTool(t *testing.T) {
 		}
 	})
 
+	t.Run("get_reference_tree", func(t *testing.T) {
+		envelope := call(t, server, "get_reference_tree", `{"selector":{"object":"transition","id":"order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"},"direction":"out","depth":1,"kinds":["transition_from","transition_event","transition_to","transition_action"]}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_reference_tree error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		root := result["root"].(map[string]any)
+		if root["object"] != "transition" || root["id"] != "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']" {
+			t.Fatalf("reference tree root = %#v", root)
+		}
+		if result["direction"] != "out" || result["depth"] != float64(1) || result["truncated"] != false {
+			t.Fatalf("reference tree envelope = %#v", result)
+		}
+		nodes := result["nodes"].([]any)
+		edges := result["edges"].([]any)
+		if len(nodes) != 5 || len(edges) != 4 {
+			t.Fatalf("reference tree nodes=%d edges=%d result=%#v", len(nodes), len(edges), result)
+		}
+	})
+
 	t.Run("inspect", func(t *testing.T) {
 		envelope := call(t, server, "inspect", `{"selector":{"id":"order.task.checkout"}}`)
 		if envelope.Error != nil {
@@ -383,6 +403,13 @@ func TestServerCallToolErrors(t *testing.T) {
 		envelope := call(t, server, "get_signature", `{"selector":{"id":"auth.task.missing"}}`)
 		if envelope.Error == nil || envelope.Error.Code != "not_found" {
 			t.Fatalf("not found envelope = %#v", envelope)
+		}
+	})
+
+	t.Run("invalid_depth", func(t *testing.T) {
+		envelope := call(t, server, "get_reference_tree", `{"selector":{"id":"auth.task.login"},"direction":"out","depth":5}`)
+		if envelope.Error == nil || envelope.Error.Code != "invalid_depth" {
+			t.Fatalf("invalid depth envelope = %#v", envelope)
 		}
 	})
 }

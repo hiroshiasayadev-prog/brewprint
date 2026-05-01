@@ -27,12 +27,15 @@ func TestHandleJSONRPC(t *testing.T) {
 		}
 		result := resultMapAny(t, res.Result)
 		tools := result["tools"].([]any)
-		if len(tools) != 6 {
-			t.Fatalf("tools len = %d, want 6: %#v", len(tools), tools)
+		if len(tools) != 7 {
+			t.Fatalf("tools len = %d, want 7: %#v", len(tools), tools)
 		}
 		firstTool := tools[0].(map[string]any)
 		if _, ok := firstTool["inputSchema"]; !ok {
 			t.Fatalf("tool inputSchema missing: %#v", firstTool)
+		}
+		if !hasToolName(tools, "get_reference_tree") {
+			t.Fatalf("get_reference_tree missing from tools/list: %#v", tools)
 		}
 	})
 
@@ -114,6 +117,19 @@ func TestHandleJSONRPCErrors(t *testing.T) {
 			t.Fatalf("unknown tool error = %#v", toolError)
 		}
 	})
+}
+
+func hasToolName(tools []any, name string) bool {
+	for _, item := range tools {
+		tool, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		if tool["name"] == name {
+			return true
+		}
+	}
+	return false
 }
 
 func handleLine(t *testing.T, server *Server, line string) JSONRPCResponse {

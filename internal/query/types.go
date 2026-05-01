@@ -165,6 +165,40 @@ type GetReferencesResponse struct {
 	Diagnostics []semantic.Diagnostic `json:"diagnostics"`
 }
 
+type GetReferenceTreeRequest struct {
+	Selector Selector `json:"selector"`
+	Direction string   `json:"direction"`
+	Depth     int      `json:"depth"`
+	Kinds     []string `json:"kinds,omitempty"`
+	MaxNodes  int      `json:"max_nodes,omitempty"`
+	MaxEdges  int      `json:"max_edges,omitempty"`
+}
+
+type ReferenceTreeNode struct {
+	Object ObjectRef `json:"object"`
+	Depth  int       `json:"depth"`
+	Via    []string  `json:"via"`
+}
+
+type ReferenceTreeEdge struct {
+	Kind      string            `json:"kind"`
+	Direction string            `json:"direction"`
+	From      ReferenceEndpoint `json:"from"`
+	To        ReferenceEndpoint `json:"to"`
+	Depth     int               `json:"depth"`
+}
+
+type GetReferenceTreeResponse struct {
+	Root             ObjectRef             `json:"root"`
+	Direction        string                `json:"direction"`
+	Depth            int                   `json:"depth"`
+	Nodes            []ReferenceTreeNode   `json:"nodes"`
+	Edges            []ReferenceTreeEdge   `json:"edges"`
+	Truncated        bool                  `json:"truncated"`
+	TruncatedReasons []string              `json:"truncated_reasons"`
+	Diagnostics      []semantic.Diagnostic `json:"diagnostics"`
+}
+
 type ListObjectsRequest struct {
 	Object string `json:"object,omitempty"`
 	Kind   string `json:"kind,omitempty"`

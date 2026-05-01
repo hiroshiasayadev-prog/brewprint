@@ -73,6 +73,21 @@ func (s *Server) Tools() []Tool {
 			}, []string{"selector"}),
 		},
 		{
+			Name:        "get_reference_tree",
+			Description: "Return a bounded BFS reference graph for a semantic object.",
+			InputSchema: objectSchema(map[string]any{
+				"selector":  selectorSchema(),
+				"direction": enumStringSchema("out", "in", "both"),
+				"depth":     map[string]any{"type": "integer", "minimum": 0, "maximum": 4},
+				"kinds": map[string]any{
+					"type":  "array",
+					"items": map[string]any{"type": "string"},
+				},
+				"max_nodes": map[string]any{"type": "integer", "minimum": 1},
+				"max_edges": map[string]any{"type": "integer", "minimum": 1},
+			}, []string{"selector", "direction", "depth"}),
+		},
+		{
 			Name:        "inspect",
 			Description: "Return implementation context for a semantic object.",
 			InputSchema: objectSchema(map[string]any{
@@ -172,6 +187,16 @@ func (s *Server) CallTool(name string, args []byte) Envelope {
 			return errorEnvelope(errorCode(err), name, err.Error(), args)
 		}
 		return Envelope{Result: res}
+	case "get_reference_tree":
+		var req query.GetReferenceTreeRequest
+		if err := decodeArgs(args, &req); err != nil {
+			return errorEnvelope("invalid_args", name, err.Error(), args)
+		}
+		res, err := s.service.GetReferenceTree(req)
+		if err != nil {
+			return errorEnvelope(errorCode(err), name, err.Error(), args)
+		}
+		return Envelope{Result: res}
 	case "inspect":
 		var req query.InspectRequest
 		if err := decodeArgs(args, &req); err != nil {
@@ -229,6 +254,9 @@ func errorCode(err error) string {
 	}
 	if strings.Contains(message, "unsupported direction") {
 		return "unsupported_direction"
+	}
+	if strings.Contains(message, "invalid depth") {
+		return "invalid_depth"
 	}
 	if strings.Contains(message, "kind mismatch") {
 		return "kind_mismatch"

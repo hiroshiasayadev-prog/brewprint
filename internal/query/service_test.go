@@ -337,6 +337,50 @@ func TestQueryServiceUC001(t *testing.T) {
 		assertHasReference(t, stateFileRefs.References, "scenario_state_file", "in", "payment_webhook_flow", "order/state.yaml")
 	})
 
+	t.Run("GetReferenceTree", func(t *testing.T) {
+		transitionSelector := Selector{Object: "transition", ID: "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"}
+		tree, err := service.GetReferenceTree(GetReferenceTreeRequest{
+			Selector:  transitionSelector,
+			Direction: "out",
+			Depth:     1,
+			Kinds:     []string{"transition_from", "transition_event", "transition_to", "transition_action"},
+		})
+		if err != nil {
+			t.Fatalf("GetReferenceTree transition: %v", err)
+		}
+		if tree.Root.ID != transitionSelector.ID || tree.Direction != "out" || tree.Depth != 1 || tree.Truncated {
+			t.Fatalf("transition tree envelope = %#v", tree)
+		}
+		if len(tree.Nodes) != 5 || len(tree.Edges) != 4 {
+			t.Fatalf("transition tree nodes=%d edges=%d tree=%#v", len(tree.Nodes), len(tree.Edges), tree)
+		}
+		assertHasReferenceTreeNode(t, tree.Nodes, "order.state.processing", 1, []string{"transition_from"})
+		assertHasReferenceTreeNode(t, tree.Nodes, "order.event.payment_webhook_received", 1, []string{"transition_event"})
+		assertHasReferenceTreeNode(t, tree.Nodes, "order.state.confirmed", 1, []string{"transition_to"})
+		assertHasReferenceTreeNode(t, tree.Nodes, "payment.webhooks.task.process_payment", 1, []string{"transition_action"})
+		assertHasReferenceTreeEdge(t, tree.Edges, "transition_action", "out", transitionSelector.ID, "payment.webhooks.task.process_payment", 1)
+
+		rootOnly, err := service.GetReferenceTree(GetReferenceTreeRequest{Selector: transitionSelector, Direction: "out", Depth: 0})
+		if err != nil {
+			t.Fatalf("GetReferenceTree depth 0: %v", err)
+		}
+		if len(rootOnly.Nodes) != 1 || len(rootOnly.Edges) != 0 || rootOnly.Nodes[0].Depth != 0 || rootOnly.Nodes[0].Object.ID != transitionSelector.ID {
+			t.Fatalf("depth 0 tree = %#v", rootOnly)
+		}
+
+		truncated, err := service.GetReferenceTree(GetReferenceTreeRequest{Selector: transitionSelector, Direction: "out", Depth: 1, MaxEdges: 1})
+		if err != nil {
+			t.Fatalf("GetReferenceTree truncation: %v", err)
+		}
+		if !truncated.Truncated || len(truncated.TruncatedReasons) != 1 || truncated.TruncatedReasons[0] != "max_edges" {
+			t.Fatalf("truncated tree = %#v", truncated)
+		}
+
+		if _, err := service.GetReferenceTree(GetReferenceTreeRequest{Selector: transitionSelector, Direction: "out", Depth: 5}); err == nil {
+			t.Fatalf("GetReferenceTree depth 5 expected error")
+		}
+	})
+
 	t.Run("M11Selectors", func(t *testing.T) {
 		buildOrderSelector := Selector{Object: "node", ID: "order/task/checkout.yaml#build_order"}
 		buildOrder, err := service.GetSignature(GetSignatureRequest{Selector: buildOrderSelector})
@@ -690,6 +734,29 @@ func assertHasReference(t *testing.T, refs []Reference, kind, direction, fromID,
 	}
 	t.Fatalf("reference not found kind=%s direction=%s from=%s to=%s in %#v", kind, direction, fromID, toID, refs)
 	return Reference{}
+}
+
+func assertHasReferenceTreeNode(t *testing.T, nodes []ReferenceTreeNode, id string, depth int, via []string) ReferenceTreeNode {
+	t.Helper()
+	for _, node := range nodes {
+		if node.Object.ID != id || node.Depth != depth || strings.Join(node.Via, ",") != strings.Join(via, ",") {
+			continue
+		}
+		return node
+	}
+	t.Fatalf("reference tree node not found id=%s depth=%d via=%v in %#v", id, depth, via, nodes)
+	return ReferenceTreeNode{}
+}
+
+func assertHasReferenceTreeEdge(t *testing.T, edges []ReferenceTreeEdge, kind, direction, fromID, toID string, depth int) ReferenceTreeEdge {
+	t.Helper()
+	for _, edge := range edges {
+		if edge.Kind == kind && edge.Direction == direction && edge.From.ID == fromID && edge.To.ID == toID && edge.Depth == depth {
+			return edge
+		}
+	}
+	t.Fatalf("reference tree edge not found kind=%s direction=%s from=%s to=%s depth=%d in %#v", kind, direction, fromID, toID, depth, edges)
+	return ReferenceTreeEdge{}
 }
 
 func assertHasAPIInspectEndpoint(t *testing.T, endpoints []apiInspectEndpoint, task, method, path string) {
