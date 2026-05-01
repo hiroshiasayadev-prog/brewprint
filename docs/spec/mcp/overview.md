@@ -10,6 +10,8 @@ depends_on:
   - docs/adr/048-resolved-project-index-strategy.md
   - docs/adr/049-mcp-query-reference-vocabulary.md
   - docs/adr/054-mcp-query-coverage-for-design-conversation.md
+  - docs/adr/055-mcp-reference-tree-traversal.md
+  - docs/adr/056-mcp-analyze-impact-tool-design.md
 ---
 
 # MCP仕様 Overview
@@ -148,7 +150,7 @@ MCP responseは引き続きRaw YAML ASTを公開せず、ResolvedProject上のse
 
 ## 3. Tool overview
 
-MCP v1のquery toolは以下の7つとする。
+MCP v1のquery toolは以下の8つとする。
 
 | tool | 目的 | 主な利用場面 |
 |---|---|---|
@@ -157,6 +159,7 @@ MCP v1のquery toolは以下の7つとする。
 | [`get_source`](tools/get-source.md) | semantic objectに対応するYAML snippetを取得する | 設計対話中に定義元YAMLを確認する |
 | [`get_references`](tools/get-references.md) | objectの直接referenceを取得する | 影響範囲・依存・逆参照を確認する |
 | [`get_reference_tree`](tools/get-reference-tree.md) | objectからdepth制限つきでreference graphを辿る | 変更影響範囲や周辺objectをN hopで確認する |
+| [`analyze_impact`](tools/analyze-impact.md) | change kindを踏まえた意味づけ済み影響分析を取得する | 設計変更相談で「何が壊れるか / どう直すか」を判断する |
 | [`inspect`](tools/inspect.md) | object kind別に実装判断用の文脈を取得する | Claude Code等が実装・修正時に読む |
 | [`list_endpoints`](tools/list-endpoints.md) | API Table viewに基づくendpoint一覧を取得する | API実装・ルーティング確認 |
 
@@ -172,6 +175,7 @@ LLMは以下の使い分けを基本とする。
 | 対象objectの定義元YAML snippetを確認したい | [`get_source`](tools/get-source.md) |
 | 何に依存しているか / 何から参照されているか確認したい | [`get_references`](tools/get-references.md) |
 | 変更影響範囲や周辺objectをN hopで確認したい | [`get_reference_tree`](tools/get-reference-tree.md) |
+| 設計変更（rename / remove / 型変更等）の影響と直し方を判断したい | [`analyze_impact`](tools/analyze-impact.md) |
 | 実装・修正・レビューのために周辺文脈が必要 | [`inspect`](tools/inspect.md) |
 | API route一覧が必要 | [`list_endpoints`](tools/list-endpoints.md) |
 
@@ -181,6 +185,7 @@ LLMは以下の使い分けを基本とする。
 - 小さな型確認だけなら `get_signature` を使う
 - 直接参照確認では `get_references(direction="in")` または `both` を使う
 - N hopの影響範囲確認では `get_reference_tree` を使い、`direction` と `depth` を明示する
+- 設計変更相談では `analyze_impact` を使い、`change.kind` を明示する。 raw な reference 探索が必要な場合のみ `get_reference_tree` に降りる
 - Raw YAMLを直接読む前に、まず `get_source` でsemantic objectに対応するsnippetを確認する
 
 ---

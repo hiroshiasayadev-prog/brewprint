@@ -8,6 +8,7 @@ summary: >
 depends_on:
   - docs/adr/054-mcp-query-coverage-for-design-conversation.md
   - docs/adr/055-mcp-reference-tree-traversal.md
+  - docs/adr/056-mcp-analyze-impact-tool-design.md
 ---
 
 # Versioning / future extensions
@@ -28,8 +29,11 @@ MCP v1では以下を未定義とする。
 | `inspect(view: api_table)` | API Table viewが集約するmodules / endpoints / computed routesを把握する | high |
 | `inspect(view: er_diagram)` | ER Diagram viewが集約するmodules / stores / models / FKを把握する | high |
 | flow wiring references | DAG上のflow step / param wiringをreferenceとして扱う | medium |
-| `analyze_impact` | 変更種別つき影響分析。direct references / reference tree / flow wiring / render output mapping を材料に、影響範囲・重要度・確認事項を返す | medium |
 | `search_notes` | note/docに対するsemantic search | low |
 
 これらは必要になった時点で `docs/spec/mcp/overview.md` または該当する `docs/spec/mcp/tools/*.md` を更新し、実装タスクは `docs/TASKS.md` で管理する。
 既存ADRの方針を変更するほどの設計転換がある場合のみ、新ADRを起票する。
+
+## v1に昇格済みの記録
+
+- `analyze_impact` — ADR-056で v1 採用。 仕様は [`tools/analyze-impact.md`](./tools/analyze-impact.md) 参照

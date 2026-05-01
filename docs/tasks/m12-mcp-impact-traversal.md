@@ -3,7 +3,7 @@
 - **status**: open
 - **scope**: MCP / QueryService
 - **source**: migrated from docs/TASKS.md
-- **last_updated**: 2026-04-30
+- **last_updated**: 2026-05-01
 
 ---
 
@@ -26,21 +26,16 @@
   - `docs/spec/mcp/tools/get-reference-tree.md` へ正式仕様を反映済み
   - 実装タスクは次セッション以降で分割する
 
-- [ ] **`analyze_impact` を設計する**
-  - 設計変更相談向けに、対象objectと変更種別から影響範囲を返す上位toolとして扱う
+- [x] **`analyze_impact` を設計する**
+  - 設計完了: ADR-056 で全体方針を確定させ、 `docs/spec/mcp/tools/analyze-impact.md` に仕様反映済み
+  - 設計対話向けに、対象objectと変更種別から影響範囲を返す上位toolとして位置づけ
   - `get_references` は direct reference APIとして維持し、impact analysisを混ぜない
-  - `get_reference_tree` / direct references / flow wiring / render output mapping を材料にする
-  - input候補:
-    - `selector`
-    - `change`: `rename` / `remove` / `change_type` / `change_contract` など
-  - output候補:
-    - `impacts[]`
-    - `kind`
-    - `severity`
-    - `object` または `file`
-    - `reason`
-    - `via`
-    - `recommended_action`
-  - 初期対象は field / model / task / transition 程度に絞る
-  - flow wiring と render output impact は段階的に追加する
-  - 実装前に `docs/spec/mcp/overview.md` へtool仕様案を追記する
+  - `get_reference_tree` / direct references / flow wiring / sequence step / render output (file粒度) を材料にする
+  - input: `selector` + `change` (discriminated object) + `scope_modules` + `max_impacts`
+  - output: `summary` / `impacts[]` / `coverage` (必須) / `assumptions` / `truncated` / `diagnostics`
+  - severity と fixability を別軸として分け、 `mechanical` の必要条件5要件をspecで固定
+  - `recommended_action` と `suggested_fixes[]` を二段で返す
+  - flow wiring / sequence step / type signature identity は v1 coverage に含める
+  - structural compatibility / semantic contract / render presentation details は v1 除外
+  - 初期対象は field / model / task / transition / state / event / actor / store とし、 view系・asset・primitiveは unsupported selector
+  - 実装タスクは次milestoneで管理
