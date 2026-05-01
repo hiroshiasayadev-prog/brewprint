@@ -1,6 +1,6 @@
 # 057: brewprint v1 snapshot
 
-- **status**: proposed
+- **status**: accepted
 - **date**: 2026-05-02
 
 > このADRは起票時点での決定を記録したスナップショットである。
@@ -165,6 +165,6 @@ doc-policy.md §11は本ADR反映と同commitで更新する。
 - v1後の仕様改訂はsupersedingやspec修正で進め、いずれ次の `v{N}.0.0-spec` タグで凍結する
 
 ## Evidence
-- commit: tbd（本ADR起票時のcommit hash）
+- commit: 3071dbb
 - impl commit: 該当なし（ドキュメント運用ADR）
 - 参考: セマンティックバージョニング、Goプロジェクトのtag運用慣習
