@@ -1,6 +1,6 @@
 # Milestone 12: MCP impact traversal / source assist を拡張する
 
-- **status**: open
+- **status**: closed
 - **scope**: MCP / QueryService
 - **source**: migrated from docs/TASKS.md
 - **last_updated**: 2026-05-01

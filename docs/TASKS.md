@@ -39,7 +39,8 @@ brewprintの積みタスク一覧。
 | M9: QueryService state/event/scenario expansion | closed | [tasks/m9-query-service-expansion.md](tasks/m9-query-service-expansion.md) | `docs/impl/go-m9-summary.md` |
 | M10: MCP project exploration / view inspect | closed | [tasks/m10-mcp-project-exploration.md](tasks/m10-mcp-project-exploration.md) | ADR-054 |
 | M11: MCP diagram element query | closed | [tasks/m11-mcp-diagram-element-query.md](tasks/m11-mcp-diagram-element-query.md) | ADR-054 |
-| M12: MCP impact traversal / source assist | open | [tasks/m12-mcp-impact-traversal.md](tasks/m12-mcp-impact-traversal.md) | ADR-054 / ADR-055 / ADR-056 |
+| M12: MCP impact traversal / source assist | closed | [tasks/m12-mcp-impact-traversal.md](tasks/m12-mcp-impact-traversal.md) | ADR-054 / ADR-055 / ADR-056 |
+| M13: MCP analyze_impact implementation | closed | [tasks/m13-mcp-analyze-impact-implementation.md](tasks/m13-mcp-analyze-impact-implementation.md) | ADR-056; hybrid v1 close; `docs/impl/go-m13-summary.md` |
 
 ---
 

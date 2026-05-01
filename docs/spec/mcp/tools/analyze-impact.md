@@ -355,13 +355,11 @@ LLM はこの内容を人間に提示することで、 「分析対象だが結
 - `change.kind = "remove"` の task 対象 → `direct_references`, `reference_tree`, `transition_action_resolution`, `flow_step_task_resolution`, `sequence_step_task_resolution`, `render_output_files`
 - `change.kind = "add"` の field 対象 → name collision check / type resolution / writer coverage 等。`direct_references` ではない
 
-`add` を投げた場合の `coverage.analyzed` 例:
+`add` を投げた場合の `coverage.analyzed` v1 最小実装:
 
 - `name_collision`
-- `type_resolution`
-- `writer_coverage`
 
-これら 3 語彙は `add` 専用と位置づける。
+`type_resolution` / `writer_coverage` は `add` 専用の将来 coverage 語彙だが、M13 v1 では実体 collector を持たないため `coverage.not_analyzed` に入れる。
 
 ### coverage 必須化のルール
 
@@ -484,6 +482,10 @@ YAML snippet 全文は含めない。
 - flow step の task 参照（`flow_step_task_resolution`）
 - flow param の field 参照（`flow_param_field_resolution`）
 
+M13 v1 の `flow_param_field_resolution` は最小範囲とする。
+対象は、flow param wiring の target/source/return asset 名や source task/join の return model identity が、対象 field / field model に関係すると判定できるケースに限る。
+model 間の structural compatibility や、任意の式解析は行わない。
+
 実装は `inspect(task).members.flow.entries` 相当の経路を内部的に読む。
 `get_reference_tree` の reference kind は拡張しない（ADR-055 維持）。
 
@@ -524,7 +526,33 @@ md 内の presentation 詳細（DAG node shape の変化、ER の線の変化、
 
 ---
 
-## 11. assumptions
+## 11. M13 v1 implementation constraints
+
+M13 は full spec を一度に満たすのではなく、強い public contract を守った上での v1 最小実装として close する。
+
+M13 v1 で実装するもの:
+
+- `change` discriminated object validation
+- unsupported selector の normal response + `unsupported_selector` diagnostic
+- task rename/remove/change_contract の transition action / flow step / sequence step impact
+- field rename/remove/change_type の direct/reference-tree based impact
+- field 変更に対する最小 `flow_param_field_resolution`
+- transition `change_transition_target` の `new_to` / `new_action` 解決チェック
+- render output file 粒度 impact
+- add の `name_collision`
+- `fixability=mechanical` の共通 judgement gate
+
+M13 v1 の known limitations:
+
+- field rename は source line/column が不足する場合、`mechanical` ではなく `unknown` / `manual_review` に落とす。
+- `fixability=mechanical` は gate を満たす場合のみ返す。gate を満たさない rename は `suggested` または `unknown` とする。
+- flow param 解析は wiring identity の最小判定に限る。
+- add の `type_resolution` / `writer_coverage` は `coverage.not_analyzed` に残す。
+- state / event / actor / store に対する専用 analyze collector は M13 v1 では限定的であり、主に reference/render 経路で扱う。
+
+---
+
+## 12. assumptions
 
 `assumptions` は tool 側の前提・限界を文字列で列挙する。
 
@@ -539,7 +567,7 @@ implementation 都合の制約も、 LLM が誤った安心感を人間に与え
 
 ---
 
-## 12. Selector support
+## 13. Selector support
 
 `analyze_impact` の対象 selector は、 [`get_references`](./get-references.md) で supported な selector を起点にする。
 
