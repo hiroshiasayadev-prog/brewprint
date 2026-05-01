@@ -383,18 +383,153 @@ func TestQueryServiceUC001(t *testing.T) {
 	})
 
 	t.Run("AnalyzeImpactCore", func(t *testing.T) {
-		res, err := service.AnalyzeImpact(AnalyzeImpactRequest{
-			Selector: Selector{ID: "auth.task.login"},
-			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeRename, NewID: "auth.task.sign_in"},
+		taskRemove, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{ID: "payment.webhooks.task.process_payment"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeRemove},
 		})
 		if err != nil {
-			t.Fatalf("AnalyzeImpact rename skeleton: %v", err)
+			t.Fatalf("AnalyzeImpact task remove: %v", err)
 		}
-		if res.Target.ID != "auth.task.login" || res.Change.Kind != AnalyzeImpactChangeRename || len(res.Impacts) != 0 || res.Truncated {
-			t.Fatalf("AnalyzeImpact response = %#v", res)
+		if taskRemove.Target.ID != "payment.webhooks.task.process_payment" || taskRemove.Change.Kind != AnalyzeImpactChangeRemove || taskRemove.Truncated {
+			t.Fatalf("AnalyzeImpact task remove envelope = %#v", taskRemove)
 		}
-		if res.Summary.BySeverity["breaking"] != 0 || res.Summary.ByFixability["mechanical"] != 0 || len(res.Coverage.NotAnalyzed) == 0 || len(res.Assumptions) == 0 {
-			t.Fatalf("AnalyzeImpact summary/coverage = %#v", res)
+		removedAction := assertHasImpact(t, taskRemove.Impacts, "transition_action", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']")
+		if removedAction.Severity != "breaking" || removedAction.Fixability != "manual_review" || strings.Join(removedAction.Via, ",") != "transition_action" {
+			t.Fatalf("task remove transition action impact = %#v", removedAction)
+		}
+		removedScenario := assertHasImpact(t, taskRemove.Impacts, "sequence_step_action", "payment_webhook_flow")
+		if removedScenario.Severity != "breaking" || removedScenario.Fixability != "manual_review" || strings.Join(removedScenario.Via, ",") != "scenario_step_transition,transition_action" {
+			t.Fatalf("task remove sequence impact = %#v", removedScenario)
+		}
+		if taskRemove.Summary.BySeverity["breaking"] != len(taskRemove.Impacts) || taskRemove.Summary.ByKind["transition_action"] != 1 || taskRemove.Summary.ByKind["sequence_step_action"] != 1 {
+			t.Fatalf("task remove summary = %#v impacts=%#v", taskRemove.Summary, taskRemove.Impacts)
+		}
+
+		taskRename, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{ID: "payment.webhooks.task.process_payment"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeRename, NewID: "payment.webhooks.task.handle_payment"},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact task rename action/sequence: %v", err)
+		}
+		if taskRename.Target.ID != "payment.webhooks.task.process_payment" || taskRename.Change.Kind != AnalyzeImpactChangeRename || taskRename.Truncated {
+			t.Fatalf("AnalyzeImpact task rename envelope = %#v", taskRename)
+		}
+		renamedAction := assertHasImpact(t, taskRename.Impacts, "transition_action", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']")
+		if renamedAction.Severity != "breaking" || renamedAction.Fixability != "suggested" || len(renamedAction.SuggestedFixes) == 0 {
+			t.Fatalf("task rename transition action impact = %#v", renamedAction)
+		}
+		renamedSequence := assertHasImpact(t, taskRename.Impacts, "sequence_step_action", "payment_webhook_flow")
+		if renamedSequence.Severity != "breaking" || renamedSequence.Fixability != "suggested" || len(renamedSequence.SuggestedFixes) == 0 {
+			t.Fatalf("task rename sequence impact = %#v", renamedSequence)
+		}
+		if len(taskRename.Diagnostics) != 0 {
+			t.Fatalf("task rename diagnostics = %#v", taskRename.Diagnostics)
+		}
+
+		flowRename, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{ID: "order.task.build_order"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeRename, NewID: "order.task.create_order"},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact task rename flow: %v", err)
+		}
+		flowImpact := assertHasImpact(t, flowRename.Impacts, "flow_step_task", "order.task.checkout")
+		if flowImpact.Severity != "breaking" || flowImpact.Fixability != "suggested" || len(flowImpact.SuggestedFixes) == 0 {
+			t.Fatalf("task rename flow impact = %#v", flowImpact)
+		}
+		if flowRename.Summary.ByKind["flow_step_task"] != 1 || flowRename.Summary.BySeverity["breaking"] != 1 || flowRename.Summary.ByFixability["suggested"] != 1 {
+			t.Fatalf("task rename flow summary = %#v impacts=%#v", flowRename.Summary, flowRename.Impacts)
+		}
+
+		contract, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{ID: "payment.webhooks.task.process_payment"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeContract, Note: "params changed"},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact task change_contract: %v", err)
+		}
+		assertHasImpact(t, contract.Impacts, "transition_action", "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']")
+		assertHasImpact(t, contract.Impacts, "sequence_step_action", "payment_webhook_flow")
+		if contract.Summary.BySeverity["warning"] != len(contract.Impacts) || contract.Summary.ByFixability["manual_review"] != len(contract.Impacts) {
+			t.Fatalf("task change_contract summary = %#v impacts=%#v", contract.Summary, contract.Impacts)
+		}
+
+		transitionImpact, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{Object: "transition", ID: "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeTransitionTarget, NewTo: "order.state.failed"},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact transition target change: %v", err)
+		}
+		if transitionImpact.Target.ID != "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']" || transitionImpact.Truncated {
+			t.Fatalf("AnalyzeImpact transition envelope = %#v", transitionImpact)
+		}
+		scenarioImpact := assertHasImpact(t, transitionImpact.Impacts, "transition_scenario_step", "payment_webhook_flow")
+		if scenarioImpact.Severity != "warning" || scenarioImpact.Fixability != "manual_review" || strings.Join(scenarioImpact.Via, ",") != "scenario_step_transition" {
+			t.Fatalf("scenario impact = %#v", scenarioImpact)
+		}
+		if scenarioImpact.Source == nil || scenarioImpact.Source.File != "views/scenarios/payment_webhook_flow.yaml" || scenarioImpact.Source.Line == 0 || scenarioImpact.Source.Column == 0 {
+			t.Fatalf("scenario impact source = %#v", scenarioImpact.Source)
+		}
+		actionImpact := assertHasImpact(t, transitionImpact.Impacts, "transition_action_task", "payment.webhooks.task.process_payment")
+		if actionImpact.Severity != "warning" || actionImpact.Fixability != "manual_review" || strings.Join(actionImpact.Via, ",") != "transition_action" {
+			t.Fatalf("action impact = %#v", actionImpact)
+		}
+		if actionImpact.Source == nil || actionImpact.Source.File != "order/state.yaml" || actionImpact.Source.Line == 0 || actionImpact.Source.Column == 0 {
+			t.Fatalf("action impact source = %#v", actionImpact.Source)
+		}
+		if len(transitionImpact.Diagnostics) != 0 {
+			t.Fatalf("transition impact diagnostics = %#v", transitionImpact.Diagnostics)
+		}
+		if transitionImpact.Summary.ByKind["transition_scenario_step"] != 1 || transitionImpact.Summary.ByKind["transition_action_task"] != 1 || transitionImpact.Summary.ByFixability["manual_review"] != 2 {
+			t.Fatalf("transition impact summary = %#v", transitionImpact.Summary)
+		}
+
+		transitionRemove, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{Object: "transition", ID: "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeRemove},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact transition remove: %v", err)
+		}
+		removedScenarioImpact := assertHasImpact(t, transitionRemove.Impacts, "transition_scenario_step", "payment_webhook_flow")
+		if removedScenarioImpact.Severity != "breaking" || removedScenarioImpact.Fixability != "manual_review" {
+			t.Fatalf("transition remove scenario impact = %#v", removedScenarioImpact)
+		}
+
+		fieldRename, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{Object: "field", ID: "order.model.order.id"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeRename, NewID: "order.model.order.order_id"},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact field rename: %v", err)
+		}
+		if fieldRename.Target.ID != "order.model.order.id" || len(fieldRename.Impacts) == 0 {
+			t.Fatalf("AnalyzeImpact field rename response = %#v", fieldRename)
+		}
+		if fieldRename.Summary.BySeverity["breaking"] == 0 || fieldRename.Summary.ByFixability["unknown"] == 0 || fieldRename.Summary.ByKind["field_consumer"] == 0 {
+			t.Fatalf("AnalyzeImpact field rename summary = %#v impacts=%#v", fieldRename.Summary, fieldRename.Impacts)
+		}
+		foundFileOnlySource := false
+		for _, impact := range fieldRename.Impacts {
+			if impact.Source != nil && impact.Source.File != "" && (impact.Source.Line == 0 || impact.Source.Column == 0) {
+				foundFileOnlySource = true
+				break
+			}
+		}
+		if !foundFileOnlySource {
+			t.Fatalf("AnalyzeImpact field rename expected source.file without line/column: %#v", fieldRename.Impacts)
+		}
+		foundSourceDiagnostic := false
+		for _, diagnostic := range fieldRename.Diagnostics {
+			if diagnostic.Code == "source_location_unavailable" {
+				foundSourceDiagnostic = true
+				break
+			}
+		}
+		if !foundSourceDiagnostic {
+			t.Fatalf("AnalyzeImpact field rename diagnostics = %#v", fieldRename.Diagnostics)
 		}
 
 		unsupported, err := service.AnalyzeImpact(AnalyzeImpactRequest{
@@ -791,6 +926,17 @@ func assertHasReference(t *testing.T, refs []Reference, kind, direction, fromID,
 	}
 	t.Fatalf("reference not found kind=%s direction=%s from=%s to=%s in %#v", kind, direction, fromID, toID, refs)
 	return Reference{}
+}
+
+func assertHasImpact(t *testing.T, impacts []ImpactEntry, kind, objectID string) ImpactEntry {
+	t.Helper()
+	for _, impact := range impacts {
+		if impact.Kind == kind && impact.Object.ID == objectID {
+			return impact
+		}
+	}
+	t.Fatalf("impact not found kind=%s object=%s in %#v", kind, objectID, impacts)
+	return ImpactEntry{}
 }
 
 func assertHasReferenceTreeNode(t *testing.T, nodes []ReferenceTreeNode, id string, depth int, via []string) ReferenceTreeNode {

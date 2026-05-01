@@ -2,6 +2,8 @@ package query
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/hiroshiasayadev-prog/brewprint/internal/semantic"
 )
@@ -37,12 +39,12 @@ func (s *Service) AnalyzeImpact(req AnalyzeImpactRequest) (AnalyzeImpactResponse
 		}, nil
 	}
 
-	_, target, err := s.referenceTarget(req.Selector)
+	targetKey, target, err := s.referenceTarget(req.Selector)
 	if err != nil {
 		return AnalyzeImpactResponse{}, err
 	}
 
-	impacts, diagnostics := s.collectAnalyzeImpacts(req, target)
+	impacts, diagnostics := s.collectAnalyzeImpacts(req, targetKey, target)
 	impacts, truncated, reasons := truncateImpacts(impacts, maxImpacts)
 	assignImpactIDs(impacts)
 
@@ -59,8 +61,240 @@ func (s *Service) AnalyzeImpact(req AnalyzeImpactRequest) (AnalyzeImpactResponse
 	}, nil
 }
 
-func (s *Service) collectAnalyzeImpacts(req AnalyzeImpactRequest, target ObjectRef) ([]ImpactEntry, []semantic.Diagnostic) {
-	return []ImpactEntry{}, []semantic.Diagnostic{}
+func (s *Service) collectAnalyzeImpacts(req AnalyzeImpactRequest, targetKey semantic.ObjectKey, target ObjectRef) ([]ImpactEntry, []semantic.Diagnostic) {
+	if taskImpacts, taskDiagnostics := s.collectTaskAnalyzeImpacts(req, targetKey, target); taskImpacts != nil || taskDiagnostics != nil {
+		return taskImpacts, taskDiagnostics
+	}
+	if target.Object == "field" || req.Selector.Object == "field" || req.Selector.Kind == "field" {
+		return s.collectFieldAnalyzeImpacts(req, target)
+	}
+	if target.Object != "transition" {
+		return []ImpactEntry{}, []semantic.Diagnostic{}
+	}
+	if req.Change.Kind != AnalyzeImpactChangeTransitionTarget && req.Change.Kind != AnalyzeImpactChangeRename && req.Change.Kind != AnalyzeImpactChangeRemove {
+		return []ImpactEntry{}, []semantic.Diagnostic{}
+	}
+
+	transition, err := s.transitionBySelector(req.Selector)
+	if err != nil {
+		return []ImpactEntry{}, []semantic.Diagnostic{}
+	}
+
+	var impacts []ImpactEntry
+	var diagnostics []semantic.Diagnostic
+	addImpact := func(impact ImpactEntry) {
+		if !s.impactInScope(impact, target, req.ScopeModules) {
+			return
+		}
+		if impact.Source == nil || impact.Source.Line == 0 || impact.Source.Column == 0 {
+			diagnostics = appendSourceLocationUnavailableDiagnostic(diagnostics, impact.Source, impact.Object)
+		}
+		impacts = append(impacts, impact)
+	}
+
+	for _, impact := range s.collectTransitionScenarioStepImpacts(transition, req.Change) {
+		addImpact(impact)
+	}
+	if impact, ok := s.collectTransitionActionTaskImpact(transition, req.Change); ok {
+		addImpact(impact)
+	}
+
+	sort.SliceStable(impacts, func(i, j int) bool {
+		if impacts[i].Kind != impacts[j].Kind {
+			return impacts[i].Kind < impacts[j].Kind
+		}
+		if impacts[i].Object.ID != impacts[j].Object.ID {
+			return impacts[i].Object.ID < impacts[j].Object.ID
+		}
+		return sourceSortKey(impacts[i].Source) < sourceSortKey(impacts[j].Source)
+	})
+	return impacts, diagnostics
+}
+
+func (s *Service) collectTransitionScenarioStepImpacts(transition semantic.Transition, change AnalyzeImpactChange) []ImpactEntry {
+	transitionID := semantic.TransitionID(transition)
+	severity := transitionImpactSeverity(change)
+	reason := fmt.Sprintf("sequence scenario step が transition '%s' を exact match で参照しているため、変更後にシナリオ上の意味が変わる可能性がある", transitionID)
+	recommended := "scenario step の from_state / via / guard と遷移先の意味を確認する"
+	if change.Kind == AnalyzeImpactChangeRemove || change.Kind == AnalyzeImpactChangeRename {
+		reason = fmt.Sprintf("sequence scenario step が transition '%s' を exact match で参照しているため、変更後に参照解決できなくなる可能性が高い", transitionID)
+		recommended = "scenario step の transition 参照を確認し、必要なら from_state / via / guard を更新する"
+	}
+
+	var scenarioIDs []string
+	for id := range s.project.ScenariosByID {
+		scenarioIDs = append(scenarioIDs, id)
+	}
+	sort.Strings(scenarioIDs)
+
+	impacts := []ImpactEntry{}
+	for _, scenarioID := range scenarioIDs {
+		scenario := s.project.ScenariosByID[scenarioID]
+		if scenario == nil {
+			continue
+		}
+		for i, step := range scenario.Steps {
+			if semantic.TransitionID(step.Transition) != transitionID {
+				continue
+			}
+			source := s.sourceLocationForScenarioStep(scenario, i)
+			impacts = append(impacts, ImpactEntry{
+				Kind:              "transition_scenario_step",
+				Severity:          severity,
+				Fixability:        "manual_review",
+				Object:            scenarioObjectRef(scenario),
+				Reason:            reason,
+				Via:               []string{"scenario_step_transition"},
+				Source:            source,
+				RecommendedAction: recommended,
+			})
+		}
+	}
+	return impacts
+}
+
+func (s *Service) collectTransitionActionTaskImpact(transition semantic.Transition, change AnalyzeImpactChange) (ImpactEntry, bool) {
+	if transition.ActionTask == "" {
+		return ImpactEntry{}, false
+	}
+	task := s.project.TasksByQID[transition.ActionTask]
+	if task == nil {
+		return ImpactEntry{}, false
+	}
+
+	transitionID := semantic.TransitionID(transition)
+	severity := transitionImpactSeverity(change)
+	reason := fmt.Sprintf("transition '%s' の遷移先や action が変わると、action task '%s' が実行される文脈の意味が変わる可能性がある", transitionID, transition.ActionTask)
+	recommended := "action task の副作用と遷移先 state の整合を人間が確認する"
+	if change.Kind == AnalyzeImpactChangeRemove {
+		reason = fmt.Sprintf("transition '%s' が削除されると、action task '%s' への到達経路が失われる", transitionID, transition.ActionTask)
+		recommended = "action task が別の transition から必要か確認する"
+	}
+	if change.Kind == AnalyzeImpactChangeRename {
+		reason = fmt.Sprintf("transition '%s' が rename されると、action task '%s' との紐づけの意味を確認する必要がある", transitionID, transition.ActionTask)
+		recommended = "transition rename 後も action task の文脈が意図通りか確認する"
+	}
+
+	return ImpactEntry{
+		Kind:              "transition_action_task",
+		Severity:          severity,
+		Fixability:        "manual_review",
+		Object:            objectRef(task),
+		Reason:            reason,
+		Via:               []string{"transition_action"},
+		Source:            sourceLocationFromBlock(transition.FileID, s.findTransitionSource(transition)),
+		RecommendedAction: recommended,
+	}, true
+}
+
+func transitionImpactSeverity(change AnalyzeImpactChange) string {
+	if change.Kind == AnalyzeImpactChangeRemove || change.Kind == AnalyzeImpactChangeRename {
+		return "breaking"
+	}
+	return "warning"
+}
+
+func (s *Service) sourceLocationForScenarioStep(scenario *semantic.SequenceScenario, stepIndex int) *SourceLocation {
+	if scenario == nil {
+		return nil
+	}
+	content, ok := s.fileContent(scenario.FileID)
+	if !ok {
+		return &SourceLocation{File: scenario.FileID.String()}
+	}
+	lines := splitSourceLines(content)
+	start, end := topLevelSectionRange(lines, "steps")
+	if start < 0 {
+		return &SourceLocation{File: scenario.FileID.String()}
+	}
+	current := 0
+	for i := start; i < end; i++ {
+		trimmed := strings.TrimSpace(lines[i])
+		if !strings.HasPrefix(trimmed, "- ") && trimmed != "-" {
+			continue
+		}
+		itemEnd := nextSequenceItemOrSectionEnd(lines, i+1, end, indentOf(lines[i]))
+		if current == stepIndex {
+			return sourceLocationFromBlock(scenario.FileID, makeBlock(lines, i, itemEnd))
+		}
+		current++
+		i = itemEnd - 1
+	}
+	return &SourceLocation{File: scenario.FileID.String()}
+}
+
+func sourceLocationFromBlock(fileID semantic.FileID, block sourceBlock) *SourceLocation {
+	loc := &SourceLocation{File: fileID.String()}
+	if block.startLine > 0 {
+		loc.Line = block.startLine
+		loc.Column = block.column
+		loc.EndLine = block.endLine
+		loc.EndColumn = 1
+	}
+	return loc
+}
+
+func appendSourceLocationUnavailableDiagnostic(diagnostics []semantic.Diagnostic, source *SourceLocation, object ObjectRef) []semantic.Diagnostic {
+	fileID := semantic.FileID(object.File)
+	if source != nil && source.File != "" {
+		fileID = semantic.FileID(source.File)
+	}
+	messageTarget := object.ID
+	if messageTarget == "" {
+		messageTarget = object.File
+	}
+	return append(diagnostics, semantic.Diagnostic{
+		Severity: semantic.SeverityWarning,
+		Code:     "source_location_unavailable",
+		FileID:   fileID,
+		Message:  fmt.Sprintf("source line/column is unavailable for impact object: %s", messageTarget),
+	})
+}
+
+func sourceSortKey(source *SourceLocation) string {
+	if source == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s:%08d:%08d", source.File, source.Line, source.Column)
+}
+
+func (s *Service) impactInScope(impact ImpactEntry, target ObjectRef, scopeModules []string) bool {
+	if len(scopeModules) == 0 {
+		return true
+	}
+	if objectMatchesScope(impact.Object, scopeModules) {
+		return true
+	}
+	return objectMatchesScope(target, scopeModules)
+}
+
+func objectMatchesScope(object ObjectRef, scopeModules []string) bool {
+	for _, module := range scopeModules {
+		if module == "" {
+			continue
+		}
+		if object.Module == module {
+			return true
+		}
+		if object.File != "" && (object.File == module+".yaml" || strings.HasPrefix(object.File, module+"/")) {
+			return true
+		}
+		if hasQualifiedIDModule(object.ID, module) || hasQualifiedIDModule(object.QualifiedID, module) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasQualifiedIDModule(id string, module string) bool {
+	if id == "" || module == "" {
+		return false
+	}
+	return id == module || strings.HasPrefix(id, module+".")
+}
+
+func analyzeImpactFieldSelector(selector Selector) bool {
+	return selector.Object == "field" || selector.Kind == "field"
 }
 
 func unsupportedAnalyzeImpactSelector(selector Selector) bool {
@@ -134,14 +368,20 @@ func analyzeImpactCoverage(change AnalyzeImpactChange, selector Selector) Impact
 	switch change.Kind {
 	case AnalyzeImpactChangeRename:
 		coverage.Analyzed = append(coverage.Analyzed, "model_field_resolution", "transition_action_resolution", "render_output_files")
+		if analyzeImpactFieldSelector(selector) {
+			coverage.Analyzed = append(coverage.Analyzed, "flow_param_field_resolution")
+		}
 	case AnalyzeImpactChangeRemove:
 		coverage.Analyzed = append(coverage.Analyzed, "transition_action_resolution", "flow_step_task_resolution", "sequence_step_task_resolution", "render_output_files")
+		if analyzeImpactFieldSelector(selector) {
+			coverage.Analyzed = append(coverage.Analyzed, "model_field_resolution")
+		}
 	case AnalyzeImpactChangeType:
 		coverage.Analyzed = append(coverage.Analyzed, "model_field_resolution", "flow_param_field_resolution", "type_signature_identity")
 	case AnalyzeImpactChangeContract:
 		coverage.Analyzed = append(coverage.Analyzed, "flow_step_task_resolution", "flow_param_field_resolution", "sequence_step_task_resolution")
 	case AnalyzeImpactChangeTransitionTarget:
-		coverage.Analyzed = append(coverage.Analyzed, "transition_action_resolution")
+		coverage.Analyzed = append(coverage.Analyzed, "transition_action_resolution", "sequence_step_task_resolution")
 	case AnalyzeImpactChangeAdd:
 		coverage.Analyzed = []string{"name_collision", "type_resolution", "writer_coverage"}
 	}
