@@ -41,14 +41,10 @@ brewprintの積みタスク一覧。
 | M11: MCP diagram element query | closed | [tasks/m11-mcp-diagram-element-query.md](tasks/m11-mcp-diagram-element-query.md) | ADR-054 |
 | M12: MCP impact traversal / source assist | closed | [tasks/m12-mcp-impact-traversal.md](tasks/m12-mcp-impact-traversal.md) | ADR-054 / ADR-055 / ADR-056 |
 | M13: MCP analyze_impact implementation | closed | [tasks/m13-mcp-analyze-impact-implementation.md](tasks/m13-mcp-analyze-impact-implementation.md) | ADR-056; hybrid v1 close; `docs/impl/go-m13-summary.md` |
+| M14: brewprint self-hosting | open | [tasks/m14-self-hosting.md](tasks/m14-self-hosting.md) | UC-002 / v1.0.0-spec実用検証 + editor/viewer要件抽出 |
 
 ---
 
 ## 検討中
 
-### brewprint self-hosting
-
-brewprint自身のblueprintをbrewprintで設計する。
-editor / viewer要件と密接に関わる。
-MCP coverage要件の実用検証も兼ねる。
-別途milestoneとして起票予定。
+（現在検討中の項目はなし。v1後検討事項は ADR-057 §6 / doc-policy.md §11 を参照）
