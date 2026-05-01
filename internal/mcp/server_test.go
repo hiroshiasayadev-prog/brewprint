@@ -226,17 +226,24 @@ func TestServerCallTool(t *testing.T) {
 	})
 
 	t.Run("analyze_impact", func(t *testing.T) {
-		envelope := call(t, server, "analyze_impact", `{"selector":{"id":"auth.task.login"},"change":{"kind":"rename","new_id":"auth.task.sign_in"}}`)
+		envelope := call(t, server, "analyze_impact", `{"selector":{"object":"transition","id":"order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"},"change":{"kind":"change_transition_target","new_to":"order.state.failed"}}`)
 		if envelope.Error != nil {
 			t.Fatalf("analyze_impact error: %#v", envelope.Error)
 		}
 		result := resultMap(t, envelope)
 		target := result["target"].(map[string]any)
-		if target["id"] != "auth.task.login" {
+		if target["id"] != "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']" {
 			t.Fatalf("analyze_impact target = %#v", target)
 		}
-		if len(result["impacts"].([]any)) != 0 || result["truncated"] != false {
+		impacts := result["impacts"].([]any)
+		if len(impacts) != 2 || result["truncated"] != false {
 			t.Fatalf("analyze_impact result = %#v", result)
+		}
+		if !hasImpactMap(impacts, "transition_scenario_step", "payment_webhook_flow") {
+			t.Fatalf("analyze_impact scenario impact missing: %#v", impacts)
+		}
+		if !hasImpactMap(impacts, "transition_action_task", "payment.webhooks.task.process_payment") {
+			t.Fatalf("analyze_impact action impact missing: %#v", impacts)
 		}
 		if _, ok := result["summary"].(map[string]any)["by_severity"]; !ok {
 			t.Fatalf("analyze_impact summary missing: %#v", result)
@@ -472,6 +479,20 @@ func resultMap(t *testing.T, envelope Envelope) map[string]any {
 		t.Fatalf("unmarshal result map: %v", err)
 	}
 	return out
+}
+
+func hasImpactMap(impacts []any, kind, objectID string) bool {
+	for _, item := range impacts {
+		impact, ok := item.(map[string]any)
+		if !ok || impact["kind"] != kind {
+			continue
+		}
+		object, ok := impact["object"].(map[string]any)
+		if ok && object["id"] == objectID {
+			return true
+		}
+	}
+	return false
 }
 
 func newUC001Server(t *testing.T) *Server {
