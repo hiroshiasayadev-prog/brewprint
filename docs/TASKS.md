@@ -41,7 +41,9 @@ brewprintの積みタスク一覧。
 | M11: MCP diagram element query | closed | [tasks/m11-mcp-diagram-element-query.md](tasks/m11-mcp-diagram-element-query.md) | ADR-054 |
 | M12: MCP impact traversal / source assist | closed | [tasks/m12-mcp-impact-traversal.md](tasks/m12-mcp-impact-traversal.md) | ADR-054 / ADR-055 / ADR-056 |
 | M13: MCP analyze_impact implementation | closed | [tasks/m13-mcp-analyze-impact-implementation.md](tasks/m13-mcp-analyze-impact-implementation.md) | ADR-056; hybrid v1 close; `docs/impl/go-m13-summary.md` |
-| M14: brewprint self-hosting | open | [tasks/m14-self-hosting.md](tasks/m14-self-hosting.md) | UC-002 / v1.0.0-spec実用検証 + editor/viewer要件抽出 |
+| M14: brewprint self-hosting | paused | [tasks/m14-self-hosting.md](tasks/m14-self-hosting.md) | UC-002 / v1.0.0-spec実用検証 + editor/viewer要件抽出。M15完了まで一時停止 |
+| M14a: subnode file-private scope fix | open | [tasks/m14a-subnode-scope-fix.md](tasks/m14a-subnode-scope-fix.md) | ADR-058 / ADR-059。M14 Phase Aで発覚したv1.0系実装バグ修正 |
+| M15: data layer expressiveness (v1.1) | open | [tasks/m15-data-layer-expressiveness.md](tasks/m15-data-layer-expressiveness.md) | ADR-060 (TypeRef + flow wiring type compatibility)。Phase A/B/C構成。完了時点で v1.1.0-spec タグ発行 |
 
 ---
 
