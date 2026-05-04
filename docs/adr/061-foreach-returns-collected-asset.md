@@ -1,14 +1,21 @@
-# 061: foreach.returns collected asset 参�Eルール
+# 061: foreach.returns collected asset 参照ルール
 
 - **status**: accepted
 - **date**: 2026-05-04
 
-> こ�EADRは起票時点での決定を記録したスナップショチE��である、E> 現在の仕様�E spec を参照すること、E
+> このADRは起票時点での決定を記録したスナップショットである。
+> 現在の仕様は spec を参照すること。
+
 ## 背景
 
-ADR-016 で `foreach` は node type ではなぁE`flow:` セクションの制御構文として定義された、E`foreach` は apply 允Etask を繰り返し実行し、各 iteration の入力�E `$item` で渡す、E
-ADR-060 では TypeRef と flow wiring type compatibility を導�Eし、`$item` の型を `foreach.over` の `list<T>` から導�Eするルールを定めた、Eただし、ADR-060 は `foreach.returns` によって collect されぁEasset を後綁Eflow から参�Eする場合�E source id 解決ルールめEADR-061 に委�EてぁE��、E
-こ�E未決領域を残すと、以下�Eような自然な flow が仕様上あぁE��ぁE��なる、E
+ADR-016 で `foreach` は node type ではなく `flow:` セクションの制御構文として定義された。
+`foreach` は apply 先 task を繰り返し実行し、各 iteration の入力は `$item` で渡す。
+
+ADR-060 では TypeRef と flow wiring type compatibility を導入し、`$item` の型を `foreach.over` の `list<T>` から導出するルールを定めた。
+ただし、ADR-060 は `foreach.returns` によって collect された asset を後続 flow から参照する場合の source id 解決ルールを ADR-061 に委ねていた。
+
+この未決領域を残すと、以下のような自然な flow が仕様上あいまいになる。
+
 ```yaml
 flow:
   - foreach: validate_item
@@ -22,7 +29,8 @@ flow:
       items: validated_items
 ```
 
-また、同ぁEapply 允Etask を褁E��の入力集合に対して使ぁE��合、apply 允Etask の `returns.name` だけでは collect 結果を区別できなぁE��E
+また、同じ apply 先 task を複数の入力集合に対して使う場合、apply 先 task の `returns.name` だけでは collect 結果を区別できない。
+
 ```yaml
 flow:
   - foreach: validate_item
@@ -38,11 +46,14 @@ flow:
     returns: validated_wishlist_items
 ```
 
-したがって、`foreach.returns` めEforeach invocation 単位�E collected asset 名として定義し、後綁Eflow からの参�Eルールを�E確化する、E
-## 決宁E
+したがって、`foreach.returns` を foreach invocation 単位の collected asset 名として定義し、後続 flow からの参照ルールを明確化する。
+
+## 決定
+
 ### 1. `foreach.returns` は collected asset source 名である
 
-`foreach.returns` は、apply 允Etask の `returns` めEiteration ごとに雁E��ぁEcollected asset に付けめEfile-local source 名とする、E
+`foreach.returns` は、apply 先 task の `returns` を iteration ごとに集めた collected asset に付ける file-local source 名とする。
+
 ```yaml
 flow:
   - foreach: validate_item
@@ -52,26 +63,38 @@ flow:
     returns: validated_items
 ```
 
-上記�E `validated_items` は、`validate_item` の吁Eiteration の返り値めEcollect した asset source である、Eこれは apply 允Etask の `returns.name` とは別の名前であり、foreach invocation 単位で命名される、E
+上記の `validated_items` は、`validate_item` の各 iteration の返り値を collect した asset source である。
+これは apply 先 task の `returns.name` とは別の名前であり、foreach invocation 単位で命名される。
+
 ### 2. `foreach.returns` は任意である
 
-`foreach.returns` は optional とする、E
-- collect 結果を後綁Eflow から安定参照する場合�E持E��すめE- collect 結果めEtask return source として使ぁE��合�E持E��すめE- side-effect 目皁E�� apply 允Etask を繰り返すだけ�E場合�E省略できる
+`foreach.returns` は optional とする。
+
+- collect 結果を後続 flow から安定参照する場合は指定する
+- collect 結果を task return source として使う場合は指定する
+- side-effect 目的で apply 先 task を繰り返すだけの場合は省略できる
 
 ```yaml
-# side-effect only: collect result を使わなぁEflow:
+# side-effect only: collect result を使わない
+flow:
   - foreach: sync_item
     over: $params.items
     params:
       item: $item
 ```
 
-apply 允Etask に `returns` がなぁE��もかかわらず `foreach.returns` を指定した場合�E invalid とする、E
-`foreach.returns` を省略した場合、collected asset は semantic model 上に生�EされなぁE��Eforeach は side-effect / 個別 iteration の効果�Eみを持ち、collect 結果を表現したぁE��合�E `foreach.returns` を�E示する忁E��がある、E
-renderer / inspect / MCP は、`foreach.returns` を省略した foreach を「side-effect only な繰り返し実行」として扱ぁE��E省略時に collected asset の冁E��名や擬似 source を露出してはならなぁE��E
-### 3. 後綁Eflow は `foreach.returns` 名を wiring source として参�Eできる
+apply 先 task に `returns` がないにもかかわらず `foreach.returns` を指定した場合は invalid とする。
 
-`foreach.returns` で宣言されぁEcollected asset は、同一 flow file 冁E�E後綁Estep / branch / fork / foreach から wiring source として参�Eできる、E
+`foreach.returns` を省略した場合、collected asset は semantic model 上に生成されない。
+foreach は side-effect / 個別 iteration の効果のみを持ち、collect 結果を表現したい場合は `foreach.returns` を明示する必要がある。
+
+renderer / inspect / MCP は、`foreach.returns` を省略した foreach を「side-effect only な繰り返し実行」として扱う。
+省略時に collected asset の内部名や擬似 source を露出してはならない。
+
+### 3. 後続 flow は `foreach.returns` 名を wiring source として参照できる
+
+`foreach.returns` で宣言された collected asset は、同一 flow file 内の後続 step / branch / fork / foreach から wiring source として参照できる。
+
 ```yaml
 flow:
   - foreach: validate_item
@@ -85,11 +108,16 @@ flow:
       items: validated_items
 ```
 
-こ�E参�Eは file-local source 参�Eであり、`$params` / `$item` のようなシジルは使わなぁE��E
-`foreach.returns` で宣言されぁEcollected asset は、その foreach entry が完亁E��た後に生�Eされる、Eしたがって、その foreach 自身の `params` 冁E��ら�E刁E�E身の `returns` 名を参�EしてはならなぁE��E参�Eできるのは、当該 foreach entry より後ろの flow entry からのみである、E
-### 4. `foreach.returns` の型�E `list<T>` とする
+この参照は file-local source 参照であり、`$params` / `$item` のようなシジルは使わない。
 
-apply 允Etask の `returns.model` ぁETypeRef `T` の場合、`foreach.returns` の collected asset 型�E `list<T>` とする、E
+`foreach.returns` で宣言された collected asset は、その foreach entry が完了した後に生成される。
+したがって、その foreach 自身の `params` 内から自分自身の `returns` 名を参照してはならない。
+参照できるのは、当該 foreach entry より後ろの flow entry からのみである。
+
+### 4. `foreach.returns` の型は `list<T>` とする
+
+apply 先 task の `returns.model` が TypeRef `T` の場合、`foreach.returns` の collected asset 型は `list<T>` とする。
+
 ```yaml
 nodes:
   - id: validate_item
@@ -109,14 +137,25 @@ flow:
     returns: validated_items
 ```
 
-上記では `validated_items` の型�E `list<cart_item>` である、E
-apply 允Etask の `returns.model` ぁE`any` の場合、`foreach.returns` の型�E `list<any>` とする、E
-apply 允Etask の `returns.model` が解決不�Eな場合、`foreach.returns` の TypeRef も解決不�Eとして扱ぁE��Eこ�E場合、後綁Ewiring が当該 collected asset を参照してぁE��も、`incompatible_wiring_type` は発行しなぁE��E未解決 TypeRef に対する一次診断を優先し、二重診断を避ける、E
-### 5. task return source との関俁E
-本 ADR は、`foreach.returns` によって flow 冁E�� collected asset source を作るルールを定める、Emain task / composite task がどの flow source を返すか、つまめEtask return source の明示方法�E本 ADR では定義しなぁE��E
-`foreach.returns` は、後綁EADR で定義する task return source から参�E可能な flow source になりうる、Eただし、`main task returns.name` と `foreach.returns` の名前一致による暗黙接続�E、本 ADR では採用しなぁE��E
+上記では `validated_items` の型は `list<cart_item>` である。
+
+apply 先 task の `returns.model` が `any` の場合、`foreach.returns` の型は `list<any>` とする。
+
+apply 先 task の `returns.model` が解決不能な場合、`foreach.returns` の TypeRef も解決不能として扱う。
+この場合、後続 wiring が当該 collected asset を参照していても、`incompatible_wiring_type` は発行しない。
+未解決 TypeRef に対する一次診断を優先し、二重診断を避ける。
+
+### 5. task return source との関係
+
+本 ADR は、`foreach.returns` によって flow 内に collected asset source を作るルールを定める。
+main task / composite task がどの flow source を返すか、つまり task return source の明示方法は本 ADR では定義しない。
+
+`foreach.returns` は、後続 ADR で定義する task return source から参照可能な flow source になりうる。
+ただし、`main task returns.name` と `foreach.returns` の名前一致による暗黙接続は、本 ADR では採用しない。
+
 ```yaml
-# task return source の明示方法�E ADR-062 で扱ぁE��宁Enodes:
+# task return source の明示方法は ADR-062 で扱う想定
+nodes:
   - id: validate_cart
     type: task
     main: true
@@ -136,15 +175,20 @@ flow:
     returns: validated_items
 ```
 
-上記�E `returns.source` は ADR-062 で扱ぁE��定�E例であり、本 ADR の決定篁E��には含めなぁE��E
-### 6. `foreach.returns` の名前空間と重褁E��ール
+上記の `returns.source` は ADR-062 で扱う予定の例であり、本 ADR の決定範囲には含めない。
 
-`foreach.returns` は同一 flow file 冁E�E wiring source 名前空間に参加する、Ebare token として参�EされめEsource は単一名前空間で解決され、衝突�E invalid とする、E
-同一 flow file 冁E��、`foreach.returns` は以下と重褁E��てはならなぁE��E
-- 同一ファイル冁E�E node id
-- 他�E `foreach.returns`
+### 6. `foreach.returns` の名前空間と重複ルール
 
-重褁E��た場合、bare token (`some_name`) を後綁Ewiring から書ぁE��ときに「node output」と「collected asset source」�Eどちらに解決すべきかが決められなぁE��めEinvalid とする、E
+`foreach.returns` は同一 flow file 内の wiring source 名前空間に参加する。
+bare token として参照される source は単一名前空間で解決され、衝突は invalid とする。
+
+同一 flow file 内で、`foreach.returns` は以下と重複してはならない。
+
+- 同一ファイル内の node id
+- 他の `foreach.returns`
+
+重複した場合、bare token (`some_name`) を後続 wiring から書いたときに「node output」と「collected asset source」のどちらに解決すべきかが決められないため invalid とする。
+
 ```yaml
 nodes:
   - id: validated_items
@@ -158,7 +202,8 @@ flow:
     over: $params.cart_items
     params:
       item: $item
-    returns: validated_items # invalid: 同一ファイル冁Enode id と重褁E```
+    returns: validated_items # invalid: 同一ファイル内 node id と重複
+```
 
 ```yaml
 flow:
@@ -172,15 +217,18 @@ flow:
     over: $params.wishlist_items
     params:
       item: $item
-    returns: validated_items # invalid: collected asset source 名が重褁E```
+    returns: validated_items # invalid: collected asset source 名が重複
+```
 
-一方、task の `returns.name` は通常 flow の wiring source ではなぁE��E通常 task の出力を参�Eする場合�E task の node id を使ぁE��め、task の `returns.name` と `foreach.returns` が同名であることは衝突とは扱わなぁE��E
+一方、task の `returns.name` は通常 flow の wiring source ではない。
+通常 task の出力を参照する場合は task の node id を使うため、task の `returns.name` と `foreach.returns` が同名であることは衝突とは扱わない。
+
 ```yaml
 nodes:
   - id: validate_item
     type: task
     returns:
-      name: validated_items   # task signature 上�E returns.name
+      name: validated_items   # task signature 上の returns.name
       model: cart_item
 
 flow:
@@ -188,13 +236,18 @@ flow:
     over: $params.cart_items
     params:
       cart_item: $item
-    returns: validated_items   # 衝突しなぁE(task.returns.name は wiring source ではなぁE
+    returns: validated_items   # 衝突しない (task.returns.name は wiring source ではない)
 ```
 
-なお、file / module / private scope を趁E��た名前空間�E離�E�たとえ�E sub-task file 墁E��での衝突許容�E��E本 ADR の対象外であり、ADR-002 / ADR-003 / ADR-058 の名前空間ルールに従う、E本 ADR の重褁E��ールは「同一 flow file 冁E�� bare token として参�EされめEwiring source の解決」に限定される、E
-### 7. `foreach.id` は導�EしなぁE
-本 ADR では `foreach.id` フィールドを導�EしなぁE��E
-同じ apply 允Etask を褁E��囁Eforeach する場合�E、`foreach.returns` に異なめEcollected asset 名を与えることで区別する、E
+なお、file / module / private scope を超えた名前空間分離（たとえば sub-task file 境界での衝突許容）は本 ADR の対象外であり、ADR-002 / ADR-003 / ADR-058 の名前空間ルールに従う。
+本 ADR の重複ルールは「同一 flow file 内で bare token として参照される wiring source の解決」に限定される。
+
+### 7. `foreach.id` は導入しない
+
+本 ADR では `foreach.id` フィールドを導入しない。
+
+同じ apply 先 task を複数回 foreach する場合は、`foreach.returns` に異なる collected asset 名を与えることで区別する。
+
 ```yaml
 flow:
   - foreach: validate_item
@@ -210,88 +263,145 @@ flow:
     returns: validated_wishlist_items
 ```
 
-`foreach.id` を導�Eすると構文が重くなり、現時点の要件に対して過剰である、E
-### 8. 制御フロースコープとの関俁E
-ADR-023 は、制御フロー構文の冁E��で生�EされぁEasset をスコープ外から直接参�E不可とした、E
-`foreach.returns` はこ�Eルールに対する明示皁E�� escape hatch とする、Eapply 允Etask の iteration 冁E��で生�Eされる個別 asset は外部参�E不可のままだが、`foreach.returns` で明示皁E�� collect した結果だけを flow 外�Eの source として公開できる、E
+`foreach.id` を導入すると構文が重くなり、現時点の要件に対して過剰である。
+
+### 8. 制御フロースコープとの関係
+
+ADR-023 は、制御フロー構文の内部で生成された asset をスコープ外から直接参照不可とした。
+
+`foreach.returns` はこのルールに対する明示的な escape hatch とする。
+apply 先 task の iteration 内部で生成される個別 asset は外部参照不可のままだが、`foreach.returns` で明示的に collect した結果だけを flow 外側の source として公開できる。
+
 ### 9. diagnostics
 
-本 ADR 受理後、少なくとも以下�E診断めEspec / 実裁E��追加する、E
+本 ADR 受理後、少なくとも以下の診断を spec / 実装に追加する。
+
 | code | severity | 意味 |
 |---|---|---|
-| `duplicate_flow_source` | error | 同一 flow file 冁E�� `foreach.returns` ぁEnode id また�E他�E `foreach.returns` と重褁E��てぁE�� |
-| `invalid_foreach_returns` | error | apply 允Etask に `returns` がなぁE�Eに `foreach.returns` が指定されてぁE��、また�E当該 foreach 自身の `params` 冁E��ら�E刁E�E `returns` 名を参�EしてぁE�� |
-| `unresolved_wiring_source` | error | wiring source ぁEnode id / `$params` / `$item` / collected asset のぁE��れとしても解決できなぁE|
-| `invalid_wiring_source` | error | source は解決できたが、その斁E��では wiring source として使えなぁE|
+| `duplicate_flow_source` | error | 同一 flow file 内で `foreach.returns` が node id または他の `foreach.returns` と重複している |
+| `invalid_foreach_returns` | error | apply 先 task に `returns` がないのに `foreach.returns` が指定されている、または当該 foreach 自身の `params` 内から自分の `returns` 名を参照している |
+| `unresolved_wiring_source` | error | wiring source が node id / `$params` / `$item` / collected asset のいずれとしても解決できない |
+| `invalid_wiring_source` | error | source は解決できたが、その文脈では wiring source として使えない |
 
-`unresolved_wiring_source` と `invalid_wiring_source` は区別する、E前老E�E typo などにより参�E先が存在しなぁE��合、後老E�E参�E先�E存在するぁEreturns 相当�E出力を持たなぁEnode めE��効篁E��外�E `$item` など、source として不正な場合に使ぁE��E
-既孁Ediagnostic code へ統合する場合でも、上記�E状態を機械皁E��区別できる形にする、E
-## 琁E��
+`unresolved_wiring_source` と `invalid_wiring_source` は区別する。
+前者は typo などにより参照先が存在しない場合、後者は参照先は存在するが returns 相当の出力を持たない node や有効範囲外の `$item` など、source として不正な場合に使う。
 
-### なぁE`foreach.returns` が忁E��か
+既存 diagnostic code へ統合する場合でも、上記の状態を機械的に区別できる形にする。
 
-apply 允Etask の `returns.name` は task 単体�E出力名であり、foreach invocation ごとの collect 結果名ではなぁE��E
-同じ task を褁E��の入力集合に適用する場合、apply 允Etask の `returns.name` だけでは collect 結果を区別できなぁE��E`foreach.returns` によって invocation 単位�E結果名を与えることで、後綁Eflow から明確に参�Eできる、E
-### なぁE`foreach.returns` めEoptional にするぁE
-foreach は side-effect 目皁E��使われることもある、Eたとえ�E吁Eitem を外部サービスへ同期する、store に書き込む、E��知を送る、とぁE��た場合、collect 結果を生成しなぁEflow が�E然である、E
-そ�Eため `foreach.returns` は常に忁E��にはせず、collect 結果を利用する場合にだけ指定する、E
-### なぜ型めE`list<T>` にするぁE
-foreach は apply 允Etask を要素ごとに実行する構文である、Eapply 允Etask の単一実行が `T` を返すなら、foreach 全体�E collect 結果は `list<T>` と老E��る�Eが�E然である、E
-こ�Eルールは ADR-060 の TypeRef と相性がよく、named list model と inline `list<T>` の互換性も既存ルールで扱える、E
-### なぁE`foreach.id` を�EれなぁE��
+## 理由
 
-`foreach.id` は foreach invocation の identity を�E示する手段になりうるが、現時点では `foreach.returns` ぁEinvocation 単位�E source 名として機�Eする、E
-source として忁E��なのは collect 結果の名前であり、foreach制御構文自体�EIDではなぁE��E不要な識別子を増やすと YAML が重くなり、brewprint の読みめE��さを損なぁE��め導�EしなぁE��E
-### なぜ制御フロースコープ�E例外にするぁE
-foreach冁E��の吁Eiteration asset を外部から参�E可能にすると、ループ�E部構造と外部flowが寁E��合する、E一方で、�E示皁E�� collect された結果は foreach の正当な外部出力であり、後綁Etask が利用できなければ foreach の表現力が不足する、E
-したがって、個別 iteration asset は隠蔽し、`foreach.returns` で宣言されぁEcollected asset だけを外部 source として公開する、E
-### 却下した代替桁E
-#### 代替桁E: apply 允Etask の `returns.name` をそのまま collect 結果名にする
+### なぜ `foreach.returns` が必要か
 
-同じ task を褁E��囁Eforeach した場合に collect 結果を区別できなぁE��Eまた、task 単体�E return 名と foreach invocation の結果名が混同される、E
-ↁE却下、E
-#### 代替桁E: `foreach.id` を忁E��にし、source id めE`<foreach_id>.<returns>` にする
+apply 先 task の `returns.name` は task 単体の出力名であり、foreach invocation ごとの collect 結果名ではない。
 
-source id の一意性は拁E��しめE��ぁE��、単純な foreach にも余�EなIDが忁E��になる、E現時点のユースケースでは `foreach.returns` 名だけで十�Eに区別できる、E
-ↁE却下、E
-#### 代替桁E: `foreach.returns` を常に忁E��にする
+同じ task を複数の入力集合に適用する場合、apply 先 task の `returns.name` だけでは collect 結果を区別できない。
+`foreach.returns` によって invocation 単位の結果名を与えることで、後続 flow から明確に参照できる。
 
-side-effect only の foreach でも未使用の collect 名を強制することになり、設計ノイズが増える、E
-ↁE却下、E
-#### 代替桁E: collected asset を後綁Eflow から参�E不可にする
+### なぜ `foreach.returns` を optional にするか
 
-foreach 結果を後綁Estep で雁E���E変換する flow を表現できなぁE��Eまた、後続ADRで task return source を�E示する場合にも、foreach の collect 結果めEreturn source 候補として扱えなくなる、E
-ↁE却下、E
-#### 代替桁E: main task returns.name と foreach.returns の名前一致で暗黙接続すめE
-UC-001 のような例を短く書けるが、task return source の一般剁E�� foreach 固有ADRに混ぜることになる、Emain task / composite task が何を返すか�E foreach に限らなぁE��断皁E��仕様であり、`foreach.returns` の source 化とは別に扱ぁE��きである、E
-ↁE却下。本 ADR では採用せず、task return source の明示化�E ADR-062 で扱ぁE��E
+foreach は side-effect 目的で使われることもある。
+たとえば各 item を外部サービスへ同期する、store に書き込む、通知を送る、といった場合、collect 結果を生成しない flow が自然である。
+
+そのため `foreach.returns` は常に必須にはせず、collect 結果を利用する場合にだけ指定する。
+
+### なぜ型を `list<T>` にするか
+
+foreach は apply 先 task を要素ごとに実行する構文である。
+apply 先 task の単一実行が `T` を返すなら、foreach 全体の collect 結果は `list<T>` と考えるのが自然である。
+
+このルールは ADR-060 の TypeRef と相性がよく、named list model と inline `list<T>` の互換性も既存ルールで扱える。
+
+### なぜ `foreach.id` を入れないか
+
+`foreach.id` は foreach invocation の identity を明示する手段になりうるが、現時点では `foreach.returns` が invocation 単位の source 名として機能する。
+
+source として必要なのは collect 結果の名前であり、foreach制御構文自体のIDではない。
+不要な識別子を増やすと YAML が重くなり、brewprint の読みやすさを損なうため導入しない。
+
+### なぜ制御フロースコープの例外にするか
+
+foreach内部の各 iteration asset を外部から参照可能にすると、ループ内部構造と外部flowが密結合する。
+一方で、明示的に collect された結果は foreach の正当な外部出力であり、後続 task が利用できなければ foreach の表現力が不足する。
+
+したがって、個別 iteration asset は隠蔽し、`foreach.returns` で宣言された collected asset だけを外部 source として公開する。
+
+### 却下した代替案
+
+#### 代替案A: apply 先 task の `returns.name` をそのまま collect 結果名にする
+
+同じ task を複数回 foreach した場合に collect 結果を区別できない。
+また、task 単体の return 名と foreach invocation の結果名が混同される。
+
+→ 却下。
+
+#### 代替案B: `foreach.id` を必須にし、source id を `<foreach_id>.<returns>` にする
+
+source id の一意性は担保しやすいが、単純な foreach にも余分なIDが必要になる。
+現時点のユースケースでは `foreach.returns` 名だけで十分に区別できる。
+
+→ 却下。
+
+#### 代替案C: `foreach.returns` を常に必須にする
+
+side-effect only の foreach でも未使用の collect 名を強制することになり、設計ノイズが増える。
+
+→ 却下。
+
+#### 代替案D: collected asset を後続 flow から参照不可にする
+
+foreach 結果を後続 step で集計・変換する flow を表現できない。
+また、後続ADRで task return source を明示する場合にも、foreach の collect 結果を return source 候補として扱えなくなる。
+
+→ 却下。
+
+#### 代替案E: main task returns.name と foreach.returns の名前一致で暗黙接続する
+
+UC-001 のような例を短く書けるが、task return source の一般則を foreach 固有ADRに混ぜることになる。
+main task / composite task が何を返すかは foreach に限らない横断的な仕様であり、`foreach.returns` の source 化とは別に扱うべきである。
+
+→ 却下。本 ADR では採用せず、task return source の明示化は ADR-062 で扱う。
+
 ## 影響
 
-### 既孁Espec への影響
+### 既存 spec への影響
 
-- `docs/spec/edges.md` §1-5 foreachエントリに、`foreach.returns` ぁEcollected asset source 名であることを追記すめE- `docs/spec/edges.md` §1-7 flow wiring 型互換性に、wiring source 種別として collected asset source を追加する
-  - source 記況E `foreach.returns` で宣言されぁEcollected asset source 吁E  - source TypeRef: `list<T>`�E�ET` は apply 允Etask の `returns.model`�E�E  - apply 允Etask の `returns.model` が解決不�Eな場合�E source TypeRef も解決不�Eとして扱ぁE��`incompatible_wiring_type` を抑制する
-- `docs/spec/diagnostics.md` に `duplicate_flow_source` / `invalid_foreach_returns` / `unresolved_wiring_source` また�E同等�E診断を追加する
-- task return source の明示化�E ADR-062 で扱ぁE��め、本 ADR の spec 反映では `task.returns.source` を追加しなぁE
-### 既孁EADR への影響
+- `docs/spec/edges.md` §1-5 foreachエントリに、`foreach.returns` が collected asset source 名であることを追記する
+- `docs/spec/edges.md` §1-7 flow wiring 型互換性に、wiring source 種別として collected asset source を追加する
+  - source 記法: `foreach.returns` で宣言された collected asset source 名
+  - source TypeRef: `list<T>`（`T` は apply 先 task の `returns.model`）
+  - apply 先 task の `returns.model` が解決不能な場合は source TypeRef も解決不能として扱い、`incompatible_wiring_type` を抑制する
+- `docs/spec/diagnostics.md` に `duplicate_flow_source` / `invalid_foreach_returns` / `unresolved_wiring_source` または同等の診断を追加する
+- task return source の明示化は ADR-062 で扱うため、本 ADR の spec 反映では `task.returns.source` を追加しない
 
-- ADR-016 の foreach 構文判断は維持する。本 ADR は ADR-016 めEsupersede せず、`foreach.returns` の意味を追補すめE- ADR-023 の制御フロースコープに対し、`foreach.returns` を�E示皁E�� escape hatch として追加する、EDR-023 自体�E遡及修正しなぁE��、spec/edges.md の制御フロースコープ節には `foreach.returns` が例外として外部公開される旨を追記すめE- ADR-060 §5-1 の注で ADR-061 に委�EられてぁE�� collected asset source 解決を、本 ADR で確定する、EDR-060 §5 の wiring source 解決ルールに、collected asset source�E�Eforeach.returns` 由来�E�を4つ目の source 種別として追加する
+### 既存 ADR への影響
 
-### 既存実裁E��の影響
+- ADR-016 の foreach 構文判断は維持する。本 ADR は ADR-016 を supersede せず、`foreach.returns` の意味を追補する
+- ADR-023 の制御フロースコープに対し、`foreach.returns` を明示的な escape hatch として追加する。ADR-023 自体は遡及修正しないが、spec/edges.md の制御フロースコープ節には `foreach.returns` が例外として外部公開される旨を追記する
+- ADR-060 §5-1 の注で ADR-061 に委ねられていた collected asset source 解決を、本 ADR で確定する。ADR-060 §5 の wiring source 解決ルールに、collected asset source（`foreach.returns` 由来）を4つ目の source 種別として追加する
+
+### 既存実装への影響
 
 - flow source resolver に `foreach.returns` 由来の collected asset source を登録する
-- 同一 flow file 冁E�� `foreach.returns` ぁEnode id また�E他�E `foreach.returns` と重褁E��てぁE��ぁE��を検�Eする
-- `foreach.returns` ありの場合、apply 允Etask の `returns.model` から `list<T>` TypeRef を生成すめE- `foreach.returns` 省略時�E collected asset めEsemantic model に生�EしなぁE��renderer / inspect / MCP もこれを露出しなぁE- 後綁Ewiring ぁEcollected asset source を参照した場合、生成された `list<T>` めEsource TypeRef として使ぁE- apply 允Etask の `returns.model` が解決不�Eな場合、collected asset source の TypeRef も解決不�Eとして扱ぁE��後綁Ewiring の `incompatible_wiring_type` を抑制する
-- main task / composite task の return source 接続�E本 ADR では実裁E��象に含めなぁE��`task.returns.source` は ADR-062 で扱ぁE
-### 既孁EUC への影響
+- 同一 flow file 内で `foreach.returns` が node id または他の `foreach.returns` と重複していないかを検出する
+- `foreach.returns` ありの場合、apply 先 task の `returns.model` から `list<T>` TypeRef を生成する
+- `foreach.returns` 省略時は collected asset を semantic model に生成しない。renderer / inspect / MCP もこれを露出しない
+- 後続 wiring が collected asset source を参照した場合、生成された `list<T>` を source TypeRef として使う
+- apply 先 task の `returns.model` が解決不能な場合、collected asset source の TypeRef も解決不能として扱い、後続 wiring の `incompatible_wiring_type` を抑制する
+- main task / composite task の return source 接続は本 ADR では実装対象に含めない。`task.returns.source` は ADR-062 で扱う
 
-- UC-001 `cart/task/validate_cart.yaml` の `foreach.returns: validated_items` は、foreach の collected asset source 名として正当化されめE- UC-001 で main task がその collected asset を返す接続方法�E、本 ADR では未定義とし、ADR-062 の task return source 明示化で扱ぁE- UC-002 self-hosting で同じ tool / normalize task を褁E��雁E��に適用する場合、`foreach.returns` によって collected asset を区別できる
+### 既存 UC への影響
+
+- UC-001 `cart/task/validate_cart.yaml` の `foreach.returns: validated_items` は、foreach の collected asset source 名として正当化される
+- UC-001 で main task がその collected asset を返す接続方法は、本 ADR では未定義とし、ADR-062 の task return source 明示化で扱う
+- UC-002 self-hosting で同じ tool / normalize task を複数集合に適用する場合、`foreach.returns` によって collected asset を区別できる
 
 ### v1.1 への影響
 
-本 ADR は M15 / data layer expressiveness の Phase B として、v1.1.0-spec に含める、EADR-060 の TypeRef と flow wiring type compatibility を前提にした forward 拡張であり、v1.0.0-spec の遡及修正ではなぁE��E
+本 ADR は M15 / data layer expressiveness の Phase B として、v1.1.0-spec に含める。
+ADR-060 の TypeRef と flow wiring type compatibility を前提にした forward 拡張であり、v1.0.0-spec の遡及修正ではない。
+
 ## Evidence
 
 - commit: a5032d1
-- impl commit: 01e7127
-- 参老E ADR-016 foreach flow construct, ADR-023 control flow scope, ADR-060 TypeRef / flow wiring type compatibility
+- impl commit: tbd
+- 参考: ADR-016 foreach flow construct, ADR-023 control flow scope, ADR-060 TypeRef / flow wiring type compatibility
