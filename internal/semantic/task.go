@@ -16,6 +16,7 @@ type Param struct {
 	Name      string
 	Model     QualifiedID
 	ModelName string
+	TypeRef   *TypeRef
 	Note      string
 }
 
@@ -23,6 +24,7 @@ type Return struct {
 	Name      string
 	Model     QualifiedID
 	ModelName string
+	TypeRef   *TypeRef
 	Asset     *Asset
 }
 

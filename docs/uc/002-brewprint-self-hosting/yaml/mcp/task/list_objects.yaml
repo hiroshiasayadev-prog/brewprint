@@ -1,0 +1,71 @@
+# MCP tool `list_objects` task / flow
+# docs/spec/mcp/tools/list-objects.md に対応。
+
+nodes:
+  - id: list_objects
+    type: task
+    main: true
+    params:
+      - name: request
+        model: list_objects_request
+    returns:
+      name: response
+      model: list_objects_response
+    note: |
+      MCP tool `list_objects` の公開contract。
+      MCP toolでありHTTP endpointではないため endpoint: true は付けない。
+      project内のsemantic object一覧を返す探索用tool。
+      詳細なsignature / references / inspect情報は別toolへ委ねる。
+
+  - id: validate_request
+    type: task
+    params:
+      - name: request
+        model: list_objects_request
+    returns:
+      name: validated_request
+      model: list_objects_request
+    note: |
+      tool input schemaを検証する。
+      object / kind / module / file はすべて任意filter。
+      object / kind のenum制約はv1 modelでは表現できないためrequest model側のnoteで保持する。
+
+  - id: query_service
+    type: task
+    params:
+      - name: request
+        model: list_objects_request
+    returns:
+      name: query_result
+      model: any
+    reads:
+      - resolved_project_store
+    note: |
+      QueryService境界。
+      Raw YAML ASTではなくResolvedProject上のsemantic object indexを読む。
+      node / view / transition / field をfilter条件に応じて列挙する。
+
+  - id: build_response
+    type: task
+    params:
+      - name: query_result
+        model: any
+    returns:
+      name: response
+      model: list_objects_response
+    note: |
+      QueryService結果をMCP response payloadへ整形する。
+      objects[] と diagnostics[] を返す。
+
+flow:
+  - step: validate_request
+    params:
+      request: $params.request
+
+  - step: query_service
+    params:
+      request: validate_request
+
+  - step: build_response
+    params:
+      query_result: query_service

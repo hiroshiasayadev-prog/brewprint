@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/nodes.md
 status: confirmed
-last_updated: 2026-04-26
+last_updated: 2026-05-03
 summary: >
   brewprintの全ノード種別のフィールド定義。
   各フィールドの必須/任意・型・意味・出典ADRを記載する。
@@ -25,9 +25,10 @@ depends_on:
   - docs/adr/026-fk-cardinality-and-nm-relation.md
   - docs/adr/028-api-table-route-composition.md
   - docs/adr/031-actor-global-definition.md
-  - docs/adr/040-control-flow-step-wiring.md
   - docs/adr/034-internal-event-source.md
+  - docs/adr/040-control-flow-step-wiring.md
   - docs/adr/042-wireframe-main-and-layout.md
+  - docs/adr/060-flow-wiring-type-compatibility.md
 ---
 
 # ノード定義仕様
@@ -103,8 +104,8 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 | フィールド | 必須 | 型 | 内容 | 出典 |
 |-----------|------|-----|------|------|
 | `main` | 任意 | bool | `true` でメインノード宣言。1ファイルに1つだけ許容。`task` にのみ適用（ADR-011） |
-| `params` | 任意 | list\<param\> | 入力。model IDへの参照リスト | ADR-009 |
-| `returns` | 任意 | returns | 出力。model IDへの参照とasset名の宣言 | ADR-009 |
+| `params` | 任意 | list\<param\> | 入力。TypeRefへの参照リスト | ADR-009, ADR-060 |
+| `returns` | 任意 | returns | 出力。TypeRefへの参照とasset名の宣言 | ADR-009, ADR-060 |
 | `reads` | 任意 | list\<store-id\> | 参照するstore IDのリスト | ADR-020 |
 | `writes` | 任意 | list\<store-id\> | 更新するstore IDのリスト | ADR-020 |
 | `endpoint` | 任意 | bool | `true` でAPI Tableの集計対象となり、`list_endpoints` MCPツールに出力 | ADR-005, ADR-017, ADR-028 |
@@ -117,16 +118,16 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 | フィールド | 必須 | 型 | 内容 |
 |-----------|------|-----|------|
 | `name` | ✓ | string | このtask内でのパラメータ名 |
-| `model` | ✓ | model-id | 型参照（model IDまたはprimitive） |
+| `model` | ✓ | TypeRef | 型参照。primitive / named model / inline `list<T>` / inline `dict<T>` を指定できる |
 
 ### returns オブジェクト
 
 | フィールド | 必須 | 型 | 内容 |
 |-----------|------|-----|------|
 | `name` | ✓ | string | 生成されるassetの名前 |
-| `model` | ✓ | model-id | 型参照（model ID） |
+| `model` | ✓ | TypeRef | 型参照。primitive / named model / inline `list<T>` / inline `dict<T>` を指定できる |
 
-`returns` は単一のみ。複数返しが必要な場合はstruct modelでwrapして単一にする（ADR-009）。
+`returns` は単一のみ。複数返しが必要な場合はstruct modelでwrapして単一にする（ADR-009）。primitive return は `str` / `int` / `bool` / `any` 等の primitive TypeRef で表現する。
 
 ### init オブジェクト（initializes内）
 
@@ -138,11 +139,13 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 
 `initializes` で宣言されたstoreはファイル内にprivate。外部参照不可（ADR-014）。
 
+`initializes[].model` は v1.1 でも model-id 参照のまま扱う。TypeRef 適用対象は `params[].model` / `returns.model` / `fields[].type` / `model.element` / `model.value` に限定する。詳細は [type-ref.md](./type-ref.md) §1 を参照する。
+
 ---
 
 ## model
 
-> 出典: ADR-007（superseded・内容はADR-010に継承）, ADR-008, ADR-010, ADR-021
+> 出典: ADR-007（superseded・内容はADR-010に継承）, ADR-008, ADR-010, ADR-021, ADR-060
 
 Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` サブディレクトリに1ファイル=1定義で置く。
 
@@ -164,7 +167,7 @@ Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` �
       fk: role.id
       note: "ロールID（FK → role.id）"
     - name: profile
-      type: user_profile    # 別model IDを型として参照（fkなし → JSON埋め込み扱い）
+      type: user_profile    # named model TypeRef（fkなし → JSON埋め込み扱い）
       note: "プロフィール情報"
     - name: created_at
       type: datetime
@@ -174,18 +177,18 @@ Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` �
 - id: item_list
   type: model
   kind: list
-  element: item             # model ID または primitive literal
+  element: item             # TypeRef。model ID / primitive / inline list<T> / inline dict<T>
 
 # dict
 - id: config_map
   type: model
   kind: dict
-  value: config             # model ID または primitive literal（keyは常にstr）
+  value: config             # TypeRef。keyは常にstr
 ```
 
 ### primitive予約語
 
-以下の語はprimitive予約語。model IDとして定義不可（ADR-021）。
+以下の語はprimitive予約語。model IDとして定義不可（ADR-021）。TypeRef構文全体は [type-ref.md](./type-ref.md) で定義する。
 
 | primitive | 意味 |
 |-----------|------|
@@ -203,8 +206,8 @@ Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` �
 |-----------|------|-----|------|------|
 | `kind` | ✓ | enum | `struct` / `list` / `dict` | ADR-007→ADR-010, ADR-021 |
 | `fields` | struct時必須 | list\<field\> | フィールド定義（structのみ） | ADR-008 |
-| `element` | list時必須 | string | 要素の型。model ID または primitive literal | ADR-021 |
-| `value` | dict時必須 | string | 値の型。model ID または primitive literal | ADR-021 |
+| `element` | list時必須 | TypeRef | 要素の型 | ADR-021, ADR-060 |
+| `value` | dict時必須 | TypeRef | 値の型。keyは常に `str` | ADR-021, ADR-060 |
 
 `kind: scalar` は廃止。primitive literalを直接使う（ADR-021）。  
 `kind: dict` のkeyは常に `str`。`key` フィールドは存在しない（ADR-021）。
@@ -214,13 +217,13 @@ Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` �
 | フィールド | 必須 | 型 | 内容 | 出典 |
 |-----------|------|-----|------|------|
 | `name` | ✓ | string | フィールド名。struct内でユニーク | ADR-008 |
-| `type` | ✓ | string | 型。primitive予約語 or model ID | ADR-008 |
+| `type` | ✓ | TypeRef | 型。primitive / named model / inline `list<T>` / inline `dict<T>` を指定できる | ADR-008, ADR-060 |
 | `pk` | 任意 | bool | `true` でPKカラム。1 struct内に1つ | ADR-021 |
 | `fk` | 任意 | `<model-id>.<field-name>` | FK参照先。省略時はJSON埋め込み扱い | ADR-021 |
 | `unique` | 任意 | bool | `true` で1:1リレーション。`fk:` と併用。省略時はmany-to-one | ADR-026 |
 | `note` | 任意 | string | 人間向けdocstring兼LLM semantic contract | ADR-008, ADR-021 |
 
-`type` の機械的validationはprimitive予約語 or 定義済みmodel IDの存在チェックのみ（ADR-008）。
+`type` の機械的validationは TypeRef の構文チェック、および primitive予約語 or 定義済みmodel IDの存在チェックを行う。inline `list<T>` / `dict<T>` は要素・値の TypeRef を再帰的に検証する。TypeRef 構文自体が不正な場合は `invalid_type_ref`、構文はvalidだが named model が未解決の場合は `unresolved_field_type` を出す。
 
 **`fk` フィールドの意味**
 
@@ -286,6 +289,8 @@ Processingレイヤー / Dataレイヤー。実行時にデータを保持する
 | `of` | 任意 | model-id | 保持するmodel ID | ADR-007 |
 
 `store.kind: db` は独自フィールド（列定義）を持たない。`of: <model-id>` でmodelを参照するのみ。ER図は `store.of` → model → fields の参照を辿って列定義を描画する（ADR-021）。
+
+`store.of` は v1.1 でも model-id 参照のまま扱う。TypeRef 適用対象外である理由と対象フィールドは [type-ref.md](./type-ref.md) §1 を参照する。
 
 ### collectionのnote規約
 
@@ -377,7 +382,7 @@ Applicationレイヤー。制御フローの起点。DAGの `flow:` には登場
 
 | フィールド | 必須 | 型 | 内容 |
 |-----------|------|-----|------|
-| `model` | ✓ | model-id | ペイロードの型参照 |
+| `model` | ✓ | model-id | ペイロードの型参照。v1.1 でも TypeRef ではなく model-id 参照として扱う |
 
 ### sourceの意味
 

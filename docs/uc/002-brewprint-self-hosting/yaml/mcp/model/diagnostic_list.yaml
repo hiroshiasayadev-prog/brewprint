@@ -1,0 +1,8 @@
+# MCP Diagnostic list
+
+nodes:
+  - id: diagnostic_list
+    type: model
+    kind: list
+    element: diagnostic
+    note: "MCP response envelopeで使うdiagnostic配列。"

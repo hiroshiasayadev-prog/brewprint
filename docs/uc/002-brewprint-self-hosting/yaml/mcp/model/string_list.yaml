@@ -1,0 +1,12 @@
+# MCP string list
+# string arrayを共有modelとして参照するための補助model。
+
+nodes:
+  - id: string_list
+    type: model
+    kind: list
+    element: str
+    note: |
+      MCP schema内の文字列配列を表す共通list model。
+      例: reference kind filter、truncated_reasons、coverage.analyzed / not_analyzed など。
+      配列要素のenum値集合は利用箇所ごとのnoteで補足する。

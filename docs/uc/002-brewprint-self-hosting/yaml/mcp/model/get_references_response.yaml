@@ -1,0 +1,28 @@
+# MCP get_references response
+# docs/spec/mcp/tools/get-references.md §3〜§4 に対応。
+
+nodes:
+  - id: get_references_response
+    type: model
+    kind: struct
+    fields:
+      - name: object
+        type: object_ref
+        note: "必須。query対象object。"
+      - name: direction
+        type: str
+        note: "必須。実際に使ったdirection。out / in / both。"
+      - name: depth
+        type: int
+        note: "必須。get_referencesでは常に1を返す。"
+      - name: references
+        type: reference_list
+        note: "必須。対象objectの直接reference一覧。"
+      - name: diagnostics
+        type: diagnostic_list
+        note: "必須。Diagnostic list。"
+    note: |
+      MCP tool `get_references` のresponse model。
+      docs/spec/mcp/tools/get-references.md §3 のOutput、および §4 のdepth固定ルールに対応する。
+      `references` は共通model `reference_list` を参照する。
+      MCP v1ではdirect referencesのみを返し、transitive traversalは `get_reference_tree` が担当する。

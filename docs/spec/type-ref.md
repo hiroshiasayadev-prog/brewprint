@@ -1,0 +1,221 @@
+---
+scope: docs/spec/type-ref.md
+status: confirmed
+last_updated: 2026-05-03
+summary: >
+  brewprint v1.1 TypeRef構文と型互換性の基礎定義。
+  primitive / named model / inline list / inline dict、および named list/dict model の正規化を定義する。
+depends_on:
+  - docs/adr/021-model-field-structure.md
+  - docs/adr/060-flow-wiring-type-compatibility.md
+---
+
+# TypeRef仕様
+
+TypeRef は、brewprint v1.1 で params / returns / model field / list element / dict value に使う型参照である。
+
+TypeRef は runtime 型システムではなく、人間とLLMが共有する設計契約を静的に検証するための最小表現である。brewprint は TypeRef によって flow wiring の型互換性、foreach の `$item` 型導出、外部境界の shallow container I/O を扱う。
+
+> 由来: ADR-060 §1
+
+---
+
+## 1. TypeRefを受け取るフィールド
+
+TypeRef は以下のフィールドで使う。
+
+| 場所 | フィールド | 意味 |
+|---|---|---|
+| task / branch / fork / join params | `params[].model` | 入力paramの型 |
+| task / join returns | `returns.model` | 出力assetの型 |
+| struct model field | `fields[].type` | fieldの型 |
+| list model | `element` | list要素の型 |
+| dict model | `value` | dict値の型 |
+
+`store.of`、`initializes[].model`、`event.payload.model` は本仕様では TypeRef 適用対象に含めない。これらは既存の model-id 参照として扱う。
+
+TypeRef は上記のフィールド値として直接指定されるほか、foreach の `$item` の型導出にも使われる。`$item` は TypeRef を受け取るフィールドではなく、`foreach.over` の TypeRef から flow wiring 解決時に導出される。詳細は [edges.md](./edges.md) §1-7 を参照する。
+
+TypeRef を受け取るフィールドの詳細なスキーマは [nodes.md](./nodes.md) を参照する。
+
+> 由来: ADR-060 §1, §9
+
+---
+
+## 2. TypeRef構文
+
+TypeRef は以下のいずれかである。
+
+| 種別 | 例 | 意味 |
+|---|---|---|
+| primitive | `str`, `int`, `float`, `bool`, `bytes`, `datetime`, `any` | primitive予約語 |
+| named model | `user`, `order`, `catalog.product` | model ID または model QID への参照 |
+| inline list | `list<user>` | 要素型 `user` の list |
+| inline dict | `dict<config>` | value型 `config` の dict。key は常に `str` |
+
+```yaml
+params:
+  - name: files
+    model: list<source_file>
+
+returns:
+  name: diagnostics
+  model: list<diagnostic>
+
+nodes:
+  - id: module_config
+    type: model
+    kind: struct
+    fields:
+      - name: settings
+        type: dict<any>
+```
+
+`list<T>` / `dict<T>` は built-in container TypeRef であり、user-defined generic ではない。ユーザーが型変数 `T` を宣言する構文、`model<T>`、`task<T>`、`T extends X`、generic function inference は存在しない。
+
+> 由来: ADR-060 §1
+
+---
+
+## 3. primitive予約語
+
+以下の語は primitive TypeRef として扱う。model ID として定義してはならない。
+
+この一覧は ADR-021 §3 の primitive 予約語を網羅したものである。ADR-060 §1 の primitive 表は代表例であり、完全な一覧は本節を正とする。
+
+| primitive | 意味 |
+|---|---|
+| `str` | 文字列 |
+| `int` | 整数 |
+| `float` | 浮動小数点数 |
+| `bool` | 真偽値 |
+| `bytes` | バイト列 |
+| `datetime` | 日時 |
+| `any` | 型不定。flow wiring compatibility では両方向 wildcard として扱う |
+
+`any` は設計上の逃げ口であり、使用は最小限にする。ただし v1.1 には narrow 構文がないため、互換性判定では source / target のどちらに現れても互換とする。
+
+> 由来: ADR-021 §3, ADR-060 §1
+
+---
+
+## 4. named model TypeRef
+
+primitive でも inline container でもない TypeRef は named model 参照として扱う。
+
+```yaml
+params:
+  - name: user
+    model: user
+
+returns:
+  name: order
+  model: commerce.order
+```
+
+list/dict 以外の named model は nominal に比較する。`user` と `customer` が同じ fields を持っていても、型互換とはみなさない。
+
+外部shapeとの変換が必要な場合は、adapter / normalize task を明示して別の asset を生成する。
+
+> 由来: ADR-060 §2, §3
+
+---
+
+## 5. inline list / dict TypeRef
+
+`list<T>` は要素型 `T` を持つ list を表す。
+
+```yaml
+params:
+  - name: users
+    model: list<user>
+```
+
+`dict<T>` は value型 `T` を持つ dict を表す。key は常に `str` であり、key型を指定する構文は存在しない。
+
+```yaml
+params:
+  - name: config_by_name
+    model: dict<config>
+```
+
+TypeRef は再帰的に定義されるため、構文上は以下も有効である。
+
+```txt
+list<any>
+list<dict<user>>
+dict<list<diagnostic>>
+```
+
+ただし深い入れ子は推奨しない。深さ制限または lint 方針は M15 Phase C で扱う。
+
+> 由来: ADR-060 §1
+
+---
+
+## 6. named list/dict model の正規化
+
+ADR-021 の named list/dict model は v1.1 でも有効である。
+
+```yaml
+- id: user_list
+  type: model
+  kind: list
+  element: user
+```
+
+型互換性チェックでは、上記は以下と同じ container shape として正規化する。
+
+```txt
+list<user>
+```
+
+同様に、
+
+```yaml
+- id: config_map
+  type: model
+  kind: dict
+  value: config
+```
+
+は以下と互換な container shape として扱う。
+
+```txt
+dict<config>
+```
+
+named list/dict model の `id` / `note` は、人間・LLM向けの意味付けとして保持される。ただし flow wiring の型互換性では container shape に正規化して比較する。
+
+```txt
+user_list -> list<user>      OK
+list<user> -> user_list      OK
+user_list -> list<order>     NG
+```
+
+struct model は正規化せず、named model として nominal に比較する。
+
+> 由来: ADR-060 §2
+
+---
+
+## 7. TypeRef構文エラー
+
+TypeRef として解釈できない文字列は `invalid_type_ref` diagnostic とする。
+
+例:
+
+```txt
+list<
+dict<>
+list<user
+map<user>
+```
+
+`map<user>` のように `list` / `dict` 以外の container kind を使った場合も、TypeRef として扱えないため `invalid_type_ref` とする。
+
+TypeRef 構文は valid だが内部の named model が解決できない場合は、出現箇所に応じて既存の未解決 diagnostic を使う。`fields[].type` では `unresolved_field_type`、`params[].model` / `returns.model` / `model.element` / `model.value` では `unresolved_model` を使う。構文自体が壊れている場合、または TypeRef として扱えない container kind を指定した場合のみ `invalid_type_ref` を出す。
+
+TypeRef の解決に失敗した場合、その TypeRef を使う flow wiring では `incompatible_wiring_type` を追加で発行しない。型互換性チェックは source TypeRef と target TypeRef の両方が正常に解決できた場合のみ行う。
+
+> 由来: ADR-060 §6, §7, M15 Phase A task

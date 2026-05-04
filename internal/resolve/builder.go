@@ -97,6 +97,7 @@ func buildTask(fileID semantic.FileID, module string, raw rawyaml.Task) *semanti
 			Name:      param.Name,
 			Model:     resolveModelQID(module, param.Model),
 			ModelName: param.Model,
+			TypeRef:   mustBuildTypeRef(module, param.Model),
 			Note:      param.Note,
 		})
 	}
@@ -106,6 +107,7 @@ func buildTask(fileID semantic.FileID, module string, raw rawyaml.Task) *semanti
 			Name:      raw.Returns.Name,
 			Model:     modelQID,
 			ModelName: raw.Returns.Model,
+			TypeRef:   mustBuildTypeRef(module, raw.Returns.Model),
 			Asset: &semantic.Asset{
 				Name:       raw.Returns.Name,
 				Model:      modelQID,
@@ -180,6 +182,7 @@ func buildJoin(fileID semantic.FileID, module string, raw rawyaml.ControlNode) *
 			Name:      raw.Returns.Name,
 			Model:     modelQID,
 			ModelName: raw.Returns.Model,
+			TypeRef:   mustBuildTypeRef(module, raw.Returns.Model),
 			Asset: &semantic.Asset{
 				Name:       raw.Returns.Name,
 				Model:      modelQID,
@@ -199,6 +202,7 @@ func buildParams(module string, raw []rawyaml.Param) []semantic.Param {
 			Name:      param.Name,
 			Model:     resolveModelQID(module, param.Model),
 			ModelName: param.Model,
+			TypeRef:   mustBuildTypeRef(module, param.Model),
 			Note:      param.Note,
 		})
 	}
@@ -214,21 +218,32 @@ func buildModel(fileID semantic.FileID, module string, raw rawyaml.Model) *seman
 			Kind:   semantic.NodeKindModel,
 			Note:   raw.Note,
 		},
-		Kind:    raw.Kind,
-		Element: raw.Element,
-		Value:   raw.Value,
+		Kind:       raw.Kind,
+		Element:    raw.Element,
+		ElementRef: mustBuildTypeRef(module, raw.Element),
+		Value:      raw.Value,
+		ValueRef:   mustBuildTypeRef(module, raw.Value),
 	}
 	for _, field := range raw.Fields {
 		model.Fields = append(model.Fields, semantic.ModelField{
-			Name:   field.Name,
-			Type:   field.Type,
-			PK:     field.PK,
-			FK:     field.FK,
-			Unique: field.Unique,
-			Note:   field.Note,
+			Name:    field.Name,
+			Type:    field.Type,
+			TypeRef: mustBuildTypeRef(module, field.Type),
+			PK:      field.PK,
+			FK:      field.FK,
+			Unique:  field.Unique,
+			Note:    field.Note,
 		})
 	}
 	return model
+}
+
+func mustBuildTypeRef(module string, raw string) *semantic.TypeRef {
+	if raw == "" {
+		return nil
+	}
+	ref, _ := parseTypeRef(raw, module)
+	return ref
 }
 
 func buildStore(fileID semantic.FileID, module string, raw rawyaml.Store) *semantic.Store {

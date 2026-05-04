@@ -1,0 +1,73 @@
+# MCP tool `list_endpoints` task / flow
+# docs/spec/mcp/tools/list-endpoints.md に対応。
+
+nodes:
+  - id: list_endpoints
+    type: task
+    main: true
+    params:
+      - name: request
+        model: list_endpoints_request
+    returns:
+      name: response
+      model: list_endpoints_response
+    note: |
+      MCP tool `list_endpoints` の公開contract。
+      MCP toolでありHTTP endpointではないため endpoint: true は付けない。
+      API Table view YAMLに基づいてendpoint一覧を返す。
+      list_endpoints自体はHTTP endpointではなく、HTTP endpoint一覧を返すquery toolである。
+
+  - id: validate_request
+    type: task
+    params:
+      - name: request
+        model: list_endpoints_request
+    returns:
+      name: validated_request
+      model: list_endpoints_request
+    note: |
+      tool input schemaとapi_table_idを検証する。
+      api_table_id は任意。
+      API Tableが複数存在し、api_table_idが省略された場合は全API Tableをtables[]に分けて返す。
+
+  - id: query_service
+    type: task
+    params:
+      - name: request
+        model: list_endpoints_request
+    returns:
+      name: query_result
+      model: any
+    reads:
+      - resolved_project_store
+    note: |
+      QueryService境界。
+      Raw YAML ASTではなくResolvedProject上のAPI Table viewとendpoint task情報を読む。
+      task(endpoint=true)の単純列挙ではなく、API Table view定義とADR-028のroute合成規則に従いfull pathを計算する。
+      収集対象endpointが0件のmodule-entryはsectionsには出さない。
+
+  - id: build_response
+    type: task
+    params:
+      - name: query_result
+        model: any
+    returns:
+      name: response
+      model: list_endpoints_response
+    note: |
+      QueryService結果をMCP response payloadへ整形する。
+      tables[] / sections[] / endpoints[] / diagnostics を返す。
+      endpoint objectにはmethod / path / leaf_path / task / params / returns / sourceを含めうる。
+
+flow:
+  - step: validate_request
+    params:
+      request: $params.request
+
+  - step: query_service
+    params:
+      request: validate_request
+
+  - step: build_response
+    params:
+      query_result: query_service

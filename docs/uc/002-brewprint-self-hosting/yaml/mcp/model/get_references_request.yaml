@@ -1,0 +1,22 @@
+# MCP get_references request
+# docs/spec/mcp/tools/get-references.md §2 に対応。
+
+nodes:
+  - id: get_references_request
+    type: model
+    kind: struct
+    fields:
+      - name: selector
+        type: object_selector
+        note: "必須。直接reference取得対象のObject selector。"
+      - name: direction
+        type: str
+        note: "任意。out / in / both。省略時はout。enum制約はnoteで保持する。"
+      - name: kinds
+        type: any
+        note: "任意。reference kind filterの文字列配列。専用string list modelを作らずanyで暫定表現する。"
+    note: |
+      MCP tool `get_references` のrequest model。
+      docs/spec/mcp/tools/get-references.md §2 のInputに対応する。
+      MCP v1ではdirect referencesのみを返し、inputにdepthは持たない。
+      `kinds` は Reference.kind のfilterであり、許容値は docs/spec/mcp/schema.md §2.2 のReference kindに従う。

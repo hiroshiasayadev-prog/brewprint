@@ -1,0 +1,15 @@
+# MCP get_signature request
+# docs/spec/mcp/tools/get-signature.md §2 に対応。
+
+nodes:
+  - id: get_signature_request
+    type: model
+    kind: struct
+    fields:
+      - name: selector
+        type: object_selector
+        note: "必須。対象objectを指定するObject selector。"
+    note: |
+      MCP tool `get_signature` のrequest model。
+      docs/spec/mcp/tools/get-signature.md §2 のInputに対応する。
+      selectorの有効なobject / kind組み合わせは docs/spec/mcp/schema.md §1.2 のSelector support matrixに従う。

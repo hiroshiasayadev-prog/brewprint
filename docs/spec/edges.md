@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/edges.md
 status: confirmed
-last_updated: 2026-04-25
+last_updated: 2026-05-04
 summary: >
   brewprintのエッジ記法の定義。
   ファイル内データフロー（flow:セクション）・状態遷移（transitions:セクション）・
@@ -18,6 +18,8 @@ depends_on:
   - docs/adr/020-cross-edge-management.md
   - docs/adr/023-control-flow-scope-and-branch-entry.md
   - docs/adr/040-control-flow-step-wiring.md
+  - docs/adr/060-flow-wiring-type-compatibility.md
+  - docs/adr/061-foreach-returns-collected-asset.md
 ---
 
 # エッジ定義仕様
@@ -34,7 +36,7 @@ brewprintのエッジは記述場所によって3種に分かれる。
 
 ## 1. データフローエッジ（flow:セクション）
 
-> 出典: ADR-015, ADR-016
+> 出典: ADR-015, ADR-016, ADR-060, ADR-061
 
 ### 設計原則
 
@@ -49,7 +51,9 @@ brewprintのエッジは記述場所によって3種に分かれる。
 
 **制御フロー構文（`branch` / `fork` / `foreach`）の内部で生成されたassetは、その構文のスコープ外から直接参照不可。**
 
-スコープ外にデータを渡す必要がある場合は、`initializes` で事前宣言したstoreに `writes` で格納し、後続taskが `reads` で参照する。
+例外として、`foreach.returns` で明示的に宣言された collected asset source は外部へ公開され、同一 flow file 内の後続 flow entry から bare source として参照できる。これは制御フロースコープに対する明示的な escape hatch であり、個別 iteration asset を外部参照可能にするものではない。
+
+スコープ外にデータを渡す必要があり、`foreach.returns` の collect 結果では表せない場合は、`initializes` で事前宣言したstoreに `writes` で格納し、後続taskが `reads` で参照する。
 
 ```yaml
 # NG: 分岐内のassetを外部wiringで直接参照
@@ -94,6 +98,7 @@ flow:
 | 記法 | 意味 |
 |------|------|
 | `source_node` | source_nodeの `returns` 全体を参照 |
+| `collected_asset` | 先行する `foreach.returns` で宣言された collected asset source を参照 |
 | `$params.field` | ファイル境界からの入力（main nodeのparams）の特定フィールドを参照 |
 | `$item` | foreachのループ境界からの入力（現在のイテレーション要素） |
 
@@ -240,7 +245,7 @@ case内で生成されたassetは、ADR-023の制御フロースコープによ�
 
 ### 1-5. foreachエントリ（ループ実行）
 
-> 出典: ADR-013（superseded）, ADR-016
+> 出典: ADR-013（superseded）, ADR-016, ADR-060, ADR-061
 
 `foreach` はnode typeではなく、`flow:` セクションの制御構文（ADR-016）。
 
@@ -252,7 +257,7 @@ flow:
     params:
       item: $item               # 現在のイテレーション要素
       config: $params.config    # 他のparamも含めapply先taskのparams wiring（任意ではなくapply先に依存）
-    returns: results            # applyの結果をcollectしたasset名
+    returns: results            # apply先taskのreturnsをiterationごとにcollectしたasset source名（任意）
 ```
 
 #### foreachエントリのフィールド
@@ -260,10 +265,10 @@ flow:
 | フィールド | 必須 | 内容 | 出典 |
 |-----------|------|------|------|
 | `foreach` | ✓ | apply先taskのID（同ファイルのサブノードまたは外部main node） | ADR-016 |
-| `over` | ✓ | iterateするlistの参照元。**node ID**（前段taskの `returns` asset）または **`$params.field`**（main taskのparams内のlistフィールド）を指定可。`$params.field` を指定した場合、parser/validatorは `main.params.<field>.model` が `kind: list` であることを検証する | ADR-016 |
+| `over` | ✓ | iterateするlistの参照元。**node ID**（前段task / join の `returns` asset）または **`$params.field`**（main taskのparams）を指定可。TypeRef 解決と `$item` 型導出の詳細は §1-7 を参照 | ADR-016, ADR-060 |
 | `mode` | 任意 | `sequential`（デフォルト）or `map`（並列実行） | ADR-016 |
 | `params` | 任意 | apply先taskのparams wiring（stepエントリと同じルール）。apply先にparamsがある場合は必須。`$item` で現在のイテレーション要素を参照 | ADR-016 |
-| `returns` | 任意 | applyの結果をcollectしたasset名 | ADR-016 |
+| `returns` | 任意 | apply先taskの `returns` を iteration ごとに collect した collected asset source 名。後続 flow から参照する場合に指定する。side-effect only の foreach では省略可 | ADR-016, ADR-061 |
 
 #### modeの使い分け
 
@@ -274,9 +279,61 @@ flow:
 
 #### $item シジル
 
-`$item` の型は `over` で参照したlistのelement型から暗黙に決まる（ADR-016）。apply先taskのparamのmodelとの型一致はGo実装の静的検証で担保する。
+`$item` は `foreach.params` 内だけで有効な wiring source である。foreach外で `$item` を使った場合は `invalid_wiring_source` を出す。
+
+`$item` の型は `over` で参照した TypeRef から導出する。詳細な導出ルールと診断抑制は §1-7 を参照する。
+
+#### foreach.returns collected asset source
+
+`foreach.returns` は、apply 先 task の `returns` を iteration ごとに collect した collected asset source 名である。
+
+```yaml
+flow:
+  - foreach: validate_item
+    over: $params.cart_items
+    params:
+      cart_item: $item
+    returns: validated_items
+
+  - step: summarize_cart
+    params:
+      items: validated_items
+```
+
+上記の `validated_items` は、後続 flow から bare source として参照できる。
+この名前は apply 先 task の `returns.name` ではなく、foreach invocation 単位で宣言される file-local source 名である。
+
+`foreach.returns` は optional である。collect 結果を後続 flow から参照する場合は指定し、side-effect only の foreach では省略できる。省略時は collected asset source を semantic model に生成しない。renderer / inspect / MCP は、省略時の internal pseudo source を露出してはならない。
+
+apply 先 task に `returns` がないにもかかわらず `foreach.returns` を指定した場合は `invalid_foreach_returns` とする。また、当該 foreach 自身の `params` 内から自分自身の `returns` 名を参照してはならない。この場合も `invalid_foreach_returns` とする。
+
+apply 先 task の `returns.model` が TypeRef `T` の場合、`foreach.returns` の TypeRef は `list<T>` とする。apply 先 task の `returns.model` が `any` の場合は `list<any>` とする。apply 先 task の `returns.model` が解決不能な場合は collected asset source の TypeRef も解決不能として扱い、後続 wiring の `incompatible_wiring_type` は抑制する。
+
+```yaml
+nodes:
+  - id: validate_item
+    type: task
+    returns:
+      name: validated
+      model: cart_item
+
+flow:
+  - foreach: validate_item
+    over: $params.cart_items
+    params:
+      cart_item: $item
+    returns: validated_items
+```
+
+上記では `validated_items` の TypeRef は `list<cart_item>` である。
+
+`foreach.id` は導入しない。同じ apply 先 task を複数回 foreach する場合は、異なる `foreach.returns` 名で collect 結果を区別する。
+
+本仕様は task return source を定義しない。`task.returns.source` および main task `returns.name` と `foreach.returns` の名前一致による暗黙接続は採用しない。
 
 DAGレンダリングではforeachはapply先taskのboxに ↻ アイコンを装飾する形で表現。foreachが独立したboxとして描画されることはない（ADR-016）。
+
+> 由来: ADR-061 §1〜§8
 
 ### 1-6. $シジル体系まとめ
 
@@ -290,6 +347,97 @@ DAGレンダリングではforeachはapply先taskのboxに ↻ アイコンを�
 シジルはnode IDと記法レベルで区別され、「外部からの注入」であることを明示する（ADR-015）。
 
 ---
+
+### 1-7. flow wiring 型互換性
+
+> 出典: ADR-060, ADR-061
+
+flow wiring では、source TypeRef から target param TypeRef への代入互換性を検証する。
+
+検証対象は以下。
+
+| wiring箇所 | source | target |
+|---|---|---|
+| `step.params` | wiring source | step task の params |
+| `branch.params` | wiring source | branch node 自身の params |
+| `branch.cases[].params` | wiring source | case entry task の params |
+| `fork.branches[].steps[].params` | wiring source | branch内 step task の params |
+| `foreach.params` | wiring source | foreach apply task の params |
+| `join.params` | fork branch terminal step の returns.name 一致による暗黙source | join node の params |
+
+#### TypeRef互換ルール
+
+source TypeRef `S` から target TypeRef `T` への代入は、named list/dict model を container TypeRef に正規化したうえで、以下の場合のみ有効である。
+
+1. `S` または `T` が `any`
+2. primitive 同士で同一
+3. list/dict 以外の named model 同士で QID が同一
+4. list 同士で element TypeRef が互換
+5. dict 同士で value TypeRef が互換
+
+それ以外は `incompatible_wiring_type` を出す。
+
+```txt
+str -> str                         OK
+str -> int                         NG
+user -> user                       OK
+user -> order                      NG
+any -> user                        OK
+user -> any                        OK
+list<user> -> list<user>           OK
+list<user> -> list<order>          NG
+list<any> -> list<user>            OK
+user_list -> list<user>            OK
+config_map -> dict<config>         OK
+str -> user                        NG
+```
+
+named list/dict model の正規化および TypeRef 構文は [type-ref.md](./type-ref.md) を参照する。
+
+#### wiring source の型解決
+
+| source記法 | source TypeRef |
+|---|---|
+| node ID / QualifiedID | task または join の `returns.model` |
+| `$params.<name>` | 同一ファイルの main task の `params[].name == <name>` の `model` |
+| `$item` | foreach の `over` から導出した element TypeRef。`over` が `list<T>` または named list model の場合は `T`、`any` の場合は `any` |
+| `foreach.returns` で宣言された collected asset source 名 | apply 先 task の `returns.model` `T` から導出した `list<T>` |
+
+flow wiring source は以下の4種として解決する。
+
+1. node ID / QualifiedID
+2. `$params.<name>`
+3. `$item`
+4. `foreach.returns` で宣言された collected asset source 名
+
+node ID が task / join 以外を指す場合、または task / join でも `returns` を持たない場合は、参照先は存在するが wiring source として使えないため `invalid_wiring_source` を出す。
+
+`$params.<name>` は main task params の名前参照であり、struct field access ではない。
+
+`$item` は `foreach.params` 内だけで有効である。foreach外で使った場合は、参照先の概念は存在するがその文脈では使えないため `invalid_wiring_source` を出す。
+
+`foreach.returns` で宣言された collected asset source は、同一 flow file 内の後続 step / branch / fork / foreach から bare source として参照できる。当該 foreach 自身の `params` 内から自分の `returns` 名を参照した場合は `invalid_foreach_returns` を出す。
+
+`foreach.returns` は同一 flow file 内の bare wiring source 名前空間に参加する。同一 flow file 内で、`foreach.returns` は node id または他の `foreach.returns` と重複してはならない。重複した場合は `duplicate_flow_source` を出す。ただし task の `returns.name` は通常 flow の wiring source ではないため、task `returns.name` と `foreach.returns` が同名でも衝突扱いしない。
+
+wiring source が node ID / `$params.<name>` / `$item` / collected asset source のいずれとしても解決できない場合は `unresolved_wiring_source` を出す。
+
+`foreach.over` の解決結果が list として扱えない場合は `invalid_foreach_over_type` を出し、その foreach 内の `$item` wiring に対する `incompatible_wiring_type` は抑制する。
+
+> 由来: ADR-060 §5, ADR-061 §3〜§6, §9
+
+#### 型解決失敗時の扱い
+
+型互換性チェックは、source TypeRef と target TypeRef の両方が正常に解決できた場合のみ行う。
+
+以下の場合は `incompatible_wiring_type` を発行しない。
+
+- source TypeRef が解決不能
+- target param TypeRef が解決不能
+- foreach の `over` が list として扱えず、`$item` の型が導出できない
+- collected asset source の TypeRef が解決不能
+
+この方針により、未解決参照や TypeRef 構文エラーに対して二重に incompatible diagnostic を出さない。
 
 ## 2. 状態遷移エッジ（transitions:セクション）
 

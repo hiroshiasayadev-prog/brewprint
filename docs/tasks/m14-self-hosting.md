@@ -130,23 +130,32 @@ self-hosting中に浮かび上がるeditor / viewer要件は以下に蓄積す�
 
 ### Phase A: MCP公開contract のblueprint化
 
-- [ ] **MCP toolsの blueprint表現方針を決める**
-  - 各MCPツール（`get_references` / `get_reference_tree` / `inspect` / `analyze_impact` 等）をbrewprintのどのノード種別で表現するか決定する
-  - task / event / model / actor の選択判断を docs に残す
-  - 必要に応じてADR起票
+- [x] **MCP toolsの blueprint表現方針を決める**
+  - 各MCPツール（`get_references` / `get_reference_tree` / `inspect` / `analyze_impact` 等）は `task` として表現する
+  - MCP toolはHTTP endpointではないため、tool taskに `endpoint: true` は付けない
+  - request / response型は `model`、MCP server / client は `actor`、ResolvedProjectは `store kind: context` として表現する
+  - 方針は `docs/uc/002-brewprint-self-hosting/docs/phase-a-mcp-contract.md` に記録済み
+  - 並列作業分割は `docs/uc/002-brewprint-self-hosting/docs/phase-a-work-split.md` に記録済み
+  - 現時点では新規ADR不要と判断
 
-- [ ] **MCP tools の actor / model 定義をblueprint化する**
-  - MCPツールの request / response型をbrewprint modelで表現する
-  - MCP server / client の actor を定義する
-  - `docs/spec/mcp/schema.md` / `errors.md` を参照しつつ進める
+- [x] **MCP tools の actor / model 定義をblueprint化する**
+  - MCPツールの request / response型をbrewprint modelで表現済み
+  - MCP server / client の actor を `yaml/actors.yaml` に定義済み
+  - ResolvedProject context store を `yaml/mcp/store/resolved_project_store.yaml` に定義済み
+  - `docs/spec/mcp/schema.md` / `errors.md` / `tools/*.md` を参照し、optional / enum / union / discriminated object等は `note` で暫定表現
+  - v1 model表現力gapは `docs/uc/002-brewprint-self-hosting/TASKS-UC-002.md` に記録済み
 
-- [ ] **MCP tools の task / flow をblueprint化する**
-  - 各ツール呼出しのflowをDAGで表現する
-  - QueryServiceとの境界をどう表現するか検討する
+- [x] **MCP tools の task / flow をblueprint化する**
+  - 8 MCP tool分のtask YAMLを `yaml/mcp/task/*.yaml` に配置済み
+  - 各ツール呼出しのflowは `validate_request -> query_service -> build_response` としてDAGで表現済み
+  - QueryServiceとの境界は file-local `query_service` sub task + `reads: [resolved_project_store]` + `note` で表現済み
+  - QueryServiceを独立node種別として捏造しない方針を維持
 
 - [ ] **Phase A render を生成・確認する**
-  - `brewprint render` でPhase A範囲のrender出力を生成する
-  - render結果に対するgolden test相当の確認を行う
+  - Phase A YAMLは配置済み
+  - `docs/uc/002-brewprint-self-hosting/docs/coverage.md` は現状に追随済み
+  - `brewprint render` / `go test ./...` は未実行
+  - render結果に対するgolden test相当の確認は未完了
   - render出力上の表現力gapがあれば spec gap として記録する
 
 ### Phase B: 内部レイヤーのblueprint化

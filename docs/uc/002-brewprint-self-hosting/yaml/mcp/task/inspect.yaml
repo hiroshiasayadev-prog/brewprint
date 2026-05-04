@@ -1,0 +1,75 @@
+# MCP tool `inspect` task / flow
+# docs/spec/mcp/tools/inspect.md に対応。
+
+nodes:
+  - id: inspect
+    type: task
+    main: true
+    params:
+      - name: request
+        model: inspect_request
+    returns:
+      name: response
+      model: inspect_response
+    note: |
+      MCP tool `inspect` の公開contract。
+      MCP toolでありHTTP endpointではないため endpoint: true は付けない。
+      対象objectの実装判断に必要な周辺文脈をkind別にまとめて返す。
+      get_signatureより濃い文脈取得toolとして扱う。
+
+  - id: validate_request
+    type: task
+    params:
+      - name: request
+        model: inspect_request
+    returns:
+      name: validated_request
+      model: inspect_request
+    note: |
+      tool input schemaとselector / detailを検証する。
+      detail は brief / normal / full のenumで、省略時normal。
+      MCP v1ではdetailによる厳密な返却差分は実装任意だが、未知値はerror。
+      enum制約はv1 modelでは表現できないためrequest model側のnoteで保持する。
+
+  - id: query_service
+    type: task
+    params:
+      - name: request
+        model: inspect_request
+    returns:
+      name: query_result
+      model: any
+    reads:
+      - resolved_project_store
+    note: |
+      QueryService境界。
+      Raw YAML ASTではなくResolvedProject上のsemantic object、members、references、source補助情報を読む。
+      task / store / model / state / event / transition / field / view / file など対象kindごとに返却shapeが変わる。
+      kind別のmembers構造、flow entries、sequence hints、view集約結果などの差分はv1 modelでは厳密表現できないためresponse model側のnoteで保持する。
+      対象kind別分岐は現時点ではnoteで表現し、flowのbranch化はしない。
+
+  - id: build_response
+    type: task
+    params:
+      - name: query_result
+        model: any
+    returns:
+      name: response
+      model: inspect_response
+    note: |
+      QueryService結果をMCP response payloadへ整形する。
+      object / signature / doc / source / members / references / diagnostics を返す。
+      members / references は対象kindとdetailに応じて可能な範囲で含める。
+
+flow:
+  - step: validate_request
+    params:
+      request: $params.request
+
+  - step: query_service
+    params:
+      request: validate_request
+
+  - step: build_response
+    params:
+      query_result: query_service

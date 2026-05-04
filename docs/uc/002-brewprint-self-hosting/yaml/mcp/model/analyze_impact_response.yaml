@@ -1,0 +1,42 @@
+# MCP analyze_impact response
+# docs/spec/mcp/tools/analyze-impact.md §4〜§12 に対応。
+
+nodes:
+  - id: analyze_impact_response
+    type: model
+    kind: struct
+    fields:
+      - name: target
+        type: object_ref
+        note: "必須。分析対象ObjectRef。"
+      - name: change
+        type: any
+        note: "必須。inputで指定されたchangeをそのまま返す。discriminated objectをv1 modelで表せないためany。"
+      - name: summary
+        type: any
+        note: "必須。by_severity / by_fixability / by_kind の件数集計object。dict shapeを厳密表現しないためany。"
+      - name: impacts
+        type: any
+        note: "必須。impact entry配列。各entryは id / kind / severity / fixability / object / reason / via / source / recommended_action / suggested_fixes を持つ。専用list modelを作らずanyで暫定表現する。"
+      - name: coverage
+        type: any
+        note: "必須。analyzed / not_analyzed / note を持つcoverage object。語彙制約はnoteで保持する。"
+      - name: assumptions
+        type: any
+        note: "必須。tool側の前提・限界の文字列配列。専用list modelを作らずanyで暫定表現する。"
+      - name: truncated
+        type: bool
+        note: "必須。max_impactsにより打ち切ったか。"
+      - name: truncated_reasons
+        type: any
+        note: "必須。打ち切り理由の文字列配列。専用list modelを作らずanyで暫定表現する。"
+      - name: diagnostics
+        type: diagnostic_list
+        note: "必須。unsupported selector時のunsupported_selector等を含む。"
+    note: |
+      MCP tool `analyze_impact` のresponse model。
+      docs/spec/mcp/tools/analyze-impact.md §4 Output、§5 Impact entry、§6 severity / fixability、§7 coverage、§8 suggested_fixes、§9 SourceLocation、§10 coverage scope details、§12 assumptionsに対応する。
+      `impact.severity` は breaking / warning / info。
+      `impact.fixability` は mechanical / suggested / manual_review / unknown。
+      `coverage.analyzed` / `coverage.not_analyzed` はv1標準語彙を持つが、brewprint v1 modelではenum listを厳密表現できないためany + noteで保持する。
+      `suggested_fixes[]` はfix kind依存payloadを持つためany内に含める。

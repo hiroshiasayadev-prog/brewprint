@@ -1,0 +1,32 @@
+# MCP get_reference_tree request
+# docs/spec/mcp/tools/get-reference-tree.md §2 に対応。
+
+nodes:
+  - id: get_reference_tree_request
+    type: model
+    kind: struct
+    fields:
+      - name: selector
+        type: object_selector
+        note: "必須。traversal root object selector。"
+      - name: direction
+        type: str
+        note: "必須。out / in / both。enum制約はnoteで保持する。"
+      - name: depth
+        type: int
+        note: "必須。0..4。範囲外はinvalid_depth error。"
+      - name: kinds
+        type: any
+        note: "任意。traversal / return対象のreference kind filter文字列配列。専用list modelを作らずanyで暫定表現する。"
+      - name: max_nodes
+        type: int
+        note: "任意。node返却上限。省略時200。"
+      - name: max_edges
+        type: int
+        note: "任意。edge返却上限。省略時500。"
+    note: |
+      MCP tool `get_reference_tree` のrequest model。
+      docs/spec/mcp/tools/get-reference-tree.md §2 のInputに対応する。
+      directionは探索範囲を暗黙化しないため必須。
+      `kinds` は docs/spec/mcp/schema.md §2.2 のReference.kind filter。
+      depthの範囲制約やenum制約はbrewprint v1 modelでは型として表せないためnoteで保持する。

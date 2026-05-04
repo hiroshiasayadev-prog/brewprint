@@ -1,0 +1,38 @@
+# MCP ObjectRef
+# docs/spec/mcp/schema.md §1.7 に対応。
+
+nodes:
+  - id: object_ref
+    type: model
+    kind: struct
+    fields:
+      - name: object
+        type: str
+        note: "enum値集合: node / view / transition / asset / field / file / primitive"
+      - name: kind
+        type: str
+        note: "object種別。nodeならtask/model/store等。値集合はobjectごとに異なるためnoteで扱う"
+      - name: id
+        type: str
+        note: "object ID。QualifiedIDまたはsynthetic ID"
+      - name: qualified_id
+        type: str
+        note: "QualifiedIDを持つobjectのみ。任意"
+      - name: file
+        type: str
+        note: "file-local objectの所属FileID。任意"
+      - name: local_id
+        type: str
+        note: "file-local objectのlocal ID。任意"
+      - name: label
+        type: str
+        note: "人間向け短縮表示名。任意"
+      - name: source
+        type: source_location
+        note: "定義元source。任意"
+      - name: parent
+        type: any
+        note: "field等の親ObjectRef。再帰型をv1 modelで表しきれないためany"
+    note: |
+      MCP response内でsemantic objectを指す共通形式。
+      parentは本来ObjectRefだが、v1 modelでは再帰structを直接表せないためanyで暫定表現する。

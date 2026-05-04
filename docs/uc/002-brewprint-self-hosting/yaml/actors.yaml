@@ -1,0 +1,15 @@
+# UC-002 global actors
+# MCP公開contractの外部主体。
+
+nodes:
+  - id: mcp_client
+    type: actor
+    note: |
+      MCP toolを呼び出す外部クライアント。
+      Claude Code / ChatGPT connector / MCP host などを抽象化した主体。
+
+  - id: mcp_server
+    type: actor
+    note: |
+      brewprint MCP server。
+      MCP requestを受け取り、QueryService経由でResolvedProject上の情報を返す境界。

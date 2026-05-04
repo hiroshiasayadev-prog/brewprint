@@ -1,0 +1,24 @@
+# MCP SourceLocation
+# docs/spec/mcp/schema.md §1.6 に対応。
+
+nodes:
+  - id: source_location
+    type: model
+    kind: struct
+    fields:
+      - name: file
+        type: str
+        note: "FileID。必須"
+      - name: line
+        type: int
+        note: "1-origin line number。取得できる場合のみ"
+      - name: column
+        type: int
+        note: "1-origin column number。取得できる場合のみ"
+      - name: end_line
+        type: int
+        note: "範囲終端line。任意"
+      - name: end_column
+        type: int
+        note: "範囲終端column。任意"
+    note: "semantic objectに対応するsource位置。line/column欠落を許容する。"

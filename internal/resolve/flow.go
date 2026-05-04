@@ -22,7 +22,40 @@ func buildFlows(raw *rawyaml.Project, project *semantic.Project, symbols *symbol
 			}
 		}
 		project.FlowByFile[fileID] = entries
+		project.FlowCollectedSourcesByFile[fileID] = buildFlowCollectedSources(project, fileID, entries)
 	}
+}
+
+func buildFlowCollectedSources(project *semantic.Project, fileID semantic.FileID, entries []semantic.FlowEntry) map[string]*semantic.FlowCollectedSource {
+	out := map[string]*semantic.FlowCollectedSource{}
+	for _, entry := range entries {
+		if entry.Kind != semantic.FlowKindForeach || entry.Foreach.Returns == "" {
+			continue
+		}
+		task := project.TasksByQID[entry.Foreach.Task]
+		if task == nil || task.Returns == nil {
+			continue
+		}
+		collected := &semantic.FlowCollectedSource{
+			Name:              entry.Foreach.Returns,
+			FileID:            fileID,
+			ProducedByForeach: entry.Foreach.Task,
+			ProducedByTaskID:  entry.Foreach.TaskID,
+		}
+		if task.Returns.TypeRef != nil {
+			collected.TypeRef = &semantic.TypeRef{
+				Kind: semantic.TypeRefList,
+				Raw:  "list<" + task.Returns.TypeRef.String() + ">",
+				Name: "list",
+				Elem: task.Returns.TypeRef,
+			}
+		}
+		out[collected.Name] = collected
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func buildFlowEntry(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, raw rawyaml.FlowEntry) (semantic.FlowEntry, bool) {

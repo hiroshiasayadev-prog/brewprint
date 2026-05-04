@@ -14,8 +14,8 @@ UC-002 固有の作業・spec gap・editor / viewer 要件の発見ログを追�
 - [x] `render_index.yaml` を起票
 - [x] `TASKS-UC-002.md` を起票
 - [x] `editor-viewer-notes.md` を起票
-- [ ] Phase A: MCP公開contract の blueprint 化を開始
-- [ ] Phase A の YAML が入った後に `docs/coverage.md` を起票
+- [x] Phase A: MCP公開contract の blueprint 化を開始
+- [x] Phase A の YAML が入った後に `docs/coverage.md` を起票
 
 ---
 
@@ -36,11 +36,30 @@ M14の方針に従い、UC-002は v1.0.0-spec を基準に self-hosting を進�
 
 ## Phase A: MCP公開contract
 
-- [ ] MCP tools の blueprint 表現方針を決める
-- [ ] MCP server / client actor を定義する
-- [ ] MCP tool request / response model を定義する
-- [ ] MCP tool 呼び出しを task / flow として表現する
+並列作業時は `docs/phase-a-work-split.md` を入口にし、命名規約・レーン分割・merge前チェックリストに従う。
+表現方針の詳細は `docs/phase-a-mcp-contract.md` を参照する。
+
+- [x] MCP tools の blueprint 表現方針を決める
+  - `docs/phase-a-mcp-contract.md` に記録
+  - MCP toolは `task`、request / responseは `model`、client / serverは `actor`、ResolvedProjectは `store kind: context` で表す
+  - MCP toolはHTTP endpointではないため、tool taskに `endpoint: true` は付けない
+- [x] Phase A の並列作業分割を記録する
+  - `docs/phase-a-work-split.md` にレーン分割・命名規約・merge前チェックリストを記録
+- [x] MCP server / client actor を定義する
+  - `yaml/actors.yaml` に `mcp_client` / `mcp_server` を定義
+- [x] ResolvedProject context store を定義する
+  - `yaml/mcp/store/resolved_project_store.yaml` に `store kind: context` として定義
+- [x] MCP tool request / response model を定義する
+  - 8 MCP tool分の `*_request.yaml` / `*_response.yaml` を配置済み
+- [x] MCP tool 呼び出しを task / flow として表現する
+  - 8 MCP tool分のtask YAMLを配置済み
+  - 各tool taskは `validate_request -> query_service -> build_response` のflowを持つ
+  - 各 `query_service` sub taskは `resolved_project_store` を `reads` する
+  - MCP toolはHTTP endpointではないため `endpoint: true` は付けていない
 - [ ] Phase A範囲のrenderを生成・確認する
+  - `yaml/views/er.yaml` と `docs/coverage.md` は起票済み
+  - Phase A YAMLは配置済み
+  - `brewprint render` / `go test ./...` は未実行
 
 ---
 
@@ -58,7 +77,37 @@ M14の方針に従い、UC-002は v1.0.0-spec を基準に self-hosting を進�
 
 ## spec gap 発見ログ
 
-現時点では未記録。
+### 1. MCP schemaの再帰型 / union list / 任意内部indexをv1 modelで厳密表現できない
+
+- 対象: `docs/spec/mcp/schema.md`, `docs/spec/mcp/errors.md`
+- 発見元: `docs/uc/002-brewprint-self-hosting/yaml/mcp/model/object_ref.yaml`, `diagnostic.yaml`, `resolved_project.yaml`
+- 状況:
+  - `ObjectRef.parent` は本来 `ObjectRef` への再帰参照。
+  - `Diagnostic.related` は `SourceLocation` または `ObjectRef` の配列。
+  - `ResolvedProject` の内部registry / reverse lookup index / render mappingは任意mapや実装内部shapeを含む。
+- 論点:
+  - brewprint v1 modelは recursive struct、union list、arbitrary JSON object / map value unionを型レベルで表せない。
+  - そのため、MCP公開contractを完全なschemaとしてblueprint化するには v2 で model 表現力の拡張候補になる。
+- 暫定対応:
+  - v1では該当fieldを `any` とし、`note` に元schema上の意味を残す。
+- 分類: v2向け構造変更
+
+### 2. tool別request / responseのoptional・enum・discriminated object・nested listをv1 modelで厳密表現できない
+
+- 対象: `docs/spec/mcp/tools/*.md`
+- 発見元: `docs/uc/002-brewprint-self-hosting/yaml/mcp/model/*_request.yaml`, `docs/uc/002-brewprint-self-hosting/yaml/mcp/model/*_response.yaml`
+- 状況:
+  - `direction`, `detail`, `fallback`, `severity`, `fixability` などはenum相当だが、v1 modelではenum値集合を型制約として表せない。
+  - `analyze_impact.change` は `kind` ごとにpayloadが変わるdiscriminated objectだが、v1 modelではpayload相関を表せない。
+  - `get_reference_tree.nodes[]`, `get_reference_tree.edges[]`, `list_endpoints.tables[]`, `analyze_impact.impacts[]` などはnested list objectで、専用modelを大量に作らない限りshapeを厳密に保持できない。
+  - `get_signature.signature` と `inspect.signature` / `inspect.members` は対象kindごとのunion相当。
+- 論点:
+  - MCP公開contractをmachine-readableなblueprintとして使うには、optional / enum / union / discriminated object / list element schema をmodelで表す拡張が必要か。
+  - あるいはPhase Aのように外部contractの出典と制約を `note` に残す運用で十分か。
+- 暫定対応:
+  - enum相当は `type: str` + `note` に列挙。
+  - discriminated object / union / nested list object / 任意payloadは `type: any` + `note` に出典specと制約を記録。
+- 分類: v2向け構造変更
 
 発見時は以下の形式で追記する。
 

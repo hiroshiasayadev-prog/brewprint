@@ -20,6 +20,7 @@ const (
 	diagnosticDuplicateModelField       = "duplicate_model_field"
 	diagnosticDuplicatePrimaryKey       = "duplicate_primary_key"
 	diagnosticMissingRequiredField      = "missing_required_field"
+	diagnosticInvalidTypeRef            = "invalid_type_ref"
 	diagnosticDuplicateNode             = "duplicate_node"
 	diagnosticDuplicateMainNode         = "duplicate_main_node"
 	diagnosticDuplicateActor            = "duplicate_actor"
@@ -29,6 +30,12 @@ const (
 	diagnosticUnresolvedFlowNode        = "unresolved_flow_node"
 	diagnosticInvalidFlowBranch         = "invalid_flow_branch"
 	diagnosticUnmatchedJoinParam        = "unmatched_join_param"
+	diagnosticIncompatibleWiringType    = "incompatible_wiring_type"
+	diagnosticInvalidWiringSource       = "invalid_wiring_source"
+	diagnosticUnresolvedWiringSource    = "unresolved_wiring_source"
+	diagnosticInvalidForeachOverType    = "invalid_foreach_over_type"
+	diagnosticInvalidForeachReturns     = "invalid_foreach_returns"
+	diagnosticDuplicateFlowSource       = "duplicate_flow_source"
 	diagnosticUnresolvedTransitionState = "unresolved_transition_state"
 	diagnosticUnresolvedTransitionEvent = "unresolved_transition_event"
 	diagnosticDuplicateTransition       = "duplicate_transition"
@@ -78,6 +85,7 @@ func validateProject(project *semantic.Project, symbols *symbolTable) {
 	validateTaskDefinitions(project, symbols)
 	validateControlDefinitions(project, symbols)
 	validateEventDefinitions(project, symbols)
+	validateFlowWiringTypes(project, symbols)
 }
 
 func validateRequiredNodeIDs(project *semantic.Project, symbols *symbolTable) {
@@ -101,6 +109,20 @@ func validateModelDefinitions(project *semantic.Project, symbols *symbolTable) {
 		seenFields := map[string]struct{}{}
 		pkCount := 0
 		module := moduleForFileID(model.FileID)
+		if model.Kind == "list" {
+			if model.Element == "" {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticMissingRequiredField, model.FileID, "model element is required: "+model.QID.String())
+			} else {
+				validateTypeRef(project, symbols, model.FileID, module, model.Element, "model.element "+model.QID.String(), diagnosticUnresolvedModel, "unresolved model element: "+model.Element)
+			}
+		}
+		if model.Kind == "dict" {
+			if model.Value == "" {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticMissingRequiredField, model.FileID, "model value is required: "+model.QID.String())
+			} else {
+				validateTypeRef(project, symbols, model.FileID, module, model.Value, "model.value "+model.QID.String(), diagnosticUnresolvedModel, "unresolved model value: "+model.Value)
+			}
+		}
 		for _, field := range model.Fields {
 			fieldLabel := field.Name
 			if fieldLabel == "" {
@@ -118,8 +140,8 @@ func validateModelDefinitions(project *semantic.Project, symbols *symbolTable) {
 			}
 			if field.Type == "" {
 				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticMissingRequiredField, model.FileID, "model field type is required: "+model.QID.String()+"."+fieldLabel)
-			} else if !modelOrPrimitiveExists(project, module, field.Type) {
-				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedFieldType, model.FileID, "unresolved field type: "+model.QID.String()+"."+fieldLabel+" -> "+field.Type)
+			} else {
+				validateTypeRef(project, symbols, model.FileID, module, field.Type, "fields[].type "+model.QID.String()+"."+fieldLabel, diagnosticUnresolvedFieldType, "unresolved field type: "+model.QID.String()+"."+fieldLabel+" -> "+field.Type)
 			}
 			if field.FK != "" {
 				if !fieldExists(project, module, field.FK) {
@@ -228,8 +250,8 @@ func validateParams(project *semantic.Project, symbols *symbolTable, fileID sema
 		}
 		if param.ModelName == "" {
 			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticMissingRequiredField, fileID, fmt.Sprintf("%s model is required: %s", context, param.Name))
-		} else if !modelOrPrimitiveExists(project, module, param.ModelName) {
-			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedModel, fileID, fmt.Sprintf("unresolved %s model: %s", context, param.ModelName))
+		} else {
+			validateTypeRef(project, symbols, fileID, module, param.ModelName, context+" param "+param.Name, diagnosticUnresolvedModel, fmt.Sprintf("unresolved %s model: %s", context, param.ModelName))
 		}
 	}
 }
@@ -240,19 +262,23 @@ func validateReturn(project *semantic.Project, symbols *symbolTable, fileID sema
 	}
 	if ret.ModelName == "" {
 		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticMissingRequiredField, fileID, context+" model is required: "+owner+"."+ret.Name)
-	} else if !modelExists(project, ret.Model) {
-		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedModel, fileID, "unresolved "+context+" model: "+ret.ModelName)
+	} else {
+		module := moduleForFileID(fileID)
+		validateTypeRef(project, symbols, fileID, module, ret.ModelName, context+" "+owner+"."+ret.Name, diagnosticUnresolvedModel, "unresolved "+context+" model: "+ret.ModelName)
 	}
 }
 
-func modelOrPrimitiveExists(project *semantic.Project, module string, raw string) bool {
-	if raw == "" {
+func validateTypeRef(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, module string, raw string, position string, unresolvedCode string, unresolvedMessage string) bool {
+	ref, err := parseTypeRef(raw, module)
+	if err != nil {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidTypeRef, fileID, fmt.Sprintf("invalid TypeRef %q at %s: %v", raw, position, err))
 		return false
 	}
-	if isPrimitive(raw) {
-		return true
+	if !typeRefModelsExist(project, ref) {
+		symbols.addDiagnosticCode(semantic.SeverityError, unresolvedCode, fileID, unresolvedMessage)
+		return false
 	}
-	return modelExists(project, resolveModelQID(module, raw))
+	return true
 }
 
 func modelExists(project *semantic.Project, qid semantic.QualifiedID) bool {
@@ -283,4 +309,238 @@ func fieldExists(project *semantic.Project, module string, raw string) bool {
 func isPrimitive(raw string) bool {
 	_, ok := primitiveTypes[raw]
 	return ok
+}
+
+func validateFlowWiringTypes(project *semantic.Project, symbols *symbolTable) {
+	for fileID, entries := range project.FlowByFile {
+		validateDuplicateFlowSources(project, symbols, fileID, entries)
+		visibleCollected := map[string]*semantic.FlowCollectedSource{}
+		for _, entry := range entries {
+			switch entry.Kind {
+			case semantic.FlowKindStep:
+				validateFlowParamWirings(project, symbols, fileID, entry.Step.Params, paramsForTask(project, entry.Step.Task), "step.params "+entry.Step.TaskID, nil, visibleCollected, "")
+			case semantic.FlowKindBranch:
+				validateFlowParamWirings(project, symbols, fileID, entry.Branch.Params, paramsForBranch(project, entry.Branch.Branch), "branch.params "+entry.Branch.BranchID, nil, visibleCollected, "")
+				for _, branchCase := range entry.Branch.Cases {
+					validateFlowParamWirings(project, symbols, fileID, branchCase.Step.Params, paramsForTask(project, branchCase.Step.Task), "branch.cases[].params "+entry.Branch.BranchID+"."+branchCase.Label, nil, visibleCollected, "")
+				}
+			case semantic.FlowKindFork:
+				for branchIndex, branch := range entry.Fork.Branches {
+					for _, step := range branch.Steps {
+						validateFlowParamWirings(project, symbols, fileID, step.Params, paramsForTask(project, step.Task), fmt.Sprintf("fork.branches[%d].steps[].params %s", branchIndex, step.TaskID), nil, visibleCollected, "")
+					}
+				}
+				validateFlowParamWirings(project, symbols, fileID, entry.Fork.JoinParams, paramsForJoin(project, entry.Fork.Join), "join.params "+entry.Fork.JoinID, nil, visibleCollected, "")
+			case semantic.FlowKindForeach:
+				if entry.Foreach.Returns != "" {
+					validateForeachReturns(project, symbols, fileID, entry.Foreach)
+				}
+				itemType, itemOK := resolveForeachItemType(project, symbols, fileID, entry.Foreach, visibleCollected)
+				validateFlowParamWirings(project, symbols, fileID, entry.Foreach.Params, paramsForTask(project, entry.Foreach.Task), "foreach.params "+entry.Foreach.TaskID, itemTypeResolver(itemType, itemOK), visibleCollected, entry.Foreach.Returns)
+				if entry.Foreach.Returns != "" {
+					if collected := project.FlowCollectedSourcesByFile[fileID][entry.Foreach.Returns]; collected != nil {
+						visibleCollected[entry.Foreach.Returns] = collected
+					}
+				}
+			}
+		}
+	}
+}
+
+func validateDuplicateFlowSources(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, entries []semantic.FlowEntry) {
+	nodeIDs := map[string]struct{}{}
+	for _, node := range project.NodesByFile[fileID] {
+		if node.GetID() != "" {
+			nodeIDs[node.GetID()] = struct{}{}
+		}
+	}
+	seenReturns := map[string]struct{}{}
+	for _, entry := range entries {
+		if entry.Kind != semantic.FlowKindForeach || entry.Foreach.Returns == "" {
+			continue
+		}
+		name := entry.Foreach.Returns
+		if _, exists := nodeIDs[name]; exists {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateFlowSource, fileID, "duplicate flow source: foreach.returns conflicts with node id: "+name)
+		}
+		if _, exists := seenReturns[name]; exists {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateFlowSource, fileID, "duplicate flow source: foreach.returns conflicts with another foreach.returns: "+name)
+		}
+		seenReturns[name] = struct{}{}
+	}
+}
+
+func validateForeachReturns(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, foreach semantic.ForeachFlow) {
+	if task := project.TasksByQID[foreach.Task]; task == nil || task.Returns == nil {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidForeachReturns, fileID, "invalid foreach.returns for "+foreach.TaskID+": apply task has no returns")
+	}
+	for _, wiring := range foreach.Params {
+		if wiring.Source.Raw == foreach.Returns {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidForeachReturns, fileID, "invalid foreach.returns for "+foreach.TaskID+": foreach.params references its own returns: "+foreach.Returns)
+		}
+	}
+}
+
+func validateFlowParamWirings(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, wirings []semantic.ParamWiring, targetParams []semantic.Param, position string, itemResolver func() (*semantic.TypeRef, bool), visibleCollected map[string]*semantic.FlowCollectedSource, invalidSelfReturn string) {
+	if len(wirings) == 0 || len(targetParams) == 0 {
+		return
+	}
+	targetByName := map[string]semantic.Param{}
+	for _, param := range targetParams {
+		targetByName[param.Name] = param
+	}
+	for _, wiring := range wirings {
+		if invalidSelfReturn != "" && wiring.Source.Raw == invalidSelfReturn {
+			continue
+		}
+		target, ok := targetByName[wiring.TargetParam]
+		if !ok || !typeRefResolved(project, target.TypeRef) {
+			continue
+		}
+		source, ok := resolveWiringSourceTypeRef(project, symbols, fileID, wiring.Source, position+"."+wiring.TargetParam, itemResolver, visibleCollected)
+		if !ok || !typeRefResolved(project, source) {
+			continue
+		}
+		if !typeRefsCompatible(project, source, target.TypeRef) {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticIncompatibleWiringType, fileID, fmt.Sprintf("incompatible wiring type at %s.%s: source %s is not compatible with target %s", position, wiring.TargetParam, source.String(), target.TypeRef.String()))
+		}
+	}
+}
+
+func resolveWiringSourceTypeRef(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, source semantic.FlowSource, position string, itemResolver func() (*semantic.TypeRef, bool), visibleCollected map[string]*semantic.FlowCollectedSource) (*semantic.TypeRef, bool) {
+	switch source.Kind {
+	case semantic.FlowSourceParam:
+		ref, ok := mainParamTypeRef(project, fileID, source.ParamName)
+		if !ok {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedWiringSource, fileID, "unresolved wiring source at "+position+": "+source.Raw)
+			return nil, false
+		}
+		return ref, true
+	case semantic.FlowSourceItem:
+		if itemResolver == nil {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidWiringSource, fileID, "invalid wiring source at "+position+": $item is only valid in foreach.params")
+			return nil, false
+		}
+		return itemResolver()
+	case semantic.FlowSourceNode:
+		if source.Node == "" {
+			if collected := visibleCollected[source.Raw]; collected != nil {
+				return collected.TypeRef, true
+			}
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedWiringSource, fileID, "unresolved wiring source at "+position+": "+source.Raw)
+			return nil, false
+		}
+		if task := project.TasksByQID[source.Node]; task != nil {
+			if task.Returns == nil || task.Returns.TypeRef == nil {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidWiringSource, fileID, "invalid wiring source at "+position+": node has no returns: "+source.Raw)
+				return nil, false
+			}
+			return task.Returns.TypeRef, true
+		}
+		if join := project.JoinsByQID[source.Node]; join != nil {
+			if join.Returns == nil || join.Returns.TypeRef == nil {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidWiringSource, fileID, "invalid wiring source at "+position+": node has no returns: "+source.Raw)
+				return nil, false
+			}
+			return join.Returns.TypeRef, true
+		}
+		if project.NodesByQID[source.Node] != nil {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidWiringSource, fileID, "invalid wiring source at "+position+": node is not a task or join: "+source.Raw)
+			return nil, false
+		}
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedWiringSource, fileID, "unresolved wiring source at "+position+": "+source.Raw)
+		return nil, false
+	default:
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedWiringSource, fileID, "unresolved wiring source at "+position+": "+source.Raw)
+		return nil, false
+	}
+}
+
+func resolveForeachItemType(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, foreach semantic.ForeachFlow, visibleCollected map[string]*semantic.FlowCollectedSource) (*semantic.TypeRef, bool) {
+	overType, ok := resolveWiringSourceTypeRef(project, symbols, fileID, foreach.Over, "foreach.over "+foreach.TaskID, nil, visibleCollected)
+	if !ok || !typeRefResolved(project, overType) {
+		return nil, false
+	}
+	if typeRefIsAny(overType) {
+		return overType, true
+	}
+	normalized := normalizeContainerTypeRef(project, overType)
+	if normalized == nil || normalized.Kind != semantic.TypeRefList || normalized.Elem == nil || !typeRefResolved(project, normalized.Elem) {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidForeachOverType, fileID, fmt.Sprintf("invalid foreach.over type for %s: %s is not list<T>", foreach.TaskID, overType.String()))
+		return nil, false
+	}
+	return normalized.Elem, true
+}
+
+func itemTypeResolver(itemType *semantic.TypeRef, ok bool) func() (*semantic.TypeRef, bool) {
+	return func() (*semantic.TypeRef, bool) {
+		if !ok {
+			return nil, false
+		}
+		return itemType, true
+	}
+}
+
+func mainParamTypeRef(project *semantic.Project, fileID semantic.FileID, name string) (*semantic.TypeRef, bool) {
+	mainQID := project.MainNodeByFile[fileID]
+	mainTask := project.TasksByQID[mainQID]
+	if mainTask == nil {
+		return nil, false
+	}
+	for _, param := range mainTask.Params {
+		if param.Name == name {
+			return param.TypeRef, true
+		}
+	}
+	return nil, false
+}
+
+func typeRefResolved(project *semantic.Project, ref *semantic.TypeRef) bool {
+	if ref == nil {
+		return false
+	}
+	switch ref.Kind {
+	case semantic.TypeRefPrimitive:
+		return true
+	case semantic.TypeRefNamedModel:
+		model := project.ModelsByQID[ref.Model]
+		if model == nil {
+			return false
+		}
+		switch model.Kind {
+		case "list":
+			return typeRefResolved(project, model.ElementRef)
+		case "dict":
+			return typeRefResolved(project, model.ValueRef)
+		default:
+			return true
+		}
+	case semantic.TypeRefList:
+		return typeRefResolved(project, ref.Elem)
+	case semantic.TypeRefDict:
+		return typeRefResolved(project, ref.Value)
+	default:
+		return false
+	}
+}
+
+func paramsForTask(project *semantic.Project, qid semantic.QualifiedID) []semantic.Param {
+	if task := project.TasksByQID[qid]; task != nil {
+		return task.Params
+	}
+	return nil
+}
+
+func paramsForBranch(project *semantic.Project, qid semantic.QualifiedID) []semantic.Param {
+	if branch := project.BranchesByQID[qid]; branch != nil {
+		return branch.Params
+	}
+	return nil
+}
+
+func paramsForJoin(project *semantic.Project, qid semantic.QualifiedID) []semantic.Param {
+	if join := project.JoinsByQID[qid]; join != nil {
+		return join.Params
+	}
+	return nil
 }

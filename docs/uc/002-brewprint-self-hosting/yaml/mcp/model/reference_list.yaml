@@ -1,0 +1,8 @@
+# MCP Reference list
+
+nodes:
+  - id: reference_list
+    type: model
+    kind: list
+    element: reference
+    note: "MCP response envelopeで使うreference配列。"

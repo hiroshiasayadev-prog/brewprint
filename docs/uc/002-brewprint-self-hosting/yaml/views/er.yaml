@@ -1,0 +1,17 @@
+# UC-002 Phase A MCP公開contract ER view定義
+# as: er_diagram で横断view YAML を宣言する。
+# Phase A範囲のmcp moduleを対象に含める。
+#
+# 注意:
+# - ER rendererの描画対象は store.kind: db と、それに紐づく model.kind: struct のみ。
+# - Phase AのResolvedProjectは store.kind: context として表すため、ER図には登場しない。
+# - MCP request / response / common schema model はDB entityではなくcontract schemaとして扱う。
+
+as: er_diagram
+id: mcp_contract_er
+note: |
+  UC-002 Phase A MCP公開contractのER view。
+  MCP schema model群とResolvedProject context storeを含むmcp moduleを対象にする。
+  ただしv1 ER rendererはDB store由来のentityのみを描画するため、Phase Aのcontract schema modelはcoverage.mdで確認する。
+modules:
+  - module: mcp

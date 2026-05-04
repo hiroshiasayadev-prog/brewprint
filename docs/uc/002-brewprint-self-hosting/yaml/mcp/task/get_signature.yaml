@@ -1,0 +1,70 @@
+# MCP tool `get_signature` task / flow
+# docs/spec/mcp/tools/get-signature.md に対応。
+
+nodes:
+  - id: get_signature
+    type: task
+    main: true
+    params:
+      - name: request
+        model: get_signature_request
+    returns:
+      name: response
+      model: get_signature_response
+    note: |
+      MCP tool `get_signature` の公開contract。
+      MCP toolでありHTTP endpointではないため endpoint: true は付けない。
+      対象object単体の外形、signature、doc、diagnosticsを返す。
+
+  - id: validate_request
+    type: task
+    params:
+      - name: request
+        model: get_signature_request
+    returns:
+      name: validated_request
+      model: get_signature_request
+    note: |
+      tool input schemaとselectorを検証する。
+      selectorの有効な組み合わせや対象kind別の制約はv1 modelでは表現できないためrequest model側のnoteで保持する。
+
+  - id: query_service
+    type: task
+    params:
+      - name: request
+        model: get_signature_request
+    returns:
+      name: query_result
+      model: any
+    reads:
+      - resolved_project_store
+    note: |
+      QueryService境界。
+      Raw YAML ASTではなくResolvedProject上のsemantic objectを読む。
+      node / transition / field などselector対象ごとにsignatureを取得する。
+      対象kind別signatureのshape差分はv1 modelでは厳密表現できないためresponse model側のnoteで保持する。
+
+  - id: build_response
+    type: task
+    params:
+      - name: query_result
+        model: any
+    returns:
+      name: response
+      model: get_signature_response
+    note: |
+      QueryService結果をMCP response payloadへ整形する。
+      object / signature / doc / diagnostics を返す。
+
+flow:
+  - step: validate_request
+    params:
+      request: $params.request
+
+  - step: query_service
+    params:
+      request: validate_request
+
+  - step: build_response
+    params:
+      query_result: query_service

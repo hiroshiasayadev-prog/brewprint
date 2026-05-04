@@ -1,0 +1,21 @@
+# MCP list_endpoints response
+# docs/spec/mcp/tools/list-endpoints.md §3〜§4 に対応。
+
+nodes:
+  - id: list_endpoints_response
+    type: model
+    kind: struct
+    fields:
+      - name: tables
+        type: any
+        note: "必須。API Tableごとのendpoint一覧。各tableは id / http_root_path / sections を持つ。専用list modelを作らずanyで暫定表現する。"
+      - name: diagnostics
+        type: diagnostic_list
+        note: "必須。Diagnostic list。"
+    note: |
+      MCP tool `list_endpoints` のresponse model。
+      docs/spec/mcp/tools/list-endpoints.md §3 Output、および §4 endpoint objectに対応する。
+      `tables[]` は API Table view単位の集約結果で、sections[] / endpoints[] を含むnested list objectである。
+      endpoint objectは method / path / leaf_path / task を必須とし、params / returns / source を任意で持つ。
+      route合成はADR-028の規則に従い、task(endpoint=true)の単純列挙ではない。
+      nested list構造とendpoint objectのoptional fieldをv1 modelで厳密表現できないため any + note で保持する。

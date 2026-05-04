@@ -40,8 +40,9 @@ type Project struct {
 	ReferencesBySource map[ObjectKey][]Reference
 	ReferencesByTarget map[ObjectKey][]Reference
 
-	FlowByFile        map[FileID][]FlowEntry
-	TransitionsByFile map[FileID][]Transition
+	FlowByFile                 map[FileID][]FlowEntry
+	FlowCollectedSourcesByFile map[FileID]map[string]*FlowCollectedSource
+	TransitionsByFile          map[FileID][]Transition
 
 	TransitionsByStateEventGuard map[TransitionKey]TransitionRef
 	TransitionsByStateEvent      map[TransitionEventKey][]TransitionRef
@@ -73,6 +74,7 @@ func NewProject() *Project {
 		ReferencesBySource:           map[ObjectKey][]Reference{},
 		ReferencesByTarget:           map[ObjectKey][]Reference{},
 		FlowByFile:                   map[FileID][]FlowEntry{},
+		FlowCollectedSourcesByFile:   map[FileID]map[string]*FlowCollectedSource{},
 		TransitionsByFile:            map[FileID][]Transition{},
 		TransitionsByStateEventGuard: map[TransitionKey]TransitionRef{},
 		TransitionsByStateEvent:      map[TransitionEventKey][]TransitionRef{},

@@ -1,0 +1,37 @@
+# MCP get_reference_tree response
+# docs/spec/mcp/tools/get-reference-tree.md §3〜§6 に対応。
+
+nodes:
+  - id: get_reference_tree_response
+    type: model
+    kind: struct
+    fields:
+      - name: root
+        type: object_ref
+        note: "必須。traversal root ObjectRef。"
+      - name: direction
+        type: str
+        note: "必須。実際に使ったdirection。out / in / both。"
+      - name: depth
+        type: int
+        note: "必須。実際に使ったmax traversal depth。"
+      - name: nodes
+        type: any
+        note: "必須。到達object entry配列。各entryは object:ObjectRef / depth:int / via:string[] を持つ。専用list modelを作らずanyで暫定表現する。"
+      - name: edges
+        type: any
+        note: "必須。traversalで辿ったReference entry配列。Referenceにdepth:intを加えたshape。reference_listではdepth拡張を表せないためanyで暫定表現する。"
+      - name: truncated
+        type: bool
+        note: "必須。max_nodes / max_edges により打ち切ったか。"
+      - name: truncated_reasons
+        type: any
+        note: "必須。max_nodes / max_edges 等の打ち切り理由文字列配列。専用list modelを作らずanyで暫定表現する。"
+      - name: diagnostics
+        type: diagnostic_list
+        note: "必須。Diagnostic list。"
+    note: |
+      MCP tool `get_reference_tree` のresponse model。
+      docs/spec/mcp/tools/get-reference-tree.md §3 のOutput、§4 Node entry、§5 Edge entry、§6 Traversal semanticsに対応する。
+      tool名はtreeだが返却形式は nodes[] / edges[] からなるbounded reference graph。
+      `nodes` / `edges` / `truncated_reasons` は配列要素shapeの拡張やstring list制約をv1 modelで厳密表現できないため any + note で保持する。

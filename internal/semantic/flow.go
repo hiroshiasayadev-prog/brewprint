@@ -32,6 +32,14 @@ type ForeachFlow struct {
 	Returns string
 }
 
+type FlowCollectedSource struct {
+	Name              string
+	FileID            FileID
+	ProducedByForeach QualifiedID
+	ProducedByTaskID  string
+	TypeRef           *TypeRef
+}
+
 type ForkFlow struct {
 	Fork       QualifiedID
 	ForkID     string

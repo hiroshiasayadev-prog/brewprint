@@ -1,0 +1,13 @@
+# ResolvedProject context store
+# MCP tool task群がQueryService境界で読む解決済みproject context。
+
+nodes:
+  - id: resolved_project_store
+    type: store
+    kind: context
+    of: resolved_project
+    note: |
+      semantic buildを通過したResolvedProjectを保持するcontext store。
+      MCP tool task内の `query_service` sub taskが reads する。
+      Raw YAML ASTではなく、validation / name resolution / derived model build / index build後のsemantic modelを指す。
+      `store.kind: context` は実行時contextであり、ER図のDB entityとしては扱わない。

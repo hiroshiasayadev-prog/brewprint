@@ -1,0 +1,35 @@
+# MCP inspect response
+# docs/spec/mcp/tools/inspect.md §3〜§14 に対応。
+
+nodes:
+  - id: inspect_response
+    type: model
+    kind: struct
+    fields:
+      - name: object
+        type: object_ref
+        note: "必須。inspect対象ObjectRef。"
+      - name: signature
+        type: any
+        note: "必須。get_signature相当の外形。task / store / model / state / event / view / file 等でshapeが異なるためany。"
+      - name: doc
+        type: str
+        note: "任意。note由来の説明。"
+      - name: source
+        type: source_location
+        note: "任意。定義元SourceLocation。"
+      - name: members
+        type: any
+        note: "任意。objectが内包する要素。kind別shapeが大きく異なるためanyで暫定表現する。"
+      - name: references
+        type: reference_list
+        note: "任意。主要reference一覧。"
+      - name: diagnostics
+        type: diagnostic_list
+        note: "必須。Diagnostic list。"
+    note: |
+      MCP tool `inspect` のresponse model。
+      docs/spec/mcp/tools/inspect.md §3 Common output shape、および §4〜§14 のkind別inspect shapeに対応する。
+      `signature` と `members` は task / store / model / state / event / scenario / transition / field / api_table / er_diagram / file ごとに異なるunion相当のpayloadである。
+      brewprint v1 modelではunion / discriminated object / nested arbitrary objectを厳密表現できないため any + note で保持する。
+      `references` は主要referenceのみを返す任意fieldで、詳細なdirect referencesは `get_references` が担当する。

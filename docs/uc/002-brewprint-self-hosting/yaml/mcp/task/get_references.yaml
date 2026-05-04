@@ -1,0 +1,72 @@
+# MCP tool `get_references` task / flow
+# docs/spec/mcp/tools/get-references.md に対応。
+
+nodes:
+  - id: get_references
+    type: task
+    main: true
+    params:
+      - name: request
+        model: get_references_request
+    returns:
+      name: response
+      model: get_references_response
+    note: |
+      MCP tool `get_references` の公開contract。
+      MCP toolでありHTTP endpointではないため endpoint: true は付けない。
+      対象objectの直接referenceを返す。
+      MCP v1ではdepthは常に1で、transitive traversalはget_reference_treeに委ねる。
+
+  - id: validate_request
+    type: task
+    params:
+      - name: request
+        model: get_references_request
+    returns:
+      name: validated_request
+      model: get_references_request
+    note: |
+      tool input schemaとselector / direction / kindsを検証する。
+      direction は out / in / both のenum、省略時 out。
+      kinds はreference kind filterだが、enum値集合はv1 modelでは表現できないためrequest model側のnoteで保持する。
+
+  - id: query_service
+    type: task
+    params:
+      - name: request
+        model: get_references_request
+    returns:
+      name: query_result
+      model: any
+    reads:
+      - resolved_project_store
+    note: |
+      QueryService境界。
+      Raw YAML ASTではなくResolvedProject上のsemantic object reference indexを読む。
+      direction / kinds filterに従ってdirect referenceのみを取得する。
+      flow wiringはReference.kindではなくinspect(task).members.flow.entries側の語彙として扱う。
+
+  - id: build_response
+    type: task
+    params:
+      - name: query_result
+        model: any
+    returns:
+      name: response
+      model: get_references_response
+    note: |
+      QueryService結果をMCP response payloadへ整形する。
+      object / direction / depth=1 / references / diagnostics を返す。
+
+flow:
+  - step: validate_request
+    params:
+      request: $params.request
+
+  - step: query_service
+    params:
+      request: validate_request
+
+  - step: build_response
+    params:
+      query_result: query_service

@@ -1,0 +1,28 @@
+# MCP get_source response
+# docs/spec/mcp/tools/get-source.md §3 に対応。
+
+nodes:
+  - id: get_source_response
+    type: model
+    kind: struct
+    fields:
+      - name: object
+        type: object_ref
+        note: "必須。source取得対象のObjectRef。"
+      - name: source
+        type: source_location
+        note: "必須。対応するSourceLocation。line / columnが取得できない場合はfileのみでもよい。"
+      - name: snippet
+        type: any
+        note: "必須。language: yaml と text を持つobject。専用modelを作らずanyで暫定表現する。"
+      - name: fallback
+        type: str
+        note: "任意。fallbackした場合はfile。enum制約はnoteで保持する。"
+      - name: diagnostics
+        type: diagnostic_list
+        note: "必須。fallback時のsource_range_unavailable等を含む。"
+    note: |
+      MCP tool `get_source` のresponse model。
+      docs/spec/mcp/tools/get-source.md §3 のOutputに対応する。
+      `snippet` は `{ language: "yaml", text: "..." }` を持つが、tool固有の小さなobjectのため any + note で保持する。
+      Raw YAML ASTではなく、ResolvedProject上のsemantic objectに紐づくsource補助情報として扱う。

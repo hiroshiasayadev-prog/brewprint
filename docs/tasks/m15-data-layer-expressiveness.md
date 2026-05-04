@@ -2,8 +2,8 @@
 
 - **status**: open
 - **scope**: internal/semantic / internal/resolve / spec / docs/adr / tests
-- **source**: ADR-060 (TypeRef + flow wiring type compatibility) を起点とする v1.1 系の表現力拡張
-- **last_updated**: 2026-05-03
+- **source**: ADR-060 (TypeRef + flow wiring type compatibility) / ADR-061 (foreach.returns collected asset) を起点とする v1.1 系の表現力拡張
+- **last_updated**: 2026-05-04
 
 ---
 
@@ -20,7 +20,8 @@ brewprint の型表現力には以下の制約が残っていた。
 - enum / discriminated object / inline struct など、UC-002 self-hosting で必要になる data layer の表現力が不足
 
 ADR-060 はこのうち **TypeRef 導入と flow wiring type compatibility** を v1.1 の基礎として確定した。
-M15 はその ADR-060 を実装に落とし込みつつ、関連する v1.1 表現力拡張をまとめて扱う milestone である。
+ADR-061 は **foreach.returns collected asset source** を Phase B として確定した。
+M15 は ADR-060 / ADR-061 を実装に落とし込みつつ、関連する v1.1 表現力拡張をまとめて扱う milestone である。
 
 当初 M14b として独立 milestone を切る案もあったが、ADR-060 が v1.1 TypeRef 前提に拡張された結果、
 M14b 独立の意義が薄れ、本 milestone（M15）に吸収する判断をした（ADR-060 §M15 への影響）。
@@ -54,8 +55,9 @@ M15 では以下を行わない。
 ## Phase 構成
 
 M15 は3つの Phase に分けて進める。
-Phase A は ADR-060 で確定済みのため即着手可能。
-Phase B / C は ADR-061（予定）および追加 ADR の起票を伴う。
+Phase A は ADR-060 で確定済み。
+Phase B は ADR-061 で accepted 済み。
+Phase C は追加 ADR の起票を伴う。
 
 ### Phase A: TypeRef + flow wiring type validation
 
@@ -63,30 +65,31 @@ ADR-060 を実装と spec に落とし込む。
 
 #### 仕様反映
 
-- [ ] **`docs/spec/nodes.md` または新規 `docs/spec/type-ref.md` に TypeRef 構文を追加**
+- [x] **`docs/spec/nodes.md` または新規 `docs/spec/type-ref.md` に TypeRef 構文を追加**
   - 構文形式: primitive / named model / inline `list<T>` / inline `dict<T>`
   - 再帰的定義の許容範囲（`list<dict<user>>` 等の入れ子）
   - 深さ制限または lint 方針は Phase C で扱うため、本 phase では「制限は M15 Phase C で扱う」とのみ明記
   - TypeRef を受け取るフィールド: `param.model` / `returns.model` / `field.type` / `model.element` / `model.value`
   - 由来: ADR-060 §1, §9
 
-- [ ] **`docs/spec/edges.md` §1（flow:セクション）末尾に「§型互換性ルール」節を追加**
+- [x] **`docs/spec/edges.md` §1（flow:セクション）末尾に「§型互換性ルール」節を追加**
   - ADR-060 §3 のルールを spec として記述
   - ADR-060 §4 の検証対象 wiring 一覧
   - ADR-060 §5 の wiring source 型解決ルール（node ID / `$params.<name>` / `$item`）
   - ADR-060 §7 の型解決失敗時の抑制ルール
   - 由来: ADR-060 §3〜§7, §9
 
-- [ ] **`docs/spec/edges.md` §1-5 foreach.over の記述を ADR-060 と整合させる**
+- [x] **`docs/spec/edges.md` §1-5 foreach.over の記述を ADR-060 と整合させる**
   - 現状: 「`$params.field` を指定した場合、parser/validator は `main.params.<field>.model` が `kind: list` であることを検証する」
   - ADR-060 後: 「`foreach.over` の解決結果が list を表す TypeRef でない場合 `invalid_foreach_over_type` を出す」
   - UC-001 `validate_cart.yaml` コメントに記録された spec gap（`foreach.over` に `$params.field` を指定可能か明文化されていない件）を併せて解消
   - 由来: ADR-060 §5-3
 
-- [ ] **`docs/spec/diagnostics.md` に新 diagnostic 3件を追加**
+- [x] **`docs/spec/diagnostics.md` に新 diagnostic 4件を追加**
   - `incompatible_wiring_type` (severity: error)
   - `invalid_wiring_source` (severity: error)
   - `invalid_foreach_over_type` (severity: error)
+  - `invalid_type_ref` (severity: error)
   - 各 diagnostic の発生条件・メッセージフォーマットを記述
   - 由来: ADR-060 §6, §9
 
@@ -100,8 +103,8 @@ ADR-060 を実装と spec に落とし込む。
 
 - [ ] **rawyaml / semantic で `list<T>` / `dict<T>` 構文をパース**
   - 既存の `ModelName` (raw string) パース箇所を拡張
-  - パースエラー時の diagnostic（仮称 `invalid_type_ref` 等）を要否含めて検討
-  - 由来: ADR-060 §1
+  - パースエラー時の diagnostic は `invalid_type_ref` とする
+  - 由来: ADR-060 §1, §6
 
 - [ ] **既存の named list/dict model 解決ロジックを TypeRef に正規化**
   - `kind: list, element: T` → 内部表現として inline `list<T>` と同じ container shape を引けるようにする
@@ -118,8 +121,8 @@ ADR-060 を実装と spec に落とし込む。
   - 仮称: `typeRefsCompatible(a, b semantic.TypeRef) bool`
   - 由来: ADR-060 §3
 
-- [ ] **diagnostic コード一覧に新 3 件を追加**
-  - `internal/resolve/diagnostics.go` 等に const 追加
+- [ ] **diagnostic コード一覧に新 4 件を追加**
+  - `internal/resolve/diagnostics.go` 等に `incompatible_wiring_type` / `invalid_wiring_source` / `invalid_foreach_over_type` / `invalid_type_ref` を追加
   - 由来: ADR-060 §6
 
 #### テスト
@@ -154,33 +157,83 @@ ADR-060 を実装と spec に落とし込む。
 
 ### Phase B: foreach.returns collected asset 参照ルール
 
-ADR-061 (予定) を起票し、foreach の collected asset を後続 flow から参照する場合のルールを定める。
+ADR-061 は accepted 済み。
+foreach の collected asset を後続 flow から参照する場合のルールを spec に反映し、実装へ落とし込む。
 
-#### 検討範囲
+#### 確定した仕様範囲
 
-- foreach.returns の意味整理（source id か label か）
-- collected asset を後続 flow から参照する場合の source id 自動生成ルール
-- `foreach.id` フィールド導入の要否
-- source id 重複ルール
-- ADR-016 との整合（supersedes か追補か）
-- main task returns との暗黙接続パターン（UC-001 `validate_cart.yaml` の例: foreach.returns と main returns の name 一致）
+- `foreach.returns` は apply 先 task の `returns` を iteration ごとに collect した collected asset source 名である
+- `foreach.returns` は optional。side-effect only の foreach では省略できる
+- 省略時は collected asset source を semantic model に生成しない。renderer / inspect / MCP も internal pseudo source を露出しない
+- apply 先 task に `returns` がないにもかかわらず `foreach.returns` が指定された場合は `invalid_foreach_returns`
+- `foreach.returns` で宣言された collected asset は、同一 flow file 内の後続 step / branch / fork / foreach から bare wiring source として参照できる
+- 当該 foreach 自身の `params` 内から自分の `returns` 名を参照した場合は `invalid_foreach_returns`
+- collected asset source の TypeRef は apply 先 task の `returns.model` `T` から `list<T>` として導出する
+- apply 先 task の `returns.model` が `any` の場合は `list<any>`
+- apply 先 task の `returns.model` が解決不能な場合、collected asset source の TypeRef も解決不能として扱い、後続 wiring の `incompatible_wiring_type` は抑制する
+- `foreach.returns` は同一 flow file 内の bare wiring source 名前空間に参加し、node id / 他の `foreach.returns` と重複してはならない。重複時は `duplicate_flow_source`
+- task の `returns.name` と `foreach.returns` が同名でも衝突扱いしない
+- ADR-023 の制御フロースコープは維持し、`foreach.returns` は collect 結果だけを外部 source として公開する escape hatch とする
+- `foreach.id` は導入しない
+- `task.returns.source` および main task `returns.name` と `foreach.returns` の名前一致による暗黙接続は本 Phase では扱わない。ADR-062 領域として未実装のままにする
 
-#### Tasks
+#### 仕様反映
 
-- [ ] **UC-001 / UC-002 で foreach.returns を後続 flow から参照する具体例を観測する**
-  - UC-001 `validate_cart.yaml` 段階では後続参照の実例なし（M15 Phase A 進行中に Phase B 起票判断材料として再評価）
-  - UC-002 self-hosting 開始後に collected asset を後続参照するケースが出現すれば、その時点で ADR-061 を起票
+- [x] **ADR-061 を accepted として確定**
+- [x] **`docs/spec/edges.md` に `foreach.returns` collected asset source 仕様を反映**
+  - `foreach.returns` の意味、optional、省略時の扱い
+  - 後続 flow からの bare source 参照
+  - TypeRef = `list<T>` 導出
+  - source 名前空間・重複ルール
+  - 制御フロースコープの escape hatch
+  - `foreach.id` 非導入、task return source 非対象
+- [x] **`docs/spec/diagnostics.md` に ADR-061 diagnostics を反映**
+  - `duplicate_flow_source`
+  - `invalid_foreach_returns`
+  - `unresolved_wiring_source`
+  - `invalid_wiring_source` との区別
 
-- [ ] **ADR-061 起票（タイミングは具体例観測後）**
-  - status: proposed → 議論 → accepted
+#### 実装
 
-- [ ] **ADR-061 acceptance 後、spec / 実装に反映**
-  - 詳細タスクは ADR-061 起票時に追記
+- [ ] **collected asset source を semantic / flow resolver に登録**
+- [ ] **`duplicate_flow_source` を検出**
+  - `foreach.returns` と同一 flow file 内 node id の重複
+  - `foreach.returns` 同士の重複
+  - task `returns.name` との同名は衝突扱いしない
+- [ ] **`invalid_foreach_returns` を検出**
+  - apply 先 task に `returns` がないのに `foreach.returns` が指定されている
+  - 当該 foreach 自身の `params` 内から自分の `returns` 名を参照している
+- [ ] **`unresolved_wiring_source` を追加**
+  - node id / `$params.<name>` / `$item` / collected asset source のいずれとしても解決できない wiring source を診断する
+  - `invalid_wiring_source` は「参照先は存在するが、その文脈では source として使えない」場合に限定する
+- [ ] **collected asset source TypeRef = `list<T>` を導出**
+  - apply 先 task `returns.model` が `T` の場合は `list<T>`
+  - `any` の場合は `list<any>`
+  - `returns.model` が解決不能な場合は collected asset source TypeRef も解決不能として扱う
+- [ ] **後続 wiring source として collected asset を解決**
+  - 同一 flow file 内の後続 step / branch / fork / foreach から bare source として参照可能にする
+  - 自分自身の `foreach.params` から自分の `returns` 名を参照することは許可しない
+- [ ] **`foreach.returns` 省略時は source を生成しない**
+  - semantic model に collected asset source を作らない
+  - renderer / inspect / MCP に internal pseudo source を露出しない
+- [ ] **ADR-062 領域の task return source は未実装のままにする**
+  - `task.returns.source` は追加しない
+  - main task `returns.name` と `foreach.returns` の名前一致による暗黙接続は実装しない
 
-#### Phase B 起票判断ポリシー
+#### テスト
 
-- UC-002 self-hosting で collected asset の後続参照が必要になった時点で起票
-- それまでは設計を凍結し、Phase A / Phase C を優先する
+- [ ] **collected asset source 解決テスト**
+  - 後続 step / branch / fork / foreach から `foreach.returns` を参照できる
+  - `foreach.returns` の TypeRef が `list<T>` として target param と互換判定される
+- [ ] **省略時のテスト**
+  - `foreach.returns` 省略時に source が生成されない
+  - 省略時の internal pseudo source が renderer / inspect / MCP に露出しない
+- [ ] **diagnostic テスト**
+  - `duplicate_flow_source`
+  - `invalid_foreach_returns`
+  - `unresolved_wiring_source`
+  - `invalid_wiring_source` との区別
+  - TypeRef 解決不能時に `incompatible_wiring_type` が抑制される
 
 ---
 

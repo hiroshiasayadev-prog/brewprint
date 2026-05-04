@@ -1,0 +1,26 @@
+# MCP object selector
+# docs/spec/mcp/schema.md §1.1 に対応。
+
+nodes:
+  - id: object_selector
+    type: model
+    kind: struct
+    fields:
+      - name: id
+        type: str
+        note: "対象object ID。QualifiedID / actor global ID / synthetic IDを許容。任意"
+      - name: object
+        type: str
+        note: "node / view / transition / asset / field / file / primitive。任意enum"
+      - name: kind
+        type: str
+        note: "期待kind。指定時は解決結果との一致を検証する。任意"
+      - name: file
+        type: str
+        note: "FileID。file-local object指定時に使う。任意"
+      - name: local_id
+        type: str
+        note: "file内local object ID。sub task / field / asset等で使う。任意"
+    note: |
+      MCP tool共通のselector。
+      JSON schema上は全field任意だが、toolごとに有効な組み合わせが制約される。

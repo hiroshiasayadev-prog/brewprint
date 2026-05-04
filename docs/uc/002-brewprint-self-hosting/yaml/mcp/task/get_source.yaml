@@ -1,0 +1,71 @@
+# MCP tool `get_source` task / flow
+# docs/spec/mcp/tools/get-source.md に対応。
+
+nodes:
+  - id: get_source
+    type: task
+    main: true
+    params:
+      - name: request
+        model: get_source_request
+    returns:
+      name: response
+      model: get_source_response
+    note: |
+      MCP tool `get_source` の公開contract。
+      MCP toolでありHTTP endpointではないため endpoint: true は付けない。
+      semantic objectに対応するYAML source snippetを返す。
+      Raw YAML AST公開APIではなく、ResolvedProject上のsemantic objectに紐づくsource補助情報として扱う。
+
+  - id: validate_request
+    type: task
+    params:
+      - name: request
+        model: get_source_request
+    returns:
+      name: validated_request
+      model: get_source_request
+    note: |
+      tool input schemaとselector / fallbackを検証する。
+      fallback は file / error のenumだが、v1 modelではenum制約を表現できないためrequest model側のnoteで保持する。
+
+  - id: query_service
+    type: task
+    params:
+      - name: request
+        model: get_source_request
+    returns:
+      name: query_result
+      model: any
+    reads:
+      - resolved_project_store
+    note: |
+      QueryService境界。
+      Raw YAML ASTではなくResolvedProject上のsemantic objectからsource locationを引く。
+      object単位rangeが特定できない場合は fallback 設定に従い、同一FileID全体へのfallbackまたはtool errorへ分岐する。
+      この分岐は現時点ではnoteで表現し、flowのbranch化はしない。
+
+  - id: build_response
+    type: task
+    params:
+      - name: query_result
+        model: any
+    returns:
+      name: response
+      model: get_source_response
+    note: |
+      QueryService結果をMCP response payloadへ整形する。
+      object / source / snippet / fallback / diagnostics を返す。
+
+flow:
+  - step: validate_request
+    params:
+      request: $params.request
+
+  - step: query_service
+    params:
+      request: validate_request
+
+  - step: build_response
+    params:
+      query_result: query_service

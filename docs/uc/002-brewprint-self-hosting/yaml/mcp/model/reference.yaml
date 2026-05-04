@@ -1,0 +1,27 @@
+# MCP Reference
+# docs/spec/mcp/schema.md §2 に対応。
+
+nodes:
+  - id: reference
+    type: model
+    kind: struct
+    fields:
+      - name: kind
+        type: str
+        note: "enum値集合: param_model / return_model / produces_asset / consumes_asset / reads / writes / store_of / field_type / field_fk / transition_event / transition_from / transition_to / transition_action / event_payload / event_actor / event_watches / scenario_state_file / scenario_step_transition"
+      - name: direction
+        type: str
+        note: "enum値集合: out / in。query対象から見た方向"
+      - name: from
+        type: object_ref
+        note: "参照元object"
+      - name: to
+        type: object_ref
+        note: "参照先object"
+      - name: source
+        type: source_location
+        note: "このreferenceの定義元。任意"
+      - name: doc
+        type: str
+        note: "reference補足。任意"
+    note: "ResolvedProject上のsemantic object間の直接参照。"

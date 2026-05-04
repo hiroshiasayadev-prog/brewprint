@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/diagnostics.md
 status: draft
-last_updated: 2026-04-30
+last_updated: 2026-05-04
 summary: >
   brewprint validation diagnosticsの外部向け仕様。
   severity / code / file / message の意味、diagnostic file表現、現在のdiagnostic code一覧を定義する。
@@ -9,6 +9,8 @@ depends_on:
   - docs/adr/047-go-semantic-model-query-layer-boundary.md
   - docs/adr/051-unsupported-yaml-file-warning.md
   - docs/adr/052-source-file-path-normalization.md
+  - docs/adr/060-flow-wiring-type-compatibility.md
+  - docs/adr/061-foreach-returns-collected-asset.md
 ---
 
 # Diagnostics仕様
@@ -139,6 +141,7 @@ Sort key:
 | `duplicate_model_field` | error | model field名が重複している |
 | `duplicate_primary_key` | error | model内にprimary keyが複数ある |
 | `missing_required_field` | error | 必須fieldが欠落している |
+| `invalid_type_ref` | error | TypeRef構文が不正、または TypeRef として扱えない container kind 等を指定している |
 
 ### Duplicate / symbol validation
 
@@ -148,6 +151,7 @@ Sort key:
 | `duplicate_main_node` | error | 1 file内にmain nodeが複数ある |
 | `duplicate_actor` | error | actor idが重複している |
 | `duplicate_initialized_store` | error | initialized storeが同一file内で重複している |
+| `duplicate_flow_source` | error | 同一 flow file 内で `foreach.returns` が node id または他の `foreach.returns` と重複している |
 
 ### Flow validation
 
@@ -158,6 +162,33 @@ Sort key:
 | `unresolved_flow_node` | error | branch / fork / join nodeが解決できない |
 | `invalid_flow_branch` | error | fork branch内のstep定義が不正 |
 | `unmatched_join_param` | error | join paramに対応するbranch returnがない |
+| `incompatible_wiring_type` | error | flow wiring source の TypeRef と target param の TypeRef が互換しない |
+| `invalid_wiring_source` | error | source は解決できたが、その文脈では wiring source として使えない |
+| `unresolved_wiring_source` | error | wiring source が node id / `$params.<name>` / `$item` / collected asset source のいずれとしても解決できない |
+| `invalid_foreach_over_type` | error | `foreach.over` が指す source が list として扱えない |
+| `invalid_foreach_returns` | error | apply 先 task に `returns` がないのに `foreach.returns` が指定されている、または当該 foreach 自身の `params` 内から自分の `returns` 名を参照している |
+
+`invalid_type_ref` の message には、不正な TypeRef 文字列とその出現位置を含める。
+
+TypeRef 構文は valid だが内部の named model が解決できない場合は、出現箇所に応じて既存の未解決 diagnostic を使う。`fields[].type` では `unresolved_field_type`、`params[].model` / `returns.model` / `model.element` / `model.value` では `unresolved_model` を使う。構文自体が壊れている場合、または TypeRef として扱えない container kind を指定した場合のみ `invalid_type_ref` を出す。
+
+`incompatible_wiring_type` の message には、source TypeRef / target TypeRef / wiring位置を含める。
+
+`duplicate_flow_source` は、`foreach.returns` が同一 flow file 内の node id または他の `foreach.returns` と重複している場合に出す。task の `returns.name` は通常 flow の wiring source ではないため、task `returns.name` と `foreach.returns` が同名でも `duplicate_flow_source` にはしない。
+
+`invalid_foreach_returns` は、以下の場合に出す。
+
+- apply 先 task に `returns` がないにもかかわらず `foreach.returns` が指定されている
+- 当該 foreach 自身の `params` 内から自分自身の `returns` 名を参照している
+
+`unresolved_wiring_source` と `invalid_wiring_source` は区別する。
+
+- `unresolved_wiring_source`: typo などにより参照先が存在しない。wiring source が node id / `$params.<name>` / `$item` / collected asset source のいずれとしても解決できない
+- `invalid_wiring_source`: 参照先は存在するが、その文脈では source として使えない。例: returns を持たない node、foreach 外の `$item`
+
+TypeRef の解決失敗、未解決参照、`invalid_foreach_over_type` が発生している `$item` wiring、または TypeRef 解決不能な collected asset source を参照する wiring では、重複して `incompatible_wiring_type` を発行しない。
+
+> 由来: ADR-060 §6, §7; ADR-061 §9
 
 ### Transition validation
 

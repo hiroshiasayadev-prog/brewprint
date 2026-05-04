@@ -49,6 +49,8 @@ go test ./...
 | TASKS-UC-002.md | UC-002固有の作業・spec gap・MCP coverage不足ログの追跡 |
 | editor-viewer-notes.md | self-hosting中に見つかったeditor / viewer要件の蓄積メモ |
 | render_index.yaml | 初期groupとしてMCP公開contractを定義 |
+| docs/phase-a-mcp-contract.md | Phase AでMCP公開contractをblueprint化する表現方針 |
+| docs/phase-a-work-split.md | Phase Aを並列作業するためのレーン分割・命名規約・merge前チェックリスト |
 | renders/index.md | 未生成。Phase A render生成後に追加される想定 |
 
 `docs/coverage.md` 相当のカバレッジ表は、Phase A の YAML が入った後に起票する。

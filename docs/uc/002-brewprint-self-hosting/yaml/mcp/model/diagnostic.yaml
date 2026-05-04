@@ -1,0 +1,23 @@
+# MCP Diagnostic
+
+nodes:
+  - id: diagnostic
+    type: model
+    kind: struct
+    fields:
+      - name: severity
+        type: str
+        note: "enum値集合: error / warning / info / hint"
+      - name: code
+        type: str
+        note: "machine-readable diagnostic code"
+      - name: message
+        type: str
+        note: "human-readable message"
+      - name: source
+        type: source_location
+        note: "関連source。任意"
+      - name: related
+        type: any
+        note: "関連SourceLocationまたはObjectRef配列。v1 modelではunion listを表せないためany"
+    note: "tool実行は成立したが注意すべき情報。"

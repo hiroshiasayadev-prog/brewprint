@@ -1,0 +1,24 @@
+# MCP list_objects request
+# docs/spec/mcp/tools/list-objects.md §2 に対応。
+
+nodes:
+  - id: list_objects_request
+    type: model
+    kind: struct
+    fields:
+      - name: object
+        type: str
+        note: "任意。node / view / transition / field。省略時は全object種別を対象にする。"
+      - name: kind
+        type: str
+        note: "任意。task / model / api_table / transition / field 等。object種別ごとのkind filter。"
+      - name: module
+        type: str
+        note: "任意。module path。例: order, payment.webhooks。"
+      - name: file
+        type: str
+        note: "任意。FileID。yaml/ からのslash正規化相対path。"
+    note: |
+      MCP tool `list_objects` のrequest model。
+      docs/spec/mcp/tools/list-objects.md §2 のInputに対応する。
+      `object` と `kind` はenum相当だが、brewprint v1 modelではenum制約を表せないため type: str + note で保持する。

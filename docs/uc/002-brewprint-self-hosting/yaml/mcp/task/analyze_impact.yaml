@@ -1,0 +1,77 @@
+# MCP tool `analyze_impact` task / flow
+# docs/spec/mcp/tools/analyze-impact.md に対応。
+
+nodes:
+  - id: analyze_impact
+    type: task
+    main: true
+    params:
+      - name: request
+        model: analyze_impact_request
+    returns:
+      name: response
+      model: analyze_impact_response
+    note: |
+      MCP tool `analyze_impact` の公開contract。
+      MCP toolでありHTTP endpointではないため endpoint: true は付けない。
+      対象objectとchange kindから、意味づけ済みのimpact listを返す。
+      raw reference graphはget_reference_tree、source snippetはget_sourceに委ねる。
+
+  - id: validate_request
+    type: task
+    params:
+      - name: request
+        model: analyze_impact_request
+    returns:
+      name: validated_request
+      model: analyze_impact_request
+    note: |
+      tool input schemaとselector / change / scope_modules / max_impactsを検証する。
+      change はkindをdiscriminatorとするobject。
+      rename / remove / change_type / change_contract / change_transition_target / add のpayload制約はv1 modelでは表現できないためrequest model側のnoteで保持する。
+      kindとpayloadの不正な組み合わせは invalid_change_payload tool error。
+      unsupported selectorはtool errorではなく、空impacts + unsupported_selector diagnostic + coverageを含む通常responseとして返す。
+
+  - id: query_service
+    type: task
+    params:
+      - name: request
+        model: analyze_impact_request
+    returns:
+      name: query_result
+      model: any
+    reads:
+      - resolved_project_store
+    note: |
+      QueryService境界。
+      Raw YAML ASTではなくResolvedProject上のsemantic object / reference / render output mappingを読む。
+      change kindごとに探索深さとcollectorをtool側が決める。
+      severity / fixability / coverage / recommended_action / suggested_fixes を付与する。
+      flow wiring、sequence step、render output file粒度、型signature identityなどのcoverage差分はv1 modelでは厳密表現できないためresponse model側のnoteで保持する。
+      複雑なcollector分岐は現時点ではnoteで表現し、flowのbranch化はしない。
+
+  - id: build_response
+    type: task
+    params:
+      - name: query_result
+        model: any
+    returns:
+      name: response
+      model: analyze_impact_response
+    note: |
+      QueryService結果をMCP response payloadへ整形する。
+      target / change / summary / impacts / coverage / assumptions / truncated / truncated_reasons / diagnostics を返す。
+      fixability=mechanical はsource locationと置換内容が一意に決まる場合のみ返す。
+
+flow:
+  - step: validate_request
+    params:
+      request: $params.request
+
+  - step: query_service
+    params:
+      request: validate_request
+
+  - step: build_response
+    params:
+      query_result: query_service

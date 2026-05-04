@@ -1,0 +1,16 @@
+# MCP list_endpoints request
+# docs/spec/mcp/tools/list-endpoints.md §2 に対応。
+
+nodes:
+  - id: list_endpoints_request
+    type: model
+    kind: struct
+    fields:
+      - name: api_table_id
+        type: str
+        note: "任意。API Table view ID。省略時はproject内の全API Tableを返す。"
+    note: |
+      MCP tool `list_endpoints` のrequest model。
+      docs/spec/mcp/tools/list-endpoints.md §2 のInputに対応する。
+      API Tableが複数存在し、api_table_idが省略された場合は、全API Tableをresponse.tables[]に分けて返す。
+      このtool自体はMCP toolでありHTTP endpointではないため、対応taskに endpoint: true は付けない。

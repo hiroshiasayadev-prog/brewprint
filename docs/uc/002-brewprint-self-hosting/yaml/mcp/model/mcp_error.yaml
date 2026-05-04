@@ -1,0 +1,26 @@
+# MCP error payload
+# docs/spec/mcp/errors.md §3 に対応。
+
+nodes:
+  - id: mcp_error
+    type: model
+    kind: struct
+    fields:
+      - name: code
+        type: str
+        note: |
+          error code。
+          値集合: project_invalid / invalid_args / invalid_selector / invalid_change_payload / not_found / kind_mismatch / ambiguous / unsupported_object / unsupported_detail / unsupported_direction / invalid_depth / internal_error。
+      - name: message
+        type: str
+        note: "human-readable error message。必須"
+      - name: selector
+        type: object_selector
+        note: "入力selector。selector解決に関係するerrorの場合のみ"
+      - name: diagnostics
+        type: diagnostic_list
+        note: "関連diagnostic。任意"
+    note: |
+      MCP tool実行自体が成立しない場合に返すtool error payload。
+      JSON-RPC envelopeそのものではなく、brewprint MCP error bodyを表す。
+      codeのenum値集合はv1 modelでは型制約できないためnoteに列挙する。

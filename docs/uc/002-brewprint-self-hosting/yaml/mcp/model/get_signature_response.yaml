@@ -1,0 +1,25 @@
+# MCP get_signature response
+# docs/spec/mcp/tools/get-signature.md §3〜§10 に対応。
+
+nodes:
+  - id: get_signature_response
+    type: model
+    kind: struct
+    fields:
+      - name: object
+        type: object_ref
+        note: "必須。対象object identity。"
+      - name: signature
+        type: any
+        note: "必須。task / model / store / event / state / transition / field でshapeが異なるためanyで暫定表現する。"
+      - name: doc
+        type: str
+        note: "任意。note由来の説明。null相当を取りうる。"
+      - name: diagnostics
+        type: diagnostic_list
+        note: "必須。Diagnostic list。"
+    note: |
+      MCP tool `get_signature` のresponse model。
+      docs/spec/mcp/tools/get-signature.md §3 のOutput envelope、および §4〜§10 のkind別signatureに対応する。
+      `signature` は kind別のunion相当であり、brewprint v1 modelではunion / discriminated objectを厳密表現できないため any + note で保持する。
+      task signature の endpoint はHTTP endpoint taskのみが持ち、MCP tool task自体に endpoint: true を付ける意味ではない。
