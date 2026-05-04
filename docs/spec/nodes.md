@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/nodes.md
 status: confirmed
-last_updated: 2026-05-03
+last_updated: 2026-05-05
 summary: >
   brewprintの全ノード種別のフィールド定義。
   各フィールドの必須/任意・型・意味・出典ADRを記載する。
@@ -29,6 +29,7 @@ depends_on:
   - docs/adr/040-control-flow-step-wiring.md
   - docs/adr/042-wireframe-main-and-layout.md
   - docs/adr/060-flow-wiring-type-compatibility.md
+  - docs/adr/062-task-return-source.md
 ---
 
 # ノード定義仕様
@@ -105,7 +106,7 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 |-----------|------|-----|------|------|
 | `main` | 任意 | bool | `true` でメインノード宣言。1ファイルに1つだけ許容。`task` にのみ適用（ADR-011） |
 | `params` | 任意 | list\<param\> | 入力。TypeRefへの参照リスト | ADR-009, ADR-060 |
-| `returns` | 任意 | returns | 出力。TypeRefへの参照とasset名の宣言 | ADR-009, ADR-060 |
+| `returns` | 任意 | returns | 出力。TypeRefへの参照、asset名の宣言、任意のreturn source wiring | ADR-009, ADR-060, ADR-062 |
 | `reads` | 任意 | list\<store-id\> | 参照するstore IDのリスト | ADR-020 |
 | `writes` | 任意 | list\<store-id\> | 更新するstore IDのリスト | ADR-020 |
 | `endpoint` | 任意 | bool | `true` でAPI Tableの集計対象となり、`list_endpoints` MCPツールに出力 | ADR-005, ADR-017, ADR-028 |
@@ -126,8 +127,13 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 |-----------|------|-----|------|
 | `name` | ✓ | string | 生成されるassetの名前 |
 | `model` | ✓ | TypeRef | 型参照。primitive / named model / inline `list<T>` / inline `dict<T>` を指定できる |
+| `source` | 任意 | wiring source | task が外部へ返す値の source。node id / collected asset source / `$params.<name>` を指定できる。`$item` は指定不可 |
 
 `returns` は単一のみ。複数返しが必要な場合はstruct modelでwrapして単一にする（ADR-009）。primitive return は `str` / `int` / `bool` / `any` 等の primitive TypeRef で表現する。
+
+`returns.source` は task return wiring であり、`returns.name` / `returns.model` が表す外向き signature を満たす値を内部 flow または入力からどこで得るかを明示する。leaf task / note-only task / external boundary task では省略できる。`returns.source` を省略した場合、`returns.name` と flow source 名が一致していても暗黙接続は行わない。source 解決と型互換性の詳細は [edges.md](./edges.md) §1-8 を参照する。
+
+> 由来: ADR-062 §1〜§7
 
 ### init オブジェクト（initializes内）
 

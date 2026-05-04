@@ -2,7 +2,7 @@
 
 - **status**: open
 - **scope**: internal/semantic / internal/resolve / spec / docs/adr / tests
-- **source**: ADR-060 (TypeRef + flow wiring type compatibility) / ADR-061 (foreach.returns collected asset) を起点とする v1.1 系の表現力拡張
+- **source**: ADR-060 (TypeRef + flow wiring type compatibility) / ADR-061 (foreach.returns collected asset) / ADR-062 (task return source) を起点とする v1.1 系の表現力拡張
 - **last_updated**: 2026-05-04
 
 ---
@@ -21,7 +21,8 @@ brewprint の型表現力には以下の制約が残っていた。
 
 ADR-060 はこのうち **TypeRef 導入と flow wiring type compatibility** を v1.1 の基礎として確定した。
 ADR-061 は **foreach.returns collected asset source** を Phase B として確定した。
-M15 は ADR-060 / ADR-061 を実装に落とし込みつつ、関連する v1.1 表現力拡張をまとめて扱う milestone である。
+ADR-062 は **task return source の明示化** を Phase B 後続として確定した。
+M15 は ADR-060 / ADR-061 / ADR-062 を実装に落とし込みつつ、関連する v1.1 表現力拡張をまとめて扱う milestone である。
 
 当初 M14b として独立 milestone を切る案もあったが、ADR-060 が v1.1 TypeRef 前提に拡張された結果、
 M14b 独立の意義が薄れ、本 milestone（M15）に吸収する判断をした（ADR-060 §M15 への影響）。
@@ -57,6 +58,7 @@ M15 では以下を行わない。
 M15 は3つの Phase に分けて進める。
 Phase A は ADR-060 で確定済み。
 Phase B は ADR-061 で accepted 済み。
+Phase B2 は ADR-062 で accepted 済み。
 Phase C は追加 ADR の起票を伴う。
 
 ### Phase A: TypeRef + flow wiring type validation
@@ -237,6 +239,106 @@ foreach の collected asset を後続 flow から参照する場合のルール�
 
 ---
 
+### Phase B2: task return source の明示化
+
+ADR-062 は accepted 済み。
+`task.returns.source` によって、task の外向き return signature と内部 flow / input の source を明示的に接続する。
+
+#### 確定した仕様範囲
+
+- `task.returns.source` は optional field である
+- `returns.name` / `returns.model` は task signature として維持する
+- `returns.source` は、その signature を満たす値を内部 flow / input からどこで得るかを指定する task return wiring である
+- leaf task / note-only task / external boundary task では `returns.source` を省略できる
+- `flow:` を持たない task でも `returns.source: $params.<name>` による pass-through return は正当である
+- `returns.source` に指定できる source は node id / QualifiedID、先行する collected asset source、`$params.<name>` である
+- `$item` は `returns.source` では使えない。指定時は `invalid_return_source`
+- `returns.source` と `returns.model` は ADR-060 の TypeRef compatibility で検証する
+- 型が互換しない場合は `incompatible_return_type`
+- source / target TypeRef が解決不能な場合は `incompatible_return_type` を抑制する
+- `returns.name` と flow source 名が一致していても暗黙接続は行わない
+- 既存の `join.params` の `returns.name` 一致による暗黙接続は維持する
+- `returns.source` は単一 return にのみ対応する。複数 return / named tuple / multi output task は扱わない
+
+#### 仕様反映
+
+- [x] **ADR-062 を accepted として確認**
+- [x] **`docs/spec/nodes.md` の `returns` オブジェクトに `source` を追加**
+  - optional field として定義
+  - node id / collected asset source / `$params.<name>` を指定可能
+  - `$item` は指定不可
+  - `returns.name` と flow source 名の暗黙接続は行わないことを明記
+- [x] **`docs/spec/edges.md` に task return wiring 節を追加**
+  - source 解決規則
+  - TypeRef compatibility
+  - `$item` 禁止
+  - 暗黙接続なし
+  - `join.params` 暗黙接続は既存仕様として維持
+- [x] **`docs/spec/diagnostics.md` に ADR-062 diagnostics を反映**
+  - `unresolved_return_source`
+  - `invalid_return_source`
+  - `incompatible_return_type`
+  - `unresolved_return_source` と `invalid_return_source` の区別
+  - TypeRef 解決不能時の `incompatible_return_type` 抑制
+
+#### 実装
+
+- [ ] **raw YAML / semantic model の `returns` に `source` field を追加**
+  - `internal/rawyaml.Return.Source string`
+  - `internal/semantic.Return` に raw source 文字列または resolved source を保持する field を追加
+  - 既存の `returns.name` / `returns.model` / `TypeRef` / `Asset` は維持
+- [ ] **builder / resolver で `returns.source` を semantic model に反映**
+  - raw `returns.source` を読み取る
+  - source 記法は flow wiring source と同じ構文を使う
+  - `$item` は構文上は保持してよいが validation で `invalid_return_source` にする
+- [ ] **task return source resolver を追加**
+  - node id / QualifiedID を task / join returns に解決
+  - `$params.<name>` を main task params に解決
+  - collected asset source を同一 flow file 内の先行 `foreach.returns` として解決
+  - `returns.source` が未指定の場合は何もしない
+- [ ] **entry順 visibility を守って collected asset source を解決**
+  - `foreach.returns` の前方参照を許可しない
+  - ADR-061 と同じく flow entry を順に走査し、visible collected source を積む
+  - `project.FlowCollectedSourcesByFile[fileID]` 全体を無条件に見せない
+- [ ] **return source diagnostic を追加**
+  - `unresolved_return_source`
+  - `invalid_return_source`
+  - `incompatible_return_type`
+- [ ] **return source TypeRef compatibility を検証**
+  - source TypeRef と `returns.model` TypeRef を ADR-060 ルールで比較
+  - named list/dict model と inline `list<T>` / `dict<T>` の正規化互換を使う
+  - `any` は両方向 wildcard
+  - source / target TypeRef 解決不能時は `incompatible_return_type` を抑制
+- [ ] **name一致による暗黙 return 接続を実装しないことを確認**
+  - `returns.name` と flow source / `foreach.returns` が一致しても、`returns.source` 未指定なら return wiring として扱わない
+- [ ] **ADR-062 実装後に Evidence を更新**
+  - `docs/adr/062-task-return-source.md` の `impl commit: tbd` を実装 commit hash で更新
+  - `docs/tasks/m15-data-layer-expressiveness.md` の Evidence は必要に応じて追補する
+
+#### テスト
+
+- [ ] **`returns.source` 正常系テスト**
+  - node output を task return source として返せる
+  - collected asset source を task return source として返せる
+  - `$params.<name>` を pass-through return として返せる
+  - `returns.source` 未指定の leaf task / external boundary task は既存通り valid
+- [ ] **return source diagnostic テスト**
+  - 未解決 source で `unresolved_return_source`
+  - returns を持たない node で `invalid_return_source`
+  - `$item` 指定で `invalid_return_source`
+  - source / target 型不一致で `incompatible_return_type`
+  - source TypeRef 解決不能時は `incompatible_return_type` を抑制
+  - target `returns.model` 解決不能時は `incompatible_return_type` を抑制
+- [ ] **entry順 / 暗黙接続のテスト**
+  - 後続の `foreach.returns` を前方参照した `returns.source` は `unresolved_return_source`
+  - 先行する `foreach.returns` は `returns.source` から参照できる
+  - `returns.name` と flow source 名が一致していても、`returns.source` 未指定なら return wiring として扱わない
+- [ ] **UC-001 回帰更新**
+  - `cart/task/validate_cart.yaml` で `foreach.returns: validated_items` を main task return として返す場合、`returns.source: validated_items` を明示する
+  - 既存 render / validate が ADR-062 後も通ることを確認
+
+---
+
 ### Phase C: enum / discriminated object / inline struct / 深さ制限
 
 UC-002 self-hosting で必要になる data layer 表現力を ADR ベースで導入する。
@@ -295,7 +397,8 @@ UC-002 self-hosting で必要になる data layer 表現力を ADR ベースで�
 ## 関連 ADR
 
 - ADR-060: v1.1 TypeRef と flow wiring の型互換性 (accepted)
-- ADR-061: foreach.returns collected asset 参照ルール (予定 / Phase B で起票)
+- ADR-061: foreach.returns collected asset 参照ルール (accepted)
+- ADR-062: task return source の明示化 (accepted)
 - ADR-021: primitive 予約語と list/dict model（v1.1 でも維持）
 - ADR-016: foreach 構文（変更なし。`$item` 型解決ルールは ADR-060 で明文化）
 - ADR-058 / ADR-059: M14a で確定した v1.0 系の実装バグ修正

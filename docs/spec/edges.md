@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/edges.md
 status: confirmed
-last_updated: 2026-05-04
+last_updated: 2026-05-05
 summary: >
   brewprintのエッジ記法の定義。
   ファイル内データフロー（flow:セクション）・状態遷移（transitions:セクション）・
@@ -20,6 +20,7 @@ depends_on:
   - docs/adr/040-control-flow-step-wiring.md
   - docs/adr/060-flow-wiring-type-compatibility.md
   - docs/adr/061-foreach-returns-collected-asset.md
+  - docs/adr/062-task-return-source.md
 ---
 
 # エッジ定義仕様
@@ -438,6 +439,59 @@ wiring source が node ID / `$params.<name>` / `$item` / collected asset source 
 - collected asset source の TypeRef が解決不能
 
 この方針により、未解決参照や TypeRef 構文エラーに対して二重に incompatible diagnostic を出さない。
+
+### 1-8. task return wiring
+
+> 出典: ADR-062
+
+`task.returns.source` は、task が外部へ返す値の source を明示する task return wiring である。
+
+`returns.name` / `returns.model` は task の外向き signature を表す。`returns.source` は、その signature を満たす値を内部 flow または入力からどこで得るかを指定する。
+
+`returns.source` は optional である。leaf task / note-only task / external boundary task では指定しなくてよい。`flow:` を持つ main task / composite task が内部 flow の結果を返す場合、または入力をそのまま返す pass-through task を明示する場合に指定する。
+
+```yaml
+nodes:
+  - id: validate_cart
+    type: task
+    main: true
+    params:
+      - name: cart_items
+        model: cart_item_list
+    returns:
+      name: validated_items
+      model: cart_item_list
+      source: validated_items
+
+flow:
+  - foreach: validate_item
+    over: $params.cart_items
+    params:
+      cart_item: $item
+    returns: validated_items
+```
+
+`returns.source` に指定できる source は以下である。
+
+| source | 意味 |
+|---|---|
+| node ID / QualifiedID | task / join など returns を持つ node の出力全体 |
+| collected asset source | 先行する `foreach.returns` で宣言された collected asset |
+| `$params.<name>` | main task params の `<name>` をそのまま返す |
+
+`$item` は `returns.source` では使えない。`$item` は foreach iteration 内部の source であり、task 全体の return source ではない。foreach 全体の結果を返す場合は、`foreach.returns` で collect した source を `returns.source` に指定する。
+
+`returns.source` が node ID / `$params.<name>` / collected asset source のいずれとしても解決できない場合は `unresolved_return_source` を出す。source は解決できたが task return source として使えない場合は `invalid_return_source` を出す。例: returns を持たない node、`$item`。
+
+`returns.source` を指定した場合、source TypeRef と `returns.model` の TypeRef は §1-7 と同じ TypeRef compatibility ルールで検証する。互換しない場合は `incompatible_return_type` を出す。
+
+source TypeRef または `returns.model` の TypeRef が解決不能な場合は、重複して `incompatible_return_type` を発行しない。未解決 source / invalid source / unresolved model / invalid TypeRef など、一次診断を優先する。
+
+`returns.name` と flow source 名が一致していても、それだけでは task return source として扱わない。返す値を明示する場合は `returns.source` を指定する。なお、`join.params` の `returns.name` 一致による暗黙接続は既存仕様として維持する。
+
+`returns.source` は単一 return にのみ対応する。複数 return / named tuple / multi output task は本仕様では扱わない。必要な場合は struct model で wrap して単一 return として表現する。
+
+> 由来: ADR-062 §1〜§8
 
 ## 2. 状態遷移エッジ（transitions:セクション）
 

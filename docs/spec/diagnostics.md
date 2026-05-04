@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/diagnostics.md
 status: draft
-last_updated: 2026-05-04
+last_updated: 2026-05-05
 summary: >
   brewprint validation diagnosticsの外部向け仕様。
   severity / code / file / message の意味、diagnostic file表現、現在のdiagnostic code一覧を定義する。
@@ -11,6 +11,7 @@ depends_on:
   - docs/adr/052-source-file-path-normalization.md
   - docs/adr/060-flow-wiring-type-compatibility.md
   - docs/adr/061-foreach-returns-collected-asset.md
+  - docs/adr/062-task-return-source.md
 ---
 
 # Diagnostics仕様
@@ -167,6 +168,9 @@ Sort key:
 | `unresolved_wiring_source` | error | wiring source が node id / `$params.<name>` / `$item` / collected asset source のいずれとしても解決できない |
 | `invalid_foreach_over_type` | error | `foreach.over` が指す source が list として扱えない |
 | `invalid_foreach_returns` | error | apply 先 task に `returns` がないのに `foreach.returns` が指定されている、または当該 foreach 自身の `params` 内から自分の `returns` 名を参照している |
+| `unresolved_return_source` | error | `returns.source` が node id / `$params.<name>` / collected asset source のいずれとしても解決できない |
+| `invalid_return_source` | error | source は解決できたが task return source として使えない |
+| `incompatible_return_type` | error | `returns.source` の TypeRef と `returns.model` の TypeRef が互換しない |
 
 `invalid_type_ref` の message には、不正な TypeRef 文字列とその出現位置を含める。
 
@@ -188,7 +192,16 @@ TypeRef 構文は valid だが内部の named model が解決できない場合�
 
 TypeRef の解決失敗、未解決参照、`invalid_foreach_over_type` が発生している `$item` wiring、または TypeRef 解決不能な collected asset source を参照する wiring では、重複して `incompatible_wiring_type` を発行しない。
 
-> 由来: ADR-060 §6, §7; ADR-061 §9
+`unresolved_return_source` と `invalid_return_source` は区別する。
+
+- `unresolved_return_source`: typo などにより参照先が存在しない。`returns.source` が node id / `$params.<name>` / collected asset source のいずれとしても解決できない
+- `invalid_return_source`: 参照先は存在するが、task return source として使えない。例: returns を持たない node、`$item`
+
+`incompatible_return_type` の message には、source TypeRef / target TypeRef / `returns.source` 位置を含める。
+
+`returns.source` の TypeRef または `returns.model` の TypeRef が解決不能な場合、重複して `incompatible_return_type` を発行しない。
+
+> 由来: ADR-060 §6, §7; ADR-061 §9; ADR-062 §8
 
 ### Transition validation
 
