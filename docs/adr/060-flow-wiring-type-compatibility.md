@@ -422,5 +422,5 @@ M15 では以下を合わせて扱う。
 ## Evidence
 
 - commit: f507485
-- impl commit: tbd
+- impl commit: 01e7127
 - 参考: TypeScript any の両方向互換挙動、nominal typing（Java / C# の class identity）、Dagster asset の type 解決

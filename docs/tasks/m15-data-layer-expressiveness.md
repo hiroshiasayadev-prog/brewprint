@@ -306,5 +306,5 @@ UC-002 self-hosting で必要になる data layer 表現力を ADR ベースで�
 
 ## Evidence
 
-- commit: tbd
-- impl commit: tbd
+- commit: 01e7127
+- impl commit: 01e7127
