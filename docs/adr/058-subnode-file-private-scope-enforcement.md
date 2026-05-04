@@ -163,6 +163,6 @@ ADR-057 §4 のRelease snapshots運用に従い、本ADR受理時点では新タ
 - M14 Phase A YAML は M14a + M15 完了後に enum等を使った形で初構築する
 
 ## Evidence
-- commit: tbd
+- commit: 01e7127
 - impl commit: tbd
 - 参考: GoおよびRustの「1ファイル=1public型+privateヘルパー」構造慣習
