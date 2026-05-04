@@ -239,8 +239,10 @@ source = `foreach.over` の解決結果から要素型を引く。
 | `incompatible_wiring_type` | error | wiring source の型と target param の型が互換しない |
 | `invalid_wiring_source` | error | returns 相当の出力型を持たない node、または有効範囲外の `$item` を wiring source として指定した |
 | `invalid_foreach_over_type` | error | `foreach.over` が指す source が list として扱えない |
+| `invalid_type_ref` | error | TypeRef 構文が不正、または TypeRef として扱えない container kind 等を指定した |
 
 `incompatible_wiring_type` のメッセージには source TypeRef / target TypeRef / wiring位置を含めること。
+`invalid_type_ref` のメッセージには、不正な TypeRef 文字列とその出現位置を含めること。
 
 ### 7. 型解決失敗時の扱い
 
@@ -273,7 +275,7 @@ source = `foreach.over` の解決結果から要素型を引く。
 
 - **`docs/spec/nodes.md`**: `param.model` / `returns.model` / `field.type` / `model.element` / `model.value` が TypeRef を受け取ることを定義
 - **`docs/spec/edges.md` §1（flow:セクション）末尾に「§型互換性ルール」節を追加**: 本 ADR §3〜§7 の内容を仕様として記述
-- **`docs/spec/diagnostics.md`**: `incompatible_wiring_type` / `invalid_wiring_source` / `invalid_foreach_over_type` を追加、由来に ADR-060 を記載
+- **`docs/spec/diagnostics.md`**: `incompatible_wiring_type` / `invalid_wiring_source` / `invalid_foreach_over_type` / `invalid_type_ref` を追加、由来に ADR-060 を記載
 
 TypeRef の構文詳細を `nodes.md` に置くか、新規 `spec/type-ref.md` に切るかは M15 の spec 整理時に決める。
 
@@ -372,13 +374,13 @@ join.params は wiring 文法に直接出ないが、各 fork branch の termina
 - 既存の `ModelName` / `Model` は migration 期間中は保持してよいが、flow wiring validation は TypeRef ベースに寄せる
 - `internal/resolve/validation.go` に `validateFlowWiringTypes` を追加（validate phase で実行）
 - `internal/resolve/validation.go` に TypeRef 互換判定ヘルパー（仮称 `typeRefsCompatible(a, b semantic.TypeRef) bool` 等）を追加
-- `internal/resolve/diagnostics.go` 等の diagnostic コード一覧に `incompatible_wiring_type` / `invalid_wiring_source` / `invalid_foreach_over_type` を追加
+- `internal/resolve/diagnostics.go` 等の diagnostic コード一覧に `incompatible_wiring_type` / `invalid_wiring_source` / `invalid_foreach_over_type` / `invalid_type_ref` を追加
 
 ### 既存 spec への影響
 
 - `spec/nodes.md` または新規 `spec/type-ref.md` に TypeRef 構文を追加
 - `spec/edges.md` §1 末尾に「§型互換性ルール」節を新設
-- `spec/diagnostics.md` に新 diagnostic 3件を追加
+- `spec/diagnostics.md` に新 diagnostic 4件を追加
 
 ### 既存 UC への影響
 
@@ -419,6 +421,6 @@ M15 では以下を合わせて扱う。
 
 ## Evidence
 
-- commit: tbd
+- commit: f507485
 - impl commit: tbd
 - 参考: TypeScript any の両方向互換挙動、nominal typing（Java / C# の class identity）、Dagster asset の type 解決

@@ -329,6 +329,6 @@ ADR-054 §影響 §MCP の future 候補リストに含まれていた `analyze_
 ADR-054 の方針（設計対話 coverage 基準）はそのまま継承する。
 
 ## Evidence
-- commit: tbd
+- commit: 6a1fa4a
 - impl commit: tbd
 - 参考: 特になし

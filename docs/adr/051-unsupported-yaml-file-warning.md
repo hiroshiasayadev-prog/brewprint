@@ -58,6 +58,6 @@ source層のloader（`internal/source/loader.go` の `Loader.Load`）は `yaml/`
 - 実装は `internal/source` 層に warning diagnostic を出す経路を追加する必要がある（M1 時点では diagnostic 配信パスが未整備のため、impl側で別途扱う）
 
 ## Evidence
-- commit: tbd
+- commit: 261ed60
 - impl commit: tbd
 - 参考: ADR-030 §決定, ADR-050 §決定

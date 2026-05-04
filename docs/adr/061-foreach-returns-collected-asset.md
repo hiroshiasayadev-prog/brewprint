@@ -402,6 +402,6 @@ ADR-060 の TypeRef と flow wiring type compatibility を前提にした forwar
 
 ## Evidence
 
-- commit: tbd
+- commit: a5032d1
 - impl commit: tbd
 - 参考: ADR-016 foreach flow construct, ADR-023 control flow scope, ADR-060 TypeRef / flow wiring type compatibility
