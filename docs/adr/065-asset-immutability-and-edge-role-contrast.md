@@ -167,6 +167,6 @@ asset の mutability を「規定しない」と書くと、設計者が「規�
 
 ## Evidence
 
-- commit: tbd
+- commit: 3323a79
 - impl commit: 該当なし（既存 edge 体系の明文化のため実装変更なし）
 - 参考: ADR-010 model/asset 分離, ADR-020 cross-edge management, ADR-063 task return source / initialized store
