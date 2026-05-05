@@ -251,7 +251,7 @@ ADR-062 は accepted 済み。
 - `returns.source` は、その signature を満たす値を内部 flow / input からどこで得るかを指定する task return wiring である
 - leaf task / note-only task / external boundary task では `returns.source` を省略できる
 - `flow:` を持たない task でも `returns.source: $params.<name>` による pass-through return は正当である
-- `returns.source` に指定できる source は node id / QualifiedID、先行する collected asset source、`$params.<name>` である
+- `returns.source` に指定できる source は node id / QualifiedID、同一 flow file 内の collected asset source、`$params.<name>` である
 - `$item` は `returns.source` では使えない。指定時は `invalid_return_source`
 - `returns.source` と `returns.model` は ADR-060 の TypeRef compatibility で検証する
 - 型が互換しない場合は `incompatible_return_type`
@@ -296,10 +296,10 @@ ADR-062 は accepted 済み。
   - `$params.<name>` を main task params に解決
   - collected asset source を同一 flow file 内の先行 `foreach.returns` として解決
   - `returns.source` が未指定の場合は何もしない
-- [ ] **entry順 visibility を守って collected asset source を解決**
-  - `foreach.returns` の前方参照を許可しない
-  - ADR-061 と同じく flow entry を順に走査し、visible collected source を積む
-  - `project.FlowCollectedSourcesByFile[fileID]` 全体を無条件に見せない
+- [ ] **task return source は flow 末尾時点の collected source 集合で解決**
+  - `returns.source` は task 全体の return を表すため、flow entry 順における前方参照という概念は適用しない
+  - 同一 flow file 内に出現するすべての `foreach.returns` 由来 collected asset source を参照候補にする
+  - flow 内部 wiring の entry順 visibility とは扱いを分ける
 - [ ] **return source diagnostic を追加**
   - `unresolved_return_source`
   - `invalid_return_source`
@@ -311,6 +311,10 @@ ADR-062 は accepted 済み。
   - source / target TypeRef 解決不能時は `incompatible_return_type` を抑制
 - [ ] **name一致による暗黙 return 接続を実装しないことを確認**
   - `returns.name` と flow source / `foreach.returns` が一致しても、`returns.source` 未指定なら return wiring として扱わない
+- [ ] **MCP / renderer / resolved index への露出方針を確認**
+  - `returns.source` を MCP `get_signature` に含めるか、`inspect` のみに出すかを判断する
+  - DAG renderer で `returns.source` を可視化するか、ADR-062 ではスコープ外とするかを判断する
+  - semantic / resolved project に raw source 文字列だけを持つか、resolved source も持つかを ADR-048 と整合確認する
 - [ ] **ADR-062 実装後に Evidence を更新**
   - `docs/adr/062-task-return-source.md` の `impl commit: tbd` を実装 commit hash で更新
   - `docs/tasks/m15-data-layer-expressiveness.md` の Evidence は必要に応じて追補する
@@ -329,9 +333,9 @@ ADR-062 は accepted 済み。
   - source / target 型不一致で `incompatible_return_type`
   - source TypeRef 解決不能時は `incompatible_return_type` を抑制
   - target `returns.model` 解決不能時は `incompatible_return_type` を抑制
-- [ ] **entry順 / 暗黙接続のテスト**
-  - 後続の `foreach.returns` を前方参照した `returns.source` は `unresolved_return_source`
-  - 先行する `foreach.returns` は `returns.source` から参照できる
+- [ ] **collected asset visibility / 暗黙接続のテスト**
+  - flow 内の `foreach.returns` は、flow entry 上の出現位置にかかわらず `returns.source` から参照できる
+  - flow 内部 wiring では既存どおり entry順 visibility を維持する
   - `returns.name` と flow source 名が一致していても、`returns.source` 未指定なら return wiring として扱わない
 - [ ] **UC-001 回帰更新**
   - `cart/task/validate_cart.yaml` で `foreach.returns: validated_items` を main task return として返す場合、`returns.source: validated_items` を明示する

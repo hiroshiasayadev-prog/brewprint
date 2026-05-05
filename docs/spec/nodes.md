@@ -127,7 +127,7 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 |-----------|------|-----|------|
 | `name` | ✓ | string | 生成されるassetの名前 |
 | `model` | ✓ | TypeRef | 型参照。primitive / named model / inline `list<T>` / inline `dict<T>` を指定できる |
-| `source` | 任意 | wiring source | task が外部へ返す値の source。node id / collected asset source / `$params.<name>` を指定できる。`$item` は指定不可 |
+| `source` | 任意 | string（wiring source 構文） | task が外部へ返す値の source。node id / collected asset source / `$params.<name>` を指定できる。`$item` は指定不可 |
 
 `returns` は単一のみ。複数返しが必要な場合はstruct modelでwrapして単一にする（ADR-009）。primitive return は `str` / `int` / `bool` / `any` 等の primitive TypeRef で表現する。
 

@@ -444,7 +444,7 @@ wiring source が node ID / `$params.<name>` / `$item` / collected asset source 
 
 > 出典: ADR-062
 
-`task.returns.source` は、task が外部へ返す値の source を明示する task return wiring である。
+`task.returns.source` は、task が外部へ返す値の source を明示する task return wiring である。§1-7 の flow wiring が task 内部のノード間 wiring を扱うのに対し、return wiring は task の外向き signature と内部 source の接続を扱う。
 
 `returns.name` / `returns.model` は task の外向き signature を表す。`returns.source` は、その signature を満たす値を内部 flow または入力からどこで得るかを指定する。
 
@@ -476,8 +476,10 @@ flow:
 | source | 意味 |
 |---|---|
 | node ID / QualifiedID | task / join など returns を持つ node の出力全体 |
-| collected asset source | 先行する `foreach.returns` で宣言された collected asset |
+| collected asset source | 同一 flow file 内に出現する `foreach.returns` 由来 collected asset |
 | `$params.<name>` | main task params の `<name>` をそのまま返す |
+
+`returns.source` から参照可能な collected asset source は、同一 flow file 内に出現するすべての `foreach.returns` 由来 collected asset source である。`returns.source` は task 全体の return を表すため、flow entry 順における前方参照という概念は適用しない。flow 内部 wiring の visibility とは扱いが異なる。
 
 `$item` は `returns.source` では使えない。`$item` は foreach iteration 内部の source であり、task 全体の return source ではない。foreach 全体の結果を返す場合は、`foreach.returns` で collect した source を `returns.source` に指定する。
 
