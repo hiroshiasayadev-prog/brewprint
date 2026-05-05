@@ -45,7 +45,7 @@ ADR-009 / spec/nodes.md §returns オブジェクト で「returns は単一の�
 task は実装上 `task()` のように function call として呼ばれ、戻り値は呼び出し側で受け取られる。
 `returns.name` は docstring 的な命名であり、言語仕様としての意味は `returns.model`（型）が本質である。
 
-DAG 上で `returns.name` を node ラベルとして可視化する必要性は、Tasks 詳細セクションの `#### Returns` table で参照可能であることを踏まえると低い。
+一方、`returns.source` は「内部 source を外向き task signature の return として返す」wiring である。DAG 上で `returns.name` を boundary node として描く必要性は低いが、return data line の role label として表示することで、内部 source が外向きにどの return name として返されるかを自然に示せる。
 
 ### 認識3: `_end` を ObjectFlow 終点として再利用できる
 
@@ -65,41 +65,61 @@ ADR-065 §決定 §5 の役割対比で、initialized store は store node と m
 
 ADR-024 §1〜§3 の `subgraph returns` 描画ルールを廃止する。
 
-`returns.name` を表す boundary asset node は描かず、`returns.source` で指定された source node から `_end` への data line（`-->`）で「これが return される値」を表現する。
+`returns.name` を表す boundary asset node は描かず、`returns.source` で指定された値を表す node から `_end` への label 付き data line で「これが return される値」を表現する。edge label は固定 prefix `returns as ` と `task.returns.name` を連結した文字列とする。
 
-`returns.name` 情報は DAG には現れない。Tasks 詳細セクションの `#### Returns` table で参照可能であり、DAG 上の重複表示を避ける。
+```txt
+<value_node> -- "returns as <returns.name>" --> _end
+```
+
+このとき、task / join / collected asset のように asset を生成する source では、task node から直接 `_end` へ data line を引かない。通常どおり asset node を生成し、その asset node から `_end` へ data line を引く。data line は「値」を運ぶ線であり、task node そのものではなく、その task が生成した asset を経由する方が意味的に正確である。
+
+`returns.name` は boundary node としては DAG に出さない。ただし return data line の label として表示する。Tasks 詳細セクションの `#### Returns` table でも参照可能であり、DAG 上では node を増やさず edge role として補助表示する。
 
 ### 2. `_end` は ControlFlow 終点 + ObjectFlow 終点を兼ねる
 
 ADR-024 §4 で確立された `_end([End])` は、本ADRから以下の2役を担う。
 
 - **ControlFlow 終点**: 最後の task / floating ノードからの制御線（`==>`）の収束先（既存挙動）
-- **ObjectFlow 終点**: `returns.source` で指定された source からの data line（`-->`）の収束先（新規）
+- **ObjectFlow 終点**: `returns.source` で指定された値を表す node からの label 付き data line（`-- "returns as <returns.name>" -->`）の収束先（新規）
 
 UML 2.x では ActivityFinalNode と ActivityParameterNode (output) は別シンボルだが、Mermaid flowchart にはこの区別を表現する慣習記法がない。単一 return という brewprint の構造的制約（ADR-009）を踏まえ、`_end` に両 flow を収束させることでこの制約を逆に視覚化する。
 
-`_end` への data line と control line は両立する。同一の最終 task から `_end` へ control line（`==>`）と data line（`-->`）の両方が引かれることは正常な状態である。
+`_end` への return data line と control line は両立する。同一の最終 task が `returns.source` の source でもある場合でも、control line（`task ==> _end`）は task node から引き、return data line（`asset -- "returns as <returns.name>" --> _end`）は task が生成した asset node から引く。task / join が `returns` を持たず asset node を生成しない場合は、return source として不正であり、この render ルールの対象外である。
 
 ### 3. source 種別ごとの edge 起点
 
-`returns.source` の source 種別ごとに、`_end` への edge 起点を以下のとおり定める。
+`returns.source` の source 種別ごとに、`_end` への return data line 起点を以下のとおり定める。edge label は source 種別を問わず `returns as <returns.name>` とする。
 
-| source 種別 | edge 起点 | 例 |
+| source 種別 | `_end` への return data line 起点 | 例 |
 |---|---|---|
-| node id / QualifiedID | 当該 node | `transform --> _end` |
-| collected asset source（`foreach.returns`） | foreach apply 先 task | `process_item --> _end` |
-| initialized source（`initializes[].name`） | `subgraph initializes` 内の store node | `report --> _end` |
-| `$params.<name>` | `subgraph params` 内の boundary asset | `config --> _end` |
+| node id / QualifiedID | 当該 task / join が生成する asset node | `result -- "returns as report" --> _end` |
+| collected asset source（`foreach.returns`） | `foreach.returns` 名で生成される collected asset node | `results -- "returns as report" --> _end` |
+| initialized source（`initializes[].name`） | `subgraph initializes` 内の store node | `report -- "returns as report" --> _end` |
+| `$params.<name>` | `subgraph params` 内の boundary asset | `config -- "returns as report" --> _end` |
 
-collected asset source は ADR-061 で独立した名前を持つが、DAG 上では独立 node を新設せず apply 先 task からの直接 edge で表現する。これは spec/views/dag.md の foreach 例（`process_item --> results` 形式）の延長として整合する。
+node id / QualifiedID を `returns.source` に指定した場合、DAG 上では従来どおり当該 node から `returns.name` の asset node を生成し、その asset node から `_end` へ data line を引く。
 
-`$params.<name>` を return する pass-through ケースは、params boundary node から `_end` へ直結 edge を引く。間に identity を示す表現は挟まない。
+```txt
+transform --> result([result])
+result -- "returns as report" --> _end
+transform ==> _end
+```
+
+collected asset source は ADR-061 で独立した名前を持つ source であり、DAG 上でも `foreach.returns` 名の collected asset node を生成する。foreach apply 先 task から collected asset node への data line を引き、その collected asset node から `_end` へ data line を引く。
+
+```txt
+process_item --> results([results])
+results -- "returns as report" --> _end
+process_item ==> _end
+```
+
+initialized source と `$params.<name>` はすでに値を表す node（initialized store node / params boundary asset）を持つため、その node から `_end` へ label 付き return data line を引く。間に identity を示す表現は挟まない。
 
 ### 4. `subgraph initializes` を新設する
 
 `initializes[]` で宣言された file-private store を、`subgraph initializes` で囲って描画する。
 
-```mermaid
+```txt
 subgraph initializes
   report[(report)]
   cache[(cache)]
@@ -149,7 +169,7 @@ flow:
       item: $item
 ```
 
-```mermaid
+```txt
 report --> append_item
 ```
 
@@ -166,17 +186,17 @@ cross-edge `reads:` / `writes:` の宣言は store access contract であり、A
 ```
 
 `reads` のみ:
-```mermaid
+```txt
 report -- "read" --> append_item
 ```
 
 `writes` のみ:
-```mermaid
+```txt
 append_item -- "write" --> report
 ```
 
 両方:
-```mermaid
+```txt
 append_item <-- "read/write" --> report
 ```
 
@@ -188,7 +208,7 @@ append_item <-- "read/write" --> report
 
 例: `report` を flow wiring で `append_item` に渡し、かつ `append_item` が `reads`/`writes` を宣言する場合：
 
-```mermaid
+```txt
 report --> append_item                          %% flow wiring (data line)
 append_item <-- "read/write" --> report         %% cross-edge (store access line)
 ```
@@ -216,7 +236,7 @@ ADR-024 §1〜§3 の boundary 体系は本ADRで以下のとおり再構成さ�
 |---|---|---|
 | 入力 (`$params`) | `subgraph params` + boundary asset | 維持（ADR-024） |
 | 内部宣言 (`initializes[]`) | `subgraph initializes` + initialized store node | 新設（本ADR §4） |
-| 出力 (`returns`) | `_end` への data line | 廃止 + 再構成（本ADR §1, §2, §3） |
+| 出力 (`returns`) | `returns.source` の値 node から `_end` への label 付き return data line | `subgraph returns` は廃止 + return data line として再構成（本ADR §1, §2, §3） |
 
 `boundaryNode` classDef は `subgraph params` 内の boundary asset にのみ適用する。`subgraph returns` は廃止のため `boundaryNode` の使用範囲が縮小する。
 
@@ -246,15 +266,23 @@ classDef external      fill:#E0E0E0,stroke:#999,color:#555
 
 ### なぜ `subgraph returns` を廃止するか
 
-ADR-024 §1 の「複数 return を視覚化する」目的は、ADR-009 の単一 return 制約により構造的に達成不要となっている。`subgraph returns` で囲うメリットは「asset を返す場合に名前が boundary に表示される」程度に縮退しており、ADR-063 で initialized source / collected asset source / `$params.<name>` 等の多様な source が `returns.source` の参照対象になった現状では、`source --> boundary asset --> boundary returns` の3段 edge による冗長性が顕在化する。
+ADR-024 §1 の「複数 return を視覚化する」目的は、ADR-009 の単一 return 制約により構造的に達成不要となっている。`subgraph returns` で囲うメリットは「return signature 名が boundary に表示される」程度に縮退しており、ADR-063 で initialized source / collected asset source / `$params.<name>` 等の多様な source が `returns.source` の参照対象になった現状では、`value node --> returns boundary` という専用 boundary 表現が冗長になる。
 
-`returns.name` を DAG から消しても Tasks 詳細セクションの `#### Returns` table で参照可能であり、設計表現上の情報損失は限定的である。
+一方で、return data line が単なる `value --> _end` だけでは「終了した」ことは分かっても「外向き return signature として返した」ことが弱く見える。そこで returns boundary node は復活させず、edge label として `returns as <returns.name>` を付与する。これは boundary node の再導入ではなく、ObjectFlow の role を明示する軽量な表現である。
+
+ただし、`subgraph returns` の廃止は asset node の廃止を意味しない。task / join / foreach collected asset が値を生成する場合、その値を表す asset node は従来どおり描画する。廃止するのは `returns.name` を境界表示するためだけの returns boundary node である。
+
+`returns.name` は DAG node としては表示しないが、return data line の label と Tasks 詳細セクションの `#### Returns` table で参照可能にする。これにより、node 数を増やさずに「どの外向き return name として返されるか」を読み取れる。
 
 ### なぜ `_end` に ObjectFlow を収束させるか
 
 UML 2.x では ActivityFinalNode と ActivityParameterNode (output) を別シンボルで表現するが、Mermaid flowchart にはこの区別を表現する慣習記法がない。
 
-brewprint は単一 return 制約（ADR-009）を持つため、「`_end` に来る data line が return」という解釈は一意に定まる。Mermaid 制約と単一 return 構造を両立させる解として、`_end` に両 flow を収束させる方法を採用する。
+brewprint は単一 return 制約（ADR-009）を持つため、「`_end` に来る data line が return」という解釈は一意に定まる。Mermaid 制約と単一 return 構造を両立させる解として、`_end` に両 flowを収束させる方法を採用する。
+
+data line は値の受け渡しを表すため、task / join node から直接 `_end` へ引くのではなく、task / join が生成した asset node から `_end` へ引く。これにより、制御主体としての task node と、返される値としての asset node を混同しない。
+
+さらに label を `returns as <returns.name>` に固定することで、単なる dataflow ではなく task return wiring であることを視覚的に区別する。label は source 名ではなく edge role と外向き return name を表す。
 
 ### なぜ initialized store を subgraph で囲うか
 
@@ -293,14 +321,14 @@ DAG render は YAML に書かれた事実を忠実に描画するレイヤーで
 
 → 却下。
 
-#### 代替案B: `subgraph returns` 廃止 + `returns.name` を edge label で表示
+#### 代替案B: edge label なしで `_end` へ data line を引く
 
-`source -- "returns: result" --> _end` のように edge label で `returns.name` を表示する案。
+`value --> _end` のように、return data line を通常 data line と同じ無ラベル edge として描画する案。
 
-利点: `returns.name` が DAG に残る。
-欠点: edge label がさらに増える。Tasks 詳細セクションの `#### Returns` table と重複する。
+利点: edge label が増えず、図が簡潔。
+欠点: `value --> _end` だけでは通常の dataflow と return wiring の区別が弱い。`_end` が ControlFlow 終点も兼ねるため、何が外向き return として返されるのかが読み取りづらい。
 
-→ 却下。`returns.name` の DAG 表示は冗長と割り切る。
+→ 却下。`returns as <returns.name>` label を付け、return wiring の role を明示する。
 
 #### 代替案C: initialized store を subgraph で囲わず通常の store node と同じ位置に描く
 
@@ -341,7 +369,9 @@ DAG render は YAML に書かれた事実を忠実に描画するレイヤーで
 - `docs/spec/views/dag.md` §エッジのrender に `returns.source` の edge ルール節を新設する
 - `docs/spec/views/dag.md` の全 render 例（基本DAG / fork-join / store / foreach / branch）を新ルールに従い書き換える
   - `subgraph returns` の削除
-  - source node から `_end` への data line 追加
+  - `returns.source` の値 node から `_end` への label 付き return data line 追加
+  - task / join / collected asset source では asset node を経由することの反映
+  - return data line label として `returns as <returns.name>` を出力することの反映
   - 該当する場合 `subgraph initializes` の追加
 - `docs/spec/views/dag.md` §エッジのrender §データ線 の store access line 説明を、initialized store にも適用される旨に拡張する
 - ADR-066 の color 修正と本ADRの initStoreNode 追加を classDef 一覧に反映する
@@ -357,8 +387,10 @@ DAG render は YAML に書かれた事実を忠実に描画するレイヤーで
 
 - `internal/render/dag` から `subgraph returns` 出力ロジックを削除する
 - `internal/render/dag` に `subgraph initializes` 出力ロジックを追加する
-- `internal/render/dag` に `returns.source` 解決と `_end` への data line 出力を追加する
+- `internal/render/dag` に `returns.source` 解決と `_end` への label 付き return data line 出力を追加する
   - 4 source 種別（node id / collected asset source / initialized source / `$params.<name>`）に対応
+  - node id / QualifiedID / collected asset source では asset node を経由して `_end` へ接続する
+  - edge label は `returns as <returns.name>` とする
 - `internal/render/dag` の classDef 出力に `initStoreNode` を追加する
 - flow wiring と cross-edge `reads`/`writes` の両方が同じ initialized store node を参照する場合、両 edge をそれぞれ独立して出力する
 - 出力の Mermaid 文字列が変わるため、文字列比較ベースの test が変わる
@@ -367,7 +399,8 @@ DAG render は YAML に書かれた事実を忠実に描画するレイヤーで
 
 - UC-001 の renders/ 配下 Mermaid 出力が以下のとおり変わる
   - `subgraph returns` 消滅
-  - `_end` へ data line 追加
+  - `returns.source` の値 node から `_end` へ label 付き return data line 追加
+  - task / join / collected asset source では asset node から `_end` へ label 付き return data line 追加
   - initialized store を持つ task は `subgraph initializes` 追加
   - classDef に `initStoreNode` 追加
 - ADR-066 の文字色変更と合わせて golden test を一括更新する
