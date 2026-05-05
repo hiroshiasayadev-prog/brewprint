@@ -384,6 +384,6 @@ v1.0.0-spec の遡及修正ではない forward 拡張である。
 
 ## Evidence
 
-- commit: tbd
+- commit: eb891f2
 - impl commit: tbd
 - 参考: ADR-009 task IO design (single return), ADR-014 initializes field, ADR-020 cross-edge management, ADR-024 DAG boundary nodes, ADR-044 store access edge labels, ADR-061 foreach collected asset, ADR-062 task return source, ADR-063 task return source / initialized store, ADR-065 asset immutability and edge role contrast, ADR-066 DAG classDef WCAG fix, OMG UML 2.x ActivityFinalNode / ActivityParameterNode

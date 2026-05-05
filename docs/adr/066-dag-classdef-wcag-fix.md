@@ -148,6 +148,6 @@ ADR-022 の冒頭には partial superseded annotation を追加し、§「ノー
 
 ## Evidence
 
-- commit: tbd
+- commit: 96aa78c
 - impl commit: tbd
 - 参考: WCAG 2.1（W3C）, IEC 61966-2-1 sRGB Linearization, ADR-022 DAG node shape and edge types
