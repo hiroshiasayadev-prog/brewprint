@@ -30,6 +30,8 @@ depends_on:
   - docs/adr/042-wireframe-main-and-layout.md
   - docs/adr/060-flow-wiring-type-compatibility.md
   - docs/adr/062-task-return-source.md
+  - docs/adr/063-task-return-source-initialized-store.md
+  - docs/adr/065-asset-immutability-and-edge-role-contrast.md
 ---
 
 # ノード定義仕様
@@ -127,13 +129,13 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 |-----------|------|-----|------|
 | `name` | ✓ | string | 生成されるassetの名前 |
 | `model` | ✓ | TypeRef | 型参照。primitive / named model / inline `list<T>` / inline `dict<T>` を指定できる |
-| `source` | 任意 | string（wiring source 構文） | task が外部へ返す値の source。node id / collected asset source / `$params.<name>` を指定できる。`$item` は指定不可 |
+| `source` | 任意 | string（wiring source 構文） | task が外部へ返す値の source。node id / collected asset source / initialized source / `$params.<name>` を指定できる。`$item` は指定不可 |
 
 `returns` は単一のみ。複数返しが必要な場合はstruct modelでwrapして単一にする（ADR-009）。primitive return は `str` / `int` / `bool` / `any` 等の primitive TypeRef で表現する。
 
 `returns.source` は task return wiring であり、`returns.name` / `returns.model` が表す外向き signature を満たす値を内部 flow または入力からどこで得るかを明示する。leaf task / note-only task / external boundary task では省略できる。`returns.source` を省略した場合、`returns.name` と flow source 名が一致していても暗黙接続は行わない。source 解決と型互換性の詳細は [edges.md](./edges.md) §1-8 を参照する。
 
-> 由来: ADR-062 §1〜§7
+> 由来: ADR-062 §1〜§7, ADR-063 §1
 
 ### init オブジェクト（initializes内）
 
@@ -146,6 +148,12 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 `initializes` で宣言されたstoreはファイル内にprivate。外部参照不可（ADR-014）。
 
 `initializes[].model` は v1.1 でも model-id 参照のまま扱う。TypeRef 適用対象は `params[].model` / `returns.model` / `fields[].type` / `model.element` / `model.value` に限定する。詳細は [type-ref.md](./type-ref.md) §1 を参照する。
+
+`initializes[].name` は同一 file の bare wiring source 名前空間に参加する。`returns.source` および flow 内部 wiring（step.params / branch.params / fork.branches[].steps[].params / foreach.params / branch.cases[].params）の bare token から initialized source として参照できる。参照時の TypeRef は `initializes[].model` を named model TypeRef として扱い、ADR-060 の TypeRef compatibility ルールで target TypeRef と互換性検証する。詳細は [edges.md](./edges.md) §1-7 / §1-8 を参照する。
+
+外部 file からの QualifiedID 参照や module 跨ぎ参照は ADR-014 通り引き続き不可である。
+
+> 由来: ADR-014 §決定, ADR-063 §2〜§4
 
 ---
 
@@ -243,11 +251,25 @@ Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` �
 
 ## asset
 
-> 出典: ADR-010
+> 出典: ADR-010, ADR-065
 
 Processingレイヤー。フロー上の存在。**独立ファイルは持たない**。`task` の `returns` 宣言から暗黙的に生まれる。
 
 YAML上に直接定義する構文は存在しない。DAG図・MCPツールでは `task.returns.name` をasset IDとして扱う。
+
+### immutability と書き込み文法の不在
+
+asset は task の単一実行が生んだ output snapshot として扱う。brewprint の語彙レベルで以下が成り立つ。
+
+- cross-edge `reads:` / `writes:` は `store-id` のみを受ける（[edges.md](./edges.md) §3）。asset はこの対象外
+- task が値を生むのは `returns` 宣言を通してのみ。生成後の書き換えを表す YAML 記述は存在しない
+- 「累積する箱」「後から append される対象」として asset を扱うことはできない
+
+mutable な runtime instance が必要な場合は store を使う（§store / 同セクションの2形態表参照）。
+
+実装言語上の参照渡しや mutation 挙動は brewprint のスコープ外（ADR-065 §決定 §4）。
+
+> 由来: ADR-065 §決定 §1〜§5
 
 ```
 # task/login.yamlのreturnsから暗黙的に生まれるasset
@@ -261,9 +283,20 @@ assetの「意味」はそれを生産するtaskによって与えられる。ta
 
 ## store
 
-> 出典: ADR-007（kind定義・内容はADR-010に継承）, ADR-019（stateとの区別）
+> 出典: ADR-007（kind定義・内容はADR-010に継承）, ADR-019（stateとの区別）, ADR-065（2形態の整理）
 
 Processingレイヤー / Dataレイヤー。実行時にデータを保持する実体。FSMの `state` とは別概念（ADR-019）。
+
+brewprint における runtime data instance の総称が store であり、宣言経路で2形態に分かれる。
+
+| 形態 | 宣言経路 | スコープ | 出典 |
+|------|---------|---------|------|
+| store node | `store/*.yaml` で `type: store` として宣言 | module-level（QualifiedID で外部参照可） | ADR-007 → ADR-010 |
+| initialized store | task ファイルの `initializes[]` で宣言 | file-private（同一 file 内のみ参照可） | ADR-014, ADR-063 |
+
+両者とも cross-edge `reads:` / `writes:` の対象であり、mutation を表現する語彙を持つ。`asset` との役割対比は §asset / ADR-065 §決定 §5 を参照。
+
+以下の `kind` / `of` はいずれの形態にも適用される。`initialized store` は `kind` を持たず `model` 参照のみで宣言される（[init オブジェクト](#init-オブジェクトinitializes内) 参照）。
 
 ```yaml
 - id: user_db

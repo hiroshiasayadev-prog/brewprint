@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/overview.md
 status: confirmed
-last_updated: 2026-04-30
+last_updated: 2026-05-05
 summary: >
   brewprintの全体概要。コンセプト・ノード種別・クロスエッジ・伝搬方向・
   責務分離方針・今後の検討事項を定義する。
@@ -20,6 +20,7 @@ depends_on:
   - docs/adr/019-state-node.md
   - docs/adr/020-cross-edge-management.md
   - docs/adr/028-api-table-route-composition.md
+  - docs/adr/065-asset-immutability-and-edge-role-contrast.md
 future_issues:
   - non-functional属性（retry/idempotent/async）のfirst-class化はdogfood後に判断
 ---
@@ -99,6 +100,14 @@ brewprintの**実装者はほぼAIを想定**している。この前提から�
 | `join` | Processing | 合流。対応する `fork` の全ブランチが揃うまで待つ。必ず `fork` とペアで使う |
 
 > `foreach` はADR-016にてnode typeから廃止。`flow:` セクションの制御構文として記述する。
+
+### runtime data instance と asset の役割対比
+
+brewprint における runtime data instance は `store` が総称。`store` には2形態あり、module-level に宣言される `store node`（`store/*.yaml`）と、task ファイル内に `initializes` で宣言される `initialized store` がある。前者は QualifiedID で外部参照可能、後者は file-private（詳細は [nodes.md](./nodes.md) §store / §init オブジェクト 参照）。
+
+`asset` は `task.returns` 由来の output snapshot であり、mutable な runtime instance ではない。cross-edge `reads:` / `writes:` の対象外であり、書き込み文法を持たない。mutable な runtime instance が必要な場合は `store` を使う。
+
+> 由来: ADR-065 §決定 §1〜§5
 
 ### taskのendpointフラグ
 

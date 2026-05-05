@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/views/er.md
 status: confirmed
-last_updated: 2026-04-24
+last_updated: 2026-05-05
 summary: >
   ER図のrenderルール。
   store.kind=dbとmodelの参照を辿ってMermaid erDiagramを生成する際の
@@ -12,6 +12,8 @@ depends_on:
   - docs/adr/021-model-field-structure.md
   - docs/adr/026-fk-cardinality-and-nm-relation.md
   - docs/adr/039-er-diagram-composed-view.md
+  - docs/adr/014-initializes-field.md
+  - docs/adr/065-asset-immutability-and-edge-role-contrast.md
 ---
 
 # ER図 renderルール
@@ -27,6 +29,8 @@ ER図に登場するノードは以下の2種のみ。
 
 `store.kind: session` / `collection` / `context` はER図に登場しない。
 `model.kind: list` / `dict` はエンティティとしてER図に登場しない（structのフィールド型として出現するのみ）。
+
+`initializes[]` で宣言された initialized store もER図に登場しない。`kind` を持たないため `store.kind: db` の条件を満たさず、また task 内の file-private な runtime instance であって永続データ構造ではないため（ADR-014, ADR-065）。
 
 ---
 
