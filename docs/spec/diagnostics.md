@@ -12,6 +12,7 @@ depends_on:
   - docs/adr/060-flow-wiring-type-compatibility.md
   - docs/adr/061-foreach-returns-collected-asset.md
   - docs/adr/062-task-return-source.md
+  - docs/adr/063-task-return-source-initialized-store.md
 ---
 
 # Diagnostics仕様
@@ -152,7 +153,6 @@ Sort key:
 | `duplicate_main_node` | error | 1 file内にmain nodeが複数ある |
 | `duplicate_actor` | error | actor idが重複している |
 | `duplicate_initialized_store` | error | initialized storeが同一file内で重複している |
-| `duplicate_flow_source` | error | 同一 flow file 内で `foreach.returns` が node id または他の `foreach.returns` と重複している |
 
 ### Flow validation
 
@@ -165,12 +165,13 @@ Sort key:
 | `unmatched_join_param` | error | join paramに対応するbranch returnがない |
 | `incompatible_wiring_type` | error | flow wiring source の TypeRef と target param の TypeRef が互換しない |
 | `invalid_wiring_source` | error | source は解決できたが、その文脈では wiring source として使えない |
-| `unresolved_wiring_source` | error | wiring source が node id / `$params.<name>` / `$item` / collected asset source のいずれとしても解決できない |
+| `unresolved_wiring_source` | error | wiring source が node id / `$params.<name>` / `$item` / collected asset source / initialized source のいずれとしても解決できない |
 | `invalid_foreach_over_type` | error | `foreach.over` が指す source が list として扱えない |
 | `invalid_foreach_returns` | error | apply 先 task に `returns` がないのに `foreach.returns` が指定されている、または当該 foreach 自身の `params` 内から自分の `returns` 名を参照している |
-| `unresolved_return_source` | error | `returns.source` が node id / `$params.<name>` / collected asset source のいずれとしても解決できない |
+| `unresolved_return_source` | error | `returns.source` が node id / `$params.<name>` / collected asset source / initialized source のいずれとしても解決できない |
 | `invalid_return_source` | error | source は解決できたが task return source として使えない |
 | `incompatible_return_type` | error | `returns.source` の TypeRef と `returns.model` の TypeRef が互換しない |
+| `duplicate_flow_source` | error | 同一 flow file 内で node id / collected asset source 名 / initialized source 名のいずれかが他のものと重複している |
 
 `invalid_type_ref` の message には、不正な TypeRef 文字列とその出現位置を含める。
 
@@ -178,7 +179,7 @@ TypeRef 構文は valid だが内部の named model が解決できない場合�
 
 `incompatible_wiring_type` の message には、source TypeRef / target TypeRef / wiring位置を含める。
 
-`duplicate_flow_source` は、`foreach.returns` が同一 flow file 内の node id または他の `foreach.returns` と重複している場合に出す。task の `returns.name` は通常 flow の wiring source ではないため、task `returns.name` と `foreach.returns` が同名でも `duplicate_flow_source` にはしない。
+`duplicate_flow_source` は、同一 flow file 内で node id / `foreach.returns` で宣言された collected asset source 名 / `initializes[].name` で宣言された initialized source 名のいずれかが他のものと重複している場合に出す。task の `returns.name` は通常 flow の wiring source ではないため、task `returns.name` と他の bare source 名が同名でも `duplicate_flow_source` にはしない。
 
 `invalid_foreach_returns` は、以下の場合に出す。
 
@@ -187,21 +188,25 @@ TypeRef 構文は valid だが内部の named model が解決できない場合�
 
 `unresolved_wiring_source` と `invalid_wiring_source` は区別する。
 
-- `unresolved_wiring_source`: typo などにより参照先が存在しない。wiring source が node id / `$params.<name>` / `$item` / collected asset source のいずれとしても解決できない
+- `unresolved_wiring_source`: typo などにより参照先が存在しない。wiring source が node id / `$params.<name>` / `$item` / collected asset source / initialized source のいずれとしても解決できない
 - `invalid_wiring_source`: 参照先は存在するが、その文脈では source として使えない。例: returns を持たない node、foreach 外の `$item`
 
-TypeRef の解決失敗、未解決参照、`invalid_foreach_over_type` が発生している `$item` wiring、または TypeRef 解決不能な collected asset source を参照する wiring では、重複して `incompatible_wiring_type` を発行しない。
+initialized source は valid な wiring source 種別であり、`invalid_wiring_source` の対象にはならない。`initializes[].model` が解決不能な場合、initialized source を参照する wiring の `incompatible_wiring_type` は抑制する。
+
+TypeRef の解決失敗、未解決参照、`invalid_foreach_over_type` が発生している `$item` wiring、または TypeRef 解決不能な collected asset source / initialized source を参照する wiring では、重複して `incompatible_wiring_type` を発行しない。
 
 `unresolved_return_source` と `invalid_return_source` は区別する。
 
-- `unresolved_return_source`: typo などにより参照先が存在しない。`returns.source` が node id / `$params.<name>` / collected asset source のいずれとしても解決できない
+- `unresolved_return_source`: typo などにより参照先が存在しない。`returns.source` が node id / `$params.<name>` / collected asset source / initialized source のいずれとしても解決できない
 - `invalid_return_source`: 参照先は存在するが、task return source として使えない。例: returns を持たない node、`$item`
+
+initialized source は valid な return source 種別であり、`invalid_return_source` の対象にはならない。
 
 `incompatible_return_type` の message には、source TypeRef / target TypeRef / `returns.source` 位置を含める。
 
 `returns.source` の TypeRef または `returns.model` の TypeRef が解決不能な場合、重複して `incompatible_return_type` を発行しない。
 
-> 由来: ADR-060 §6, §7; ADR-061 §9; ADR-062 §8
+> 由来: ADR-060 §6, §7; ADR-061 §9; ADR-062 §8; ADR-063 §9
 
 ### Transition validation
 

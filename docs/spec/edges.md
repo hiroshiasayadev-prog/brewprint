@@ -21,6 +21,7 @@ depends_on:
   - docs/adr/060-flow-wiring-type-compatibility.md
   - docs/adr/061-foreach-returns-collected-asset.md
   - docs/adr/062-task-return-source.md
+  - docs/adr/063-task-return-source-initialized-store.md
 ---
 
 # エッジ定義仕様
@@ -403,13 +404,15 @@ named list/dict model の正規化および TypeRef 構文は [type-ref.md](./ty
 | `$params.<name>` | 同一ファイルの main task の `params[].name == <name>` の `model` |
 | `$item` | foreach の `over` から導出した element TypeRef。`over` が `list<T>` または named list model の場合は `T`、`any` の場合は `any` |
 | `foreach.returns` で宣言された collected asset source 名 | apply 先 task の `returns.model` `T` から導出した `list<T>` |
+| `initializes[].name` で宣言された initialized source 名 | `initializes[].model` を named model TypeRef として扱う |
 
-flow wiring source は以下の4種として解決する。
+flow wiring source は以下の5種として解決する。
 
 1. node ID / QualifiedID
 2. `$params.<name>`
 3. `$item`
 4. `foreach.returns` で宣言された collected asset source 名
+5. `initializes[].name` で宣言された initialized source 名
 
 node ID が task / join 以外を指す場合、または task / join でも `returns` を持たない場合は、参照先は存在するが wiring source として使えないため `invalid_wiring_source` を出す。
 
@@ -419,13 +422,17 @@ node ID が task / join 以外を指す場合、または task / join でも `re
 
 `foreach.returns` で宣言された collected asset source は、同一 flow file 内の後続 step / branch / fork / foreach から bare source として参照できる。当該 foreach 自身の `params` 内から自分の `returns` 名を参照した場合は `invalid_foreach_returns` を出す。
 
-`foreach.returns` は同一 flow file 内の bare wiring source 名前空間に参加する。同一 flow file 内で、`foreach.returns` は node id または他の `foreach.returns` と重複してはならない。重複した場合は `duplicate_flow_source` を出す。ただし task の `returns.name` は通常 flow の wiring source ではないため、task `returns.name` と `foreach.returns` が同名でも衝突扱いしない。
+`initializes[].name` で宣言された initialized source は、同一 flow file 内の bare token として step.params / branch.params / fork.branches[].steps[].params / foreach.params / branch.cases[].params から参照できる。`initializes[].model` が解決不能な場合、initialized source の TypeRef も解決不能として扱い、後続 wiring の `incompatible_wiring_type` は抑制する。flow 内部 wiring から initialized source を参照する場合、その source は flow の構造上、当該 wiring に到達する時点での store の状態を指す。具体的な mutation semantics（参照渡し / コピー / append の挙動）は task 実装に委ねられ、brewprint としては規定しない。
 
-wiring source が node ID / `$params.<name>` / `$item` / collected asset source のいずれとしても解決できない場合は `unresolved_wiring_source` を出す。
+initialized source の参照は、cross-edge `reads` / `writes`（ADR-020）の体系を置き換えない。flow param wiring は値の受け渡し contract、cross-edge `reads` / `writes` は副作用 / store access contract として分担する。両者は併存する宣言であり、`reads` / `writes` 宣言と flow wiring 参照の整合性検査は v1.1 では規定しない（将来 lint レベルで扱う余地を残す）。
+
+`foreach.returns` および `initializes[].name` は同一 flow file 内の bare wiring source 名前空間に参加する。同一 flow file 内で、node id / `foreach.returns` / `initializes[].name` のいずれかが他のものと重複してはならない。重複した場合は `duplicate_flow_source` を出す。ただし task の `returns.name` は通常 flow の wiring source ではないため、task `returns.name` と他の bare source 名が同名でも衝突扱いしない。
+
+wiring source が node ID / `$params.<name>` / `$item` / collected asset source / initialized source のいずれとしても解決できない場合は `unresolved_wiring_source` を出す。
 
 `foreach.over` の解決結果が list として扱えない場合は `invalid_foreach_over_type` を出し、その foreach 内の `$item` wiring に対する `incompatible_wiring_type` は抑制する。
 
-> 由来: ADR-060 §5, ADR-061 §3〜§6, §9
+> 由来: ADR-060 §5, ADR-061 §3〜§6, §9, ADR-063 §2, §6, §7
 
 #### 型解決失敗時の扱い
 
@@ -477,23 +484,37 @@ flow:
 |---|---|
 | node ID / QualifiedID | task / join など returns を持つ node の出力全体 |
 | collected asset source | 同一 flow file 内に出現する `foreach.returns` 由来 collected asset |
+| initialized source | 同一 file の main task `initializes[].name` で宣言された file-private source |
 | `$params.<name>` | main task params の `<name>` をそのまま返す |
 
-`returns.source` から参照可能な collected asset source は、同一 flow file 内に出現するすべての `foreach.returns` 由来 collected asset source である。`returns.source` は task 全体の return を表すため、flow entry 順における前方参照という概念は適用しない。flow 内部 wiring の visibility とは扱いが異なる。
+`returns.source` は task 実行完了時点の source を参照する。`flow:` を持つ task では、flow が END に到達した時点の source 状態を task return として扱う。このルールは指定 source 種別を問わず共通である。
+
+- node output: 当該 node の実行完了時点の output
+- collected asset source: 当該 foreach 全体が完了した時点の collect 結果
+- initialized source: task 実行完了時点（flow END 時点）の store の値
+- `$params.<name>`: task 起動時点の入力（不変）
+
+evaluation の時間軸は「source の出現位置」ではなく「task / flow の完了時点」である。これは flow entry 順における前方参照という概念を `returns.source` には適用しないことを意味する。
+
+`returns.source` から参照可能な collected asset source は、同一 flow file 内に出現するすべての `foreach.returns` 由来 collected asset source である。flow 内部 wiring の visibility（entry順）とは扱いが異なる。
 
 `$item` は `returns.source` では使えない。`$item` は foreach iteration 内部の source であり、task 全体の return source ではない。foreach 全体の結果を返す場合は、`foreach.returns` で collect した source を `returns.source` に指定する。
 
-`returns.source` が node ID / `$params.<name>` / collected asset source のいずれとしても解決できない場合は `unresolved_return_source` を出す。source は解決できたが task return source として使えない場合は `invalid_return_source` を出す。例: returns を持たない node、`$item`。
+initialized source の TypeRef は `initializes[].model` を named model TypeRef として扱う（spec/nodes.md `init オブジェクト` 参照）。`initializes[].model` は v1.1 でも model-id 参照のままであり、inline `list<T>` / `dict<T>` は受け取らない。`returns.source` 経由で参照された場合に限り named model TypeRef として TypeRef compatibility 検証の対象になる。
+
+`returns.source` が node ID / `$params.<name>` / collected asset source / initialized source のいずれとしても解決できない場合は `unresolved_return_source` を出す。source は解決できたが task return source として使えない場合は `invalid_return_source` を出す。例: returns を持たない node、`$item`。initialized source は valid な return source 種別であり、`invalid_return_source` の対象にはならない。
 
 `returns.source` を指定した場合、source TypeRef と `returns.model` の TypeRef は §1-7 と同じ TypeRef compatibility ルールで検証する。互換しない場合は `incompatible_return_type` を出す。
 
 source TypeRef または `returns.model` の TypeRef が解決不能な場合は、重複して `incompatible_return_type` を発行しない。未解決 source / invalid source / unresolved model / invalid TypeRef など、一次診断を優先する。
 
+`returns.source` に指定した initialized store が flow 内で `writes` されているか否かは validation 対象としない。初期値のまま return するユースケース（identity initializer / default fallback / placeholder return）が valid である。
+
 `returns.name` と flow source 名が一致していても、それだけでは task return source として扱わない。返す値を明示する場合は `returns.source` を指定する。なお、`join.params` の `returns.name` 一致による暗黙接続は既存仕様として維持する。
 
 `returns.source` は単一 return にのみ対応する。複数 return / named tuple / multi output task は本仕様では扱わない。必要な場合は struct model で wrap して単一 return として表現する。
 
-> 由来: ADR-062 §1〜§8
+> 由来: ADR-062 §1〜§8, ADR-063 §1, §3, §5
 
 ## 2. 状態遷移エッジ（transitions:セクション）
 
