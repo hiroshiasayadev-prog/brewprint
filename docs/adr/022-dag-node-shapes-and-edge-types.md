@@ -3,6 +3,11 @@
 - **status**: accepted
 - **date**: 2026-04-20
 
+> このADRは起票時点での決定を記録したスナップショットである。
+> 現在の仕様は spec を参照すること。
+>
+> §決定 §「ノードの色付け」の `color` 列は ADR-066 で更新された。本ADRの色テーブルは起票時点の値を保持する。現行値は `docs/spec/views/dag.md` を参照すること。
+
 ## 背景
 
 `spec/views/dag.md` にてDAGのMermaid renderルールを定義するにあたり、
