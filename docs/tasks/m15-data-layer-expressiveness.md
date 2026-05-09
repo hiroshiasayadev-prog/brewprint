@@ -290,58 +290,58 @@ ADR-062 は accepted 済み。
 
 #### 実装
 
-- [ ] **raw YAML / semantic model の `returns` に `source` field を追加**
+- [x] **raw YAML / semantic model の `returns` に `source` field を追加**
   - `internal/rawyaml.Return.Source string`
   - `internal/semantic.Return` に raw source 文字列または resolved source を保持する field を追加
   - 既存の `returns.name` / `returns.model` / `TypeRef` / `Asset` は維持
-- [ ] **builder / resolver で `returns.source` を semantic model に反映**
+- [x] **builder / resolver で `returns.source` を semantic model に反映**
   - raw `returns.source` を読み取る
   - source 記法は flow wiring source と同じ構文を使う
   - `$item` は構文上は保持してよいが validation で `invalid_return_source` にする
-- [ ] **task return source resolver を追加**
+- [x] **task return source resolver を追加**
   - node id / QualifiedID を task / join returns に解決
   - `$params.<name>` を main task params に解決
   - collected asset source を同一 flow file 内の `foreach.returns` として解決
   - `returns.source` が未指定の場合は何もしない
-- [ ] **task return source は flow 末尾時点の collected source 集合で解決**
+- [x] **task return source は flow 末尾時点の collected source 集合で解決**
   - `returns.source` は task 全体の return を表すため、flow entry 順における前方参照という概念は適用しない
   - 同一 flow file 内に出現するすべての `foreach.returns` 由来 collected asset source を参照候補にする
   - flow 内部 wiring の entry順 visibility とは扱いを分ける
-- [ ] **return source diagnostic を追加**
+- [x] **return source diagnostic を追加**
   - `unresolved_return_source`
   - `invalid_return_source`
   - `incompatible_return_type`
-- [ ] **return source TypeRef compatibility を検証**
+- [x] **return source TypeRef compatibility を検証**
   - source TypeRef と `returns.model` TypeRef を ADR-060 ルールで比較
   - named list/dict model と inline `list<T>` / `dict<T>` の正規化互換を使う
   - `any` は両方向 wildcard
   - source / target TypeRef 解決不能時は `incompatible_return_type` を抑制
-- [ ] **name一致による暗黙 return 接続を実装しないことを確認**
+- [x] **name一致による暗黙 return 接続を実装しないことを確認**
   - `returns.name` と flow source / `foreach.returns` が一致しても、`returns.source` 未指定なら return wiring として扱わない
 - [ ] **MCP / renderer / resolved index への露出方針を確認**
   - `returns.source` を MCP `get_signature` に含めるか、`inspect` のみに出すかを判断する
   - DAG renderer で `returns.source` を可視化するか、ADR-062 ではスコープ外とするかを判断する
   - semantic / resolved project に raw source 文字列だけを持つか、resolved source も持つかを ADR-048 と整合確認する
-- [ ] **ADR-062 実装後に Evidence を更新**
+- [x] **ADR-062 実装後に Evidence を更新**
   - `docs/adr/062-task-return-source.md` の `impl commit: tbd` を実装 commit hash で更新
   - `docs/tasks/m15-data-layer-expressiveness.md` の Evidence は必要に応じて追補する
 
 #### テスト
 
-- [ ] **`returns.source` 正常系テスト**
+- [x] **`returns.source` 正常系テスト**
   - node output を task return source として返せる
   - collected asset source を task return source として返せる
   - initialized source を task return source として返せる
   - `$params.<name>` を pass-through return として返せる
   - `returns.source` 未指定の leaf task / external boundary task は既存通り valid
-- [ ] **return source diagnostic テスト**
+- [x] **return source diagnostic テスト**
   - 未解決 source で `unresolved_return_source`
   - returns を持たない node で `invalid_return_source`
   - `$item` 指定で `invalid_return_source`
   - source / target 型不一致で `incompatible_return_type`
   - source TypeRef 解決不能時は `incompatible_return_type` を抑制
   - target `returns.model` 解決不能時は `incompatible_return_type` を抑制
-- [ ] **collected asset visibility / 暗黙接続のテスト**
+- [x] **collected asset visibility / 暗黙接続のテスト**
   - flow 内の `foreach.returns` は、flow entry 上の出現位置にかかわらず `returns.source` から参照できる
   - flow 内部 wiring では既存どおり entry順 visibility を維持する
   - `returns.name` と flow source 名が一致していても、`returns.source` 未指定なら return wiring として扱わない
@@ -388,44 +388,44 @@ ADR-063 は accepted 済み。
 
 #### 実装
 
-- [ ] **flow wiring source resolver に initialized source 解決を追加**
+- [x] **flow wiring source resolver に initialized source 解決を追加**
   - 同一 file の main task の `initializes[]` を引き、`name == <bare_token>` の entry の `model` を named model TypeRef として返す
   - bare token 解決順序は node id / collected asset source / initialized source の3者を統一名前空間として扱う
-- [ ] **task return source resolver に initialized source 解決を追加**
+- [x] **task return source resolver に initialized source 解決を追加**
   - flow wiring source resolver と同じ initialized source 解決ロジックを返す
-- [ ] **`duplicate_flow_source` の検出対象に initialized source 名を加える**
+- [x] **`duplicate_flow_source` の検出対象に initialized source 名を加える**
   - 同一 flow file 内の node id / collected asset source / initialized source の重複を検出
-- [ ] **`unresolved_wiring_source` / `unresolved_return_source` の解決失敗判定を更新**
+- [x] **`unresolved_wiring_source` / `unresolved_return_source` の解決失敗判定を更新**
   - bare token が node id / collected asset source / initialized source のいずれにも該当しない場合に出す
-- [ ] **TypeRef compatibility を initialized source にも適用**
+- [x] **TypeRef compatibility を initialized source にも適用**
   - `initializes[].model` を named model TypeRef として扱い ADR-060 ルールで検証
   - `initializes[].model` 解決不能時は `incompatible_wiring_type` / `incompatible_return_type` を抑制
-- [ ] **writes 有無の検査は実装しない**
-- [ ] **cross-edge `reads` / `writes` 宣言と flow wiring 参照の整合性検査は実装しない**
+- [x] **writes 有無の検査は実装しない**
+- [x] **cross-edge `reads` / `writes` 宣言と flow wiring 参照の整合性検査は実装しない**
 - [ ] **DAG render は ADR-064 §暫定方針に従う**
   - `returns.source` の DAG 上明示 edge は引かない
   - initialized source は file-private store 表現を維持
   - flow 内部 wiring からの initialized source 参照 edge は通常の dataflow edge として描く
-- [ ] **ADR-063 実装後に Evidence を更新**
+- [x] **ADR-063 実装後に Evidence を更新**
   - `docs/adr/063-task-return-source-initialized-store.md` の `impl commit: tbd` を実装 commit hash で更新
 
 #### テスト
 
-- [ ] **flow 内部 wiring から initialized source を bare token で参照できる**
+- [x] **flow 内部 wiring から initialized source を bare token で参照できる**
   - step.params / branch.params / fork.branches[].steps[].params / foreach.params / branch.cases[].params 各箇所
   - TypeRef compatibility が ADR-060 ルールで通る
-- [ ] **`returns.source` から initialized source を参照できる**
+- [x] **`returns.source` から initialized source を参照できる**
   - main task が initialized store を return する pattern が valid
   - TypeRef が `returns.model` と互換しない場合は `incompatible_return_type`
-- [ ] **重複検出テスト**
+- [x] **重複検出テスト**
   - node id と initialized source 名の重複で `duplicate_flow_source`
   - collected asset source 名と initialized source 名の重複で `duplicate_flow_source`
   - task `returns.name` と initialized source 名が同名でも衝突扱いしない
-- [ ] **未解決テスト**
+- [x] **未解決テスト**
   - typo した bare token で `unresolved_wiring_source` / `unresolved_return_source`
-- [ ] **TypeRef 解決抑制テスト**
+- [x] **TypeRef 解決抑制テスト**
   - `initializes[].model` が解決不能なときの `incompatible_wiring_type` / `incompatible_return_type` 抑制
-- [ ] **writes 有無無関係テスト**
+- [x] **writes 有無無関係テスト**
   - flow 内で writes されていない initialized source を参照しても valid
 - [ ] **UC-001 回帰**
   - 既存 wiring に initialized source を bare token で参照しているものはない見込みだが、回帰として `process_report.yaml` 等で composite task の構造を検証
@@ -534,4 +534,4 @@ UC-002 self-hosting で必要になる data layer 表現力を ADR ベースで�
 ## Evidence
 
 - commit: 01e7127
-- impl commit: 01e7127
+- impl commit: e7b8292

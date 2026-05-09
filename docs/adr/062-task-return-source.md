@@ -347,5 +347,5 @@ ADR-060 / ADR-061 を前提にした forward 拡張であり、v1.0.0-spec の�
 ## Evidence
 
 - commit: a5032d1
-- impl commit: tbd
+- impl commit: e7b8292
 - 参考: ADR-009 task I/O design, ADR-015 flow wiring, ADR-060 TypeRef compatibility, ADR-061 foreach collected asset source

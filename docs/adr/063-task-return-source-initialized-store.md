@@ -472,6 +472,6 @@ v1.0.0-spec の遡及修正ではない forward 拡張である。
 
 ## Evidence
 
-- commit: tbd
-- impl commit: tbd
+- commit: ee0a48c
+- impl commit: e7b8292
 - 参考: ADR-014 initializes field, ADR-020 cross-edge management, ADR-060 TypeRef / flow wiring type compatibility, ADR-061 foreach collected asset, ADR-062 task return source
