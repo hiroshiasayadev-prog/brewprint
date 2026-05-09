@@ -218,6 +218,11 @@ func resolveFlowSource(project *semantic.Project, fileID semantic.FileID, raw st
 	if join := project.JoinsByQID[qid]; join != nil && join.Returns != nil {
 		source.AssetName = join.Returns.Name
 	}
+	if qid == "" {
+		if init, ok := initializedSource(project, fileID, raw); ok {
+			return semantic.FlowSource{Kind: semantic.FlowSourceInitialized, Raw: raw, TypeRef: init.TypeRef}
+		}
+	}
 	return source
 }
 

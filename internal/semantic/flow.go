@@ -73,9 +73,10 @@ type ParamWiring struct {
 type FlowSourceKind string
 
 const (
-	FlowSourceParam FlowSourceKind = "param"
-	FlowSourceItem  FlowSourceKind = "item"
-	FlowSourceNode  FlowSourceKind = "node"
+	FlowSourceParam       FlowSourceKind = "param"
+	FlowSourceItem        FlowSourceKind = "item"
+	FlowSourceNode        FlowSourceKind = "node"
+	FlowSourceInitialized FlowSourceKind = "initialized"
 )
 
 type FlowSource struct {
@@ -84,4 +85,5 @@ type FlowSource struct {
 	ParamName string
 	Node      QualifiedID
 	AssetName string
+	TypeRef   *TypeRef
 }

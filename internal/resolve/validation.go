@@ -36,6 +36,9 @@ const (
 	diagnosticInvalidForeachOverType    = "invalid_foreach_over_type"
 	diagnosticInvalidForeachReturns     = "invalid_foreach_returns"
 	diagnosticDuplicateFlowSource       = "duplicate_flow_source"
+	diagnosticUnresolvedReturnSource    = "unresolved_return_source"
+	diagnosticInvalidReturnSource       = "invalid_return_source"
+	diagnosticIncompatibleReturnType    = "incompatible_return_type"
 	diagnosticUnresolvedTransitionState = "unresolved_transition_state"
 	diagnosticUnresolvedTransitionEvent = "unresolved_transition_event"
 	diagnosticDuplicateTransition       = "duplicate_transition"
@@ -182,13 +185,16 @@ func validateTaskDefinitions(project *semantic.Project, symbols *symbolTable) {
 		validateParams(project, symbols, task.FileID, "task params", task.Params)
 		if task.Returns != nil {
 			validateReturn(project, symbols, task.FileID, task.QID.String(), "task return", task.Returns)
+			validateTaskReturnSource(project, symbols, task)
 		}
 		for _, init := range task.Initializes {
 			if init.Name == "" {
 				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticMissingRequiredField, task.FileID, "initialized store name is required: "+task.QID.String())
 			}
-			if init.Model == "" {
+			if init.ModelName == "" {
 				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticMissingRequiredField, task.FileID, "initialized store model is required: "+task.QID.String()+"."+init.Name)
+			} else if _, err := parseInitializedModelRef(init.ModelName, moduleForFileID(task.FileID)); err != nil {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidTypeRef, task.FileID, fmt.Sprintf("invalid initialized store model %q at %s.%s: %v", init.ModelName, task.QID.String(), init.Name, err))
 			} else if !modelExists(project, init.Model) {
 				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedModel, task.FileID, "unresolved initialized store model: "+init.Model.String())
 			}
@@ -281,6 +287,17 @@ func validateTypeRef(project *semantic.Project, symbols *symbolTable, fileID sem
 	return true
 }
 
+func parseInitializedModelRef(raw string, module string) (*semantic.TypeRef, error) {
+	ref, err := parseTypeRef(raw, module)
+	if err != nil {
+		return nil, err
+	}
+	if ref.Kind != semantic.TypeRefNamedModel {
+		return nil, fmt.Errorf("initialized store model must be a model id")
+	}
+	return ref, nil
+}
+
 func modelExists(project *semantic.Project, qid semantic.QualifiedID) bool {
 	if qid == "" {
 		return false
@@ -368,6 +385,24 @@ func validateDuplicateFlowSources(project *semantic.Project, symbols *symbolTabl
 		}
 		seenReturns[name] = struct{}{}
 	}
+	if main := mainTaskForFile(project, fileID); main != nil {
+		seenInits := map[string]struct{}{}
+		for _, init := range main.Initializes {
+			if init.Name == "" {
+				continue
+			}
+			if _, exists := nodeIDs[init.Name]; exists {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateFlowSource, fileID, "duplicate flow source: initializes[].name conflicts with node id: "+init.Name)
+			}
+			if _, exists := seenReturns[init.Name]; exists {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateFlowSource, fileID, "duplicate flow source: initializes[].name conflicts with foreach.returns: "+init.Name)
+			}
+			if _, exists := seenInits[init.Name]; exists {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateFlowSource, fileID, "duplicate flow source: initializes[].name conflicts with another initializes[].name: "+init.Name)
+			}
+			seenInits[init.Name] = struct{}{}
+		}
+	}
 }
 
 func validateForeachReturns(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, foreach semantic.ForeachFlow) {
@@ -422,23 +457,28 @@ func resolveWiringSourceTypeRef(project *semantic.Project, symbols *symbolTable,
 			return nil, false
 		}
 		return itemResolver()
+	case semantic.FlowSourceInitialized:
+		return source.TypeRef, true
 	case semantic.FlowSourceNode:
 		if source.Node == "" {
 			if collected := visibleCollected[source.Raw]; collected != nil {
 				return collected.TypeRef, true
 			}
+			if init, ok := initializedSource(project, fileID, source.Raw); ok {
+				return init.TypeRef, true
+			}
 			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedWiringSource, fileID, "unresolved wiring source at "+position+": "+source.Raw)
 			return nil, false
 		}
 		if task := project.TasksByQID[source.Node]; task != nil {
-			if task.Returns == nil || task.Returns.TypeRef == nil {
+			if task.Returns == nil {
 				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidWiringSource, fileID, "invalid wiring source at "+position+": node has no returns: "+source.Raw)
 				return nil, false
 			}
 			return task.Returns.TypeRef, true
 		}
 		if join := project.JoinsByQID[source.Node]; join != nil {
-			if join.Returns == nil || join.Returns.TypeRef == nil {
+			if join.Returns == nil {
 				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidWiringSource, fileID, "invalid wiring source at "+position+": node has no returns: "+source.Raw)
 				return nil, false
 			}
@@ -482,8 +522,7 @@ func itemTypeResolver(itemType *semantic.TypeRef, ok bool) func() (*semantic.Typ
 }
 
 func mainParamTypeRef(project *semantic.Project, fileID semantic.FileID, name string) (*semantic.TypeRef, bool) {
-	mainQID := project.MainNodeByFile[fileID]
-	mainTask := project.TasksByQID[mainQID]
+	mainTask := mainTaskForFile(project, fileID)
 	if mainTask == nil {
 		return nil, false
 	}
@@ -493,6 +532,94 @@ func mainParamTypeRef(project *semantic.Project, fileID semantic.FileID, name st
 		}
 	}
 	return nil, false
+}
+
+func mainTaskForFile(project *semantic.Project, fileID semantic.FileID) *semantic.Task {
+	if project == nil {
+		return nil
+	}
+	return project.TasksByQID[project.MainNodeByFile[fileID]]
+}
+
+func initializedSource(project *semantic.Project, fileID semantic.FileID, name string) (semantic.InitializedStore, bool) {
+	mainTask := mainTaskForFile(project, fileID)
+	if mainTask == nil {
+		return semantic.InitializedStore{}, false
+	}
+	for _, init := range mainTask.Initializes {
+		if init.Name == name {
+			return init, true
+		}
+	}
+	return semantic.InitializedStore{}, false
+}
+
+func validateTaskReturnSource(project *semantic.Project, symbols *symbolTable, task *semantic.Task) {
+	if task == nil || task.Returns == nil || task.Returns.Source == "" {
+		return
+	}
+	position := "returns.source " + task.QID.String() + "." + task.Returns.Name
+	source, sourceType, ok := resolveReturnSource(project, symbols, task.FileID, task.Returns.Source, position)
+	task.Returns.SourceRef = source
+	if !ok || !typeRefResolved(project, sourceType) || !typeRefResolved(project, task.Returns.TypeRef) {
+		return
+	}
+	if !typeRefsCompatible(project, sourceType, task.Returns.TypeRef) {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticIncompatibleReturnType, task.FileID, fmt.Sprintf("incompatible return type at %s: source %s is not compatible with target %s", position, sourceType.String(), task.Returns.TypeRef.String()))
+	}
+}
+
+func resolveReturnSource(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, raw string, position string) (semantic.FlowSource, *semantic.TypeRef, bool) {
+	if raw == "$item" {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidReturnSource, fileID, "invalid return source at "+position+": $item is not valid in returns.source")
+		return semantic.FlowSource{Kind: semantic.FlowSourceItem, Raw: raw}, nil, false
+	}
+	if strings.HasPrefix(raw, "$params.") {
+		paramName := strings.TrimPrefix(raw, "$params.")
+		ref, ok := mainParamTypeRef(project, fileID, paramName)
+		source := semantic.FlowSource{Kind: semantic.FlowSourceParam, Raw: raw, ParamName: paramName, TypeRef: ref}
+		if !ok {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedReturnSource, fileID, "unresolved return source at "+position+": "+raw)
+			return source, nil, false
+		}
+		return source, ref, true
+	}
+	qid := resolveAnyNodeQID(project, fileID, raw)
+	if qid != "" {
+		source := semantic.FlowSource{Kind: semantic.FlowSourceNode, Raw: raw, Node: qid}
+		if task := project.TasksByQID[qid]; task != nil {
+			if task.Returns == nil {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidReturnSource, fileID, "invalid return source at "+position+": node has no returns: "+raw)
+				return source, nil, false
+			}
+			source.AssetName = task.Returns.Name
+			source.TypeRef = task.Returns.TypeRef
+			return source, task.Returns.TypeRef, true
+		}
+		if join := project.JoinsByQID[qid]; join != nil {
+			if join.Returns == nil {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidReturnSource, fileID, "invalid return source at "+position+": node has no returns: "+raw)
+				return source, nil, false
+			}
+			source.AssetName = join.Returns.Name
+			source.TypeRef = join.Returns.TypeRef
+			return source, join.Returns.TypeRef, true
+		}
+		if project.NodesByQID[qid] != nil {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidReturnSource, fileID, "invalid return source at "+position+": node is not a task or join: "+raw)
+			return source, nil, false
+		}
+	}
+	if collected := project.FlowCollectedSourcesByFile[fileID][raw]; collected != nil {
+		source := semantic.FlowSource{Kind: semantic.FlowSourceNode, Raw: raw, AssetName: raw, TypeRef: collected.TypeRef}
+		return source, collected.TypeRef, true
+	}
+	if init, ok := initializedSource(project, fileID, raw); ok {
+		source := semantic.FlowSource{Kind: semantic.FlowSourceInitialized, Raw: raw, TypeRef: init.TypeRef}
+		return source, init.TypeRef, true
+	}
+	symbols.addDiagnosticCode(semantic.SeverityError, diagnosticUnresolvedReturnSource, fileID, "unresolved return source at "+position+": "+raw)
+	return semantic.FlowSource{Kind: semantic.FlowSourceNode, Raw: raw}, nil, false
 }
 
 func typeRefResolved(project *semantic.Project, ref *semantic.TypeRef) bool {

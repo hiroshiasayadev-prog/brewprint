@@ -24,15 +24,19 @@ type Return struct {
 	Name      string
 	Model     QualifiedID
 	ModelName string
+	Source    string
+	SourceRef FlowSource
 	TypeRef   *TypeRef
 	Asset     *Asset
 }
 
 type InitializedStore struct {
-	Name  string
-	Model QualifiedID
-	Note  string
-	Store *Store
+	Name      string
+	Model     QualifiedID
+	ModelName string
+	TypeRef   *TypeRef
+	Note      string
+	Store     *Store
 }
 
 type StoreRef struct {

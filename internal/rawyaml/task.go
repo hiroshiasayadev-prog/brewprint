@@ -22,8 +22,9 @@ type Param struct {
 }
 
 type Return struct {
-	Name  string `yaml:"name"`
-	Model string `yaml:"model"`
+	Name   string `yaml:"name"`
+	Model  string `yaml:"model"`
+	Source string `yaml:"source"`
 }
 
 type Initialize struct {

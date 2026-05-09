@@ -107,6 +107,7 @@ func buildTask(fileID semantic.FileID, module string, raw rawyaml.Task) *semanti
 			Name:      raw.Returns.Name,
 			Model:     modelQID,
 			ModelName: raw.Returns.Model,
+			Source:    raw.Returns.Source,
 			TypeRef:   mustBuildTypeRef(module, raw.Returns.Model),
 			Asset: &semantic.Asset{
 				Name:       raw.Returns.Name,
@@ -119,9 +120,11 @@ func buildTask(fileID semantic.FileID, module string, raw rawyaml.Task) *semanti
 	}
 	for _, init := range raw.Initializes {
 		task.Initializes = append(task.Initializes, semantic.InitializedStore{
-			Name:  init.Name,
-			Model: resolveModelQID(module, init.Model),
-			Note:  init.Note,
+			Name:      init.Name,
+			Model:     resolveModelQID(module, init.Model),
+			ModelName: init.Model,
+			TypeRef:   buildInitializedTypeRef(module, init.Model),
+			Note:      init.Note,
 		})
 	}
 	for _, read := range raw.Reads {
@@ -182,6 +185,7 @@ func buildJoin(fileID semantic.FileID, module string, raw rawyaml.ControlNode) *
 			Name:      raw.Returns.Name,
 			Model:     modelQID,
 			ModelName: raw.Returns.Model,
+			Source:    raw.Returns.Source,
 			TypeRef:   mustBuildTypeRef(module, raw.Returns.Model),
 			Asset: &semantic.Asset{
 				Name:       raw.Returns.Name,
@@ -244,6 +248,18 @@ func mustBuildTypeRef(module string, raw string) *semantic.TypeRef {
 	}
 	ref, _ := parseTypeRef(raw, module)
 	return ref
+}
+
+func buildInitializedTypeRef(module string, raw string) *semantic.TypeRef {
+	if raw == "" {
+		return nil
+	}
+	return &semantic.TypeRef{
+		Kind:  semantic.TypeRefNamedModel,
+		Raw:   raw,
+		Name:  raw,
+		Model: resolveModelQID(module, raw),
+	}
 }
 
 func buildStore(fileID semantic.FileID, module string, raw rawyaml.Store) *semantic.Store {
