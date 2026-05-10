@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/mcp/schema.md
 status: draft
-last_updated: 2026-05-01
+last_updated: 2026-05-09
 summary: >
   MCP toolで共通利用するschemaを定義する。
   selector、ObjectRef、Reference、Diagnosticなどの共通表現を規定する。
@@ -13,6 +13,7 @@ depends_on:
   - docs/adr/048-resolved-project-index-strategy.md
   - docs/adr/054-mcp-query-coverage-for-design-conversation.md
   - docs/adr/056-mcp-analyze-impact-tool-design.md
+  - docs/adr/062-task-return-source.md
 ---
 
 # MCP schema
@@ -480,7 +481,9 @@ MCP v1で返すreference kindは以下とする。
 flow wiring（`flow_step` / `flow_param` 相当の情報）はMCP v1の `get_references` では返さない。
 flow wiringはDAG file内部の局所構造であり、MCP v1では `inspect(task).members.flow.entries` に閉じる。
 
-M11ではこの方針を維持し、`flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over` は `Reference.kind` ではなく、flow inspect用の語彙として扱う。
+`returns.source` による task return wiring も、MCP v1の `get_references` では返さない。`returns.source` は `inspect(task).members.return_source` に raw / resolved 情報として返し、global reverse index（`referencesBySource` / `referencesByTarget`）の必須対象にはしない。
+
+M11ではこの方針を維持し、`flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over` / `task_return_source` は `Reference.kind` ではなく、flow / task inspect用の語彙として扱う。
 これらは将来の `get_reference_tree` / `analyze_impact` の traversal 材料になりうるが、direct references v1 の返却対象には含めない。
 
 ### 2.3 Direction

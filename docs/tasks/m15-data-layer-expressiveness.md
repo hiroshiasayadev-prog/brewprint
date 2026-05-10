@@ -3,7 +3,7 @@
 - **status**: open
 - **scope**: internal/semantic / internal/resolve / spec / docs/adr / tests
 - **source**: ADR-060 (TypeRef + flow wiring type compatibility) / ADR-061 (foreach.returns collected asset) / ADR-062 (task return source) / ADR-063 (initialized source の wiring source 化) / ADR-064 (returns.source の DAG render ルール, proposed) を起点とする v1.1 系の表現力拡張
-- **last_updated**: 2026-05-05
+- **last_updated**: 2026-05-09
 
 ---
 
@@ -318,13 +318,20 @@ ADR-062 は accepted 済み。
   - source / target TypeRef 解決不能時は `incompatible_return_type` を抑制
 - [x] **name一致による暗黙 return 接続を実装しないことを確認**
   - `returns.name` と flow source / `foreach.returns` が一致しても、`returns.source` 未指定なら return wiring として扱わない
-- [ ] **MCP / renderer / resolved index への露出方針を確認**
-  - `returns.source` を MCP `get_signature` に含めるか、`inspect` のみに出すかを判断する
-  - DAG renderer で `returns.source` を可視化するか、ADR-062 ではスコープ外とするかを判断する
-  - semantic / resolved project に raw source 文字列だけを持つか、resolved source も持つかを ADR-048 と整合確認する
+- [x] **MCP / renderer / resolved index への露出方針を確認**
+  - `returns.source` は MCP `get_signature` には含めない。`get_signature` は外向き contract（`returns.name` / `returns.model`）を返す軽量toolとする
+  - `returns.source` は `inspect(task).members.return_source` に raw / resolved 情報として返す
+  - DAG renderer での可視化は ADR-064 / `docs/spec/views/dag.md` の `returns.source` render ルールに委ねる
+  - semantic / ResolvedProject には raw source 文字列だけでなく resolved source も保持する
+  - `returns.source` edge を global reverse index（`referencesBySource` / `referencesByTarget`）や `get_references` の必須対象にはしない。必要になった時点で別途拡張する
 - [x] **ADR-062 実装後に Evidence を更新**
   - `docs/adr/062-task-return-source.md` の `impl commit: tbd` を実装 commit hash で更新
   - `docs/tasks/m15-data-layer-expressiveness.md` の Evidence は必要に応じて追補する
+
+- [x] **MCP spec へ `returns.source` 露出方針を反映**
+  - `docs/spec/mcp/tools/get-signature.md`: `returns.source` を返さないことを明記
+  - `docs/spec/mcp/tools/inspect.md`: `members.return_source` と source kind を追加
+  - `docs/spec/mcp/schema.md`: `returns.source` を `get_references` / global reverse index の必須対象にしないことを明記
 
 #### テスト
 

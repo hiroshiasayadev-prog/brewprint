@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/mcp/tools/inspect.md
 status: draft
-last_updated: 2026-04-30
+last_updated: 2026-05-09
 summary: >
   inspect toolの仕様を定義する。
   対象objectの実装判断に必要な周辺文脈をkind別に返す。
@@ -16,6 +16,8 @@ depends_on:
   - docs/adr/036-sequence-diagram-arrow-rules-per-source.md
   - docs/adr/038-sequence-diagram-sub-task-traversal.md
   - docs/adr/039-er-diagram-composed-view.md
+  - docs/adr/062-task-return-source.md
+  - docs/adr/063-task-return-source-initialized-store.md
 ---
 
 # `inspect`
@@ -86,6 +88,7 @@ MCP v1では、`detail` による厳密な返却差分は実装任意とする�
 - reads / writes
 - 同一ファイル内sub task
 - flow内での位置
+- task return source（`returns.source`）の raw / resolved 情報
 - このtaskをactionとして呼ぶtransition
 - このtaskが生成するasset
 - source
@@ -113,6 +116,14 @@ MCP v1では、`detail` による厳密な返却差分は実装任意とする�
     }
   },
   "members": {
+    "return_source": {
+      "raw": "build_order",
+      "source": {
+        "kind": "node_return",
+        "node": "build_order",
+        "type_ref": "order.model.order"
+      }
+    },
     "assets": [
       {
         "object": "asset",
@@ -234,11 +245,34 @@ MCP v1で保証するのは以下。
 | source.kind | 意味 |
 |---|---|
 | `node_return` | 同一flow内の前段nodeの `returns` 全体 |
+| `collected_asset` | `foreach.returns` で宣言された collected asset source |
+| `initialized_source` | `initializes[].name` で宣言された initialized source |
 | `main_param` | `$params.<field>` によるmain task param参照 |
 | `foreach_item` | `$item` によるforeach current item参照 |
 | `implicit_join` | fork join.params の同名解決 |
 
 `node_return` はreturns内部のfieldを直接参照しない。flow wiringの単位は `docs/spec/edges.md` と同じくtaskのreturns全体とする。
+
+`returns.source` が指定されているtaskでは、`inspect(task)` は `members.return_source` を返す。`get_signature` は外向きcontractのみを返すため `returns.source` を含めない。
+
+```json
+{
+  "members": {
+    "return_source": {
+      "raw": "validated_items",
+      "source": {
+        "kind": "collected_asset",
+        "name": "validated_items",
+        "type_ref": "list<cart.model.cart_item>"
+      }
+    }
+  }
+}
+```
+
+`members.return_source.raw` は YAML 上の `returns.source` 文字列を保持する。`members.return_source.source` は ResolvedProject 上で解決済みの source を表し、`kind` は `node_return` / `collected_asset` / `initialized_source` / `main_param` のいずれかとする。`$item` は task return source として不正なため `invalid_return_source` diagnostic の対象であり、resolved source にはならない。
+
+`returns.source` が未指定、またはtaskが `returns` を持たない場合、`members.return_source` は省略する。source が未解決または不正な場合は diagnostics を優先し、実装は `raw` のみを返して resolved `source` を省略してよい。
 
 `branch` / `fork` / `foreach` は制御フロー構文であり、flow inspectではentryとして返してよい。ただし、それ自体をMCP selector化することはM11の範囲外とする。
 

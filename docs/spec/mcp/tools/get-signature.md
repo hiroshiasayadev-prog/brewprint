@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/mcp/tools/get-signature.md
 status: draft
-last_updated: 2026-04-30
+last_updated: 2026-05-09
 summary: >
   get_signature toolの仕様を定義する。
   対象object単体の外形、signature、doc、diagnosticsを返す。
@@ -13,6 +13,7 @@ depends_on:
   - docs/adr/028-api-table-route-composition.md
   - docs/adr/031-actor-global-definition.md
   - docs/adr/035-fsm-guard-branch-and-transition-identification.md
+  - docs/adr/062-task-return-source.md
 ---
 
 # `get_signature`
@@ -120,6 +121,8 @@ depends_on:
 
 `signature.endpoint.leaf_path` はtask側のleaf pathであり、API Tableで合成されたfull pathではない。
 full pathは `list_endpoints` の `endpoints[].path` で返す。
+
+`get_signature` は task の外向き contract を返す軽量toolであるため、`returns.source` は返さない。`returns.source` は task 内部の return wiring であり、必要な場合は `inspect(task).members.return_source` で確認する。
 
 ## 5. model signature
 
