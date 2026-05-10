@@ -1,6 +1,6 @@
 # 068: ADR authoring guide の標準化
 
-- **status**: proposed
+- **status**: accepted
 - **date**: 2026-05-09
 
 > このADRは起票時点での決定を記録したスナップショットである。
@@ -247,6 +247,6 @@ M15 Phase C では、ADR-067 以降の設計判断で authoring guide を参照�
 
 ## Evidence
 
-- commit: tbd
+- commit: 693e3c0
 - impl commit: 該当なし
 - 参考: ADR-050 spec-first documentation policy, ADR-067 enum model 導入時のレビュー経験

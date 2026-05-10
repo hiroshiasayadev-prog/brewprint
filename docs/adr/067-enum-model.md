@@ -337,6 +337,6 @@ M15 Phase C では、本ADRを受けて enum model の spec / implementation / U
 
 ## Evidence
 
-- commit: tbd
+- commit: 693e3c0
 - impl commit: tbd
 - 参考: JSON Schema enum, OpenAPI string enum, nominal typing 方針（ADR-060）
