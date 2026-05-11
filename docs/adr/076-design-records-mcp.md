@@ -313,6 +313,6 @@ MVP段階では、以下を単一specにまとめる。
 
 ## Evidence
 
-- commit: tbd
+- commit: f92c228
 - impl commit: tbd
 - 参考: ADR-050のspec-first運用、ADR-068のADR authoring guide、ADR-054のMCP設計対話coverage

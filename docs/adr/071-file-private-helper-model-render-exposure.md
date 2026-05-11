@@ -259,6 +259,6 @@ model file 内 helper model の render exposure は、本ADRでは未解消の�
 
 ## Evidence
 
-- commit: tbd
+- commit: 476a4f4
 - impl commit: tbd
 - 参考: ADR-070 model visibility と file-private helper model、docs/spec/views/dag.md の `## Tasks` detail section 方針

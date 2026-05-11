@@ -435,6 +435,6 @@ M15 では、本ADR acceptance 後に spec / implementation / UC-002 migration �
 
 ## Evidence
 
-- commit: tbd
+- commit: 49391ff
 - impl commit: tbd
 - 参考: ADR-011 の main node / sub node 方針、ADR-058 の file-private sub node scope、ADR-069 の anonymous inline struct 不採用、UC-002 MCP contract YAML における `any + note` 暫定表現
