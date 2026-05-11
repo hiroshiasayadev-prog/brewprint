@@ -154,7 +154,7 @@ MVPの検証対象が薄くなりすぎないように、最初に少数の代�
 
 - ADR-067〜ADR-076
 - ADR-050: spec-first documentation policy
-- `docs/spec/mcp/tools/design-records.md`（本ADRと同時または直後に新設）
+- `docs/spec/design-records-mcp/**`（本ADRと同時または直後に新設）
 
 それ以前のADR（ADR-001〜ADR-049、ADR-051〜ADR-066）は一括移行しない。
 整合性レビュー、新ADR起票、関連spec更新などで触れたタイミングで、漸進的にmetadataを追加する。
@@ -166,10 +166,15 @@ Design Records MCP は、既存brewprint MCPとは対象データソースが異
 既存brewprint MCPは、brewprint YAMLから構築された `ResolvedProject` 上のsemantic objectをqueryするためのlayerである。
 一方、Design Records MCPは、`docs/adr/**` と `docs/spec/**` のMarkdown front matterをquery / validation対象とする。
 
-既存brewprint MCPへ統合するか、別MCPサーバーとして提供するかは、本ADRでは決めない。
+Design Records MCP は、既存brewprint MCPとは独立して起動・検証できる構成を第一候補とする。
+
+Design Records MCP のspecは、既存brewprint MCPのtool specである `docs/spec/mcp/tools/**` には置かない。
+Design Records MCP用のspecは、`docs/spec/design-records-mcp/**` に分ける。
+
+既存brewprint MCPへ将来的に統合提供する可能性は排除しない。
 ただし、brewprint YAML semantic object向けの既存 `QueryService` の責務を、docs管理へそのまま拡張しない。
 
-統合方式、tool namespace、実装package構成は、MVP実装前の後続ADRまたはspecで決める。
+最終的なtool namespaceや実装package構成は、MVP実装前の後続ADRまたはspecで決める。
 
 ## 理由
 
@@ -274,13 +279,18 @@ ADR起票時のfront matter推奨項目として、以下を追記する可能�
 - `design_record.supersedes`
 - `design_record.migrated_to_spec`
 
-### docs/spec/mcp/**
+### docs/spec/design-records-mcp/**
 
-Design Records MCPのtool specを追加する可能性がある。
+Design Records MCPのspecを追加する可能性がある。
 
-MVP段階では、以下を単一specにまとめる。
+MVP段階では、既存brewprint MCPの `docs/spec/mcp/tools/**` には混ぜず、以下のように独立したspec directoryへまとめる。
 
-- `docs/spec/mcp/tools/design-records.md`
+```text
+docs/spec/design-records-mcp/
+  overview.md
+  schema.md
+  tools.md
+```
 
 このspecでは、少なくとも以下を定義する。
 
@@ -296,14 +306,18 @@ MVP段階では、以下を単一specにまとめる。
 
 実装位置はこのADRでは固定しない。
 
+第一候補としては、既存brewprint MCPとは独立して起動できる構成を採る。
+
 候補としては、以下が考えられる。
 
-- 既存brewprint MCPとは別のMCPサーバー
-- 既存MCPサーバー内の別namespace
-- `internal/docgov`
-- `cmd/brewprint` 配下のdocs validation command
+- `cmd/design-records-mcp/`
+- `cmd/brewprint-design-records-mcp/`
+- `internal/designrecords/`
 
-ただし、このADRではGo package構成、tool namespace、別サーバー化の有無までは決めない。
+この構成により、brewprint本体のsemantic build / renderer / QueryServiceが実装中またはデバッグ中に壊れていても、Design Records MCPは `docs/adr/**` と `docs/spec/**` を読んで独立に動作できる。
+
+ただし、このADRではGo package構成やtool namespaceの最終形までは決めない。
+既存brewprint MCPとの統合提供が必要になった場合も、Design Records MCPの独立起動性を失わない範囲で後続ADRまたはspecで判断する。
 
 ### 既存ADR/spec
 
