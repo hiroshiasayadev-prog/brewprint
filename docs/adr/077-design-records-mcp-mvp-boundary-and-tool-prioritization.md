@@ -1,6 +1,6 @@
 # 077: Design Records MCP MVP boundary and tool prioritization
 
-- **status**: proposed
+- **status**: accepted
 - **date**: 2026-05-11
 - **depends_on**: ADR-076
 - **supersedes**:
@@ -311,6 +311,6 @@ ADR-076のbootstrap方針に従い、初期対象recordへ `design_record` metad
 
 ## Evidence
 
-- commit: tbd
+- commit: beb3f51
 - impl commit: tbd
 - 参考: generic support調査時のADR読み込み計測、ADR-076のDesign Records MCP導入方針

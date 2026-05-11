@@ -1,6 +1,6 @@
 # 076: Design Records MCP
 
-- **status**: proposed
+- **status**: accepted
 - **date**: 2026-05-11
 - **depends_on**: ADR-050, ADR-068
 - **supersedes**:
