@@ -194,44 +194,44 @@ Done criteria:
 
 Diagnostic category:
 
-- [ ] `duplicate_id`
-- [ ] `filename_id_mismatch`
-- [ ] `invalid_h1_title`
-- [ ] `invalid_status_for_kind`
-- [ ] `spec_status_mismatch`
-- [ ] `missing_depends_on_target`
-- [ ] `missing_supersedes_target`
-- [ ] `invalid_migrated_to_spec`
-- [ ] `missing_record_path`
+- [x] `duplicate_id`
+- [x] `filename_id_mismatch`
+- [x] `invalid_h1_title`
+- [x] `invalid_status_for_kind`
+- [x] `spec_status_mismatch`
+- [x] `missing_depends_on_target`
+- [x] `missing_supersedes_target`
+- [x] `invalid_migrated_to_spec`
+- [x] `missing_record_path`
 
 Validation rules:
 
-- [ ] duplicate normalized record ID を検出する
-- [ ] ADR H1 番号と filename 番号の不一致を検出する
-- [ ] ADR H1 が期待形式に合わない場合 `invalid_h1_title` を出す
-- [ ] kind 別 status 値域違反を検出する
-- [ ] spec top-level `status` と `design_record.status` の不一致を `spec_status_mismatch` とする
-- [ ] `depends_on` 参照先 ID の存在確認を行う
-- [ ] `supersedes` 参照先 ID の存在確認を行う
-- [ ] ADR `migrated_to_spec` の non-empty 値が `YYYY-MM-DD` でない場合 `invalid_migrated_to_spec` を出す
-- [ ] scan/path normalization 後の candidate path に対する read/stat 失敗を `missing_record_path` とする
-- [ ] Diagnostic は検査軸ごとに独立して発火し、1 record に複数 diagnostic が付いてよい
+- [x] duplicate normalized record ID を検出する
+- [x] ADR H1 番号と filename 番号の不一致を検出する
+- [x] ADR H1 が期待形式に合わない場合 `invalid_h1_title` を出す
+- [x] kind 別 status 値域違反を検出する
+- [x] spec top-level `status` と `design_record.status` の不一致を `spec_status_mismatch` とする
+- [x] `depends_on` 参照先 ID の存在確認を行う
+- [x] `supersedes` 参照先 ID の存在確認を行う
+- [x] ADR `migrated_to_spec` の non-empty 値が `YYYY-MM-DD` でない場合 `invalid_migrated_to_spec` を出す
+- [x] scan/path normalization 後の candidate path に対する read/stat 失敗を `missing_record_path` とする
+- [x] Diagnostic は検査軸ごとに独立して発火し、1 record に複数 diagnostic が付いてよい
 
 MVP out:
 
-- [ ] `accepted_but_not_migrated` は実装しない
-- [ ] `missing_design_record` は実装しない
-- [ ] status combination validation は実装しない
-- [ ] semantic mismatch between body and metadata は実装しない
-- [ ] spec section origin completeness は実装しない
+- [x] `accepted_but_not_migrated` は実装しない
+- [x] `missing_design_record` は実装しない
+- [x] status combination validation は実装しない
+- [x] semantic mismatch between body and metadata は実装しない
+- [x] spec section origin completeness は実装しない
 
 Done criteria:
 
-- [ ] `validate_records` が全 record を検証できる
-- [ ] `kind` / `id_range` filter に対応する
-- [ ] `id_range` rule は `list_records` と同じ
-- [ ] validation response returns top-level `ok` and `diagnostics`; `ok` is true when there are no error diagnostics
-- [ ] diagnostic response は `category` / `severity` / `record_id` / `path` / `message` / `target_id` を返せる
+- [x] `validate_records` が全 record を検証できる
+- [x] `kind` / `id_range` filter に対応する
+- [x] `id_range` rule は `list_records` と同じ
+- [x] validation response returns top-level `ok` and `diagnostics`; `ok` is true when there are no error diagnostics
+- [x] diagnostic response は `category` / `severity` / `record_id` / `path` / `message` / `target_id` を返せる
 
 ---
 

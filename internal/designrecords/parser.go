@@ -70,13 +70,13 @@ func parseADRRecord(path, raw string) (*Record, RecordCandidate, []ParseIssue) {
 	id := "ADR-" + num
 	candidate.ID = id
 	candidate.NormalizedID = normalizeRecordID(id)
-	if filenameNumber != "" && filenameNumber != num {
+	if filenameNumber != num {
 		candidate.FilenameIDMismatch = true
 		issues = append(issues, ParseIssue{
 			Category: DiagnosticFilenameIDMismatch,
 			Path:     path,
 			RecordID: id,
-			Message:  "ADR H1 number does not match filename number",
+			Message:  "ADR filename number is missing or does not match H1 number",
 			Details: map[string]string{
 				"h1_number":       num,
 				"filename_number": filenameNumber,
@@ -214,7 +214,7 @@ func parseSpecRecord(path, raw string) (*Record, RecordCandidate, []ParseIssue) 
 			Details:  map[string]string{"h1": h1Line},
 		})
 	}
-	if fm.DesignRecord.Status != "" && fm.DesignRecord.Status != fm.Status {
+	if fm.Status != "" && fm.DesignRecord.Status != "" && fm.DesignRecord.Status != fm.Status {
 		issues = append(issues, ParseIssue{
 			Category: DiagnosticSpecStatusMismatch,
 			Path:     path,

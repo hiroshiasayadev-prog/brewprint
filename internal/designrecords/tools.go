@@ -41,10 +41,8 @@ func GetRecord(ctx context.Context, idx *Index, req GetRecordRequest) (GetRecord
 	return GetRecordResponse{}, newToolError(ErrorCodeRecordNotFound, fmt.Sprintf("record %s was not found", req.ID))
 }
 
-// ValidateRecords is a Phase 0 stub. It reports existing index diagnostics and
-// treats an empty diagnostic set as ok.
-//
-// TODO(Phase 3): implement diagnostic generation and request filtering.
+// ValidateRecords checks the Phase 1 index materials and emits MVP validation
+// diagnostics for the selected record scope.
 func ValidateRecords(ctx context.Context, idx *Index, req ValidateRecordsRequest) (ValidateRecordsResponse, error) {
 	if err := ctx.Err(); err != nil {
 		return ValidateRecordsResponse{}, err
@@ -52,7 +50,11 @@ func ValidateRecords(ctx context.Context, idx *Index, req ValidateRecordsRequest
 	if idx == nil {
 		return ValidateRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
 	}
-	diagnostics := append([]Diagnostic(nil), idx.Diagnostics...)
+	scope, err := newValidationScope(req)
+	if err != nil {
+		return ValidateRecordsResponse{}, err
+	}
+	diagnostics := generateValidationDiagnostics(idx, scope)
 	ok := true
 	for _, diagnostic := range diagnostics {
 		if diagnostic.Severity == DiagnosticSeverityError {

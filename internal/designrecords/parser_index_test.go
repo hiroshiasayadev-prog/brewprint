@@ -103,6 +103,14 @@ func TestADRMetadataEmptyValuesAndInvalidMigratedToSpec(t *testing.T) {
 		t.Fatalf("missing invalid migrated_to_spec issue: %#v", issues)
 	}
 
+	record, _, issues = parseADRRecord("docs/adr/076-design-records-mcp.md", "# 076: Design Records MCP\n- **migrated_to_spec**: 2026-02-31\n")
+	if record == nil {
+		t.Fatal("record is nil")
+	}
+	if !hasIssue(issues, DiagnosticInvalidMigratedToSpec) {
+		t.Fatalf("calendar-invalid migrated_to_spec should produce issue: %#v", issues)
+	}
+
 	record, _, issues = parseADRRecord("docs/adr/076-design-records-mcp.md", "# 076: Design Records MCP\n- **migrated_to_spec**: \n")
 	if record.MigratedToSpec != nil {
 		t.Fatalf("empty MigratedToSpec = %#v, want nil", record.MigratedToSpec)
