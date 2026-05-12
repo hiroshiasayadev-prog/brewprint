@@ -153,38 +153,38 @@ Done criteria:
 
 `list_records` tool を実装する。
 
-- [ ] `kind` filter を実装する
-- [ ] `status` filter を実装する
-- [ ] `id` exact filter を実装する
-- [ ] `id_range` filter を実装する
-- [ ] `id_range` endpoints are inclusive
-- [ ] `id_range.from` and `id_range.to` are independently optional; one-sided ranges are supported
-- [ ] `id_range` は `ADR-NNN` の decision record 専用とする
-- [ ] `kind` 省略 + `id_range` 指定時は `kind: decision` と同等に扱う
-- [ ] `kind: spec` と `id_range` の併用は request error とする
-- [ ] `SPEC-*` range 指定は request error とする
-- [ ] `order_by: id` を実装する
-- [ ] `order: asc | desc` を実装する
-- [ ] `limit` を実装する
-- [ ] `head` / `tail` は実装しない
+- [x] `kind` filter を実装する
+- [x] `status` filter を実装する
+- [x] `id` exact filter を実装する
+- [x] `id_range` filter を実装する
+- [x] `id_range` endpoints are inclusive
+- [x] `id_range.from` and `id_range.to` are independently optional; one-sided ranges are supported
+- [x] `id_range` は `ADR-NNN` の decision record 専用とする
+- [x] `kind` 省略 + `id_range` 指定時は `kind: decision` と同等に扱う
+- [x] `kind: spec` と `id_range` の併用は request error とする
+- [x] `SPEC-*` range 指定は request error とする
+- [x] `order_by: id` を実装する
+- [x] `order: asc | desc` を実装する
+- [x] `limit` を実装する
+- [x] `head` / `tail` は実装しない
 
 Response fields:
 
-- [ ] `id`
-- [ ] `kind`
-- [ ] `title`
-- [ ] `status`
-- [ ] `path`
-- [ ] `depends_on`
-- [ ] `supersedes`
-- [ ] `migrated_to_spec`
+- [x] `id`
+- [x] `kind`
+- [x] `title`
+- [x] `status`
+- [x] `path`
+- [x] `depends_on`
+- [x] `supersedes`
+- [x] `migrated_to_spec`
 
 Done criteria:
 
-- [ ] 最新 ADR を `order_by:id`, `order:desc`, `limit` で取得できる
-- [ ] ADR-067〜ADR-077 を `id_range` で取得できる
-- [ ] `kind: spec` で Design Records MCP spec record を取得できる
-- [ ] `kind: spec` + `id_range` は request error になる
+- [x] 最新 ADR を `order_by:id`, `order:desc`, `limit` で取得できる
+- [x] ADR-067〜ADR-077 を `id_range` で取得できる
+- [x] `kind: spec` で Design Records MCP spec record を取得できる
+- [x] `kind: spec` + `id_range` は request error になる
 
 ---
 

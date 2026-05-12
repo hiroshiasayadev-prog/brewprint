@@ -137,6 +137,10 @@ MVP の `id_range` は `ADR-NNN` 形式の `decision` record にのみ適用す�
 
 `records[]` の並び順は `order_by` / `order` に従う。
 
+`order_by: id` で mixed kind の record を返す場合、MVP では deterministic ordering として `decision` records を先、`spec` records を後に並べる。
+`order: asc | desc` は同一 kind 内の ID order に適用し、`order: desc` の場合も kind order 自体は `decision` first, then `spec` のままとする。
+`decision` record ID は `ADR-NNN` の `NNN` を数値比較し、`spec` record ID は string order で比較する。
+
 ## `get_record`
 
 ### Purpose

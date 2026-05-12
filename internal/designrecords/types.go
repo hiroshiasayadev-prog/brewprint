@@ -141,11 +141,22 @@ type ListRecordsRequest struct {
 	IDRange *IDRange     `json:"id_range,omitempty"`
 	OrderBy string       `json:"order_by,omitempty"`
 	Order   string       `json:"order,omitempty"`
-	Limit   int          `json:"limit,omitempty"`
+	Limit   *int         `json:"limit,omitempty"`
+}
+
+type ListedRecord struct {
+	ID             string       `json:"id"`
+	Kind           RecordKind   `json:"kind"`
+	Title          string       `json:"title"`
+	Status         RecordStatus `json:"status"`
+	Path           string       `json:"path"`
+	DependsOn      []string     `json:"depends_on"`
+	Supersedes     []string     `json:"supersedes"`
+	MigratedToSpec *string      `json:"migrated_to_spec"`
 }
 
 type ListRecordsResponse struct {
-	Records []Record `json:"records"`
+	Records []ListedRecord `json:"records"`
 }
 
 type GetRecordRequest struct {
