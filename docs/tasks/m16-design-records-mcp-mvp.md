@@ -1,6 +1,6 @@
 # Milestone 16: Design Records MCP MVP
 
-- **status**: open
+- **status**: closed
 - **scope**: docs/spec/design-records-mcp / docs/adr / docs/spec / cmd/design-records-mcp / internal/designrecords / tests
 - **source**: ADR-076 (Design Records MCP) / ADR-077 (MVP boundary and tool prioritization) / docs/spec/design-records-mcp/**
 - **last_updated**: 2026-05-12
@@ -336,17 +336,17 @@ Test fixtures should cover:
 
 M16 is done when:
 
-- [ ] `cmd/design-records-mcp/` can run independently
-- [ ] `internal/designrecords/` owns parser / index / validation / tool handlers
-- [ ] ADR/spec record index can be built from repo docs
-- [ ] `list_records` is implemented
-- [ ] `validate_records` is implemented
-- [ ] `get_record` is implemented
+- [x] `cmd/design-records-mcp/` can run independently
+- [x] `internal/designrecords/` owns parser / index / validation / tool handlers
+- [x] ADR/spec record index can be built from repo docs
+- [x] `list_records` is implemented
+- [x] `validate_records` is implemented
+- [x] `get_record` is implemented
 - [x] P1 `suggest_next_record` is either implemented or explicitly deferred in this task file
-- [ ] MVP diagnostic categories match `docs/spec/design-records-mcp/schema.md`
-- [ ] tool behavior matches `docs/spec/design-records-mcp/tools.md`
-- [ ] tests cover parser, index, validation, and P0 tools
-- [ ] implementation does not depend on existing brewprint YAML semantic build / `ResolvedProject`
+- [x] MVP diagnostic categories match `docs/spec/design-records-mcp/schema.md`
+- [x] tool behavior matches `docs/spec/design-records-mcp/tools.md`
+- [x] tests cover parser, index, validation, and P0 tools
+- [x] implementation does not depend on existing brewprint YAML semantic build / `ResolvedProject`
 
 ---
 
@@ -361,4 +361,7 @@ These are explicitly outside M16 MVP and should be handled by later ADR/spec/tas
 - section-level traceability
 - task / UC / impl note indexing
 - existing brewprint MCP integration or shared launcher
+- expose Design Records MCP handlers through MCP transport and add integration/smoke tests
 - external generic Design Records CLI / OSS packaging
+
+M16 close note: `cmd/design-records-mcp` currently runs independently as an index summary binary. MCP server registration / transport exposure is not part of this M16 close.
