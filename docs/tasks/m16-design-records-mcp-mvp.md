@@ -1,0 +1,364 @@
+# Milestone 16: Design Records MCP MVP
+
+- **status**: open
+- **scope**: docs/spec/design-records-mcp / docs/adr / docs/spec / cmd/design-records-mcp / internal/designrecords / tests
+- **source**: ADR-076 (Design Records MCP) / ADR-077 (MVP boundary and tool prioritization) / docs/spec/design-records-mcp/**
+- **last_updated**: 2026-05-12
+
+---
+
+## Context
+
+ADR-050 により、brewprint のドキュメント運用は spec-first に転換した。
+現行仕様は `docs/spec/**` に置き、ADR は設計判断の根拠記録として扱う。
+
+ADR-076 では、ADR/spec 運用を machine-readable metadata と MCP query / validation で支援する Design Records MCP の導入方針を決めた。
+ADR-077 では、MVP の tool 優先度と read-only 境界を決めた。
+
+本 milestone は、`docs/spec/design-records-mcp/**` に定義した MVP 仕様を実装に落とし込む。
+対象は ADR / spec record の index / read / validation であり、既存 brewprint MCP の `ResolvedProject` / `QueryService` とは別責務として扱う。
+
+---
+
+## Implementation layout
+
+MVP implementation uses the following layout:
+
+```text
+cmd/
+  brewprint/
+  design-records-mcp/
+
+internal/
+  designrecords/
+```
+
+`cmd/design-records-mcp/` は Design Records MCP の独立起動 binary とする。
+
+`internal/designrecords/` が所有するもの:
+
+- ADR/spec Markdown metadata parsing
+- record index construction
+- validation
+- Design Records MCP tool handlers
+
+Non-goals:
+
+- 既存 `internal/mcp` に Design Records MCP を混ぜない
+- 既存 `internal/query` / `ResolvedProject` を docs 管理へ拡張しない
+- MVP では `cmd/brewprint` の subcommand として統合しない
+
+---
+
+## Non-goals
+
+M16 MVP では以下を行わない。
+
+- `trace_record`
+- `list_gaps`
+- `create_record`
+- `update_record`
+- `set_evidence`
+- その他 write 系 tool
+- task file / UC docs / impl notes の index 化
+- 自然言語本文から依存関係を推定すること
+- spec 本文との厳密な意味照合
+- git 履歴解析
+- code static analysis
+- Web UI
+- 複数プロジェクト横断管理
+- 汎用 OSS CLI としての公開 contract 整備
+- section 単位の完全な traceability
+- `topics` / `affects` / `refines` / `conflicts_with` metadata
+
+---
+
+## Phase 0: implementation skeleton
+
+Design Records MCP を既存 brewprint MCP から独立して起動できる構成で立ち上げる。
+
+- [ ] `cmd/design-records-mcp/` を作成する
+- [ ] `internal/designrecords/` を作成する
+- [ ] repository root を cwd または起動引数から決める
+- [ ] `docs/adr/*.md` と `docs/spec/**/*.md` を読むための filesystem boundary を実装する
+- [ ] 既存 `internal/mcp` / `internal/query` に依存しない構成にする
+
+Done criteria:
+
+- [ ] `go run ./cmd/design-records-mcp` 相当で独立起動できる
+- [ ] root path を指定または cwd から解決できる
+- [ ] 既存 brewprint YAML semantic build に依存していない
+
+---
+
+## Phase 1: record parser and index
+
+ADR/spec Markdown から MVP record index を構築する。
+
+### ADR parsing
+
+- [ ] `docs/adr/*.md` を `decision` record 候補として scan する
+- [ ] ADR H1 を `^#\s+(?P<num>\d{3}):\s+(?P<title>.+?)\s*$` で parse する
+- [ ] canonical ID を `ADR-<num>` として導出する
+- [ ] ADR files with missing or invalid H1 remain validation candidates so `invalid_h1_title` can be emitted
+- [ ] When ADR H1 is invalid, do not derive the canonical record ID from the filename
+- [ ] filename 先頭番号と H1 番号を3桁ゼロ埋め文字列一致で検査する
+- [ ] H1 直後の bullet metadata block を parse する
+- [ ] ADR metadata block starts after H1 and ends before the first H2 line or blockquote line; empty lines are allowed inside the block
+- [ ] ADR metadata lines are recognized only in the form `- **<key>**: <value>`; bold marker is required
+- [ ] ADR metadata keys are case-sensitive; values are trimmed; empty or whitespace-only values are treated as unspecified
+- [ ] `status` / `date` / `depends_on` / `supersedes` / `migrated_to_spec` key を認識する
+- [ ] 未認識 key は MVP では無視する
+- [ ] `depends_on` / `supersedes` は comma 区切り list として正規化する
+- [ ] 空 `depends_on` / `supersedes` は empty list に正規化する
+- [ ] 空 `migrated_to_spec` は null に正規化する
+- [ ] non-empty `migrated_to_spec` は `YYYY-MM-DD` のみ有効とする
+- [ ] `date` は parse してよいが record field には含めない
+
+### Spec parsing
+
+- [ ] `docs/spec/**/*.md` を scan する
+- [ ] YAML front matter を parse する
+- [ ] `design_record.id` と `design_record.kind` を持つ file のみ spec record として index する
+- [ ] `design_record` を持たない spec は silent skip し、`missing_design_record` diagnostic は出さない
+- [ ] `design_record.kind` が `decision` / `spec` 以外の場合も MVP では silent skip する
+- [ ] spec record の canonical status は top-level front matter `status` とする
+- [ ] `design_record.status` が存在する場合、top-level `status` と一致するか検査する
+- [ ] top-level `depends_on` は doc-policy 用 path list として扱い、record dependency には使わない
+- [ ] record dependency は `design_record.depends_on` から読む
+- [ ] spec record の `supersedes` は empty list に正規化する
+- [ ] spec record の `migrated_to_spec` は null に正規化する
+- [ ] spec の `design_record.supersedes` / `design_record.migrated_to_spec` に値があっても MVP では無視し、diagnostic は出さない
+
+### Common parsing
+
+- [ ] `title` は H1 から抽出する
+- [ ] spec record title は H1 行から leading `#` と whitespace を除き、前後 whitespace を trim する
+- [ ] `headings` は ATX heading のみ抽出する
+- [ ] YAML front matter 内 / fenced code block 内の `#` は heading として扱わない
+- [ ] setext heading は MVP では扱わない
+- [ ] Spec records with missing or invalid ATX H1 emit `invalid_h1_title`; title is not inferred from filename or front matter
+- [ ] `body` は raw Markdown file content として保持または必要時取得できるようにする
+
+Done criteria:
+
+- [ ] ADR-050 / ADR-067〜ADR-077 が decision record として index できる
+- [ ] `docs/spec/design-records-mcp/**` が spec record として index できる
+- [ ] `design_record` を持たない既存 spec は silent skip される
+- [ ] raw body は整形・要約・正規化されない
+
+---
+
+## Phase 2: list_records
+
+`list_records` tool を実装する。
+
+- [ ] `kind` filter を実装する
+- [ ] `status` filter を実装する
+- [ ] `id` exact filter を実装する
+- [ ] `id_range` filter を実装する
+- [ ] `id_range` endpoints are inclusive
+- [ ] `id_range.from` and `id_range.to` are independently optional; one-sided ranges are supported
+- [ ] `id_range` は `ADR-NNN` の decision record 専用とする
+- [ ] `kind` 省略 + `id_range` 指定時は `kind: decision` と同等に扱う
+- [ ] `kind: spec` と `id_range` の併用は request error とする
+- [ ] `SPEC-*` range 指定は request error とする
+- [ ] `order_by: id` を実装する
+- [ ] `order: asc | desc` を実装する
+- [ ] `limit` を実装する
+- [ ] `head` / `tail` は実装しない
+
+Response fields:
+
+- [ ] `id`
+- [ ] `kind`
+- [ ] `title`
+- [ ] `status`
+- [ ] `path`
+- [ ] `depends_on`
+- [ ] `supersedes`
+- [ ] `migrated_to_spec`
+
+Done criteria:
+
+- [ ] 最新 ADR を `order_by:id`, `order:desc`, `limit` で取得できる
+- [ ] ADR-067〜ADR-077 を `id_range` で取得できる
+- [ ] `kind: spec` で Design Records MCP spec record を取得できる
+- [ ] `kind: spec` + `id_range` は request error になる
+
+---
+
+## Phase 3: validate_records
+
+`validate_records` tool を実装する。
+
+Diagnostic category:
+
+- [ ] `duplicate_id`
+- [ ] `filename_id_mismatch`
+- [ ] `invalid_h1_title`
+- [ ] `invalid_status_for_kind`
+- [ ] `spec_status_mismatch`
+- [ ] `missing_depends_on_target`
+- [ ] `missing_supersedes_target`
+- [ ] `invalid_migrated_to_spec`
+- [ ] `missing_record_path`
+
+Validation rules:
+
+- [ ] duplicate normalized record ID を検出する
+- [ ] ADR H1 番号と filename 番号の不一致を検出する
+- [ ] ADR H1 が期待形式に合わない場合 `invalid_h1_title` を出す
+- [ ] kind 別 status 値域違反を検出する
+- [ ] spec top-level `status` と `design_record.status` の不一致を `spec_status_mismatch` とする
+- [ ] `depends_on` 参照先 ID の存在確認を行う
+- [ ] `supersedes` 参照先 ID の存在確認を行う
+- [ ] ADR `migrated_to_spec` の non-empty 値が `YYYY-MM-DD` でない場合 `invalid_migrated_to_spec` を出す
+- [ ] scan/path normalization 後の candidate path に対する read/stat 失敗を `missing_record_path` とする
+- [ ] Diagnostic は検査軸ごとに独立して発火し、1 record に複数 diagnostic が付いてよい
+
+MVP out:
+
+- [ ] `accepted_but_not_migrated` は実装しない
+- [ ] `missing_design_record` は実装しない
+- [ ] status combination validation は実装しない
+- [ ] semantic mismatch between body and metadata は実装しない
+- [ ] spec section origin completeness は実装しない
+
+Done criteria:
+
+- [ ] `validate_records` が全 record を検証できる
+- [ ] `kind` / `id_range` filter に対応する
+- [ ] `id_range` rule は `list_records` と同じ
+- [ ] validation response returns top-level `ok` and `diagnostics`; `ok` is true when there are no error diagnostics
+- [ ] diagnostic response は `category` / `severity` / `record_id` / `path` / `message` / `target_id` を返せる
+
+---
+
+## Phase 4: get_record
+
+`get_record` tool を実装する。
+
+- [ ] `id` で record を取得する
+- [ ] `include_body` を受け取る
+- [ ] `include_body` default は false とする
+- [ ] `include_body=false` でも metadata / path / title / headings を返す
+- [ ] `include_body=true` の場合、raw Markdown body を追加する
+- [ ] body は整形・要約・正規化しない
+- [ ] metadata / headings は body とは別 field として返す
+- [ ] 存在しない ID は `record_not_found` tool error とする
+
+Done criteria:
+
+- [ ] ADR-076 を ID から取得できる
+- [ ] `include_body=true` で元 Markdown 本文をそのまま返せる
+- [ ] `include_body=false` では body を返さない
+- [ ] headings に H1 / H2 などの ATX heading が含まれる
+
+---
+
+## Phase 5: tool error handling
+
+MVP tool error code を実装する。
+
+- [ ] `record_not_found`
+- [ ] `invalid_request`
+- [ ] `unsupported_kind`
+- [ ] `id_range_requires_decision_kind`
+
+Rules:
+
+- [ ] `list_records` に `kind: task` など不正な kind を指定した場合は `invalid_request` とする
+- [ ] If `suggest_next_record` is implemented, `kind: spec` など対象外 kind を指定した場合は `unsupported_kind` とする
+- [ ] `kind: spec` と `id_range` の併用は `id_range_requires_decision_kind` とする
+- [ ] `SPEC-*` range 指定は `id_range_requires_decision_kind` とする
+
+Done criteria:
+
+- [ ] request validation error が machine-readable に返る
+- [ ] tool execution error と validation diagnostic を混同しない
+
+---
+
+## Phase 6: optional suggest_next_record
+
+P0 完了後、余力があれば `suggest_next_record` を実装する。
+
+- [ ] 対象は `kind: decision` のみとする
+- [ ] existing max decision record number を取得する
+- [ ] `next_number = max + 1` とする
+- [ ] 欠番は埋めない
+- [ ] `next_id = ADR-NNN` を返す
+- [ ] `suggested_path` を返す
+- [ ] filename slug を title から生成する
+- [ ] slug は ASCII 英数字 lowercase、非英数字を `-`、連続 `-` を1つ、前後 `-` 除去、非 ASCII は `-` とする
+- [ ] slug が空の場合、`docs/adr/{NNN}.md` を suggested path としてよい
+- [ ] ファイル作成は行わない
+
+Done criteria:
+
+- [ ] 既存最大 ADR が 077 の場合、078 を提案できる
+- [ ] suggested path を返せる
+- [ ] ファイル副作用がない
+
+---
+
+## Phase 7: tests and fixtures
+
+MVP parser / tools の regression test を追加する。
+
+- [ ] ADR H1 parse tests
+- [ ] ADR bullet metadata parse tests
+- [ ] spec YAML front matter / design_record parse tests
+- [ ] record index tests
+- [ ] list_records filter / sort / limit tests
+- [ ] validate_records diagnostic tests
+- [ ] get_record include_body tests
+- [ ] tool error handling tests
+- [ ] optional: suggest_next_record tests
+
+Test fixtures should cover:
+
+- [ ] valid ADR H1
+- [ ] invalid ADR H1
+- [ ] filename ID mismatch
+- [ ] empty depends_on / supersedes / migrated_to_spec
+- [ ] invalid migrated_to_spec
+- [ ] spec status mismatch
+- [ ] design_record missing spec silent skip
+- [ ] `kind: spec` + `id_range` request error
+- [ ] fenced code block headings exclusion
+- [ ] If `suggest_next_record` is implemented, slug generation covers ASCII and non-ASCII titles
+
+---
+
+## Done criteria for M16
+
+M16 is done when:
+
+- [ ] `cmd/design-records-mcp/` can run independently
+- [ ] `internal/designrecords/` owns parser / index / validation / tool handlers
+- [ ] ADR/spec record index can be built from repo docs
+- [ ] `list_records` is implemented
+- [ ] `validate_records` is implemented
+- [ ] `get_record` is implemented
+- [ ] P1 `suggest_next_record` is either implemented or explicitly deferred in this task file
+- [ ] MVP diagnostic categories match `docs/spec/design-records-mcp/schema.md`
+- [ ] tool behavior matches `docs/spec/design-records-mcp/tools.md`
+- [ ] tests cover parser, index, validation, and P0 tools
+- [ ] implementation does not depend on existing brewprint YAML semantic build / `ResolvedProject`
+
+---
+
+## Follow-up candidates
+
+These are explicitly outside M16 MVP and should be handled by later ADR/spec/task if needed.
+
+- `trace_record`
+- `list_gaps`
+- write tools for ADR/spec updates
+- metadata gap diagnostics such as `accepted_but_not_migrated`
+- section-level traceability
+- task / UC / impl note indexing
+- existing brewprint MCP integration or shared launcher
+- external generic Design Records CLI / OSS packaging
