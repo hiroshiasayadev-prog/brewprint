@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 )
 
 type listRecordsScope struct {
@@ -49,9 +50,9 @@ func ListRecords(ctx context.Context, idx *Index, req ListRecordsRequest) (ListR
 	return ListRecordsResponse{Records: out}, nil
 }
 
-// GetRecord is a Phase 0 lookup stub over the already-populated index.
-//
-// TODO(Phase 4): load raw Markdown body on demand when include_body is true.
+// GetRecord returns one exact ID match from the already-populated index.
+// Duplicate IDs are reported by validate_records; this lookup deterministically
+// returns the first record in index order and does not introduce another error.
 func GetRecord(ctx context.Context, idx *Index, req GetRecordRequest) (GetRecordResponse, error) {
 	if err := ctx.Err(); err != nil {
 		return GetRecordResponse{}, err
@@ -59,12 +60,12 @@ func GetRecord(ctx context.Context, idx *Index, req GetRecordRequest) (GetRecord
 	if idx == nil {
 		return GetRecordResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
 	}
-	if req.ID == "" {
+	if strings.TrimSpace(req.ID) == "" {
 		return GetRecordResponse{}, newToolError(ErrorCodeInvalidRequest, "id is required")
 	}
 	for _, record := range idx.Records {
 		if record.ID == req.ID {
-			return GetRecordResponse{Record: record}, nil
+			return GetRecordResponse{Record: getRecordResponseRecord(record, req.IncludeBody)}, nil
 		}
 	}
 	return GetRecordResponse{}, newToolError(ErrorCodeRecordNotFound, fmt.Sprintf("record %s was not found", req.ID))
@@ -234,4 +235,23 @@ func listedRecord(record Record) ListedRecord {
 		Supersedes:     append([]string{}, record.Supersedes...),
 		MigratedToSpec: record.MigratedToSpec,
 	}
+}
+
+func getRecordResponseRecord(record Record, includeBody bool) GetRecordRecord {
+	out := GetRecordRecord{
+		ID:             record.ID,
+		Kind:           record.Kind,
+		Title:          record.Title,
+		Status:         record.Status,
+		Path:           record.Path,
+		DependsOn:      append([]string{}, record.DependsOn...),
+		Supersedes:     append([]string{}, record.Supersedes...),
+		MigratedToSpec: record.MigratedToSpec,
+		Headings:       append([]Heading{}, record.Headings...),
+	}
+	if includeBody {
+		body := record.RawBody
+		out.Body = &body
+	}
+	return out
 }

@@ -32,7 +32,7 @@ type Record struct {
 	DependsOn      []string     `json:"depends_on"`
 	Supersedes     []string     `json:"supersedes"`
 	MigratedToSpec *string      `json:"migrated_to_spec"`
-	Headings       []Heading    `json:"headings,omitempty"`
+	Headings       []Heading    `json:"headings"`
 	Body           *string      `json:"body,omitempty"`
 	RawBody        string       `json:"-"`
 	NormalizedID   string       `json:"-"`
@@ -164,8 +164,21 @@ type GetRecordRequest struct {
 	IncludeBody bool   `json:"include_body,omitempty"`
 }
 
+type GetRecordRecord struct {
+	ID             string       `json:"id"`
+	Kind           RecordKind   `json:"kind"`
+	Title          string       `json:"title"`
+	Status         RecordStatus `json:"status"`
+	Path           string       `json:"path"`
+	DependsOn      []string     `json:"depends_on"`
+	Supersedes     []string     `json:"supersedes"`
+	MigratedToSpec *string      `json:"migrated_to_spec"`
+	Headings       []Heading    `json:"headings"`
+	Body           *string      `json:"body,omitempty"`
+}
+
 type GetRecordResponse struct {
-	Record Record `json:"record"`
+	Record GetRecordRecord `json:"record"`
 }
 
 type ValidateRecordsRequest struct {

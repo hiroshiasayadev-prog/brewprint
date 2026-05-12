@@ -239,21 +239,21 @@ Done criteria:
 
 `get_record` tool を実装する。
 
-- [ ] `id` で record を取得する
-- [ ] `include_body` を受け取る
-- [ ] `include_body` default は false とする
-- [ ] `include_body=false` でも metadata / path / title / headings を返す
-- [ ] `include_body=true` の場合、raw Markdown body を追加する
-- [ ] body は整形・要約・正規化しない
-- [ ] metadata / headings は body とは別 field として返す
-- [ ] 存在しない ID は `record_not_found` tool error とする
+- [x] `id` で record を取得する
+- [x] `include_body` を受け取る
+- [x] `include_body` default は false とする
+- [x] `include_body=false` でも metadata / path / title / headings を返す
+- [x] `include_body=true` の場合、raw Markdown body を追加する
+- [x] body は整形・要約・正規化しない
+- [x] metadata / headings は body とは別 field として返す
+- [x] 存在しない ID は `record_not_found` tool error とする
 
 Done criteria:
 
-- [ ] ADR-076 を ID から取得できる
-- [ ] `include_body=true` で元 Markdown 本文をそのまま返せる
-- [ ] `include_body=false` では body を返さない
-- [ ] headings に H1 / H2 などの ATX heading が含まれる
+- [x] ADR-076 を ID から取得できる
+- [x] `include_body=true` で元 Markdown 本文をそのまま返せる
+- [x] `include_body=false` では body を返さない
+- [x] headings に H1 / H2 などの ATX heading が含まれる
 
 ---
 
