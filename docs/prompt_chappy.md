@@ -32,6 +32,15 @@
 - 指示されていないファイルを勝手に変更しない。
 - 新規ファイルは write_file、既存ファイルの部分更新は str-replace / edit_file を使う。
 
+### Encoding / PowerShell
+
+- Windows / PowerShell でテキストファイルを読む場合、`Get-Content -Raw` は使用禁止。
+- 文字化け防止のため、UTF-8 を明示して読む。
+- 推奨コマンド: `python -X utf8 -c "from pathlib import Path; print(Path(r'<PATH>').read_text(encoding='utf-8'))"`
+- PowerShell が必要な場合: `[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); [System.IO.File]::ReadAllText('<PATH>', [System.Text.Encoding]::UTF8)`
+- 既に `Get-Content -Raw` で読んだ内容は信用せず、UTF-8 明示で読み直す。
+- 作業開始時に `C:\Users\imved\projects\brewprint\AGENTS.md` を読み、Encoding policy を確認する。
+
 ### Repo search / Markdown editing safety
 
 - `**/*` のようなrepo全体検索は出力が爆発するため使用しない。
