@@ -44,6 +44,7 @@ brewprintの積みタスク一覧。
 | M14: brewprint self-hosting | paused | [tasks/m14-self-hosting.md](tasks/m14-self-hosting.md) | UC-002 / v1.0.0-spec実用検証 + editor/viewer要件抽出。M15完了まで一時停止 |
 | M14a: subnode file-private scope fix | open | [tasks/m14a-subnode-scope-fix.md](tasks/m14a-subnode-scope-fix.md) | ADR-058 / ADR-059。M14 Phase Aで発覚したv1.0系実装バグ修正 |
 | M15: data layer expressiveness (v1.1) | open | [tasks/m15-data-layer-expressiveness.md](tasks/m15-data-layer-expressiveness.md) | ADR-060 (TypeRef + flow wiring type compatibility)。Phase A/B/C構成。完了時点で v1.1.0-spec タグ発行 |
+| M16: Design Records MCP MVP | open | [tasks/m16-design-records-mcp-mvp.md](tasks/m16-design-records-mcp-mvp.md) | ADR-076 / ADR-077。ADR/spec record index + read-only MCP MVP |
 
 ---
 
