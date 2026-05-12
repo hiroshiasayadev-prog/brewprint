@@ -307,27 +307,27 @@ Done criteria:
 
 MVP parser / tools の regression test を追加する。
 
-- [ ] ADR H1 parse tests
-- [ ] ADR bullet metadata parse tests
-- [ ] spec YAML front matter / design_record parse tests
-- [ ] record index tests
-- [ ] list_records filter / sort / limit tests
-- [ ] validate_records diagnostic tests
-- [ ] get_record include_body tests
-- [ ] tool error handling tests
+- [x] ADR H1 parse tests
+- [x] ADR bullet metadata parse tests
+- [x] spec YAML front matter / design_record parse tests
+- [x] record index tests
+- [x] list_records filter / sort / limit tests
+- [x] validate_records diagnostic tests
+- [x] get_record include_body tests
+- [x] tool error handling tests
 - [x] optional: suggest_next_record tests
 
 Test fixtures should cover:
 
-- [ ] valid ADR H1
-- [ ] invalid ADR H1
-- [ ] filename ID mismatch
-- [ ] empty depends_on / supersedes / migrated_to_spec
-- [ ] invalid migrated_to_spec
-- [ ] spec status mismatch
-- [ ] design_record missing spec silent skip
-- [ ] `kind: spec` + `id_range` request error
-- [ ] fenced code block headings exclusion
+- [x] valid ADR H1
+- [x] invalid ADR H1
+- [x] filename ID mismatch
+- [x] empty depends_on / supersedes / migrated_to_spec
+- [x] invalid migrated_to_spec
+- [x] spec status mismatch
+- [x] design_record missing spec silent skip
+- [x] `kind: spec` + `id_range` request error
+- [x] fenced code block headings exclusion
 - [x] If `suggest_next_record` is implemented, slug generation covers ASCII and non-ASCII titles
 
 ---
