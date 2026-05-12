@@ -77,17 +77,17 @@ M16 MVP では以下を行わない。
 
 Design Records MCP を既存 brewprint MCP から独立して起動できる構成で立ち上げる。
 
-- [ ] `cmd/design-records-mcp/` を作成する
-- [ ] `internal/designrecords/` を作成する
-- [ ] repository root を cwd または起動引数から決める
-- [ ] `docs/adr/*.md` と `docs/spec/**/*.md` を読むための filesystem boundary を実装する
-- [ ] 既存 `internal/mcp` / `internal/query` に依存しない構成にする
+- [x] `cmd/design-records-mcp/` を作成する
+- [x] `internal/designrecords/` を作成する
+- [x] repository root を cwd または起動引数から決める
+- [x] `docs/adr/*.md` と `docs/spec/**/*.md` を読むための filesystem boundary を実装する
+- [x] 既存 `internal/mcp` / `internal/query` に依存しない構成にする
 
 Done criteria:
 
-- [ ] `go run ./cmd/design-records-mcp` 相当で独立起動できる
-- [ ] root path を指定または cwd から解決できる
-- [ ] 既存 brewprint YAML semantic build に依存していない
+- [x] `go run ./cmd/design-records-mcp` 相当で独立起動できる
+- [x] root path を指定または cwd から解決できる
+- [x] 既存 brewprint YAML semantic build に依存していない
 
 ---
 
@@ -97,55 +97,55 @@ ADR/spec Markdown から MVP record index を構築する。
 
 ### ADR parsing
 
-- [ ] `docs/adr/*.md` を `decision` record 候補として scan する
-- [ ] ADR H1 を `^#\s+(?P<num>\d{3}):\s+(?P<title>.+?)\s*$` で parse する
-- [ ] canonical ID を `ADR-<num>` として導出する
-- [ ] ADR files with missing or invalid H1 remain validation candidates so `invalid_h1_title` can be emitted
-- [ ] When ADR H1 is invalid, do not derive the canonical record ID from the filename
-- [ ] filename 先頭番号と H1 番号を3桁ゼロ埋め文字列一致で検査する
-- [ ] H1 直後の bullet metadata block を parse する
-- [ ] ADR metadata block starts after H1 and ends before the first H2 line or blockquote line; empty lines are allowed inside the block
-- [ ] ADR metadata lines are recognized only in the form `- **<key>**: <value>`; bold marker is required
-- [ ] ADR metadata keys are case-sensitive; values are trimmed; empty or whitespace-only values are treated as unspecified
-- [ ] `status` / `date` / `depends_on` / `supersedes` / `migrated_to_spec` key を認識する
-- [ ] 未認識 key は MVP では無視する
-- [ ] `depends_on` / `supersedes` は comma 区切り list として正規化する
-- [ ] 空 `depends_on` / `supersedes` は empty list に正規化する
-- [ ] 空 `migrated_to_spec` は null に正規化する
-- [ ] non-empty `migrated_to_spec` は `YYYY-MM-DD` のみ有効とする
-- [ ] `date` は parse してよいが record field には含めない
+- [x] `docs/adr/*.md` を `decision` record 候補として scan する
+- [x] ADR H1 を `^#\s+(?P<num>\d{3}):\s+(?P<title>.+?)\s*$` で parse する
+- [x] canonical ID を `ADR-<num>` として導出する
+- [x] ADR files with missing or invalid H1 remain validation candidates so `invalid_h1_title` can be emitted
+- [x] When ADR H1 is invalid, do not derive the canonical record ID from the filename
+- [x] filename 先頭番号と H1 番号を3桁ゼロ埋め文字列一致で検査する
+- [x] H1 直後の bullet metadata block を parse する
+- [x] ADR metadata block starts after H1 and ends before the first H2 line or blockquote line; empty lines are allowed inside the block
+- [x] ADR metadata lines are recognized only in the form `- **<key>**: <value>`; bold marker is required
+- [x] ADR metadata keys are case-sensitive; values are trimmed; empty or whitespace-only values are treated as unspecified
+- [x] `status` / `date` / `depends_on` / `supersedes` / `migrated_to_spec` key を認識する
+- [x] 未認識 key は MVP では無視する
+- [x] `depends_on` / `supersedes` は comma 区切り list として正規化する
+- [x] 空 `depends_on` / `supersedes` は empty list に正規化する
+- [x] 空 `migrated_to_spec` は null に正規化する
+- [x] non-empty `migrated_to_spec` は `YYYY-MM-DD` のみ有効とする
+- [x] `date` は parse してよいが record field には含めない
 
 ### Spec parsing
 
-- [ ] `docs/spec/**/*.md` を scan する
-- [ ] YAML front matter を parse する
-- [ ] `design_record.id` と `design_record.kind` を持つ file のみ spec record として index する
-- [ ] `design_record` を持たない spec は silent skip し、`missing_design_record` diagnostic は出さない
-- [ ] `design_record.kind` が `decision` / `spec` 以外の場合も MVP では silent skip する
-- [ ] spec record の canonical status は top-level front matter `status` とする
-- [ ] `design_record.status` が存在する場合、top-level `status` と一致するか検査する
-- [ ] top-level `depends_on` は doc-policy 用 path list として扱い、record dependency には使わない
-- [ ] record dependency は `design_record.depends_on` から読む
-- [ ] spec record の `supersedes` は empty list に正規化する
-- [ ] spec record の `migrated_to_spec` は null に正規化する
-- [ ] spec の `design_record.supersedes` / `design_record.migrated_to_spec` に値があっても MVP では無視し、diagnostic は出さない
+- [x] `docs/spec/**/*.md` を scan する
+- [x] YAML front matter を parse する
+- [x] `design_record.id` と `design_record.kind` を持つ file のみ spec record として index する
+- [x] `design_record` を持たない spec は silent skip し、`missing_design_record` diagnostic は出さない
+- [x] `design_record.kind` が `decision` / `spec` 以外の場合も MVP では silent skip する
+- [x] spec record の canonical status は top-level front matter `status` とする
+- [x] `design_record.status` が存在する場合、top-level `status` と一致するか検査する
+- [x] top-level `depends_on` は doc-policy 用 path list として扱い、record dependency には使わない
+- [x] record dependency は `design_record.depends_on` から読む
+- [x] spec record の `supersedes` は empty list に正規化する
+- [x] spec record の `migrated_to_spec` は null に正規化する
+- [x] spec の `design_record.supersedes` / `design_record.migrated_to_spec` に値があっても MVP では無視し、diagnostic は出さない
 
 ### Common parsing
 
-- [ ] `title` は H1 から抽出する
-- [ ] spec record title は H1 行から leading `#` と whitespace を除き、前後 whitespace を trim する
-- [ ] `headings` は ATX heading のみ抽出する
-- [ ] YAML front matter 内 / fenced code block 内の `#` は heading として扱わない
-- [ ] setext heading は MVP では扱わない
-- [ ] Spec records with missing or invalid ATX H1 emit `invalid_h1_title`; title is not inferred from filename or front matter
-- [ ] `body` は raw Markdown file content として保持または必要時取得できるようにする
+- [x] `title` は H1 から抽出する
+- [x] spec record title は H1 行から leading `#` と whitespace を除き、前後 whitespace を trim する
+- [x] `headings` は ATX heading のみ抽出する
+- [x] YAML front matter 内 / fenced code block 内の `#` は heading として扱わない
+- [x] setext heading は MVP では扱わない
+- [x] Spec records with missing or invalid ATX H1 emit `invalid_h1_title`; title is not inferred from filename or front matter
+- [x] `body` は raw Markdown file content として保持または必要時取得できるようにする
 
 Done criteria:
 
-- [ ] ADR-050 / ADR-067〜ADR-077 が decision record として index できる
-- [ ] `docs/spec/design-records-mcp/**` が spec record として index できる
-- [ ] `design_record` を持たない既存 spec は silent skip される
-- [ ] raw body は整形・要約・正規化されない
+- [x] ADR-050 / ADR-067〜ADR-077 が decision record として index できる
+- [x] `docs/spec/design-records-mcp/**` が spec record として index できる
+- [x] `design_record` を持たない既存 spec は silent skip される
+- [x] raw body は整形・要約・正規化されない
 
 ---
 

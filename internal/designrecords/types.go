@@ -34,12 +34,45 @@ type Record struct {
 	MigratedToSpec *string      `json:"migrated_to_spec"`
 	Headings       []Heading    `json:"headings,omitempty"`
 	Body           *string      `json:"body,omitempty"`
+	RawBody        string       `json:"-"`
+	NormalizedID   string       `json:"-"`
 }
 
 type Index struct {
-	Root        string       `json:"root"`
-	Records     []Record     `json:"records"`
-	Diagnostics []Diagnostic `json:"diagnostics,omitempty"`
+	Root        string            `json:"root"`
+	Records     []Record          `json:"records"`
+	Diagnostics []Diagnostic      `json:"diagnostics,omitempty"`
+	Candidates  []RecordCandidate `json:"-"`
+	ParseIssues []ParseIssue      `json:"-"`
+	PathIssues  []PathIssue       `json:"-"`
+}
+
+type RecordCandidate struct {
+	Path               string
+	Kind               RecordKind
+	ID                 string
+	NormalizedID       string
+	H1Line             string
+	H1Valid            bool
+	H1Number           string
+	FilenameNumber     string
+	FilenameIDMismatch bool
+	Included           bool
+	SkipReason         string
+}
+
+type ParseIssue struct {
+	Category DiagnosticCategory
+	Path     string
+	RecordID string
+	Message  string
+	Details  map[string]string
+}
+
+type PathIssue struct {
+	Path      string
+	Operation string
+	Err       error
 }
 
 type DiagnosticCategory string
