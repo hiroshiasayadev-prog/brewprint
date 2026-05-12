@@ -98,9 +98,8 @@ func ValidateRecords(ctx context.Context, idx *Index, req ValidateRecordsRequest
 	}, nil
 }
 
-// SuggestNextRecord is a P1 optional Phase 0 stub.
-//
-// TODO(Phase 6): suggest the next decision ADR id and path without writing files.
+// SuggestNextRecord suggests the next decision ADR ID and path from the
+// already-populated index. It is read-only and does not create files.
 func SuggestNextRecord(ctx context.Context, idx *Index, req SuggestNextRecordRequest) (SuggestNextRecordResponse, error) {
 	if err := ctx.Err(); err != nil {
 		return SuggestNextRecordResponse{}, err
@@ -108,7 +107,45 @@ func SuggestNextRecord(ctx context.Context, idx *Index, req SuggestNextRecordReq
 	if idx == nil {
 		return SuggestNextRecordResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
 	}
-	return SuggestNextRecordResponse{}, newToolError(ErrorCodeUnsupportedKind, "suggest_next_record is not implemented in Phase 0")
+	kind := RecordKind(strings.TrimSpace(string(req.Kind)))
+	if kind == "" {
+		return SuggestNextRecordResponse{}, newToolError(ErrorCodeInvalidRequest, "kind is required")
+	}
+	if kind != RecordKindDecision {
+		return SuggestNextRecordResponse{}, newToolError(ErrorCodeUnsupportedKind, fmt.Sprintf("suggest_next_record does not support kind %q", req.Kind))
+	}
+	title := strings.TrimSpace(req.Title)
+	if title == "" {
+		return SuggestNextRecordResponse{}, newToolError(ErrorCodeInvalidRequest, "title is required")
+	}
+
+	maxNum := 0
+	existingMaxID := ""
+	for _, record := range idx.Records {
+		if record.Kind != RecordKindDecision {
+			continue
+		}
+		num, ok := decisionRecordNumber(record.ID)
+		if !ok {
+			continue
+		}
+		if num > maxNum {
+			maxNum = num
+			existingMaxID = fmt.Sprintf("ADR-%03d", num)
+		}
+	}
+
+	nextNumber := maxNum + 1
+	nextID := fmt.Sprintf("ADR-%03d", nextNumber)
+	suggestedPath := suggestedDecisionRecordPath(nextNumber, title)
+	return SuggestNextRecordResponse{
+		Kind:          RecordKindDecision,
+		Title:         title,
+		NextID:        nextID,
+		NextNumber:    nextNumber,
+		SuggestedPath: suggestedPath,
+		ExistingMaxID: existingMaxID,
+	}, nil
 }
 
 func newListRecordsScope(req ListRecordsRequest) (listRecordsScope, error) {
@@ -254,4 +291,37 @@ func getRecordResponseRecord(record Record, includeBody bool) GetRecordRecord {
 		out.Body = &body
 	}
 	return out
+}
+
+func suggestedDecisionRecordPath(num int, title string) string {
+	prefix := fmt.Sprintf("docs/adr/%03d", num)
+	slug := slugifyRecordTitle(title)
+	if slug == "" {
+		return prefix + ".md"
+	}
+	return prefix + "-" + slug + ".md"
+}
+
+func slugifyRecordTitle(title string) string {
+	var b strings.Builder
+	previousSeparator := true
+	for _, r := range title {
+		switch {
+		case r >= 'A' && r <= 'Z':
+			b.WriteRune(r + ('a' - 'A'))
+			previousSeparator = false
+		case r >= 'a' && r <= 'z':
+			b.WriteRune(r)
+			previousSeparator = false
+		case r >= '0' && r <= '9':
+			b.WriteRune(r)
+			previousSeparator = false
+		default:
+			if !previousSeparator {
+				b.WriteByte('-')
+				previousSeparator = true
+			}
+		}
+	}
+	return strings.Trim(b.String(), "-")
 }

@@ -284,22 +284,22 @@ Done criteria:
 
 P0 完了後、余力があれば `suggest_next_record` を実装する。
 
-- [ ] 対象は `kind: decision` のみとする
-- [ ] existing max decision record number を取得する
-- [ ] `next_number = max + 1` とする
-- [ ] 欠番は埋めない
-- [ ] `next_id = ADR-NNN` を返す
-- [ ] `suggested_path` を返す
-- [ ] filename slug を title から生成する
-- [ ] slug は ASCII 英数字 lowercase、非英数字を `-`、連続 `-` を1つ、前後 `-` 除去、非 ASCII は `-` とする
-- [ ] slug が空の場合、`docs/adr/{NNN}.md` を suggested path としてよい
-- [ ] ファイル作成は行わない
+- [x] 対象は `kind: decision` のみとする
+- [x] existing max decision record number を取得する
+- [x] `next_number = max + 1` とする
+- [x] 欠番は埋めない
+- [x] `next_id = ADR-NNN` を返す
+- [x] `suggested_path` を返す
+- [x] filename slug を title から生成する
+- [x] slug は ASCII 英数字 lowercase、非英数字を `-`、連続 `-` を1つ、前後 `-` 除去、非 ASCII は `-` とする
+- [x] slug が空の場合、`docs/adr/{NNN}.md` を suggested path としてよい
+- [x] ファイル作成は行わない
 
 Done criteria:
 
-- [ ] 既存最大 ADR が 077 の場合、078 を提案できる
-- [ ] suggested path を返せる
-- [ ] ファイル副作用がない
+- [x] 既存最大 ADR が 077 の場合、078 を提案できる
+- [x] suggested path を返せる
+- [x] ファイル副作用がない
 
 ---
 
@@ -315,7 +315,7 @@ MVP parser / tools の regression test を追加する。
 - [ ] validate_records diagnostic tests
 - [ ] get_record include_body tests
 - [ ] tool error handling tests
-- [ ] optional: suggest_next_record tests
+- [x] optional: suggest_next_record tests
 
 Test fixtures should cover:
 
@@ -328,7 +328,7 @@ Test fixtures should cover:
 - [ ] design_record missing spec silent skip
 - [ ] `kind: spec` + `id_range` request error
 - [ ] fenced code block headings exclusion
-- [ ] If `suggest_next_record` is implemented, slug generation covers ASCII and non-ASCII titles
+- [x] If `suggest_next_record` is implemented, slug generation covers ASCII and non-ASCII titles
 
 ---
 
@@ -342,7 +342,7 @@ M16 is done when:
 - [ ] `list_records` is implemented
 - [ ] `validate_records` is implemented
 - [ ] `get_record` is implemented
-- [ ] P1 `suggest_next_record` is either implemented or explicitly deferred in this task file
+- [x] P1 `suggest_next_record` is either implemented or explicitly deferred in this task file
 - [ ] MVP diagnostic categories match `docs/spec/design-records-mcp/schema.md`
 - [ ] tool behavior matches `docs/spec/design-records-mcp/tools.md`
 - [ ] tests cover parser, index, validation, and P0 tools
