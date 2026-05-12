@@ -261,22 +261,22 @@ Done criteria:
 
 MVP tool error code を実装する。
 
-- [ ] `record_not_found`
-- [ ] `invalid_request`
-- [ ] `unsupported_kind`
-- [ ] `id_range_requires_decision_kind`
+- [x] `record_not_found`
+- [x] `invalid_request`
+- [x] `unsupported_kind`
+- [x] `id_range_requires_decision_kind`
 
 Rules:
 
-- [ ] `list_records` に `kind: task` など不正な kind を指定した場合は `invalid_request` とする
-- [ ] If `suggest_next_record` is implemented, `kind: spec` など対象外 kind を指定した場合は `unsupported_kind` とする
-- [ ] `kind: spec` と `id_range` の併用は `id_range_requires_decision_kind` とする
-- [ ] `SPEC-*` range 指定は `id_range_requires_decision_kind` とする
+- [x] `list_records` に `kind: task` など不正な kind を指定した場合は `invalid_request` とする
+- [x] If `suggest_next_record` is implemented, `kind: spec` など対象外 kind を指定した場合は `unsupported_kind` とする
+- [x] `kind: spec` と `id_range` の併用は `id_range_requires_decision_kind` とする
+- [x] `SPEC-*` range 指定は `id_range_requires_decision_kind` とする
 
 Done criteria:
 
-- [ ] request validation error が machine-readable に返る
-- [ ] tool execution error と validation diagnostic を混同しない
+- [x] request validation error が machine-readable に返る
+- [x] tool execution error と validation diagnostic を混同しない
 
 ---
 

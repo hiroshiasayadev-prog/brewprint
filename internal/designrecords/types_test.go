@@ -1,6 +1,9 @@
 package designrecords
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 func TestDiagnosticCategoryConstants(t *testing.T) {
 	got := []DiagnosticCategory{
@@ -54,6 +57,45 @@ func TestErrorCodeConstants(t *testing.T) {
 	for i := range got {
 		if string(got[i]) != want[i] {
 			t.Fatalf("error code[%d] = %q, want %q", i, got[i], want[i])
+		}
+	}
+}
+
+func TestToolErrorJSONShape(t *testing.T) {
+	encoded, err := json.Marshal(struct {
+		Error *ToolError `json:"error"`
+	}{
+		Error: newToolError(ErrorCodeRecordNotFound, "record ADR-999 was not found"),
+	})
+	if err != nil {
+		t.Fatalf("Marshal ToolError: %v", err)
+	}
+	want := `{"error":{"code":"record_not_found","message":"record ADR-999 was not found"}}`
+	if string(encoded) != want {
+		t.Fatalf("ToolError JSON = %s, want %s", encoded, want)
+	}
+}
+
+func TestToolErrorCodesAreNotDiagnosticCategories(t *testing.T) {
+	diagnostics := map[string]bool{
+		string(DiagnosticDuplicateID):             true,
+		string(DiagnosticFilenameIDMismatch):      true,
+		string(DiagnosticInvalidH1Title):          true,
+		string(DiagnosticInvalidStatusForKind):    true,
+		string(DiagnosticSpecStatusMismatch):      true,
+		string(DiagnosticMissingDependsOnTarget):  true,
+		string(DiagnosticMissingSupersedesTarget): true,
+		string(DiagnosticInvalidMigratedToSpec):   true,
+		string(DiagnosticMissingRecordPath):       true,
+	}
+	for _, code := range []ErrorCode{
+		ErrorCodeRecordNotFound,
+		ErrorCodeInvalidRequest,
+		ErrorCodeUnsupportedKind,
+		ErrorCodeIDRangeRequiresDecisionKind,
+	} {
+		if diagnostics[string(code)] {
+			t.Fatalf("tool error code %q is also a diagnostic category", code)
 		}
 	}
 }

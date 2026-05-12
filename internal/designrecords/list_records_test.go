@@ -156,6 +156,11 @@ func TestListRecordsRequestErrors(t *testing.T) {
 		code ErrorCode
 	}{
 		{
+			name: "invalid kind",
+			req:  ListRecordsRequest{Kind: RecordKind("task")},
+			code: ErrorCodeInvalidRequest,
+		},
+		{
 			name: "kind spec with id range",
 			req:  ListRecordsRequest{Kind: RecordKindSpec, IDRange: &IDRange{From: "ADR-067"}},
 			code: ErrorCodeIDRangeRequiresDecisionKind,

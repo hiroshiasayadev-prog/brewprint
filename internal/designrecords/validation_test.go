@@ -210,24 +210,37 @@ func TestValidateRecordsIDRangeFilter(t *testing.T) {
 	}
 }
 
-func TestValidateRecordsIDRangeRequestErrors(t *testing.T) {
+func TestValidateRecordsRequestErrors(t *testing.T) {
 	idx := &Index{}
 	tests := []struct {
 		name string
 		req  ValidateRecordsRequest
+		code ErrorCode
 	}{
+		{
+			name: "invalid kind",
+			req:  ValidateRecordsRequest{Kind: RecordKind("task")},
+			code: ErrorCodeInvalidRequest,
+		},
 		{
 			name: "kind spec with id range",
 			req:  ValidateRecordsRequest{Kind: RecordKindSpec, IDRange: &IDRange{From: "ADR-001"}},
+			code: ErrorCodeIDRangeRequiresDecisionKind,
 		},
 		{
 			name: "SPEC range endpoint",
 			req:  ValidateRecordsRequest{IDRange: &IDRange{From: "SPEC-design-records-mcp-schema"}},
+			code: ErrorCodeIDRangeRequiresDecisionKind,
+		},
+		{
+			name: "malformed range endpoint",
+			req:  ValidateRecordsRequest{IDRange: &IDRange{From: "ADR-x"}},
+			code: ErrorCodeIDRangeRequiresDecisionKind,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := ValidateRecords(context.Background(), idx, tt.req)
+			resp, err := ValidateRecords(context.Background(), idx, tt.req)
 			if err == nil {
 				t.Fatal("ValidateRecords error = nil, want ToolError")
 			}
@@ -235,8 +248,11 @@ func TestValidateRecordsIDRangeRequestErrors(t *testing.T) {
 			if !ok {
 				t.Fatalf("error = %T %v, want *ToolError", err, err)
 			}
-			if toolErr.Code != ErrorCodeIDRangeRequiresDecisionKind {
-				t.Fatalf("error code = %q, want %q", toolErr.Code, ErrorCodeIDRangeRequiresDecisionKind)
+			if toolErr.Code != tt.code {
+				t.Fatalf("error code = %q, want %q", toolErr.Code, tt.code)
+			}
+			if resp.OK || len(resp.Diagnostics) != 0 {
+				t.Fatalf("request error response = %#v, want zero validation response", resp)
 			}
 		})
 	}

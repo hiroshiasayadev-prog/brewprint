@@ -128,6 +128,7 @@ func TestGetRecordErrors(t *testing.T) {
 	}}
 
 	assertGetRecordErrorCode(t, idx, GetRecordRequest{}, ErrorCodeInvalidRequest)
+	assertGetRecordErrorCode(t, idx, GetRecordRequest{ID: ""}, ErrorCodeInvalidRequest)
 	assertGetRecordErrorCode(t, idx, GetRecordRequest{ID: " \t"}, ErrorCodeInvalidRequest)
 	assertGetRecordErrorCode(t, idx, GetRecordRequest{ID: "ADR-999"}, ErrorCodeRecordNotFound)
 	assertGetRecordErrorCode(t, idx, GetRecordRequest{ID: "adr-076"}, ErrorCodeRecordNotFound)
