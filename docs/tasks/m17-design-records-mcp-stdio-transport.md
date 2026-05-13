@@ -1,6 +1,6 @@
 # Milestone 17: Design Records MCP stdio transport
 
-- **status**: open
+- **status**: closed
 - **scope**: cmd/design-records-mcp / internal/designrecords / tests / minimal docs update
 - **source**: M16 Design Records MCP MVP / docs/spec/design-records-mcp/**
 - **last_updated**: 2026-05-13
@@ -189,20 +189,20 @@ Done criteria:
 
 M17 is done when:
 
-- [ ] `cmd/design-records-mcp` can run as stdio MCP server
-- [ ] MCP host can list Design Records MCP tools
-- [ ] MCP host can call `list_records`
-- [ ] MCP host can call `validate_records`
-- [ ] MCP host can call `get_record`
-- [ ] MCP host can call `suggest_next_record`
-- [ ] tool schemas match `docs/spec/design-records-mcp/tools.md`
-- [ ] tool errors are machine-readable
-- [ ] validation diagnostics remain normal tool responses
-- [ ] each `tools/call` rebuilds the Design Records index instead of using a long-lived cache
-- [ ] summary/debug output does not corrupt stdio MCP protocol
-- [ ] implementation remains read-only
-- [ ] implementation does not depend on existing brewprint YAML semantic build / `ResolvedProject`
-- [ ] tests or smoke checks cover stdio MCP behavior
+- [x] `cmd/design-records-mcp` can run as stdio MCP server
+- [x] MCP host can list Design Records MCP tools
+- [x] MCP host can call `list_records`
+- [x] MCP host can call `validate_records`
+- [x] MCP host can call `get_record`
+- [x] MCP host can call `suggest_next_record`
+- [x] tool schemas match `docs/spec/design-records-mcp/tools.md`
+- [x] tool errors are machine-readable
+- [x] validation diagnostics remain normal tool responses
+- [x] each `tools/call` rebuilds the Design Records index instead of using a long-lived cache
+- [x] summary/debug output does not corrupt stdio MCP protocol
+- [x] implementation remains read-only
+- [x] implementation does not depend on existing brewprint YAML semantic build / `ResolvedProject`
+- [x] tests or smoke checks cover stdio MCP behavior
 
 ---
 
