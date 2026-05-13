@@ -60,6 +60,7 @@ M17 does not include:
 - Preserve the read-only boundary.
 - Match tool schemas in `docs/spec/design-records-mcp/tools.md`.
 - Do not let summary/debug output break stdio MCP protocol output.
+- Build the Design Records index per `tools/call`; do not keep a long-lived index cache in M17.
 
 ---
 
@@ -84,9 +85,9 @@ Done criteria:
 Turn `cmd/design-records-mcp` into a stdio MCP server skeleton.
 
 - [ ] Preserve existing repository root resolution behavior
-- [ ] Build the Design Records index from root
+- [ ] Preserve existing repository root resolution behavior without building the index during initialize or tools/list
 - [ ] Respond to MCP initialize request
-- [ ] List Design Records MCP tools
+- [ ] List Design Records MCP tools without building the index
 - [ ] Decide how server mode and summary/debug mode coexist
 
 Done criteria:
@@ -105,6 +106,8 @@ Register M16 handlers as MCP tools.
 - [ ] Register `validate_records`
 - [ ] Register `get_record`
 - [ ] Register `suggest_next_record`
+- [ ] Build the Design Records index for each `tools/call` before invoking a handler
+- [ ] Do not keep a long-lived Design Records index cache
 - [ ] Match request schema in `docs/spec/design-records-mcp/tools.md`
 - [ ] Match response shape in `docs/spec/design-records-mcp/tools.md`
 
@@ -114,6 +117,7 @@ Done criteria:
 - [ ] MCP host can call `validate_records`
 - [ ] MCP host can call `get_record`
 - [ ] MCP host can call `suggest_next_record`
+- [ ] each `tools/call` observes the latest docs by rebuilding the index
 
 ---
 
@@ -153,6 +157,7 @@ Add minimal stdio MCP smoke coverage.
 - [ ] `validate_records` smoke test
 - [ ] `suggest_next_record` smoke test
 - [ ] repository root argument smoke test
+- [ ] smoke or unit test confirms index is rebuilt per `tools/call`
 
 Done criteria:
 
@@ -191,6 +196,7 @@ M17 is done when:
 - [ ] tool schemas match `docs/spec/design-records-mcp/tools.md`
 - [ ] tool errors are machine-readable
 - [ ] validation diagnostics remain normal tool responses
+- [ ] each `tools/call` rebuilds the Design Records index instead of using a long-lived cache
 - [ ] summary/debug output does not corrupt stdio MCP protocol
 - [ ] implementation remains read-only
 - [ ] implementation does not depend on existing brewprint YAML semantic build / `ResolvedProject`
