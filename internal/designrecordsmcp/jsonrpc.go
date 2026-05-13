@@ -81,7 +81,7 @@ func (s *Server) HandleJSONRPC(req JSONRPCRequest) (JSONRPCResponse, bool) {
 	case "tools/list":
 		return JSONRPCResponse{JSONRPC: jsonRPCVersion, ID: id, Result: ToolsListResult{Tools: s.Tools()}}, true
 	case "tools/call":
-		return jsonRPCProtocolError(id, -32601, "method not found", "tools/call is not implemented in M17 Phase 1"), true
+		return JSONRPCResponse{JSONRPC: jsonRPCVersion, ID: id, Result: s.HandleToolsCall(req.Params)}, true
 	default:
 		return jsonRPCProtocolError(id, -32601, "method not found", fmt.Sprintf("unknown method: %s", req.Method)), true
 	}

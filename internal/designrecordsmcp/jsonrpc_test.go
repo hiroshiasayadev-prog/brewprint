@@ -93,14 +93,17 @@ func TestHandleJSONRPCErrors(t *testing.T) {
 		}
 	})
 
-	t.Run("tools_call_unimplemented", func(t *testing.T) {
+	t.Run("tools_call", func(t *testing.T) {
 		res := handleLine(t, server, `{"jsonrpc":"2.0","id":"call","method":"tools/call","params":{"name":"list_records","arguments":{}}}`)
-		if res.Error == nil || res.Error.Code != -32601 {
+		if res.Error != nil {
 			t.Fatalf("tools/call response = %#v", res)
 		}
 		if string(res.ID) != `"call"` {
 			t.Fatalf("tools/call response id = %s, want \"call\"", string(res.ID))
 		}
+		result := assertToolCallResult(t, res, false)
+		var text designrecords.ListRecordsResponse
+		unmarshalToolText(t, result.Content[0].Text, &text)
 	})
 }
 
@@ -122,7 +125,7 @@ func TestServeJSONRPCLinesSkipsNotifications(t *testing.T) {
 	}
 }
 
-func TestServeJSONRPCLinesToolsCallUnimplemented(t *testing.T) {
+func TestServeJSONRPCLinesToolsCall(t *testing.T) {
 	server, _ := newCountingServer()
 
 	var out bytes.Buffer
@@ -137,12 +140,13 @@ func TestServeJSONRPCLinesToolsCallUnimplemented(t *testing.T) {
 	if err := json.Unmarshal([]byte(lines[0]), &res); err != nil {
 		t.Fatalf("tools/call response is not JSON: %v\n%s", err, lines[0])
 	}
-	if res.Error == nil || res.Error.Code != -32601 {
+	if res.Error != nil {
 		t.Fatalf("tools/call response = %#v", res)
 	}
 	if string(res.ID) != "9" {
 		t.Fatalf("tools/call response id = %s, want 9", string(res.ID))
 	}
+	assertToolCallResult(t, res, false)
 }
 
 func newCountingServer() (*Server, *int) {

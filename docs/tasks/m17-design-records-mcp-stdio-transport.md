@@ -104,22 +104,22 @@ Done criteria:
 
 Register M16 handlers as MCP tools.
 
-- [ ] Register `list_records`
-- [ ] Register `validate_records`
-- [ ] Register `get_record`
-- [ ] Register `suggest_next_record`
-- [ ] Build the Design Records index for each `tools/call` before invoking a handler
-- [ ] Do not keep a long-lived Design Records index cache
-- [ ] Match request schema in `docs/spec/design-records-mcp/tools.md`
-- [ ] Match response shape in `docs/spec/design-records-mcp/tools.md`
+- [x] Register `list_records`
+- [x] Register `validate_records`
+- [x] Register `get_record`
+- [x] Register `suggest_next_record`
+- [x] Build the Design Records index for each `tools/call` before invoking a handler
+- [x] Do not keep a long-lived Design Records index cache
+- [x] Match request schema in `docs/spec/design-records-mcp/tools.md`
+- [x] Match response shape in `docs/spec/design-records-mcp/tools.md`
 
 Done criteria:
 
-- [ ] MCP host can call `list_records`
-- [ ] MCP host can call `validate_records`
-- [ ] MCP host can call `get_record`
-- [ ] MCP host can call `suggest_next_record`
-- [ ] each `tools/call` observes the latest docs by rebuilding the index
+- [x] MCP host can call `list_records`
+- [x] MCP host can call `validate_records`
+- [x] MCP host can call `get_record`
+- [x] MCP host can call `suggest_next_record`
+- [x] each `tools/call` observes the latest docs by rebuilding the index
 
 ---
 
@@ -127,24 +127,24 @@ Done criteria:
 
 Map M16 `ToolError` to MCP tool errors.
 
-- [ ] `invalid_request`
-- [ ] `record_not_found`
-- [ ] `unsupported_kind`
-- [ ] `id_range_requires_decision_kind`
+- [x] `invalid_request`
+- [x] `record_not_found`
+- [x] `unsupported_kind`
+- [x] `id_range_requires_decision_kind`
 
 Rules:
 
-- [ ] Tool execution errors and validation diagnostics are not mixed
-- [ ] `validate_records` diagnostics remain normal tool response data
-- [ ] Request decode/schema errors are machine-readable
-- [ ] Error response shape matches `docs/spec/design-records-mcp/tools.md`
-- [ ] Unexpected failures return errors instead of panics
+- [x] Tool execution errors and validation diagnostics are not mixed
+- [x] `validate_records` diagnostics remain normal tool response data
+- [x] Request decode/schema errors are machine-readable
+- [x] Error response shape matches `docs/spec/design-records-mcp/tools.md`
+- [x] Unexpected failures return errors instead of panics
 
 Done criteria:
 
-- [ ] invalid request is returned as a tool error
-- [ ] `record_not_found` is returned as a tool error
-- [ ] validation diagnostics are not protocol errors
+- [x] invalid request is returned as a tool error
+- [x] `record_not_found` is returned as a tool error
+- [x] validation diagnostics are not protocol errors
 
 ---
 
