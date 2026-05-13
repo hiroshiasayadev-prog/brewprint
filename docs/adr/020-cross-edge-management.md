@@ -2,7 +2,7 @@
 
 - **status**: accepted
 - **date**: 2026-04-19
-- **supersedes**: ADR-015（`reads`/`writes`フィールドの記述位置のみ）
+- **supersedes**: ADR-015
 
 ## 背景
 

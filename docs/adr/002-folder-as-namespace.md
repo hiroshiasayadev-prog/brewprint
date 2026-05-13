@@ -1,11 +1,13 @@
 # 002: フォルダ階層=モジュール階層=名前空間
 
-- **status**: accepted（一部superseded）
+- **status**: accepted
 - **date**: 2026-04-17
 - **migrated_to_spec**: 2026-04-29
-- **partial supersede**: ADR-010により `dag.yaml` / `er.yaml` のビュー別ファイル分けは廃止。ADR-043により `master.yaml` は廃止。名前空間ルール（フォルダ = モジュール）は継続有効
+- **supersedes**:
 
 > このADRの現行仕様詳細は [docs/spec/naming.md](../spec/naming.md) §1 を参照。
+
+> 補足: ADR-010により `dag.yaml` / `er.yaml` のビュー別ファイル分けは廃止。ADR-043により `master.yaml` は廃止。名前空間ルール（フォルダ = モジュール）は継続有効。
 
 ## 背景
 

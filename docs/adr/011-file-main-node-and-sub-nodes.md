@@ -2,7 +2,7 @@
 
 - **status**: accepted
 - **date**: 2026-04-19
-- **supersedes**: ADR-010（「1ファイル=1ノード」の部分的上書き）
+- **supersedes**: ADR-010
 
 ## 背景
 

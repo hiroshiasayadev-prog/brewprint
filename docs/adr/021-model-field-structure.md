@@ -2,7 +2,7 @@
 
 - **status**: accepted
 - **date**: 2026-04-20
-- **supersedes**: ADR-008（`fields[].comment` → `fields[].note` への改名のみ）
+- **supersedes**: ADR-008
 
 ## 背景
 

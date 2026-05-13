@@ -3,7 +3,7 @@
 - **status**: accepted
 - **date**: 2026-04-26
 - **migrated_to_spec**: 2026-04-29
-- **supersedes**: なし
+- **supersedes**:
 
 > このADRの現行仕様詳細は [docs/spec/project-layout.md](../spec/project-layout.md) §1, §3, §5 を参照。
 

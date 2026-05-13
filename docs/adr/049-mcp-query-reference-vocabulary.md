@@ -2,7 +2,7 @@
 
 - **status**: accepted
 - **date**: 2026-04-27
-- **supersedes**: ADR-047 / ADR-048 の `GetDeps` / `get_deps` 命名部分のみ
+- **supersedes**: ADR-047, ADR-048
 - **depends on**: ADR-047, ADR-048
 
 ## 背景

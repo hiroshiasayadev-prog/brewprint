@@ -2,7 +2,7 @@
 
 - **status**: accepted
 - **date**: 2026-04-27
-- **supersedes**: なし
+- **supersedes**:
 
 ※ ADR-049 により `GetDeps` / `get_deps` は `GetReferences` / `get_references` に名称変更。
 

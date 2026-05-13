@@ -2,7 +2,7 @@
 
 - **status**: accepted
 - **date**: 2026-04-21
-- **supersedes**: なし
+- **supersedes**:
 
 ## 背景
 

@@ -2,7 +2,7 @@
 
 - **status**: accepted
 - **date**: 2026-04-19
-- **supersedes**: ADR-002（dag.yaml/er.yamlのビュー別ファイル分け）, ADR-007（asset = 型定義の定義）
+- **supersedes**: ADR-002, ADR-007
 
 ## 背景
 

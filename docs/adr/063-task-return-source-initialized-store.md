@@ -2,7 +2,7 @@
 
 - **status**: accepted
 - **date**: 2026-05-05
-- **supersedes**: なし（ADR-062 / ADR-061 を補追する）
+- **supersedes**:
 
 > このADRは起票時点での決定を記録したスナップショットである。
 > 現在の仕様は spec を参照すること。

@@ -2,7 +2,7 @@
 
 - **status**: accepted
 - **date**: 2026-04-19
-- **supersedes**: 013
+- **supersedes**: ADR-013
 
 ## 背景
 
