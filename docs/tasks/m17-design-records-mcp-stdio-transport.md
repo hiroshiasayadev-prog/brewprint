@@ -152,21 +152,21 @@ Done criteria:
 
 Add minimal stdio MCP smoke coverage.
 
-- [ ] Process startup smoke test or script
-- [ ] initialize / tools list / tool call minimum check
-- [ ] `list_records` smoke test
-- [ ] `get_record` smoke test
-- [ ] `validate_records` smoke test
-- [ ] `suggest_next_record` smoke test
-- [ ] repository root argument smoke test
-- [ ] smoke or unit test confirms index is rebuilt per `tools/call`
+- [x] Process startup smoke test or script
+- [x] initialize / tools list / tool call minimum check
+- [x] `list_records` smoke test
+- [x] `get_record` smoke test
+- [x] `validate_records` smoke test
+- [x] `suggest_next_record` smoke test
+- [x] repository root argument smoke test
+- [x] smoke or unit test confirms index is rebuilt per `tools/call`
 
 Done criteria:
 
-- [ ] `go test ./internal/designrecords` passes
-- [ ] `go test ./...` passes
-- [ ] stdio MCP smoke check passes
-- [ ] Windows PowerShell startup works
+- [x] `go test ./internal/designrecords` passes
+- [x] `go test ./...` passes
+- [x] stdio MCP smoke check passes
+- [x] Windows PowerShell startup works
 
 ---
 
