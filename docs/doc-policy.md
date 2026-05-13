@@ -72,6 +72,11 @@ docs/spec/
 `project-layout.md` / `file-types.md` / `naming.md` は ADR-050で新設が決まった spec。
 漸進移行ルール（§7）に従い、関連ADRに触れたタイミングで作成する。
 
+### Design Records MCP
+
+ADR / spec の record 検索・検証・取得には Design Records MCP を利用できる。
+tool の request / response 仕様は `docs/spec/design-records-mcp/tools.md` を参照する。
+
 ---
 
 ## 3. ADR運用

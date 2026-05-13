@@ -174,14 +174,14 @@ Done criteria:
 
 Add only minimal usage documentation.
 
-- [ ] Point users to `docs/spec/design-records-mcp/tools.md` for tool details
-- [ ] Do not put build commands or implementation history in `doc-policy.md`
-- [ ] If `doc-policy.md` is updated, keep it to a tool-spec reference only
+- [x] Point users to `docs/spec/design-records-mcp/tools.md` for tool details
+- [x] Do not put build commands or implementation history in `doc-policy.md`
+- [x] If `doc-policy.md` is updated, keep it to a tool-spec reference only
 
 Done criteria:
 
-- [ ] Tool spec reference is easy to find
-- [ ] `doc-policy.md` is not expanded into transport implementation notes
+- [x] Tool spec reference is easy to find
+- [x] `doc-policy.md` is not expanded into transport implementation notes
 
 ---
 
