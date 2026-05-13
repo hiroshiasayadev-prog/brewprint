@@ -68,15 +68,17 @@ M17 does not include:
 
 Choose how to implement the stdio MCP server.
 
-- [ ] Check whether existing brewprint MCP stdio code can be reused
-- [ ] Decide whether to use an MCP Go library or existing local JSON-RPC code
-- [ ] Decide the adapter boundary for tool registration, request decoding, and response encoding
+Implementation note: existing `internal/mcp` remains brewprint YAML semantic model / `QueryService`-oriented, so M17 does not directly reuse or generalize it. Design Records MCP uses a separate minimal JSON-RPC / stdio adapter in `internal/designrecordsmcp`; the existing brewprint MCP is only a wire-shape reference, while `internal/designrecords` handlers stay transport independent.
+
+- [x] Check whether existing brewprint MCP stdio code can be reused
+- [x] Decide whether to use an MCP Go library or existing local JSON-RPC code
+- [x] Decide the adapter boundary for tool registration, request decoding, and response encoding
 
 Done criteria:
 
-- [ ] stdio MCP implementation approach is decided
-- [ ] rationale is recorded in task notes or implementation comments
-- [ ] responsibility boundary with existing brewprint MCP remains clear
+- [x] stdio MCP implementation approach is decided
+- [x] rationale is recorded in task notes or implementation comments
+- [x] responsibility boundary with existing brewprint MCP remains clear
 
 ---
 
@@ -84,17 +86,17 @@ Done criteria:
 
 Turn `cmd/design-records-mcp` into a stdio MCP server skeleton.
 
-- [ ] Preserve existing repository root resolution behavior
-- [ ] Preserve existing repository root resolution behavior without building the index during initialize or tools/list
-- [ ] Respond to MCP initialize request
-- [ ] List Design Records MCP tools without building the index
-- [ ] Decide how server mode and summary/debug mode coexist
+- [x] Preserve existing repository root resolution behavior
+- [x] Preserve existing repository root resolution behavior without building the index during initialize or tools/list
+- [x] Respond to MCP initialize request
+- [x] List Design Records MCP tools without building the index
+- [x] Decide how server mode and summary/debug mode coexist
 
 Done criteria:
 
-- [ ] MCP host can start the process as a server
-- [ ] Startup does not depend on brewprint YAML semantic build
-- [ ] Summary/debug output does not corrupt stdio MCP protocol
+- [x] MCP host can start the process as a server
+- [x] Startup does not depend on brewprint YAML semantic build
+- [x] Summary/debug output does not corrupt stdio MCP protocol
 
 ---
 
