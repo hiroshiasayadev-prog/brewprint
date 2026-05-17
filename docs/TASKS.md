@@ -46,6 +46,7 @@ brewprintの積みタスク一覧。
 | M15: data layer expressiveness (v1.1) | open | [tasks/m15-data-layer-expressiveness.md](tasks/m15-data-layer-expressiveness.md) | ADR-060 (TypeRef + flow wiring type compatibility)。Phase A/B/C構成。完了時点で v1.1.0-spec タグ発行 |
 | M16: Design Records MCP MVP | closed | [tasks/m16-design-records-mcp-mvp.md](tasks/m16-design-records-mcp-mvp.md) | ADR-076 / ADR-077。ADR/spec record index + read-only MCP MVP |
 | M17: Design Records MCP stdio transport | closed | [tasks/m17-design-records-mcp-stdio-transport.md](tasks/m17-design-records-mcp-stdio-transport.md) | M16 handlers を stdio MCP server として公開 |
+| M18: semantic traceability foundation | open | [tasks/m18-semantic-traceability-foundation.md](tasks/m18-semantic-traceability-foundation.md) | ADR-081〜084。requirements / work-items / internal-design / coverage / semantic ref の最小運用基盤 |
 
 ---
 
