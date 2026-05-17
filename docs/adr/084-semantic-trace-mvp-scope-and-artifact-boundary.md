@@ -173,7 +173,7 @@ coverage mapping set / group / 個別 mapping の階層関係は後続 spec で�
 - MCP writer による artifact 生成 contract
 - MCP query interface への露出
 
-後続 spec は `docs/spec/traceability.md` として新設することを第一候補とする。
+後続 spec は `docs/spec/concepts/traceability/` 配下の分割 spec として新設することを第一候補とする。
 
 ## 理由
 
@@ -264,7 +264,7 @@ MVP では、異なる artifact layer 間の対応を表す `maps_to` と、意�
 
 ### docs/spec への影響
 
-`docs/spec/traceability.md` を新設し、semantic ref / trace schema の最小仕様を定義する必要がある。
+`docs/spec/concepts/traceability/` を新設し、semantic ref / trace schema の最小仕様を分割 spec として定義する必要がある。
 
 この spec では、active / reserved prefix、relation vocabulary、front matter schema、coverage mapping schema、resolver rule、validation rule を扱う。
 また、trace metadata YAML schema、prefix-ref と ID-as-ref の field-level 分担、coverage edge の source / target 制約、`internal-design:` ref の解決単位、`coverage:` の mapping hierarchy、MCP writer artifact generation contract も後続 spec / tool contract の対象とする。
