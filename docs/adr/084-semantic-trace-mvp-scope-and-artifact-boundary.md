@@ -306,6 +306,6 @@ fixture-local coverage は、必要に応じて fixture 側の補足として扱
 
 ## Evidence
 
-- commit: tbd
+- commit: 17d6910
 - impl commit: tbd
 - 参考: ADR-050 spec-first documentation policy, ADR-068 ADR authoring guide, ADR-081 project requirements layer と semantic traceability, ADR-082 golden fixture と self-hosting requirement の責務境界, ADR-083 project artifact boundary と YAML as primary implementation source

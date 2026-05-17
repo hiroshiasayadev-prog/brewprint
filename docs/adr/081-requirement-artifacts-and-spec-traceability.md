@@ -359,6 +359,6 @@ requirement から source spec semantic ref、work item、fixture、YAML、inter
 
 ## Evidence
 
-- commit: tbd
+- commit: a80ec7b
 - impl commit: tbd
 - 参考: ADR-050 spec-first documentation policy, ADR-068 ADR authoring guide, ADR-083 project artifact boundary と YAML as primary implementation source

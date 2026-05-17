@@ -597,6 +597,6 @@ requirements と work items は status 体系も異なる。
 
 ## Evidence
 
-- commit: tbd
+- commit: a80ec7b
 - impl commit: tbd
 - 参考: ADR-050 spec-first documentation policy, ADR-068 ADR authoring guide, ADR-081 project requirement layer と spec traceability, ADR-082 golden fixture と self-hosting requirement の責務境界

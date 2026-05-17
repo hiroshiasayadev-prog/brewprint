@@ -320,6 +320,6 @@ ADR-081 の requirement traceability と ADR-083 の semantic ref 方針と連�
 
 ## Evidence
 
-- commit: tbd
+- commit: a80ec7b
 - impl commit: tbd
 - 参考: ADR-043 project root layout and render output, ADR-050 spec-first documentation policy, ADR-057 brewprint v1 snapshot, ADR-068 ADR authoring guide, ADR-081 project requirements layer と semantic traceability, ADR-083 project artifact boundary と YAML as primary implementation source
