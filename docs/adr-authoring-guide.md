@@ -1,9 +1,9 @@
 # ADR Authoring Guide
 
-この文書は、brewprint の ADR を起票・レビュー・更新するときの実践ルールをまとめる。
+この文書は、brewprint の ADR を起票・レビュー・更新するときの実践ルールとフォーマットをまとめる。
 
-ADR のフォーマットそのものは `docs/doc-policy.md` を正とする。
-この guide は、ADR を書くときの判断、責務境界、実例の扱い、アンチパターンを補足する。
+ADR のフォーマット、metadata、Evidence の書き方はこの guide を正とする。
+`docs/doc-policy.md` はセッション開始時の入口方針のみを持つ。
 
 > 由来: ADR-068
 
@@ -73,7 +73,74 @@ ADR は、spec / task file / UC docs / fixture / impl notes など、他責務 a
 
 ---
 
-## 4. 実例・実装・fixture を根拠にするとき
+## 4. ADR フォーマット
+
+### ファイル名規則
+
+```text
+docs/adr/
+  NNN-タイトル.md   （例: 001-node-type-splitting.md）
+```
+
+NNNは3桁ゼロ埋めの連番にする。
+
+### 本文テンプレート
+
+```markdown
+# NNN: タイトル
+
+- **status**: proposed / accepted / superseded
+- **date**: YYYY-MM-DD
+- **supersedes**: （該当する場合、旧ADR番号）
+- **migrated_to_spec**: YYYY-MM-DD（spec移管済みの場合のみ）
+
+> このADRは起票時点での決定を記録したスナップショットである。
+> 現在の仕様は spec を参照すること。
+
+## 背景
+
+なぜこの決定が必要だったか。
+
+## 決定
+
+何を決めたか。起票時点での仕様案・規定を含めてよい。
+仕様詳細が別specに移管済み・新設予定の場合はリンクで参照させる。
+
+> 仕様詳細: [docs/spec/xxx.md](../spec/xxx.md) §N （該当する場合）
+
+## 理由
+
+なぜそう決めたか。却下した代替案も書く。
+
+## 影響
+
+この決定が他の仕様・実装に与える影響。
+
+## Evidence
+- commit: <ADR起票時のcommit hash>
+- impl commit: <実装反映時のcommit hash。未着手なら "tbd"。doc運用ADR等で該当しない場合は "該当なし">
+- 参考: <"dagsterのassets参考" / "Goのinterface慣習" 程度の軽い記述。なければ省略>
+```
+
+冒頭の「起票時点のスナップショット」注記は新規ADRに入れることを推奨する。
+ADR単体で読まれた場合に、現行仕様と誤読されることを防ぐためである。
+
+### status の基準
+
+- `proposed` — 議論中・まだ覆りうる
+- `accepted` — 確定。変更する場合は新しいADRでsupersedesする
+- `superseded` — 旧ADRの場合。新ADR番号をsupersedesに記載する
+
+### Evidence の書き方
+
+- **commit / impl commit**: git logから拾う。ADR起票と実装反映が同コミットなら1行でOK
+- **参考**: OSS名・言語慣習名のレベル。URL/取得日は書かない
+  - ✅ `dagsterのsoftware-defined assets参考` / `Goのinterface慣習` / `特になし`
+  - ❌ `https://docs.dagster.io/... (retrieved 2026-04-19)` ← 不要
+
+---
+
+## 5. 実例・実装・fixture を根拠にするとき
 
 実例・実装・fixture から設計判断を抽出する ADR では、具体例を恒久仕様として扱わない。
 
@@ -103,7 +170,7 @@ ADR が判断根拠として扱うべきなのは、個々の YAML shape や一�
 
 ---
 
-## 5. 観測事実と設計判断を分ける
+## 6. 観測事実と設計判断を分ける
 
 ADR では、実例から見つかった観測事実と、それに基づく設計判断を分けて書く。
 
@@ -127,7 +194,7 @@ UC-002 では、有限語彙を持つ値集合が `str + note` に閉じてお�
 
 ---
 
-## 6. 影響範囲と後続作業の書き方
+## 7. 影響範囲と後続作業の書き方
 
 ADR の「影響」には、後続作業が発生する事実や影響範囲を書く。
 ただし、具体的な checklist、順序、完了条件は task file に置く。
@@ -156,7 +223,7 @@ ADR の「影響」には、後続作業が発生する事実や影響範囲を�
 
 ---
 
-## 7. spec との境界
+## 8. spec との境界
 
 ADR は起票時点の決定を記録する。
 spec は現在の正しい仕様を記録する。
@@ -183,7 +250,44 @@ ADR に仕様案や具体例を書いてよいが、それは起票時点のス�
 
 ---
 
-## 8. reference examples
+## 9. ADR metadata の機械可読性
+
+ADR 冒頭の metadata block は Design Records MCP によって機械的に読まれるため、人間向け注釈を field value に混ぜない。
+
+特に以下を守る。
+
+- `status` は `proposed` / `accepted` / `superseded` のいずれかにする
+- `status` に `accepted（一部superseded）` のような注釈を入れない
+- `supersedes` は comma-separated `ADR-NNN` record ID list にする
+- 置換対象がない場合、`supersedes` は空欄にする
+- `なし` は書かない
+- `013` のような裸番号は `ADR-013` と書く
+- `ADR-010（一部）` のような注釈付き値は書かない
+- 注釈や補足説明は metadata block ではなく本文に書く
+
+悪い例:
+
+```markdown
+- **status**: accepted（一部superseded）
+- **supersedes**: なし
+- **supersedes**: 013
+- **supersedes**: ADR-010（一部）
+```
+
+良い例:
+
+```markdown
+- **status**: accepted
+- **supersedes**:
+- **supersedes**: ADR-013
+- **supersedes**: ADR-010
+```
+
+部分的な置き換えや補足関係がある場合は、metadata では ID のみを書き、詳細は本文で説明する。
+
+---
+
+## 10. reference examples
 
 ### ADR-067: 実例由来の設計判断
 
@@ -201,7 +305,7 @@ ADR-067 は、UC-002 self-hosting の実例から enum model 導入判断を抽�
 
 ---
 
-## 9. アンチパターン
+## 11. アンチパターン
 
 ### 1. fixture shape をそのまま仕様判断にする
 
@@ -270,7 +374,7 @@ ADR-067 は、UC-002 self-hosting の実例から enum model 導入判断を抽�
 
 ---
 
-## 10. 更新方針
+## 12. 更新方針
 
 この guide は docs 運用補助文書であり、ADR と異なり必要に応じて更新してよい。
 
