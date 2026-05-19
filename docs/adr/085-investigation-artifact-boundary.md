@@ -1,6 +1,6 @@
 # 085: investigation artifact boundary
 
-- **status**: proposed
+- **status**: accepted
 - **date**: 2026-05-18
 - **depends_on**: ADR-050, ADR-068, ADR-081, ADR-083, ADR-084
 - **supersedes**:
@@ -168,6 +168,6 @@ MVP直後の必須変更ではない。
 
 ## Evidence
 
-- commit: tbd
+- commit: 31bfe14
 - impl commit: tbd
 - 参考: ADR-081 project requirements layer と semantic traceability, ADR-083 project artifact boundary と YAML as primary implementation source, ADR-084 semantic trace MVP scope と artifact boundary, M18 semantic traceability foundation 検討中の会話
