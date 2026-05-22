@@ -1,13 +1,15 @@
 ---
 scope: docs/spec/design-records-mcp/schema.md
 status: draft
-last_updated: 2026-05-12
+last_updated: 2026-05-23
 summary: >
   Design Records MCP MVP が読む design_record metadata schema、record model、
   H1 title 抽出、diagnostic category を定義する。
 depends_on:
   - docs/adr/076-design-records-mcp.md
   - docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
+  - docs/adr/086-investigation-artifact-format-and-lifecycle.md
+  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
 design_record:
   id: SPEC-design-records-mcp-schema
   kind: spec
@@ -15,6 +17,8 @@ design_record:
   depends_on:
     - ADR-076
     - ADR-077
+    - ADR-086
+    - ADR-087
 ---
 
 # Design Records MCP schema
@@ -28,6 +32,7 @@ MVP で読む source は以下である。
 | source | 用途 |
 |---|---|
 | ADR 箇条書きmetadata | decision record の `status` / `date` / `depends_on` / `supersedes` / `migrated_to_spec` |
+| investigation 箇条書きmetadata | investigation record の `status` / `date` / `trigger` / `scope` / `non_scope` / `source_refs` / `follow_up_candidates` / optional related metadata / `follow_up_results` |
 | spec YAML front matter | spec record の `scope` / `status` / `design_record` metadata。top-level `depends_on` は doc-policy 用出自 path list として読むが、record dependency には使わない |
 | Markdown H1 | `title` 抽出 |
 | file path | record path / filename ID validation |
@@ -40,7 +45,7 @@ MVP では Markdown 本文の自然言語から依存関係や migration 状態�
 
 ## Metadata source
 
-MVP では、ADR と spec で metadata source が異なる。
+Design Records MCP では、decision / spec / investigation で metadata source が異なる。
 
 ADR は既存フォーマットを維持し、H1直下の箇条書きmetadataを読む。
 
@@ -70,6 +75,23 @@ design_record:
   depends_on:
     - ADR-076
     - ADR-077
+    - ADR-087
+```
+
+investigation は ADR-086 の形式に従い、H1直下の箇条書きmetadataを読む。
+
+```markdown
+# INV-MCP-001: Design Records MCP investigation support
+
+- **status**: concluded
+- **date**: 2026-05-23
+- **trigger**: ADR-087
+- **scope**: investigation MCP integration
+- **non_scope**: writer tools
+- **source_refs**:
+  - ADR-087
+- **follow_up_candidates**:
+  - なし
 ```
 
 ### ADR bullet metadata 文法
@@ -101,25 +123,45 @@ list value は comma 区切りとする。
 
 `date` は ADR metadata として parse してよいが、MVP の record field には含めない。
 
-> 由来: ADR-076 §front matter 方針
+### Investigation bullet metadata 文法
+
+Investigation の metadata block は ADR と同様に H1 直後から最初の H2 行または blockquote 行の直前までとする。
+`status` / `date` / `trigger` / `scope` / `non_scope` / `source_refs` / `follow_up_candidates` は required metadata とする。
+`supersedes` / `related_requirements` / `related_work_items` / `related_adrs` / `related_specs` / `related_internal_design` / `related_coverage` / `follow_up_results` は、記載がある場合のみ読む optional metadata とする。
+
+`source_refs` と `follow_up_results` の各値は canonical reference として artifact ID または semantic ref を用いる。physical path が入力に現れた場合、compatibility input として読み取ってよいが canonical form ではない。
+`source_refs` の unresolved、および記載された `follow_up_results` の unresolved は error とする。
+`follow_up_candidates` は未作成 artifact を指しうるため、存在しないこと自体を error としない。
+`trigger` / `related_*` の resolve / validation rule はこの版では確定しない。
+
+> 由来: ADR-086 §4〜§7, ADR-087 §5〜§8
 
 ## Field definitions
 
-Internal record model では、ADR / spec の metadata source 差分を吸収し、以下の field に正規化する。
+Internal record model は、metadata source の差分を吸収し、共通 field と kind 固有 detail object に正規化する。
+
+Common fields:
 
 | field | required | type | meaning |
 |---|---:|---|---|
-| `id` | yes | string | record ID。ADR は H1 から導出し、spec は `design_record.id` から読む |
-| `kind` | yes | string | record kind。ADR は `decision` として導出し、spec は `design_record.kind` から読む |
-| `status` | yes | string | kind 別 status。ADR は箇条書きmetadata、spec は top-level front matter を canonical とする |
-| `depends_on` | no | list<string> | 依存する record ID。ADR は箇条書きmetadata、spec は `design_record.depends_on` から読む |
-| `supersedes` | no | list<string> | この record が置き換える record ID。ADR metadata では空欄可 |
-| `migrated_to_spec` | no | string or null | ADR の仕様記述が spec へ移管済みの場合の日付。ADR metadata では空欄可 |
+| `id` | yes | string | record ID。decision / investigation は H1 から導出し、spec は `design_record.id` から読む |
+| `kind` | yes | string | record kind |
+| `title` | yes | string | Markdown H1 由来の human-readable title |
+| `status` | yes | string | kind 別 status |
+| `path` | yes | string | repository root からの Markdown file path |
 
-MVP では `title` は metadata に持たせない。
-`title` は Markdown H1 から抽出する。
+Kind-specific details:
 
-ADR 箇条書きmetadataの `date` は parse してよいが、MVP では record field として持たせない。
+| detail object | fields |
+|---|---|
+| `decision` | `depends_on`, `supersedes`, `migrated_to_spec` |
+| `spec` | `depends_on` |
+| `investigation` | `trigger`, `scope`, `non_scope`, `source_refs`, `follow_up_candidates`, optional `supersedes`, `related_*`, `follow_up_results` |
+
+`headings` と requested raw `body` は `get_record` の取得内容として common response に追加できる。
+
+ADR 箇条書きmetadataの `date` は parse してよいが、record response field としては持たせない。
+investigation の `date` も同様に metadata として parse するが、common response field には含めない。
 
 MVP では以下の metadata は持たせない。
 
@@ -141,11 +183,14 @@ MVP の discovery は以下の規則に従う。
 |---|---|
 | `decision` | `docs/adr/*.md` の Markdown file を ADR 候補として読む |
 | `spec` | `docs/spec/**/*.md` のうち YAML front matter に `design_record.id` と `design_record.kind` を持つ file のみを spec record として読む |
+| `investigation` | `docs/investigations/*/INV-*-*.md` の Markdown file を investigation 候補として読む |
 
-`design_record` を持たない spec は MVP index 対象外とする。
+`design_record` を持たない spec は index 対象外とする。
 その場合も `missing_design_record` diagnostic は出さない。
 
-`design_record.kind` が `decision` / `spec` 以外の場合、MVP では index 対象外とし、diagnostic は出さない。
+spec の `design_record.kind` が `spec` 以外の場合、この版では index 対象外とし、diagnostic は出さない。
+
+本specは後続の `requirement` その他の record kind 追加を制限しない。
 
 > 由来: ADR-076 §bootstrap方針, ADR-077 §validate_records の責務
 
@@ -159,6 +204,7 @@ MVP で扱う ID 形式は以下とする。
 |---|---|---|
 | `decision` | `ADR-076` | ADR 番号を3桁ゼロ埋めで持つ |
 | `spec` | `SPEC-design-records-mcp-schema` | spec 用の stable ID |
+| `investigation` | `INV-MCP-001` | ADR-086 に従う domain-scoped ID |
 
 `decision` record の canonical ID は、H1 の番号から `ADR-NNN` として導出する。
 filename 先頭の番号は canonical ID との一致検査にのみ使う。
@@ -180,16 +226,18 @@ path: docs/adr/076-design-records-mcp.md
 
 ## `kind`
 
-MVP で許可する `kind` は以下である。
+現在 index / query / validation 対象とする `kind` は以下である。
 
 | kind | meaning |
 |---|---|
 | `decision` | ADR |
 | `spec` | spec |
+| `investigation` | investigation artifact |
 
-MVP では task / UC / impl note を `kind` として扱わない。
+この表は record kind の閉じた列挙ではない。ADR-081 により予約された `requirement` その他の kind は、後続判断で追加しうる。
+MVP では task / UC / impl note を record kind として扱わない。
 
-> 由来: ADR-076 §MVP対象
+> 由来: ADR-076 §MVP対象, ADR-087 §1
 
 ## `status`
 
@@ -199,6 +247,7 @@ MVP では task / UC / impl note を `kind` として扱わない。
 |---|---|
 | `decision` | `proposed` / `accepted` / `superseded` |
 | `spec` | `confirmed` / `draft` / `wip` |
+| `investigation` | `investigating` / `concluded` / `superseded` |
 
 `decision` record の `status` は ADR 箇条書きmetadataから読む。
 
@@ -206,9 +255,11 @@ MVP では task / UC / impl note を `kind` として扱わない。
 `design_record.status` が存在する場合、top-level `status` と同値でなければならない。
 不一致の場合は `spec_status_mismatch` とする。
 
+`investigation` record の `status` は investigation 箇条書きmetadataから読む。
+
 `kind` に対して許可されない `status` は `invalid_status_for_kind` とする。
 
-> 由来: ADR-076 §front matter 方針, ADR-077 §validate_records の責務
+> 由来: ADR-076 §front matter 方針, ADR-077 §validate_records の責務, ADR-086 §5
 
 ## `depends_on`
 
@@ -290,6 +341,14 @@ H1 が存在しない、または期待形式に合わない場合、`invalid_h1
 spec record の H1 は `# <title>` 形式とし、先頭に番号を要求しない。
 spec record の title は、H1 行から leading `#` とその直後の whitespace を除き、前後 whitespace を trim した残りとする。
 
+investigation record の H1 は以下の形式のみ valid とする。
+
+```text
+^#\s+(?P<id>INV-[A-Z0-9-]+-\d{3}):\s+(?P<title>.+?)\s*$
+```
+
+investigation の canonical ID は H1 の `id` から取得する。filename は `INV-<DOMAIN>-NNN-<slug>.md` 形式であり、H1 の canonical ID と prefix が一致しなければならない。不一致は filename / ID mismatch として診断対象にする。
+
 filename からの title 推定は MVP では行わない。
 
 > 由来: ADR-077 §list_records の責務, ADR-077 §理由
@@ -300,15 +359,15 @@ Design Records MCP の internal record model は、少なくとも以下の情�
 
 | field | source | meaning |
 |---|---|---|
-| `id` | ADR: H1 / spec: `design_record.id` | record ID |
-| `kind` | ADR: fixed `decision` / spec: `design_record.kind` | record kind |
+| `id` | decision/investigation: H1 / spec: `design_record.id` | record ID |
+| `kind` | source kind / spec: `design_record.kind` | record kind |
 | `title` | H1 | human-readable title |
-| `status` | ADR: bullet metadata / spec: top-level front matter | record status |
+| `status` | decision/investigation: bullet metadata / spec: top-level front matter | record status |
 | `path` | filesystem | Markdown file path |
-| `depends_on` | ADR: bullet metadata / spec: `design_record.depends_on` | dependency IDs |
-| `supersedes` | ADR: bullet metadata / spec: empty list in MVP | superseded IDs |
-| `migrated_to_spec` | ADR: bullet metadata / spec: null in MVP | ADR migration marker |
-| `headings` | Markdown parse | heading list |
+| `decision` | ADR bullet metadata | decision-specific detail object |
+| `spec` | spec `design_record` metadata | spec-specific detail object |
+| `investigation` | investigation bullet metadata | investigation-specific detail object |
+| `headings` | Markdown parse | heading list for `get_record` |
 | `body` | Markdown file | raw body, requested only when needed |
 
 `headings` は ATX heading のみを対象とする。
@@ -329,7 +388,7 @@ Diagnostic は検査軸ごとに独立して発火し、1 record に複数 diagn
 | category | severity | meaning |
 |---|---|---|
 | `duplicate_id` | error | 複数 record が同じ正規化後 record ID を持つ |
-| `filename_id_mismatch` | error | `decision` record の ID 番号と filename 番号が一致しない |
+| `filename_id_mismatch` | error | `decision` または `investigation` record の canonical ID と filename ID 部分が一致しない |
 | `invalid_h1_title` | error | H1 が存在しない、または期待形式に合わない |
 | `invalid_status_for_kind` | error | `kind` に対して許可されない `status` を持つ |
 | `spec_status_mismatch` | error | spec top-level `status` と `design_record.status` が一致しない |
@@ -337,6 +396,14 @@ Diagnostic は検査軸ごとに独立して発火し、1 record に複数 diagn
 | `missing_supersedes_target` | error | `supersedes` の参照先 ID が存在しない |
 | `invalid_migrated_to_spec` | error | `migrated_to_spec` の値が不正 |
 | `missing_record_path` | error | discovery で候補 path を検出したが、read/stat に失敗した |
+
+Investigation validation は、少なくとも以下の結果を error として返さなければならない。具体的な diagnostic category 名と response 表現は tool contract で確定する。
+
+- `source_refs` に解決不能な canonical reference がある
+- 記載された `follow_up_results` に解決不能な canonical reference がある
+
+physical path が `source_refs` または `follow_up_results` に現れた場合は noncanonical reference として診断対象にできる。category 名と severity は後続 tool contract で確定する。
+`follow_up_candidates` の参照先が未作成であること自体は error としない。
 
 MVP では以下を diagnostic category に含めない。
 
@@ -362,6 +429,8 @@ spec では YAML front matter 内の `design_record` metadata を利用する。
 
 - ADR-050
 - ADR-067〜ADR-077
+- ADR-086〜ADR-087
+- `docs/investigations/docs/INV-DOCS-001-investigation-artifact-format-and-lifecycle.md`
 - `docs/spec/design-records-mcp/**`
 
 これ以外の既存 ADR/spec には一括付与しない。

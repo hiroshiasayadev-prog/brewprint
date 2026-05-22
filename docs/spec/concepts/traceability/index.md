@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/traceability/index.md
 status: draft
-last_updated: 2026-05-18
+last_updated: 2026-05-23
 summary: >
   semantic traceability spec の入口。
   MVP scope、分割 spec 構成、用語、active / reserved / scope 外の概要を定義する。
@@ -9,6 +9,7 @@ depends_on:
   - docs/adr/081-requirement-artifacts-and-spec-traceability.md
   - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
   - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
+  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
 ---
 
 # Traceability spec index
@@ -24,6 +25,7 @@ MVP の目的は、project-level docs artifact 間の trace を physical path �
 - design spec と internal design の対応
 - coverage mapping set / group / individual mapping の最小構造
 - semantic ref の解決と trace metadata validation の基本方針
+- investigation の `source_refs` / 記載済み `follow_up_results` の canonical reference 解決と参照切れ検査
 
 ## MVP scope
 
@@ -102,6 +104,8 @@ trace metadata YAML の schema validation は、coverage relation vocabulary で
 Traceability spec は docs artifact の semantic trace model を定義する上位仕様である。
 Design Records MCP は、この仕様に基づく index / query / validation / writer tool を実装しうるが、traceability そのものは Design Records MCP の内部仕様ではない。
 
+ADR-087 により、Design Records MCP は semantic/artifact ref resolve の実装責務を持ち、investigation の `source_refs` / 記載済み `follow_up_results` を解決・検証する。ただし、resolver の lookup source と `list_records` / `get_record` が公開する record kind は同一集合である必要はない。
+
 ## MVP outside summary
 
 MVP では以下を扱わない。
@@ -121,3 +125,4 @@ MVP では以下を扱わない。
 - ADR-081: requirements layer と semantic traceability
 - ADR-083: project artifact boundary と YAML as primary implementation source
 - ADR-084: semantic trace MVP scope と artifact boundary
+- ADR-087: Design Records MCP investigation support and semantic ref resolve

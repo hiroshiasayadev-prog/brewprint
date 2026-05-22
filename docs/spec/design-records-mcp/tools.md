@@ -1,12 +1,13 @@
 ---
 scope: docs/spec/design-records-mcp/tools.md
 status: draft
-last_updated: 2026-05-12
+last_updated: 2026-05-23
 summary: >
   Design Records MCP MVP の read-only tool interface と責務境界を定義する。
 depends_on:
   - docs/adr/076-design-records-mcp.md
   - docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
+  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
 design_record:
   id: SPEC-design-records-mcp-tools
   kind: spec
@@ -14,6 +15,7 @@ design_record:
   depends_on:
     - ADR-076
     - ADR-077
+    - ADR-087
 ---
 
 # Design Records MCP tools
@@ -41,7 +43,9 @@ MVP tool は read-only である。
 
 ## Common response conventions
 
-MVP tool response は、record を返す場合、以下の基本形を使う。
+record を返す tool response は、共通 field と kind 固有 detail object を分離する。
+
+Decision example:
 
 ```json
 {
@@ -50,11 +54,34 @@ MVP tool response は、record を返す場合、以下の基本形を使う。
   "title": "Design Records MCP",
   "status": "accepted",
   "path": "docs/adr/076-design-records-mcp.md",
-  "depends_on": ["ADR-050", "ADR-068"],
-  "supersedes": [],
-  "migrated_to_spec": null
+  "decision": {
+    "depends_on": ["ADR-050", "ADR-068"],
+    "supersedes": [],
+    "migrated_to_spec": null
+  }
 }
 ```
+
+Investigation example:
+
+```json
+{
+  "id": "INV-MCP-001",
+  "kind": "investigation",
+  "title": "Design Records MCP investigation support",
+  "status": "concluded",
+  "path": "docs/investigations/mcp/INV-MCP-001-design-records-mcp-investigation-support.md",
+  "investigation": {
+    "trigger": "ADR-087",
+    "scope": "investigation MCP integration",
+    "non_scope": "writer tools",
+    "source_refs": ["ADR-086", "ADR-087"],
+    "follow_up_candidates": ["ADR-088"]
+  }
+}
+```
+
+旧 flat response field と kind 固有 detail object は併存させない。spec を新 contract に更新した後、実装と tests は同一の切替単位で追従する。
 
 `title` は H1 から抽出する。
 `path` は repository root からの相対 path とする。
@@ -68,10 +95,10 @@ MVP では response 内で Markdown 本文を整形・要約・正規化しな�
 
 ### Purpose
 
-`list_records` は、ADR/spec record index を構造化して返す query tool である。
+`list_records` は、decision / spec / investigation を扱う record index を構造化して返す query tool である。
 
 目的は、Markdown 本文を読む前に候補 record を絞り込むことである。
-単なる filesystem listing ではなく、ADR の箇条書きmetadataまたは spec の YAML front matter から正規化した record metadata と H1 title を含む一覧を返す。
+単なる filesystem listing ではなく、ADR / investigation の箇条書きmetadataまたは spec の YAML front matter から正規化した record metadata と H1 title を含む一覧を返す。
 
 > 由来: ADR-077 §list_records の責務
 
@@ -96,7 +123,7 @@ MVP request schema:
 
 | field | required | type | meaning |
 |---|---:|---|---|
-| `kind` | no | string | `decision` / `spec` で絞り込む |
+| `kind` | no | string | `decision` / `spec` / `investigation` で絞り込む |
 | `status` | no | string | status で絞り込む |
 | `id` | no | string | exact ID で絞り込む |
 | `id_range` | no | object | ID range で絞り込む |
@@ -114,7 +141,8 @@ MVP の `id_range` は `ADR-NNN` 形式の `decision` record にのみ適用す�
 比較は `NNN` の数値比較とする。
 `kind` が省略され、かつ `id_range` が指定された場合は `kind: decision` と同等に扱う。
 `id_range` を指定する request では、`kind` は省略されているか `decision` でなければならない。
-`kind: spec` と `id_range` の併用、または `SPEC-*` への range 指定は request error とする。
+`kind: spec` / `kind: investigation` と `id_range` の併用、または `SPEC-*` / `INV-*` への range 指定は request error とする。
+Investigation の domain-scoped ID に対する range / domain filter はこの版では扱わず、後続 spec refinement に委ねる。
 
 ### Response
 
@@ -127,9 +155,11 @@ MVP の `id_range` は `ADR-NNN` 形式の `decision` record にのみ適用す�
       "title": "Design Records MCP",
       "status": "accepted",
       "path": "docs/adr/076-design-records-mcp.md",
-      "depends_on": ["ADR-050", "ADR-068"],
-      "supersedes": [],
-      "migrated_to_spec": null
+      "decision": {
+        "depends_on": ["ADR-050", "ADR-068"],
+        "supersedes": [],
+        "migrated_to_spec": null
+      }
     }
   ]
 }
@@ -137,9 +167,8 @@ MVP の `id_range` は `ADR-NNN` 形式の `decision` record にのみ適用す�
 
 `records[]` の並び順は `order_by` / `order` に従う。
 
-`order_by: id` で mixed kind の record を返す場合、MVP では deterministic ordering として `decision` records を先、`spec` records を後に並べる。
-`order: asc | desc` は同一 kind 内の ID order に適用し、`order: desc` の場合も kind order 自体は `decision` first, then `spec` のままとする。
-`decision` record ID は `ADR-NNN` の `NNN` を数値比較し、`spec` record ID は string order で比較する。
+`order_by: id` で mixed kind の record を返す場合の kind 間 ordering、および investigation ID の domain-scoped ordering は、investigation 対応の tool contract refinement で確定する。
+`decision` の `id_range` は従来どおり `ADR-NNN` の `NNN` を数値比較する。
 
 ## `get_record`
 
@@ -175,9 +204,11 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
     "title": "Design Records MCP",
     "status": "accepted",
     "path": "docs/adr/076-design-records-mcp.md",
-    "depends_on": ["ADR-050", "ADR-068"],
-    "supersedes": [],
-    "migrated_to_spec": null,
+    "decision": {
+      "depends_on": ["ADR-050", "ADR-068"],
+      "supersedes": [],
+      "migrated_to_spec": null
+    },
     "headings": [
       { "level": 1, "text": "076: Design Records MCP" },
       { "level": 2, "text": "背景" },
@@ -199,9 +230,11 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
     "title": "Design Records MCP",
     "status": "accepted",
     "path": "docs/adr/076-design-records-mcp.md",
-    "depends_on": ["ADR-050", "ADR-068"],
-    "supersedes": [],
-    "migrated_to_spec": null,
+    "decision": {
+      "depends_on": ["ADR-050", "ADR-068"],
+      "supersedes": [],
+      "migrated_to_spec": null
+    },
     "headings": [],
     "body": "# 076: Design Records MCP\n\n- **status**: accepted\n..."
   }
@@ -218,8 +251,8 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
 
 `validate_records` は、Design Records MCP の metadata index が信頼できる状態かを検証する tool である。
 
-MVP では record metadata の基本整合性検査に限定する。
-運用 gap 診断や semantic trace は扱わない。
+record metadata の基本整合性検査に加え、investigation の `source_refs` および記載済み `follow_up_results` が解決可能であることを検査する。
+運用 gap 診断や coverage query は扱わない。
 
 > 由来: ADR-077 §validate_records の責務
 
@@ -243,7 +276,7 @@ MVP では record metadata の基本整合性検査に限定する。
 request が空の場合、MVP index 対象の全 record を検証する。
 
 `id_range` の扱いは `list_records` と同じく、`ADR-NNN` 形式の `decision` record 専用とする。
-`kind: spec` と `id_range` の併用、または `SPEC-*` への range 指定は request error とする。
+`kind: spec` / `kind: investigation` と `id_range` の併用、または `SPEC-*` / `INV-*` への range 指定は request error とする。
 
 ### Response
 
@@ -292,6 +325,9 @@ MVP diagnostic category は `schema.md` の定義に従う。
 - `missing_supersedes_target`
 - `invalid_migrated_to_spec`
 - `missing_record_path`
+
+Investigation の `source_refs` unresolved、記載済み `follow_up_results` unresolved、および path-based noncanonical reference の diagnostic category / severity は、investigation 対応を実装する前に `schema.md` と本tool contractで確定する。
+`follow_up_candidates` が未作成 artifact を指すこと自体は diagnostic としない。
 
 `accepted_but_not_migrated` / `missing_design_record` などの運用 gap 診断は MVP 外である。
 
@@ -364,7 +400,7 @@ MVP tool error code は以下を最小とする。
 | `record_not_found` | 指定された record ID が存在しない |
 | `invalid_request` | request schema または field value が不正。例: `list_records` に `kind: task` を指定した場合 |
 | `unsupported_kind` | tool が対象外の `kind` を指定された。例: `suggest_next_record` に `kind: spec` を指定した場合 |
-| `id_range_requires_decision_kind` | `id_range` が `decision` 以外の kind と併用された、または `SPEC-*` range が指定された |
+| `id_range_requires_decision_kind` | `id_range` が `decision` 以外の kind と併用された、または `SPEC-*` / `INV-*` range が指定された |
 
 MVP では、存在しない record ID を指定した場合、tool は machine-readable な error を返す。
 

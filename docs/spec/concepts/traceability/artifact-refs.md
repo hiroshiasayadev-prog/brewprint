@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/traceability/artifact-refs.md
 status: draft
-last_updated: 2026-05-18
+last_updated: 2026-05-23
 summary: >
   traceability MVP の artifact ref 種別、active / reserved prefix、
   ID-as-ref、scope 外の prefix 方針を定義する。
@@ -9,6 +9,7 @@ depends_on:
   - docs/adr/081-requirement-artifacts-and-spec-traceability.md
   - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
   - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
+  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
 semantic_refs:
   - spec:trace.artifact-refs
 sections:
@@ -25,7 +26,7 @@ sections:
 
 MVP は、すべての docs artifact を semantic trace graph の一級対象にしない。
 まず spec / internal-design / coverage を active prefix として扱い、brewprint DSL YAML は reserve only とする。
-Requirement / work item / coverage mapping は、prefix-ref ではなく ID-as-ref を使う。
+Requirement / work item / coverage mapping に加え、Design Records MCP が解決する decision / spec / investigation record は、prefix-ref ではなく artifact ID-as-ref を使う。
 
 ## Active prefixes
 
@@ -115,14 +116,25 @@ MVP では、`yaml:` ref を active trace 対象にしない。
 
 ## ID-as-ref
 
-MVP では、requirement / work item / individual coverage mapping は prefix-ref ではなく ID-as-ref を使う。
+MVP では、requirement / work item / individual coverage mapping、および Design Records MCP の record は prefix-ref ではなく ID-as-ref を使う。
 
 ```yaml
 id_as_ref:
+  decision: "ADR-NNN"
+  spec_record: "SPEC-<slug>"
+  investigation: "INV-<DOMAIN>-NNN"
   requirement: "REQ-<DOMAIN>-NNN"
   work_item: "WORK-<DOMAIN>-NNN"
   coverage_mapping: "COV-<DOMAIN>-NNN"
 ```
+
+### `ADR-*` / `SPEC-*` / `INV-*`
+
+`ADR-*` は decision record ID、`SPEC-*` は spec record ID、`INV-*` は investigation record ID である。
+
+ADR-087 により、investigation の `source_refs` および記載済み `follow_up_results` は、これらの artifact ID または active semantic ref を canonical reference として使用できる。physical path は canonical reference ではない。
+
+`INV-*` は ADR-086 に従い `INV-<DOMAIN>-NNN` 形式とする。
 
 ### `REQ-*`
 
@@ -189,7 +201,7 @@ COV-...
 fixture:...
 ```
 
-`REQ-*` / `WORK-*` は requirement metadata や work item metadata 内で関連 artifact を参照する用途に使えるが、MVP coverage edge の endpoint にはしない。
+`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` は metadata 内の参照解決に使えるが、MVP coverage edge の endpoint にはしない。
 
 ## Scope-out prefixes
 
@@ -212,3 +224,4 @@ Requirement / work item は ID-as-ref として扱う。
 - ADR-081 §5: requirement ID は ADR 番号と結合しない
 - ADR-083 §8: trace layer common principle
 - ADR-084 §1〜§6: MVP active / reserved / out-of-scope boundary
+- ADR-087 §4〜§8: Design Records MCP resolve responsibility と investigation canonical reference rule

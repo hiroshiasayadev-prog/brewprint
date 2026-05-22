@@ -4,7 +4,7 @@
 
 semantic traceability MVP を、docs 上で運用できる最小状態にする。
 
-M18 では、ADR-081〜084 で定義された requirements / work-items / internal-design / coverage / semantic ref の責務境界を、spec / policy / 最小 artifact layout に反映する。
+M18 では、ADR-081〜087 で定義された requirements / work-items / internal-design / coverage / investigations / semantic ref の責務境界を、spec / policy / 最小 artifact layout に反映する。
 
 ## Scope
 
@@ -14,8 +14,10 @@ M18 が扱うもの:
 - `docs/doc-policy.md` の ADR-081〜084 追従
 - `docs/adr-authoring-guide.md` の責務表更新
 - `docs/requirements/` / `docs/work-items/` / `docs/internal-design/` / `docs/coverage/` の最小配置方針
+- `docs/investigations/` の policy / authoring guide / task 反映
 - semantic ref / coverage mapping の最小 example
-- Design Records MCP に trace support を入れるかどうかの後続判断
+- ADR-087 により確定した Design Records MCP の semantic ref resolve / investigation record 統合判断の追従反映
+- Design Records MCP / traceability spec / investigations README への ADR-087 境界判断の同期
 
 ## Non-goals
 
@@ -26,6 +28,8 @@ M18 では以下を扱わない。
 - fixture / golden traceability
 - `validates` relation
 - MCP writer tools の具体 request / response schema
+- investigation MCP interface の具体 request / response schema
+- Design Records MCP に `kind: investigation` を追加する実装および migration 手順
 - UC-002 self-hosting 再構築
 - spec directory 全体 taxonomy migration
 - fixture `render_expected/` comparison semantics
@@ -36,7 +40,11 @@ M18 では以下を扱わない。
 - ADR-082: golden fixture と self-hosting requirement の責務境界
 - ADR-083: project artifact boundary と YAML as primary implementation source
 - ADR-084: semantic trace MVP scope と artifact boundary
+- ADR-085: investigation artifact boundary
+- ADR-086: investigation artifact format and lifecycle
+- ADR-087: Design Records MCP investigation support and semantic ref resolve
 - `docs/spec/concepts/traceability/`
+- `docs/investigations/README.md`
 
 ## Phase A: traceability spec review
 
@@ -56,6 +64,8 @@ M18 では以下を扱わない。
 ## Phase B: docs policy alignment
 
 - [ ] `docs/doc-policy.md` の docs 構成に `requirements/` を追加する
+- [ ] `docs/doc-policy.md` の docs 構成に `investigations/` を追加する
+- [ ] `docs/doc-policy.md` に investigation の最小責務と必須 gate ではないことを反映する
 - [ ] `docs/doc-policy.md` の docs 構成に `work-items/` を追加する
 - [ ] `docs/doc-policy.md` の docs 構成に `internal-design/` を追加する
 - [ ] `docs/doc-policy.md` の docs 構成に `coverage/` を追加する
@@ -67,6 +77,8 @@ M18 では以下を扱わない。
 ## Phase C: ADR authoring guide alignment
 
 - [ ] `docs/adr-authoring-guide.md` の責務表に requirements を追加する
+- [ ] `docs/adr-authoring-guide.md` の責務表に investigation を追加する
+- [ ] ADR が探索ログ / 影響範囲調査 / 選択肢比較 / 未確定論点を抱え込まず、必要に応じて investigation を参照する方針を追加する
 - [ ] `docs/adr-authoring-guide.md` の責務表に work-items を追加する
 - [ ] `docs/adr-authoring-guide.md` の責務表に internal-design を追加する
 - [ ] `docs/adr-authoring-guide.md` の責務表に coverage を追加する
@@ -80,10 +92,12 @@ M18 では以下を扱わない。
 - [ ] `docs/work-items/` の最小配置方針を決める
 - [ ] `docs/internal-design/` の最小配置方針を決める
 - [ ] `docs/coverage/` の最小配置方針を決める
+- [ ] `docs/investigations/` の最小配置方針が ADR-086 / README と一致しているか確認する
 - [ ] 各 directory に README / index / placeholder が必要か判断する
 - [ ] requirement ID domain の初期 vocabulary を決めるか判断する
 - [ ] work item ID domain の初期 vocabulary を決めるか判断する
 - [ ] coverage mapping ID domain の初期 vocabulary を決めるか判断する
+- [ ] investigation ID domain の初期 vocabulary を決めるか判断する
 
 ## Phase E: first trace example
 
@@ -96,18 +110,23 @@ M18 では以下を扱わない。
 
 ## Phase F: Design Records MCP follow-up decision
 
-- [ ] Design Records MCP に semantic ref resolve を入れるか判断する
-- [ ] Design Records MCP に trace metadata validation を入れるか判断する
+- [x] Design Records MCP に semantic ref resolve を入れると判断した（ADR-087）
+- [ ] Design Records MCP に trace metadata validation を入れる範囲を spec で確定する
 - [ ] Design Records MCP に coverage mapping query を入れるか判断する
-- [ ] MCP writer tools は M18 scope 外であることを確認する
-- [ ] 必要なら後続 ADR / requirement / milestone を起票する
+- [x] MCP writer tools は M18 scope 外であることを確認した（ADR-087）
+- [x] Design Records MCP に `kind: investigation` を追加し、別 MCP interface には分離しないと判断した（ADR-087）
+- [x] investigation の `source_refs` / 記載済み `follow_up_results` は unresolved error、`follow_up_candidates` は存在検査対象外と判断した（ADR-087）
+- [ ] Design Records MCP spec / traceability spec / `docs/investigations/README.md` に ADR-087 の反映を確認する（2026-05-23 同期済み）
+- [ ] Design Records MCP implementation task を起票し、INV-DOCS-001 参照解決を acceptance criteria に含める
+- [x] 後続 ADR として ADR-087 を起票・accept した
 
 ## Done criteria
 
 - [ ] `docs/spec/concepts/traceability/` の MVP spec が review 済みである
 - [ ] traceability spec の status を confirmed にするか、remaining draft reason が明示されている
-- [ ] `docs/doc-policy.md` が ADR-081〜084 と矛盾しない
-- [ ] `docs/adr-authoring-guide.md` が ADR-081〜084 と矛盾しない
-- [ ] requirements / work-items / internal-design / coverage の最小配置方針が決まっている
+- [ ] `docs/doc-policy.md` が ADR-081〜087 と矛盾しない
+- [ ] `docs/adr-authoring-guide.md` が ADR-081〜087 と矛盾しない
+- [ ] `docs/investigations/README.md` が ADR-085 / ADR-086 / ADR-087 と矛盾しない
+- [ ] requirements / work-items / internal-design / coverage / investigations の最小配置方針が決まっている
 - [ ] 最小 semantic trace example が存在する、または作らない理由が明示されている
-- [ ] Design Records MCP trace support の扱いが後続作業として整理されている
+- [ ] ADR-087 に基づく Design Records MCP trace support / investigation integration の spec・README・実装 task 反映が整理されている

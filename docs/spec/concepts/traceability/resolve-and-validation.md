@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/traceability/resolve-and-validation.md
 status: draft
-last_updated: 2026-05-18
+last_updated: 2026-05-23
 summary: >
   semantic ref resolver、duplicate / orphan detection、trace metadata YAML validation、
   validates relation との境界を定義する。
@@ -9,6 +9,7 @@ depends_on:
   - docs/adr/081-requirement-artifacts-and-spec-traceability.md
   - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
   - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
+  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
 semantic_refs:
   - spec:trace.resolve-and-validation
 sections:
@@ -39,6 +40,8 @@ COV-TRACE-001 -> coverage mapping entry
 
 MVP では、active prefix を持つ semantic ref が resolver で解決できることを前提とする。
 
+ADR-087 により、investigation の `source_refs` および記載済み `follow_up_results` に現れる artifact ID / semantic ref も resolve / validation の対象とする。physical path は canonical reference として扱わない。
+
 ## Resolver input
 
 Resolver input は、少なくとも以下を扱う。
@@ -50,6 +53,9 @@ coverage:...
 REQ-...
 WORK-...
 COV-...
+ADR-...
+SPEC-...
+INV-...
 ```
 
 ただし、MVP coverage edge の source / target として許可されるのは active prefix を持つ semantic ref のみである。
@@ -85,6 +91,12 @@ Resolver は以下の trace metadata を index source として扱う。
 - coverage mapping entry の `id`
 - requirement metadata の `id`
 - work item metadata の `id`
+- design record の artifact ID
+- investigation metadata の `source_refs`
+- investigation metadata の `follow_up_results`
+- investigation metadata の `follow_up_candidates`（存在検査を要求しない候補参照）
+
+Resolver が lookup source として読む artifact と、Design Records MCP が `list_records` / `get_record` の record kind として公開する artifact は同一集合である必要はない。
 
 MVP では自然言語本文から ref を推定しない。
 
@@ -126,8 +138,13 @@ Examples:
 - coverage mapping の `target` が存在しない
 - requirement metadata の `source_refs.specs` が存在しない `spec:` ref を指す
 - work item metadata の `source_requirement` が存在しない `REQ-*` を指す
+- investigation metadata の `source_refs` が解決不能な artifact ID または semantic ref を指す
+- investigation metadata の `follow_up_results` が、記載されているにもかかわらず解決不能な artifact ID または semantic ref を指す
 
-MVP では orphan の severity を固定しない。
+Investigation の `source_refs` unresolved と、記載済み `follow_up_results` unresolved は error とする。
+`follow_up_candidates` は未作成 artifact を指しうるため、候補参照が未解決であること自体は orphan error としない。
+
+それ以外の orphan の severity はこの版では固定しない。
 ただし、active prefix を持つ coverage mapping endpoint の unresolved は error とすることを第一候補とする。
 
 ## Reserved ref handling
@@ -149,6 +166,8 @@ Validation は、trace metadata YAML が期待 schema に合っているかを�
 
 Examples:
 
+- investigation の `source_refs` / `follow_up_results` が canonical reference として artifact ID または semantic ref を用いているか
+- investigation の `source_refs` / 記載済み `follow_up_results` が resolve 可能か
 - `semantic_refs` が list<string> であるか
 - `sections` が map<string,string> であるか
 - coverage mapping が `id` / `source` / `relation` / `target` を持つか

@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/traceability/semantic-ref.md
 status: draft
-last_updated: 2026-05-18
+last_updated: 2026-05-23
 summary: >
   semantic ref の grammar、安定性、document-level / section-level ref、
   redirect / superseded の基本方針を定義する。
@@ -9,6 +9,7 @@ depends_on:
   - docs/adr/081-requirement-artifacts-and-spec-traceability.md
   - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
   - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
+  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
 semantic_refs:
   - spec:trace.semantic-ref
 sections:
@@ -36,6 +37,10 @@ spec:trace.semantic-ref
 internal-design:resolver.semantic-ref-index
 coverage:trace.semantic-ref
 ```
+
+Semantic ref と artifact ID-as-ref は区別する。`ADR-*` / `SPEC-*` / `INV-*` は design record artifact を指す ID-as-ref であり、`spec:` / `internal-design:` / `coverage:` のような semantic ref prefix ではない。
+
+ADR-087 により、investigation の `source_refs` および記載済み `follow_up_results` は、対象に応じて artifact ID-as-ref または semantic ref を canonical reference として用いる。physical path は canonical reference として用いない。
 
 ## Semantic ref grammar
 

@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/traceability/metadata-schema.md
 status: draft
-last_updated: 2026-05-18
+last_updated: 2026-05-23
 summary: >
   trace metadata YAML と front matter の最小 schema、semantic_refs、sections、
   artifact metadata の責務境界を定義する。
@@ -9,6 +9,8 @@ depends_on:
   - docs/adr/081-requirement-artifacts-and-spec-traceability.md
   - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
   - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
+  - docs/adr/086-investigation-artifact-format-and-lifecycle.md
+  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
 semantic_refs:
   - spec:trace.metadata-schema
 sections:
@@ -33,6 +35,7 @@ Examples:
 - coverage mapping YAML
 - requirement metadata
 - work item metadata
+- investigation metadata
 
 Trace metadata YAML の schema validation は、coverage relation vocabulary ではなく、traceability spec / MCP tool contract の責務である。
 
@@ -198,6 +201,39 @@ impact_refs:
 MVP では requirement / work item の完全 schema は定義しない。
 この file は、metadata 内で prefix-ref と ID-as-ref が併存しうることだけを示す。
 
+## Investigation metadata
+
+Investigation は ADR-086 に従い Markdown 冒頭の bullet metadata を持つ。
+
+Required metadata:
+
+- `status`
+- `date`
+- `trigger`
+- `scope`
+- `non_scope`
+- `source_refs`
+- `follow_up_candidates`
+
+Optional metadata:
+
+- `supersedes`
+- `related_requirements`
+- `related_work_items`
+- `related_adrs`
+- `related_specs`
+- `related_internal_design`
+- `related_coverage`
+- `follow_up_results`
+
+Reference rules established by ADR-087:
+
+- `source_refs` は canonical reference として artifact ID または semantic ref を用い、記載値は resolve 可能でなければならない
+- `follow_up_results` は記載されている場合、canonical reference として artifact ID または semantic ref を用い、記載値は resolve 可能でなければならない
+- `follow_up_candidates` は未作成 artifact を指しうるため、参照先の存在は要求しない
+- physical path は `source_refs` / `follow_up_results` の canonical reference ではない。legacy input として受理する場合は noncanonical reference として扱う
+- `trigger` / `related_*` の resolve / validation rule は後続 contract で定義する
+
 ## Validation responsibility
 
 Trace metadata YAML schema validation は、relation vocabulary の `validates` ではない。
@@ -209,6 +245,8 @@ Validation examples:
 - section mapping の value が実在 heading と一致するか
 - duplicate semantic ref がないか
 - coverage mapping の source / target が active prefix を持つか
+- investigation の `source_refs` / 記載済み `follow_up_results` が canonical reference であり、resolve 可能か
+- investigation の `follow_up_candidates` が未作成 artifact を指しているだけで orphan error になっていないか
 
 これらは resolver / validator / MCP tool contract が扱う。
 
