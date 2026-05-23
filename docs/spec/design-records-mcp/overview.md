@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/overview.md
 status: draft
-last_updated: 2026-05-23
+last_updated: 2026-05-24
 summary: >
   Design Records MCP の目的、対象範囲、既存 brewprint MCP との責務境界、
   MVP の非目標を定義する。
@@ -9,6 +9,7 @@ depends_on:
   - docs/adr/076-design-records-mcp.md
   - docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
+  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
 design_record:
   id: SPEC-design-records-mcp-overview
   kind: spec
@@ -17,6 +18,7 @@ design_record:
     - ADR-076
     - ADR-077
     - ADR-087
+    - ADR-088
 ---
 
 # Design Records MCP overview
@@ -76,9 +78,13 @@ Design Records MCP は、既存 brewprint MCP とは独立して起動・検証�
 
 ## Resolver responsibility
 
-Design Records MCP は、traceability spec が定める semantic/artifact ref model に従い、ref の resolve とその結果を用いた validation を担う。
+Design Records MCP は、traceability spec が定める canonical reference model に従い、ref の resolve とその結果を用いた validation を担う。
 
-resolver が lookup source として読む artifact と、`list_records` / `get_record` が record kind として公開する artifact は同一集合である必要はない。requirement / work item / internal-design / coverage 等を resolver が解決対象に含めても、それだけで record kind として公開する決定にはならない。
+ADR-088 により、MVP で必須とする resolver input は active `spec:` semantic ref、Design Records MCP が扱う record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*`)、および investigation canonical reference validation に限定する。
+
+`internal-design:` / `coverage:` / `COV-*`、coverage mapping、semantic realization relation は MVP required resolver scope に含めない。Requirement / work item の public resolve contract も concrete consumer requirement が成立した時点で判断する。
+
+resolver が lookup source として読む artifact と、`list_records` / `get_record` が record kind として公開する artifact は同一集合である必要はない。
 
 具体的な resolve tool の名称と request / response schema は後続 tool contract で定義する。
 
@@ -121,6 +127,8 @@ MVP では以下を扱わない。
 - `topics` / `affects` / `refines` / `conflicts_with` metadata
 - task file / UC docs / impl notes の record kind としての index 化
 - semantic/artifact ref resolve tool の具体 contract
+- `internal-design:` / `coverage:` / `COV-*` の resolve と semantic realization relation validation
+- coverage mapping query
 
 MVP は ADR の箇条書きmetadata、spec の YAML front matter、H1、path から得られる明示情報だけを扱う。
 自然言語本文の推定や運用 gap 診断は、MVP の validator を実データへ当てた後に追加可否を判断する。

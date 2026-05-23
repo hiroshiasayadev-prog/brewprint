@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/schema.md
 status: draft
-last_updated: 2026-05-23
+last_updated: 2026-05-24
 summary: >
   Design Records MCP MVP が読む design_record metadata schema、record model、
   H1 title 抽出、diagnostic category を定義する。
@@ -10,6 +10,7 @@ depends_on:
   - docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
   - docs/adr/086-investigation-artifact-format-and-lifecycle.md
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
+  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
 design_record:
   id: SPEC-design-records-mcp-schema
   kind: spec
@@ -19,6 +20,7 @@ design_record:
     - ADR-077
     - ADR-086
     - ADR-087
+    - ADR-088
 ---
 
 # Design Records MCP schema
@@ -129,9 +131,9 @@ Investigation の metadata block は ADR と同様に H1 直後から最初の H
 `status` / `date` / `trigger` / `scope` / `non_scope` / `source_refs` / `follow_up_candidates` は required metadata とする。
 `supersedes` / `related_requirements` / `related_work_items` / `related_adrs` / `related_specs` / `related_internal_design` / `related_coverage` / `follow_up_results` は、記載がある場合のみ読む optional metadata とする。
 
-`source_refs` と `follow_up_results` の各値は canonical reference として artifact ID または semantic ref を用いる。physical path が入力に現れた場合、compatibility input として読み取ってよいが canonical form ではない。
-`source_refs` の unresolved、および記載された `follow_up_results` の unresolved は error とする。
-`follow_up_candidates` は未作成 artifact を指しうるため、存在しないこと自体を error としない。
+`source_refs` と `follow_up_results` の各値は canonical reference として Design Records MCP が扱う record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*`) または active `spec:` semantic ref を用いる。記載値は解決可能でなければならず、unresolved は error とする。physical path が入力に現れた場合、compatibility input として読み取ってよいが canonical form ではなく、error diagnostic の対象とする。
+ADR-088 により、`internal-design:` / `coverage:` / `COV-*` は MVP canonical reference / resolver input として要求しない。
+`follow_up_candidates` に artifact reference が記載される場合も、record ID-as-ref または active `spec:` semantic ref の canonical form を用いる。候補は未作成 artifact を指しうるため、canonical form の unresolved は error にせず、予定された後続 artifact が未作成であることを示す `info` diagnostic として返す。Physical path による candidate は canonical form ではなく、noncanonical candidate を示す `info` diagnostic として返す。
 `trigger` / `related_*` の resolve / validation rule はこの版では確定しない。
 
 > 由来: ADR-086 §4〜§7, ADR-087 §5〜§8
@@ -401,9 +403,14 @@ Investigation validation は、少なくとも以下の結果を error として
 
 - `source_refs` に解決不能な canonical reference がある
 - 記載された `follow_up_results` に解決不能な canonical reference がある
+- `source_refs` または `follow_up_results` に physical path による noncanonical reference がある
 
-physical path が `source_refs` または `follow_up_results` に現れた場合は noncanonical reference として診断対象にできる。category 名と severity は後続 tool contract で確定する。
-`follow_up_candidates` の参照先が未作成であること自体は error としない。
+Investigation validation は、以下を `info` diagnostic として返す。
+
+- canonical form で記載された `follow_up_candidates` が unresolved である
+- `follow_up_candidates` に physical path による noncanonical candidate がある
+
+`follow_up_candidates` の参照先が未作成であること自体は error としない。Coverage mapping、semantic realization relation、`internal-design:` / `coverage:` / `COV-*` の解決・診断は MVP diagnostic scope に含めない。
 
 MVP では以下を diagnostic category に含めない。
 
@@ -429,7 +436,7 @@ spec では YAML front matter 内の `design_record` metadata を利用する。
 
 - ADR-050
 - ADR-067〜ADR-077
-- ADR-086〜ADR-087
+- ADR-086〜ADR-088
 - `docs/investigations/docs/INV-DOCS-001-investigation-artifact-format-and-lifecycle.md`
 - `docs/spec/design-records-mcp/**`
 

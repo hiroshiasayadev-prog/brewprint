@@ -85,7 +85,7 @@ investigation は Markdown 冒頭に bullet metadata を置く。
 
 optional の `related_*` は、investigation document 内の補助参照である。
 関連 artifact 側の primary trace edge を所有するものではない。
-関連 artifact の trace は requirement / work item / coverage 等の primary holder が引き続き所有する。
+関連 artifact の責務は requirement / work item / spec / internal design 等の primary owner が引き続き所有する。External coverage artifact は MVP operational scope 外であり、導入する場合は責務を改めて判断する。
 
 ## Status
 
@@ -128,13 +128,15 @@ investigation は、起点、調査根拠、後続候補、実際に生まれた
 この investigation を根拠に実際に作成・更新された artifact の記録に限る。
 作業状態や完了状態の管理は work item / task が所有する。
 
-`source_refs` は調査根拠であり、canonical reference として resolver が解決可能な artifact ID または semantic ref を書く。記載値が解決できない場合は validation error とする。
+`source_refs` は調査根拠であり、MVP の canonical reference として Design Records MCP が扱う record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*`) または active `spec:` semantic ref を書く。記載値が解決できない場合は validation error とする。
 
-`follow_up_results` は実際に作成・更新された artifact の参照である。記載する場合は、canonical reference として resolver が解決可能な artifact ID または semantic ref を書き、解決できない場合は validation error とする。
+`follow_up_results` は実際に作成・更新された artifact の参照である。記載する場合は、MVP の canonical reference として record ID-as-ref または active `spec:` semantic ref を書き、解決できない場合は validation error とする。
 
-`follow_up_candidates` は未作成 artifact の候補を含みうるため、参照先がまだ存在しないこと自体は validation error としない。
+`follow_up_candidates` に artifact reference を記載する場合は、canonical reference として record ID-as-ref または active `spec:` semantic ref を書く。未作成 artifact の候補を含みうるため、canonical form で記載された参照先がまだ存在しないこと自体は validation error としない。未作成であることは、予定された後続 artifact が未解決であることを示す `info` diagnostic として可視化する。
 
-physical path は `source_refs` / `follow_up_results` の canonical reference として使わない。既存 document の path-based value を compatibility input として読む必要がある場合も、noncanonical reference として扱う。
+ADR-088 により、`internal-design:` / `coverage:` / `COV-*` は MVP canonical reference / validation target として要求しない。
+
+physical path は `source_refs` / `follow_up_results` / artifact reference として記載された `follow_up_candidates` の canonical reference として使わない。既存 document の path-based value を compatibility input として読む必要がある場合、`source_refs` / `follow_up_results` にある path は noncanonical `error`、`follow_up_candidates` にある path は noncanonical candidate を示す `info` diagnostic として扱う。
 
 `trigger` / optional の `related_*` の resolve / validation rule は後続 contract で定義する。
 
@@ -152,9 +154,11 @@ physical path は `source_refs` / `follow_up_results` の canonical reference �
 - **scope**: <短い調査スコープ>
 - **non_scope**: <短い非スコープ>
 - **source_refs**:
-  - <artifact ID or path>
+  - <artifact ID-as-ref or semantic ref>
 - **follow_up_candidates**:
-  - <artifact ID or path, or なし>
+  - <candidate artifact ID-as-ref / semantic ref / human-readable candidate, or なし>
+- **follow_up_results**:  # 実際に作成・更新された artifact がある場合のみ
+  - <artifact ID-as-ref or semantic ref>
 
 ## 調査スコープ
 
@@ -208,3 +212,5 @@ investigation の調査中に別領域の調査が必要になった場合、別
 ## Current investigations
 
 - `docs/investigations/docs/INV-DOCS-001-investigation-artifact-format-and-lifecycle.md` — investigation artifact の directory / ID / format / lifecycle / authoring boundary を調査した。
+- `docs/investigations/docs/INV-DOCS-002-external-coverage-artifact-necessity.md` — semantic trace MVP で external coverage artifact が必要かを調査した。
+- `docs/investigations/docs/INV-DOCS-003-internal-design-semantic-trace-mvp-necessity.md` — `internal-design:` endpoint / realization relation の MVP 必要性を調査した。

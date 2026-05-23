@@ -10,13 +10,6 @@
   - ADR-084
   - ADR-087
   - INV-DOCS-002
-  - REQ-MCP-001
-  - spec:project-artifact-model
-  - spec:trace.artifact-refs
-  - spec:trace.metadata-schema
-  - spec:trace.coverage-mapping
-  - spec:trace.resolve-and-validation
-  - spec:trace.out-of-scope
 - **follow_up_candidates**:
   - ADR refinement for semantic trace MVP active endpoints and relation ownership
   - spec:project-artifact-model
@@ -27,8 +20,11 @@
   - spec:trace.out-of-scope
   - M18 / M19 milestone alignment
   - Design Records MCP resolver acceptance target refinement
+- **follow_up_results**:
+  - ADR-088
 
 > 本 investigation は、`docs/internal-design/` を不要と結論付けるものではない。対象は semantic trace MVP の active endpoint / operational relation として internal design を今すぐ要求する必要があるかである。
+> `source_refs` は調査時点で authoritative だった accepted ADR と prior investigation に限定する。本文で観測した draft spec / task / requirement は、ADR-088 反映後の current artifact を provenance source として遡及参照しない。
 > 以下の推奨は後続 ADR / spec / task 判断へ渡す候補であり、本 artifact 自体は決定または現行仕様を所有しない。
 
 ## 調査スコープ
@@ -139,19 +135,19 @@ INV-DOCS-002 Candidate B は external artifact を外す点では整合的だが
 
 ## 横断的な観測事実
 
-### 1. Current authority と draft のずれ
+### 1. 調査時点の authority と draft のずれ
 
-- Accepted ADR-084 は、現在の decision history として `internal-design:` / `coverage:` を active prefix に含めている。
+- 調査時点で、accepted ADR-084 は `internal-design:` / `coverage:` を active prefix に含めていた。
 - M18 の未 commit relation narrowing draft は、`spec:` → `internal-design:` mapping を MVP operational relation とする案を記述していた。
-- `docs/spec/concepts/project-artifact-model/index.md` は draft でありながら INV-DOCS-002 Candidate B の方向を先取りして external coverage を MVP 外として記述している。
-- 一方、traceability leaf draft specs と `docs/internal-design/README.md`、resolver example、M18 / M19 tasks は external coverage / `COV-TRACE-001` 前提を残している。
+- 調査時点の `docs/spec/concepts/project-artifact-model/index.md` は draft でありながら INV-DOCS-002 Candidate B の方向を先取りして external coverage を MVP 外として記述していた。
+- 一方、調査時点の traceability leaf draft specs と `docs/internal-design/README.md`、resolver example、M18 / M19 tasks は external coverage / `COV-TRACE-001` 前提を残していた。
 
-したがって、現行 worktree は external coverage の扱いに関して既に draft 間不整合を含み、さらに internal-design relation の MVP 必須性は未判断である。後続判断前に spec / task を部分同期すると、二段階の前提見直しが混ざる危険がある。
+したがって、調査時点の worktree は external coverage の扱いに関して既に draft 間不整合を含み、さらに internal-design relation の MVP 必須性は未判断であった。後続判断前に spec / task を部分同期すると、二段階の前提見直しが混ざる危険があると評価した。
 
 ### 2. MVP の実質的な価値軸
 
-- ADR-087 / REQ-MCP-001 が確定している実装価値は、design record と investigation の探索、canonical ref resolution、参照切れ validation である。
-- `spec` → internal design の semantic realization relation は、現在の一次情報ではその value axis を成立させる必須条件ではなく、追加された trace example / mapping validator の対象である。
+- 調査時点で ADR-087 / REQ-MCP-001 から確認できた実装価値は、design record と investigation の探索、canonical ref resolution、参照切れ validation であった。
+- `spec` → internal design の semantic realization relation は、調査時点の一次情報ではその value axis を成立させる必須条件ではなく、追加された trace example / mapping validator の対象であった。
 - MVP の目的を「将来 relation graph の完全な最小断面」ではなく「現在必要な canonical reference / validation foundation」と捉えるなら、internal-design relation の deferred は scope reduction として自然である。
 
 ## 候補比較
@@ -186,16 +182,16 @@ Relation declaration は defer するが、internal-design document を investig
 
 ## 推奨案
 
-現時点では **Candidate C: semantic trace MVP から `internal-design:` endpoint と `spec` ↔ internal design semantic realization relation を defer する** ことが最も小さく、確認できた実需に一致する候補と考えられる。
+本 investigation の結論時点では **Candidate C: semantic trace MVP から `internal-design:` endpoint と `spec` ↔ internal design semantic realization relation を defer する** ことが最も小さく、確認できた実需に一致する候補と考えられた。
 
 理由は以下である。
 
 1. Internal design artifact layer の存在理由は ADR-083 によって独立に成立しており、active trace endpoint 化を延期しても失われない。
-2. YAML と external coverage を外した後に残る `spec` → internal design relation は、現在一件の resolver self-example によって主に支えられており、MVP 利用者の独立 requirement は確認できなかった。
+2. YAML と external coverage を外した後に残る `spec` → internal design relation は、調査時点で確認できた一件の resolver self-example によって主に支えられており、MVP 利用者の独立 requirement は確認できなかった。
 3. ADR-087 / REQ-MCP-001 の accepted value は investigation integration と canonical ref resolution / validation であり、`spec` → internal design relation を必須にしなくても維持できる。
 4. Relation の active 化を後続へ送れば、実際の internal design navigation、impact analysis、YAML chain、または canonical internal-design ref 消費者が現れた時点で、endpoint と relation ownership を実需に基づいて設計できる。
 
-ただし、accepted ADR-084 は現在も `internal-design:` / `coverage:` を MVP active endpoint に含めている。したがって Candidate C を採用する場合は、spec や task の単独修正ではなく、後続 ADR による限定 refinement が必要である。
+調査時点では accepted ADR-084 が `internal-design:` / `coverage:` を MVP active endpoint に含めていた。したがって Candidate C を採用するには、spec や task の単独修正ではなく、後続 ADR による限定 refinement が必要であると結論付けた。後続の corrected ADR-088 がこの refinement を担った。
 
 ## 後続判断に渡す候補
 

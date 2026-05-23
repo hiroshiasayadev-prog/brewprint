@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/traceability/semantic-ref.md
 status: draft
-last_updated: 2026-05-23
+last_updated: 2026-05-24
 summary: >
   semantic ref の grammar、安定性、document-level / section-level ref、
   redirect / superseded の基本方針を定義する。
@@ -10,17 +10,18 @@ depends_on:
   - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
   - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
+  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
 semantic_refs:
   - spec:trace.semantic-ref
 sections:
-  spec:trace.semantic-ref: Semantic ref
+  spec:trace.semantic-ref.definition: Semantic ref definition
   spec:trace.semantic-ref-grammar: Semantic ref grammar
   spec:trace.semantic-ref-stability: Stability rules
 ---
 
 # Semantic ref
 
-## Semantic ref
+## Semantic ref definition
 
 Semantic ref は、brewprint docs artifact が表す概念を安定して参照するための identifier である。
 
@@ -30,15 +31,14 @@ Directory layout でもない。
 
 File rename、document split、document merge、section move が発生しても、同一概念を指す限り semantic ref は維持されるべきである。
 
-例:
+MVP で active に扱う例:
 
 ```text
 spec:trace.semantic-ref
-internal-design:resolver.semantic-ref-index
-coverage:trace.semantic-ref
+spec:trace.resolve-and-validation
 ```
 
-Semantic ref と artifact ID-as-ref は区別する。`ADR-*` / `SPEC-*` / `INV-*` は design record artifact を指す ID-as-ref であり、`spec:` / `internal-design:` / `coverage:` のような semantic ref prefix ではない。
+Semantic ref と artifact ID-as-ref は区別する。`ADR-*` / `SPEC-*` / `INV-*` は design record artifact を指す ID-as-ref であり、`spec:` のような semantic ref prefix ではない。`internal-design:` / `coverage:` は ADR-088 により MVP active scope から外れ、将来 requirement とともに再判断する。
 
 ADR-087 により、investigation の `source_refs` および記載済み `follow_up_results` は、対象に応じて artifact ID-as-ref または semantic ref を canonical reference として用いる。physical path は canonical reference として用いない。
 
@@ -50,13 +50,12 @@ MVP の prefix-ref grammar は以下とする。
 <prefix>:<domain>.<concept>[.<subconcept>...]
 ```
 
-例:
+MVP で active に扱う例:
 
 ```text
 spec:trace.semantic-ref
 spec:trace.coverage-mapping
-internal-design:resolver.semantic-ref-index
-coverage:trace.semantic-ref
+spec:trace.resolve-and-validation
 ```
 
 ### Character rules
@@ -84,19 +83,21 @@ Human-readable title は Markdown heading や metadata field に置く。
 
 ## Document-level ref and section-level ref
 
-Semantic ref は document-level と section-level の両方に使える。
+Semantic ref schema は document-level と section-level の表現を持つ。
 
 Document-level ref は、artifact 全体が表す概念を指す。
 Section-level ref は、artifact 内の特定 section が表す概念を指す。
+
+MVP で active に用いる semantic ref は `spec:` のみであり、document-level と section-level の双方を扱う。`internal-design:` / `coverage:` は endpoint identity 自体を後続判断へ送り、MVP では解決対象としない。
 
 例:
 
 ```yaml
 semantic_refs:
-  - spec:trace
+  - spec:trace.semantic-ref
 sections:
-  spec:trace.semantic-ref: Semantic ref
-  spec:trace.coverage-mapping: Coverage mapping
+  spec:trace.semantic-ref.definition: Semantic ref definition
+  spec:trace.semantic-ref-grammar: Semantic ref grammar
 ```
 
 `semantic_refs` は document-level ref を宣言する。
@@ -135,14 +136,15 @@ superseded:
     reason: optional
 ```
 
-Redirect / superseded mapping が導入されるまでは、既存 semantic ref はできるだけ残す。
+Redirect / superseded mapping が導入されるまで、MVP では既存 semantic ref entry を削除して別概念に再割り当てしてはならない。
+参照対象の名称変更・移動・分割があった場合も、旧 semantic ref entry は最も近い後継 document / section に残し、新しい概念には新しい semantic ref を発行する。
 
 ## Out of scope
 
 この file では以下を定義しない。
 
 - active / reserved prefix の完全一覧
-- coverage mapping schema
+- semantic realization mapping schema
 - resolver request / response
 - MCP tool contract
 - brewprint DSL YAML entity-level ref

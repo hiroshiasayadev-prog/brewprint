@@ -44,6 +44,7 @@ ADR は、現行仕様そのもの、作業チェックリスト、fixture migra
 - migration の細かい順序
 - fixture の作業状態
 - 実装手順の詳細
+- 判断前の探索ログ、影響範囲調査、選択肢比較、未確定論点の蓄積
 - renderer / validation / MCP tool などの実装引継ぎ本文
 
 これらが必要な場合、ADR には影響範囲と参照先を書くに留める。
@@ -64,12 +65,40 @@ ADR は、spec / task file / UC docs / fixture / impl notes など、他責務 a
 
 | 文書 | 所有するもの | 参照のみ示すもの |
 |---|---|---|
-| ADR | 設計判断、背景、理由、却下案、影響範囲 | 現行仕様本文、具体task、fixture migration詳細、実装手順 |
-| spec | 現在の正しい仕様 | ADRの判断背景（由来注記） |
-| task file | 作業項目、順序、完了条件、実装・migration checklist | 設計判断の長い理由、現行仕様本文 |
-| UC docs / fixture | 実例、coverage、gap発見ログ、migration状態 | 汎用仕様そのもの、設計判断の最終根拠 |
+| ADR | 設計判断、背景、理由、却下案、影響範囲 | 現行仕様本文、具体task、fixture migration詳細、実装手順、調査ログ、trace mapping 詳細 |
+| investigation | 調査結果、根拠、影響範囲の仮説、未確定点、選択肢、後続 artifact 候補 | 設計判断、現行仕様、要求そのもの、作業進捗、完了状態 |
+| requirement | 要求、不足、要望、stable requirement ID | 実装手順、完了状態、個別 trace mapping |
+| work item | source requirement を持つ横断作業、進捗、影響範囲 | 現行仕様本文、設計判断の長い理由 |
+| spec | 現在の正しい仕様、semantic ref declaration | ADRの判断背景（由来注記）、具体実装手順 |
+| internal design | spec を実装へ落とす internal wiring / route | 設計判断、要求、横断進捗、MVP の semantic endpoint contract |
+| external relation / assurance artifact | concrete requirement が成立した場合に配置・責務を含めて新設判断する将来候補（MVP operational scope 外） | 現行 MVP の canonical reference contract、各 artifact が所有する意味本文、fixture-level validation |
+| task file | 具体作業項目、順序、完了条件、実装・migration checklist | 設計判断の長い理由、現行仕様本文 |
+| UC docs / fixture | 実例、固定入力、期待出力、fixture-local 検証補助 | 汎用仕様、project-level trace relation、横断 gap / migration 進捗 |
 
 この境界により、ADR は時間が経っても「なぜその判断をしたか」を保持し、現行仕様・作業状態・実例の変化はそれぞれの責務文書で更新できる。
+
+### ADR と semantic trace の境界
+
+ADR は判断と影響範囲を記録するが、canonical semantic ref の declaration や resolver / validation contract を所有しない。
+Semantic trace MVP では、現行 `spec:` semantic ref と investigation canonical reference の contract は spec が所有し、internal design は implementation-facing wiring route として存続するが active semantic endpoint ではない。External coverage artifact と realization relation は concrete requirement が生じるまで future decision とする。
+
+ADR が traceability に影響する場合は、更新対象の spec / internal design / 将来新設を判断しうる external artifact を影響範囲として示し、trace detail を ADR 本文に二重管理しない。
+設計判断から現行仕様を辿る場合は、spec の由来注記と canonical reference contract を用いる。
+
+### ADR と investigation の境界
+
+ADR は、設計判断とその理由を所有する。
+investigation は、判断前の調査結果、根拠、影響範囲の仮説、未確定点、選択肢、後続 artifact 候補を所有する。
+
+複雑な変更で、判断前の探索ログ、影響範囲調査、選択肢比較、未確定論点を長く保存する必要がある場合、ADR に抱え込まず investigation を起票または参照する。
+
+ADR が investigation を根拠にする場合、ADR 本文では調査内容を再掲しすぎず、設計判断に必要な要点と investigation への参照に留める。
+
+investigation は ADR の起票前に必ず必要な gate ではない。
+単純な設計判断や、既に根拠・影響範囲が明確な変更では、ADR 単独で判断を記録してよい。
+
+investigation の directory / ID / metadata / status / lifecycle / authoring format は `docs/investigations/README.md` が所有する。
+ADR authoring guide には investigation の完全 format を重複して書かない。
 
 ---
 
@@ -134,6 +163,7 @@ ADR単体で読まれた場合に、現行仕様と誤読されることを防�
 ### Evidence の書き方
 
 - **commit / impl commit**: git logから拾う。ADR起票と実装反映が同コミットなら1行でOK
+- **artifact reference**: ADR / investigation / spec record を根拠として示す場合は、可能な限り canonical ID-as-ref（例: `ADR-088`, `INV-DOCS-003`）を用いる。Physical path は補助的な所在説明に限り、canonical reference として扱わない
 - **参考**: OSS名・言語慣習名のレベル。URL/取得日は書かない
   - ✅ `dagsterのsoftware-defined assets参考` / `Goのinterface慣習` / `特になし`
   - ❌ `https://docs.dagster.io/... (retrieved 2026-04-19)` ← 不要

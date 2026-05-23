@@ -22,6 +22,7 @@ spec には、実装・LLM・読者が現在の振る舞いを判断するため
 - renderer rule
 - MCP request / response schema
 - project layout / file classification rule
+- concept spec における artifact responsibility / canonical reference boundary
 
 spec は、設計判断の長い背景、却下した代替案、作業 checklist、fixture migration 状態の代替文書ではない。
 それらは ADR / task file / UC docs / impl notes に置く。
@@ -49,6 +50,15 @@ spec は、設計判断の長い背景、却下した代替案、作業 checklis
 - 実装引継ぎの詳細
 
 これらが必要な場合、spec には参照先を書くに留める。
+
+### concept spec の入口
+
+複数 artifact layer にまたがる責務境界や、tool-independent な concept boundary は `docs/spec/concepts/` が所有する。
+
+- [`docs/spec/concepts/project-artifact-model/index.md`](spec/concepts/project-artifact-model/index.md): artifact layer、source of truth、trace / MCP の位置付け
+- [`docs/spec/concepts/traceability/index.md`](spec/concepts/traceability/index.md): canonical reference resolution foundation と future trace scope の境界
+
+Semantic trace MVP では、active semantic ref は `spec:` のみであり、`internal-design:` / external coverage artifact / semantic realization relation は future decision とする。詳細は ADR-088 と traceability concept spec を参照する。
 
 ---
 
@@ -148,7 +158,8 @@ UC docs / fixture は実例と期待render結果を所有する。
 spec は個別fixtureの作業状態を所有しない。
 
 UCから一般仕様を抽出した場合、specには抽出された汎用ルールを書く。
-個別UCのmigration順序、作業チェックリスト、coverage gap は UC task file や coverage docs に置く。
+個別UCのmigration順序や作業チェックリストは UC task file に置く。
+Gap / evidence / sign-off / external relation artifact が必要になった場合は、ADR-088 に従って配置と責務を再判断する。MVP では external artifact 用 directory や authoring entrance を設けない。
 
 ---
 

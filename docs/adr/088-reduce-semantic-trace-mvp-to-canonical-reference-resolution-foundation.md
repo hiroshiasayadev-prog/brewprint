@@ -155,7 +155,7 @@ Internal design layer 自体は、公開 spec と implementation internal を分
 
 `docs/spec/concepts/project-artifact-model/index.md` は、`docs/internal-design/` layer を維持しつつ、MVP semantic trace endpoint とはしない境界を本 ADR に基づいて反映する。
 
-`docs/doc-policy.md`、`docs/internal-design/README.md`、`docs/coverage/README.md`、および必要な navigation / authoring guide は、internal design artifact layer の存在と semantic trace active scope を混同しないよう同期する。
+`docs/doc-policy.md`、`docs/internal-design/README.md`、および必要な navigation / authoring guide は、internal design artifact layer の存在と semantic trace active scope を混同しないよう同期する。External coverage artifact の authoring entrance は MVP では設けず、将来導入を判断した時点で必要な directory / README を新設する。
 
 ### Example artifact への影響
 
@@ -178,8 +178,8 @@ M19 の必須範囲は、ADR-087 に基づく investigation record integration�
 
 ## Evidence
 
-- commit: tbd
+- commit: 43bdfdb
 - impl commit: 該当なし
-- investigation: `docs/investigations/docs/INV-DOCS-002-external-coverage-artifact-necessity.md`
-- investigation: `docs/investigations/docs/INV-DOCS-003-internal-design-semantic-trace-mvp-necessity.md`
+- investigation: INV-DOCS-002
+- investigation: INV-DOCS-003
 - decision context: ADR-083, ADR-084, ADR-087

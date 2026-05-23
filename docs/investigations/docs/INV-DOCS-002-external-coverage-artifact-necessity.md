@@ -1,6 +1,6 @@
 # INV-DOCS-002: External coverage artifact necessity for semantic trace MVP
 
-- **status**: investigating
+- **status**: concluded
 - **date**: 2026-05-24
 - **trigger**: M18 で `yaml:` が active endpoint でない MVP に external coverage artifact が必要か再検討する必要が生じた
 - **scope**: semantic trace MVP と将来 YAML trace における external coverage artifact の必要性、relation ownership、再導入 trigger の調査
@@ -12,12 +12,6 @@
   - ADR-085
   - ADR-086
   - ADR-087
-  - spec:project-artifact-model
-  - spec:trace.artifact-refs
-  - spec:trace.metadata-schema
-  - spec:trace.coverage-mapping
-  - spec:trace.resolve-and-validation
-  - spec:trace.out-of-scope
 - **follow_up_candidates**:
   - ADR refinement for MVP relation ownership
   - spec:project-artifact-model
@@ -28,8 +22,11 @@
   - spec:trace.out-of-scope
   - M18 / M19 milestone alignment
   - MCP relation resolution handoff
+- **follow_up_results**:
+  - INV-DOCS-003
+  - ADR-088
 
-> 本 investigation は `docs/coverage/` を残す前提で正当化するものではない。accepted ADR と現行 draft / example を一次情報として、external artifact の必要性をゼロベースで評価する。
+> 本 investigation は `docs/coverage/` を残す前提で正当化するものではない。`source_refs` は調査時点で authoritative だった accepted ADR のみに限定し、本文で観測した M18 draft / example は後続同期後の current spec を provenance source として遡及参照しない。
 > 以下の推奨は後続判断の候補であり、本 artifact 自体は決定を所有しない。
 
 ## 調査スコープ
@@ -49,13 +46,13 @@
 
 ADR-083 は、spec を正本、brewprint DSL YAML を対象 design model の primary implementation source、internal design を implementation route と位置付け、三者の対応を external coverage artifact が管理するとした。導入時の中心的な問いは「どの design / internal design がどの YAML で cover されるか」「internal design 変更時にどの YAML を処理すべきか」であり、YAML を含む三層対応であった。
 
-ADR-084 は `yaml:` を reserve only とした。その後、M18 の未 commit relation narrowing draft は MVP relation を `maps_to` のみに縮小し、有効な individual mapping を `spec:` → `internal-design:` に限定する案を記述した。現行 draft spec、README、example はその案を反映して `docs/coverage/`、`coverage:`、`COV-*` を MVP mechanism として残している。しかし YAML のない一方向 link に独立台帳が必要かは比較検討されていない。
+ADR-084 は `yaml:` を reserve only とした。その後、M18 の未 commit relation narrowing draft は MVP relation を `maps_to` のみに縮小し、有効な individual mapping を `spec:` → `internal-design:` に限定する案を記述した。調査時点の draft spec、README、example はその案を反映して `docs/coverage/`、`coverage:`、`COV-*` を MVP mechanism として残していた。しかし YAML のない一方向 link に独立台帳が必要かは比較検討されていなかった。
 
-## 現在の coverage 導入根拠
+## 調査時点の coverage 導入根拠
 
 ADR-083 の根拠は、spec と二つの realization artifact（internal design と YAML）が独立して存在し、その相互対応と YAML 変更影響を外部から追跡する必要があることだった。
 
-現行 MVP では YAML endpoint、`covers`、fixture / golden、test evidence、mapping query は operational scope 外である。残る relation は、internal design がどの spec semantics を具体化するかという単方向対応である。この対応は internal-design metadata に source spec ref を宣言する形でも保持できるため、ADR-083 の三層根拠は MVP にそのまま継承できないと考えられる。
+調査時点の MVP 案では YAML endpoint、`covers`、fixture / golden、test evidence、mapping query は operational scope 外であった。残る relation は、internal design がどの spec semantics を具体化するかという単方向対応であった。この対応は internal-design metadata に source spec ref を宣言する形でも保持できるため、ADR-083 の三層根拠は当該 MVP 案にそのまま継承できないと考えられた。
 
 ## Relation ownership の現状整理
 
@@ -64,7 +61,7 @@ ADR-083 の根拠は、spec と二つの realization artifact（internal design 
 | decision provenance / dependency | `depends_on: ADR-084` | 仕様・判断の成立根拠 | ADR / spec / artifact metadata | coverage が由来や判断根拠を表そうとすると衝突する |
 | investigation lineage | `source_refs`, `follow_up_results` | 調査の根拠・派生成果物 | investigation metadata | coverage が調査経路や結果記録を持つと衝突する |
 | requirement / execution tracking | requirement → work-item → task | 必要性と進捗 | requirements / work-items / tasks | coverage が pending / done / impact を持つと衝突する |
-| semantic realization mapping | spec → internal-design → YAML | 同じ design meaning の具体化対応 | 現行 draft では coverage | MVP の `spec → internal-design` は endpoint metadata でも所有可能であり再検討対象 |
+| semantic realization mapping | spec → internal-design → YAML | 同じ design meaning の具体化対応 | 調査時点の draft では coverage | MVP 案の `spec → internal-design` は endpoint metadata でも所有可能であり再検討対象 |
 | completeness / evidence coverage | 未実装、test evidence、coverage matrix 等 | 網羅性・証拠・gap 管理 | MVP では owner 未確定 | semantic mapping と混ぜると責務拡張になるが、external artifact の導入根拠にはなりうる |
 
 semantic realization mapping は、存在する endpoint が自己申告すれば resolver で graph を合成できる。一方、未実装対象、意図的非対応、evidence、review sign-off、baseline は endpoint が存在しない状態や横断判定を含むため、endpoint metadata のみでは扱いにくい。
@@ -109,7 +106,7 @@ MVP の relation は internal-design artifact が metadata で source spec seman
 
 **成立条件**:
 
-MVP は存在する internal design の source spec link 解決に限定し、gap / evidence / sign-off / YAML coverage を operational requirement にしないこと。現行 MVP scope はこの条件に一致する。
+MVP を存在する internal design の source spec link 解決に限定し、gap / evidence / sign-off / YAML coverage を operational requirement にしないこと。調査時点の MVP 案はこの条件に一致した。
 
 ## Candidate C: endpoint metadata のみで運用する
 
@@ -128,9 +125,9 @@ MVP は存在する internal design の source spec link 解決に限定し、ga
 | YAML active 化への拡張 | 台帳を拡張 | 実需時に再判断 | endpoint metadata を拡張 |
 | many-to-many relation | 容易 | query で構築可能 | query で構築可能 |
 | gap / evidence / sign-off | 拡張すれば保持可能 | 再導入または別 artifact が必要 | endpoint metadata のみでは不向き |
-| 現行一次情報による根拠 | 将来想定中心 | MVP scope と整合 | 恒久判断には不足 |
+| 調査時点の一次情報による根拠 | 将来想定中心 | MVP scope と整合 | 恒久判断には不足 |
 
-MVP に限れば Candidate B が最小で責務に合う。Candidate A を維持するなら、mapping の独立 identity や central assurance を MVP で必要とする具体要求が別途必要である。Candidate C は、将来要求が分からない段階では結論を急げない。
+本 investigation が扱った external coverage の問いに限れば Candidate B が最小で責務に合う。Candidate A を維持するなら、mapping の独立 identity や central assurance を MVP で必要とする具体要求が別途必要である。Candidate C は、将来要求が分からない段階では結論を急げない。後続の INV-DOCS-003 と ADR-088 は、Candidate B に残る internal-design endpoint / relation 前提も再評価し、MVP をさらに縮小した。
 
 ## ADR / spec / artifact / task への影響
 
@@ -157,11 +154,11 @@ MVP に限れば Candidate B が最小で責務に合う。Candidate A を維持
 
 ## 推奨案
 
-現時点では **Candidate B: MVP では external coverage artifact を operational scope から外す** を推奨候補とする。
+本 investigation の結論時点では **Candidate B: MVP では external coverage artifact を operational scope から外す** を推奨候補とした。
 
 理由は、ADR-083 の external artifact 導入根拠が YAML を含む三層対応だった一方、ADR-084 と M18 の relation narrowing draft による MVP 案が YAML のない一方向 relation に縮小されていたためである。この relation は internal-design metadata の自己申告で表現でき、独立 mapping set / ID / schema / validator を MVP の必須機構とする実需は一次情報から確認できない。
 
-これは Candidate C の採用ではない。将来、endpoint self-declaration では扱えない completeness / evidence / central review requirement が生じた場合、external artifact を再判断すべきである。
+この推奨自体は Candidate C の採用ではなかった。後続の INV-DOCS-003 / ADR-088 により、MVP の internal-design endpoint / relation も defer された。将来、endpoint self-declaration では扱えない completeness / evidence / central review requirement が生じた場合、external artifact を再判断すべきである。
 
 1. **Verdict**: `remove external coverage artifact from MVP; reconsider later`
 2. **Recommended MVP relation owner**: `docs/internal-design/` metadata

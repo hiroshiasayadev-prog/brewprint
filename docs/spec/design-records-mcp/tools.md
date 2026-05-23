@@ -1,13 +1,14 @@
 ---
 scope: docs/spec/design-records-mcp/tools.md
 status: draft
-last_updated: 2026-05-23
+last_updated: 2026-05-24
 summary: >
   Design Records MCP MVP の read-only tool interface と責務境界を定義する。
 depends_on:
   - docs/adr/076-design-records-mcp.md
   - docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
+  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
 design_record:
   id: SPEC-design-records-mcp-tools
   kind: spec
@@ -16,6 +17,7 @@ design_record:
     - ADR-076
     - ADR-077
     - ADR-087
+    - ADR-088
 ---
 
 # Design Records MCP tools
@@ -251,8 +253,9 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
 
 `validate_records` は、Design Records MCP の metadata index が信頼できる状態かを検証する tool である。
 
-record metadata の基本整合性検査に加え、investigation の `source_refs` および記載済み `follow_up_results` が解決可能であることを検査する。
-運用 gap 診断や coverage query は扱わない。
+record metadata の基本整合性検査に加え、active `spec:` semantic ref、record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*`)、および investigation の `source_refs` / 記載済み `follow_up_results` が canonical reference として解決可能であることを検査する。
+`follow_up_candidates` に artifact reference が記載された場合は canonical form を検査する。Canonical form の unresolved candidate は予定された後続 artifact が未作成であることを示す `info` diagnostic とし、physical path による candidate は noncanonical candidate を示す `info` diagnostic とする。
+ADR-088 により、`internal-design:` / `coverage:` / `COV-*`、semantic realization relation、coverage mapping query は MVP required scope として扱わない。
 
 > 由来: ADR-077 §validate_records の責務
 
@@ -306,7 +309,7 @@ Diagnostic object は少なくとも以下を持つ。
 | field | required | meaning |
 |---|---:|---|
 | `category` | yes | diagnostic category |
-| `severity` | yes | MVP では `error` |
+| `severity` | yes | `error` または `info` |
 | `record_id` | no | 問題がある record ID |
 | `path` | no | 問題がある path |
 | `message` | yes | human-readable message |
@@ -326,8 +329,14 @@ MVP diagnostic category は `schema.md` の定義に従う。
 - `invalid_migrated_to_spec`
 - `missing_record_path`
 
-Investigation の `source_refs` unresolved、記載済み `follow_up_results` unresolved、および path-based noncanonical reference の diagnostic category / severity は、investigation 対応を実装する前に `schema.md` と本tool contractで確定する。
-`follow_up_candidates` が未作成 artifact を指すこと自体は diagnostic としない。
+Investigation validation の severity boundary は以下とする。Concrete diagnostic category 名は実装着手前に `schema.md` と本 tool contract で確定する。
+
+- `source_refs` unresolved、記載済み `follow_up_results` unresolved、およびそれらの field に置かれた path-based noncanonical reference は `error`
+- canonical form で記載された unresolved `follow_up_candidates` は、予定された後続 artifact が未作成であることを示す `info`
+- path-based `follow_up_candidates` は、noncanonical candidate を示す `info`
+
+`ok` は `error` diagnostic がない場合に `true` とし、`info` diagnostic が存在しても `false` にしない。
+Coverage mapping、semantic realization relation、`internal-design:` / `coverage:` / `COV-*` の解決・診断は MVP tool acceptance に含めない。
 
 `accepted_but_not_migrated` / `missing_design_record` などの運用 gap 診断は MVP 外である。
 

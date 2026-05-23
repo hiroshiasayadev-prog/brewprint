@@ -1,261 +1,152 @@
 ---
 scope: docs/spec/concepts/traceability/metadata-schema.md
 status: draft
-last_updated: 2026-05-23
+last_updated: 2026-05-24
 summary: >
-  trace metadata YAML と front matter の最小 schema、semantic_refs、sections、
-  artifact metadata の責務境界を定義する。
+  canonical reference resolution foundation のための spec front matter と
+  investigation reference metadata boundary を定義する。
 depends_on:
   - docs/adr/081-requirement-artifacts-and-spec-traceability.md
   - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
   - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
   - docs/adr/086-investigation-artifact-format-and-lifecycle.md
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
+  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
 semantic_refs:
   - spec:trace.metadata-schema
 sections:
-  spec:trace.metadata-schema.trace-metadata-yaml: Trace metadata YAML
-  spec:trace.metadata-schema.semantic-refs: semantic_refs
-  spec:trace.metadata-schema.sections: sections
+  spec:trace.metadata-schema.trace-metadata: Trace metadata
+  spec:trace.metadata-schema.semantic-refs: `semantic_refs`
+  spec:trace.metadata-schema.sections: `sections`
+  spec:trace.metadata-schema.investigation-reference: Investigation reference metadata
 ---
 
 # Trace metadata schema
 
-## Trace metadata YAML
+## Trace metadata
 
-Trace metadata YAML は、semantic trace を運用するために docs artifact の front matter または YAML file として書かれる metadata である。
+Trace metadata は、canonical reference を宣言・参照するための docs metadata である。Brewprint DSL YAML ではなく、`yaml:` semantic ref の対象でもない。
 
-Trace metadata YAML は brewprint DSL YAML ではない。
-`yaml:` semantic ref prefix の対象でもない。
+MVP でこの spec が定義する metadata は次に限定する。
 
-Examples:
+- spec front matter の `semantic_refs` / `sections`
+- investigation metadata に記載される canonical reference の許容形と validation boundary
 
-- spec front matter
-- internal-design front matter
-- coverage mapping YAML
-- requirement metadata
-- work item metadata
-- investigation metadata
-
-Trace metadata YAML の schema validation は、coverage relation vocabulary ではなく、traceability spec / MCP tool contract の責務である。
+Internal-design relation metadata、coverage mapping YAML、relation entry schema は MVP では定義しない。
 
 ## Common fields
 
-MVP の trace metadata は、必要に応じて以下の field を持てる。
+MVP の spec trace metadata は、必要に応じて以下の field を持てる。
 
 | field | required | type | meaning |
 |---|---:|---|---|
-| `semantic_refs` | no | list<string> | document-level semantic ref list |
-| `sections` | no | map<string,string> | section-level semantic ref to Markdown heading text mapping |
+| `semantic_refs` | no | list<string> | document-level `spec:` semantic ref list |
+| `sections` | no | map<string,string> | section-level `spec:` semantic ref と Markdown heading text の対応 |
 
-この file では、doc-policy 既存の `scope` / `status` / `last_updated` / `summary` / `depends_on` は再定義しない。
-既存 spec front matter の基本 field は doc-policy に従う。
+`scope` / `status` / `last_updated` / `summary` / `depends_on` は doc-policy が所有する。
 
 ## `semantic_refs`
 
-`semantic_refs` は、その document / artifact 全体が所有する document-level semantic ref の list である。
-
-Example:
+`semantic_refs` は、その spec document 全体が所有する document-level `spec:` ref の list である。
 
 ```yaml
 semantic_refs:
-  - spec:trace.semantic-ref
+  - spec:trace
 ```
 
 Rules:
 
-- values は semantic ref grammar に従う
+- value は active `spec:` semantic ref grammar に従う
 - duplicate value は invalid とする
 - document-level ref は同一 project 内で一意でなければならない
 - physical path を value にしてはならない
 
-`semantic_refs` は section-level ref を置く場所ではない。
-Section-level ref は `sections` に置く。
-
 ## `sections`
 
-`sections` は section-level semantic ref と Markdown heading text の対応を表す map である。
-
-Example:
+`sections` は section-level `spec:` semantic ref と Markdown heading text の対応を表す map である。
 
 ```yaml
 sections:
-  spec:trace.semantic-ref: Semantic ref
-  spec:trace.coverage-mapping: Coverage mapping
+  spec:trace.semantic-ref.definition: Semantic ref definition
+  spec:trace.resolve: Resolve
 ```
-
-Map key は section-level semantic ref である。
-Map value は該当 section の Markdown heading text である。
 
 Rules:
 
-- key は semantic ref grammar に従う
+- key は active `spec:` semantic ref grammar に従う
 - key は同一 project 内で一意でなければならない
-- value は heading marker `#` を含めない
-- value は heading text と一致しなければならない
-- heading rename では key を維持し、value を更新する
-- section move では key を維持する
+- value は heading marker `#` を含めず、実在 heading text と一致しなければならない
+- heading rename / section move では semantic ref key を維持し、必要に応じて value のみ更新する
 
-Markdown heading に `{#anchor}` を直接書く方式は使わない。
+Markdown heading に `{#anchor}` を書いて canonical identity とする方式は用いない。
 
 ## Spec front matter
 
-Spec file は、doc-policy の front matter に加えて `semantic_refs` / `sections` を持てる。
-
-Example:
+Spec file は doc-policy の front matter に加えて `semantic_refs` / `sections` を持てる。
 
 ```yaml
 ---
 scope: docs/spec/concepts/traceability/semantic-ref.md
 status: draft
-last_updated: 2026-05-18
+last_updated: 2026-05-24
 summary: >
   semantic ref の grammar と安定性を定義する。
 depends_on:
-  - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
+  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
 semantic_refs:
   - spec:trace.semantic-ref
 sections:
-  spec:trace.semantic-ref: Semantic ref
-  spec:trace.semantic-ref-grammar: Semantic ref grammar
+  spec:trace.semantic-ref.definition: Semantic ref definition
 ---
 ```
 
-`semantic_refs` / `sections` は Design Records MCP の `design_record` metadata とは別である。
-Design Records MCP record index が読む metadata と、traceability resolver が読む semantic refs は別責務として扱う。
+`semantic_refs` / `sections` は Design Records MCP の record metadata とは別責務である。
 
-## Internal-design front matter
+## Internal design metadata boundary
 
-Internal design file は、document-level semantic ref を `semantic_refs` に置ける。
+`docs/internal-design/` は implementation-facing artifact layer として存続するが、semantic trace MVP は internal design front matter に `internal-design:` ref や source `spec:` relation declaration を要求しない。
 
-Example:
+Internal design を canonical reference として解決すべき concrete consumer が生じた場合に、prefix、metadata field、resolver rule、validation contract を後続判断する。
 
-```yaml
----
-scope: docs/internal-design/resolver/semantic-ref-index.md
-status: draft
-last_updated: 2026-05-18
-summary: >
-  semantic ref index resolver の内部設計を定義する。
-depends_on:
-  - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
-semantic_refs:
-  - internal-design:resolver.semantic-ref-index
----
-```
+## Coverage metadata boundary
 
-MVP では `internal-design:` ref の section-level 解決単位を固定しない。
-必要になった場合は `sections` mapping を使える。
+MVP は external coverage artifact、`coverage:` ref、`COV-*` ID、coverage mapping YAML schema を定義しない。
 
-## Coverage metadata
+Gap / completeness / evidence / sign-off / audit / approved relation set を外部 artifact で保持する必要が生じた場合、名称と schema を含めて後続判断する。
 
-Coverage artifact は、mapping set / group の semantic ref を `semantic_refs` に置ける。
+## Requirement / work item metadata boundary
 
-Example:
+Requirement / work item は stable ID を持つが、本 spec はその完全 schema、Design Records MCP record kind 化、または semantic relation endpoint 化を定義しない。
 
-```yaml
----
-scope: docs/coverage/traceability/semantic-ref.yaml
-status: draft
-last_updated: 2026-05-18
-summary: >
-  trace semantic ref の coverage mapping set。
-depends_on:
-  - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
-semantic_refs:
-  - coverage:trace.semantic-ref
----
-```
+## Investigation reference metadata
 
-Coverage mapping の具体 schema は [`coverage-mapping.md`](coverage-mapping.md) が定義する。
+Investigation metadata の field 構成、required / optional 区分、status、lifecycle、authoring format は ADR-086 と [`docs/investigations/README.md`](../../../investigations/README.md) が所有する。
 
-## Requirement / work item metadata
+この spec が所有するのは、ADR-087 / ADR-088 に基づく canonical reference rule である。
 
-Requirement / work item は MVP では prefix-ref ではなく ID-as-ref を持つ。
-
-Requirement metadata example:
-
-```yaml
-id: REQ-TRACE-001
-title: semantic trace MVP schema を定義する
-status: accepted
-source_refs:
-  specs:
-    - spec:trace.semantic-ref
-work_items:
-  - WORK-TRACE-001
-```
-
-Work item metadata example:
-
-```yaml
-id: WORK-TRACE-001
-source_requirement: REQ-TRACE-001
-impact_refs:
-  specs:
-    - spec:trace.semantic-ref
-  internal_design:
-    - internal-design:resolver.semantic-ref-index
-```
-
-MVP では requirement / work item の完全 schema は定義しない。
-この file は、metadata 内で prefix-ref と ID-as-ref が併存しうることだけを示す。
-
-## Investigation metadata
-
-Investigation は ADR-086 に従い Markdown 冒頭の bullet metadata を持つ。
-
-Required metadata:
-
-- `status`
-- `date`
-- `trigger`
-- `scope`
-- `non_scope`
-- `source_refs`
-- `follow_up_candidates`
-
-Optional metadata:
-
-- `supersedes`
-- `related_requirements`
-- `related_work_items`
-- `related_adrs`
-- `related_specs`
-- `related_internal_design`
-- `related_coverage`
-- `follow_up_results`
-
-Reference rules established by ADR-087:
-
-- `source_refs` は canonical reference として artifact ID または semantic ref を用い、記載値は resolve 可能でなければならない
-- `follow_up_results` は記載されている場合、canonical reference として artifact ID または semantic ref を用い、記載値は resolve 可能でなければならない
-- `follow_up_candidates` は未作成 artifact を指しうるため、参照先の存在は要求しない
-- physical path は `source_refs` / `follow_up_results` の canonical reference ではない。legacy input として受理する場合は noncanonical reference として扱う
+- `source_refs` は record ID-as-ref または active `spec:` semantic ref を用い、記載値は resolve 可能でなければならない
+- `follow_up_results` は記載する場合、record ID-as-ref または active `spec:` semantic ref を用い、記載値は resolve 可能でなければならない
+- `follow_up_candidates` に artifact reference を記載する場合、canonical form を用いる。未作成 artifact 候補を指しうるため、unresolved は error にせず `info` diagnostic として可視化する
+- physical path は canonical reference としない。`source_refs` / `follow_up_results` に現れた場合は error diagnostic、`follow_up_candidates` に現れた場合は noncanonical candidate を示す `info` diagnostic として扱う
 - `trigger` / `related_*` の resolve / validation rule は後続 contract で定義する
 
 ## Validation responsibility
 
-Trace metadata YAML schema validation は、relation vocabulary の `validates` ではない。
+MVP validation は relation validation ではなく canonical reference validation である。
 
-Validation examples:
+- `semantic_refs` / `sections` の grammar と uniqueness
+- `sections` value と実在 heading の一致
+- investigation `source_refs` / 記載済み `follow_up_results` の canonicality と resolve
+- investigation `follow_up_candidates` に記載された artifact reference の canonical form と、unresolved candidate の `info` diagnostic
+- physical path の noncanonical diagnostic。`source_refs` / `follow_up_results` は error、`follow_up_candidates` は `info` とする
 
-- `semantic_refs` の値が grammar に従っているか
-- `sections` の key が grammar に従っているか
-- section mapping の value が実在 heading と一致するか
-- duplicate semantic ref がないか
-- coverage mapping の source / target が active prefix を持つか
-- investigation の `source_refs` / 記載済み `follow_up_results` が canonical reference であり、resolve 可能か
-- investigation の `follow_up_candidates` が未作成 artifact を指しているだけで orphan error になっていないか
-
-これらは resolver / validator / MCP tool contract が扱う。
+Coverage mapping endpoint、relation direction、`COV-*`、`internal-design:` resolve は MVP validation 対象外である。
 
 ## Out of scope
 
-この file では以下を定義しない。
-
-- brewprint DSL YAML schema
-- brewprint DSL YAML entity-level semantic ref
+- brewprint DSL YAML schema / entity-level semantic ref
+- internal-design semantic ref / relation metadata schema
+- coverage mapping schema
 - requirement / work item の完全 lifecycle schema
 - MCP writer tool request / response
-- fixture-local coverage schema
+- fixture-level traceability

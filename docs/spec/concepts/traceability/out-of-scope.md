@@ -1,144 +1,125 @@
 ---
 scope: docs/spec/concepts/traceability/out-of-scope.md
 status: draft
-last_updated: 2026-05-18
+last_updated: 2026-05-24
 summary: >
-  traceability MVP の scope 外、future extension 候補、後続 requirement / work item 化の基準を定義する。
+  canonical reference resolution foundation の scope 外と、
+  future extension を再判断する trigger を定義する。
 depends_on:
   - docs/adr/081-requirement-artifacts-and-spec-traceability.md
   - docs/adr/082-golden-fixture-and-self-hosting-requirement-boundary.md
   - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
   - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
+  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
+  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
 semantic_refs:
   - spec:trace.out-of-scope
 sections:
-  spec:trace.out-of-scope: Out of scope
+  spec:trace.out-of-scope.boundary: MVP out-of-scope boundary
   spec:trace.future-extensions: Future extensions
 ---
 
 # Traceability out of scope
 
-## Out of scope
+## MVP out-of-scope boundary
 
-この file は、traceability MVP で扱わないものを明示する。
+Semantic trace MVP は canonical reference resolution foundation に限定する。Scope 外の項目は不要という意味ではなく、concrete requirement が確認された時点で後続 ADR / requirement / work item により判断する。
 
-MVP scope 外の項目は、不要という意味ではない。
-必要になった場合は、ADR-081 の requirements layer に捕捉し、work item によって spec / internal design / coverage / implementation へ展開する。
+## Internal-design semantic endpoint and realization relation
+
+`docs/internal-design/` artifact layer は存続するが、MVP は以下を扱わない。
+
+- `internal-design:` semantic ref の active 化
+- internal design document の canonical ref resolve / validation
+- internal design metadata による source `spec:` relation declaration
+- `spec:` → `internal-design:` realization mapping
+- spec から internal design への reverse graph / impact query
+
+再判断 trigger:
+
+- 複数の internal design document について spec からの機械的 navigation / impact analysis が必要になった場合
+- investigation / work item / MCP query が internal design artifact の canonical resolve を必要とする場合
+- YAML trace とともに cross-layer realization chain を扱う必要が生じた場合
+
+## External coverage artifact and relation vocabulary
+
+MVP は external relation / assurance artifact、その配置、`coverage:` ref、`COV-*` mapping identity、coverage mapping YAML schema を扱わない。
+
+`maps_to` / `covers` / `validates` を semantic realization relation vocabulary として operational に採用することも延期する。Validation 自体は relation ではなく、canonical reference の tool behavior / metadata contract として MVP に残る。
+
+再判断 trigger:
+
+- gap / completeness / approved relation set を中央管理する必要が生じた場合
+- evidence / sign-off / audit snapshot / release baseline を relation と結び付ける必要が生じた場合
+- relation entry 自体に stable identity / approval / lifecycle / history が必要になった場合
+
+将来 external artifact を導入する場合、名称を `coverage` とするか、semantic mapping と assurance matrix を分けるか、どの directory に配置するかも判断対象とする。MVP は external artifact 用 directory を予約しない。
 
 ## Brewprint DSL YAML entity-level refs
 
 MVP では `yaml:` prefix を active 化しない。
 
-以下は scope 外である。
+Scope 外:
 
-- brewprint DSL YAML file-level ref
-- brewprint DSL YAML entity-level ref
+- brewprint DSL YAML file-level / entity-level semantic ref
 - node / edge / view / model / task / asset 単位の semantic ref
-- YAML 内 anchor
-- YAML logical unit の resolver rule
+- YAML 内 anchor と logical unit resolver rule
+- spec / internal design / YAML realization chain
 
-`yaml:` active 化は、self-hosting / UC-002 再構築、または YAML entity ref / resolver rule の spec 化が進んだ時点で後続 ADR / requirement により判断する。
+`yaml:` active 化は、self-hosting / UC-002 再構築、または YAML entity ref / resolver rule の concrete requirement が成立した時点で判断する。
 
 ## Fixture / golden traceability
 
-MVP では `fixture:` prefix を定義しない。
-`fixture:` は reserved prefix でもない。
+MVP では `fixture:` prefix を定義せず、fixture / golden を project-level canonical reference foundation に含めない。
 
-Fixture / golden は brewprint processor / renderer / validator の debug / regression test asset であり、project-level semantic trace graph には含めない。
-
-Scope outside MVP:
+Scope 外:
 
 - fixture semantic ref
-- fixture-local coverage の project-level graph 統合
+- fixture-local coverage の project-level 統合
 - golden output と spec semantic ref の対応
 - render expected comparison semantics
-- test harness schema
-- golden update workflow
+- test harness schema / golden update workflow
 
-Fixture-level traceability が必要になった場合は、project-level trace graph とは別 layer として後続 requirement / work item で導入する。
+## Requirement / work-item semantic endpoints
 
-## `validates` relation
-
-MVP relation vocabulary に `validates` は含めない。
-
-これは validation 機能を不要とする意味ではない。
-MVP で外すのは、coverage edge としての `validates` relation である。
-
-以下は後続 spec / tool contract の責務として扱う。
-
-- semantic ref resolver
-- duplicate detection
-- orphan detection
-- trace metadata YAML schema validation
-- MCP writer artifact generation contract
-
-## Requirement / work-item prefixes
-
-MVP では `requirement:` / `work-item:` prefix を定義しない。
-Requirement / work item は `REQ-*` / `WORK-*` の ID-as-ref として扱う。
-
-Requirement / work item を coverage edge の endpoint として扱う必要が出た場合は、後続 ADR / requirement で prefix reserve または active 化を判断する。
+Requirement / work item は `REQ-*` / `WORK-*` の stable ID を持つが、MVP は `requirement:` / `work-item:` semantic prefix や relation endpoint 化を定義しない。Design Records MCP の public resolve contract に含めるかも、consumer requirement が成立した時点で判断する。
 
 ## Full MCP writer tools
 
 MVP では MCP writer tool の request / response schema を定義しない。
 
-Future writer tool candidates:
+Future candidates:
 
-- create requirement
-- update requirement status
-- create work item
-- add coverage mapping
-- register semantic ref
+- create requirement / work item
+- register `spec:` semantic ref
 - update section mapping
+- update investigation reference metadata
 
-Writer tool を導入する場合は、以下を別 spec / ADR で定義する。
-
-- dry-run diff
-- user confirmation
-- conflict handling
-- formatting preservation
-- write permission boundary
-- generated metadata ownership
-
-## Relation ontology expansion
-
-MVP relation vocabulary は `maps_to` / `covers` のみである。
-
-以下の relation は MVP では定義しない。
-
-- `validates`
-- `depends_on`
-- `implements`
-- `derives_from`
-- `supersedes`
-- `redirects_to`
-- `affects`
-
-既存 relation が複数の意味で運用されていることが coverage review で確認された場合、relation vocabulary の追加または rename を検討する。
+Writer tool を導入する場合は、dry-run diff、user confirmation、conflict handling、format preservation、write permission boundary を別 spec / ADR で定義する。
 
 ## Future extensions
 
-後続 extension 候補は以下である。
-
 | extension | trigger |
 |---|---|
-| `yaml:` active 化 | self-hosting / UC-002 再構築、または YAML entity ref / resolver rule の spec 化 |
-| requirement / work-item prefix | requirement / work item を coverage edge endpoint にする必要が出た場合 |
-| fixture-level traceability | golden fixture と docs/spec 対応を長期管理する必要が出た場合 |
-| validation relation | test / validation artifact を trace graph の一級対象にする必要が出た場合 |
-| MCP trace tools | semantic ref query / resolve / validate を MCP contract として公開する必要が出た場合 |
-| MCP writer tools | trace metadata artifact を tool で生成・更新する必要が出た場合 |
+| `internal-design:` active 化 | internal design の canonical navigation / validation が concrete requirement になった場合 |
+| realization relation | spec と implementation-facing artifact 間の machine-readable relation が必要になった場合 |
+| external relation artifact | gap / evidence / sign-off / lifecycle の中央管理が必要になった場合 |
+| `yaml:` active 化 | YAML entity ref / cross-layer trace が必要になった場合 |
+| fixture-level traceability | golden fixture と docs/spec の対応を長期管理する必要が生じた場合 |
+| requirement / work-item prefix | それらを semantic endpoint として扱う必要が生じた場合 |
+| MCP resolve contract refinement | ADR-087 / ADR-088 の canonical reference resolve を実装可能な request / response / diagnostic contract にする場合 |
+| MCP writer tools | canonical metadata を tool で生成・更新する必要が生じた場合 |
 
 ## Follow-up artifact placement
 
-Future extension が必要になった場合、置き場所は ADR-083 の artifact placement decision rule に従う。
+Future extension が必要になった場合、要求・判断・進捗・contract の owner は既存 artifact boundary に従う。
 
 - 要求・不足・要望: `docs/requirements/`
-- 横断進捗・影響範囲: `docs/work-items/`
-- 具体作業手順: `docs/tasks/`
+- 判断: `docs/adr/`
+- 横断進捗: `docs/work-items/`
+- 具体作業: `docs/tasks/`
 - internal wiring route: `docs/internal-design/`
-- project-level trace relation: `docs/coverage/`
-- MCP tool contract: `docs/spec/design-records-mcp/` または将来の tool spec 配下
+- canonical reference / tool-independent trace contract: `docs/spec/concepts/traceability/`
+- MCP tool contract: `docs/spec/design-records-mcp/`
 
-Traceability spec は、future extension の要求や作業状態を所有しない。
+> 由来: ADR-082, ADR-083, ADR-084, ADR-087, ADR-088; INV-DOCS-002; INV-DOCS-003
