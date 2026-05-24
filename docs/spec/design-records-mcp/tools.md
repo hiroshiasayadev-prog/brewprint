@@ -30,7 +30,8 @@ Design Records MCP MVP の P0 tool は以下である。
 |---|---|---|
 | `list_records` | P0 | record index を構造化して返す |
 | `get_record` | P0 | record ID から metadata / path / headings / raw body を取得する |
-| `validate_records` | P0 | record metadata の基本整合性を検査する |
+| `validate_records` | P0 | record metadata の基本整合性と canonical reference validation を検査する |
+| `resolve_reference` | P0 | canonical semantic/artifact reference を document / section / record へ解決する |
 
 P1 の任意補助 tool として以下を許容する。
 
@@ -169,7 +170,7 @@ Investigation の domain-scoped ID に対する range / domain filter はこの�
 
 `records[]` の並び順は `order_by` / `order` に従う。
 
-`order_by: id` で mixed kind の record を返す場合の kind 間 ordering、および investigation ID の domain-scoped ordering は、investigation 対応の tool contract refinement で確定する。
+`order_by: id` で mixed kind の record を返す場合は、canonical `id` の ASCII lexical order を用いる。同一 canonical `id` が複数 entry に存在する場合も並び順は path の ASCII lexical order で安定化し、`duplicate_id` diagnostic は別途返す。
 `decision` の `id_range` は従来どおり `ADR-NNN` の `NNN` を数値比較する。
 
 ## `get_record`
@@ -246,6 +247,88 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
 `body` は元ファイル内容をそのまま返す。
 整形・要約・正規化を行ってはならない。
 構造化 metadata や headings は body とは別 field として返す。
+
+## `resolve_reference`
+
+### Purpose
+
+`resolve_reference` は、MVP canonical reference を単一の document / section / record target に解決する read-only tool である。Validation はこの resolver と同一の lookup 規則を用い、別の解決規則を持ってはならない。
+
+### Request
+
+```json
+{
+  "ref": "spec:trace.semantic-ref.definition"
+}
+```
+
+| field | required | type | meaning |
+|---|---:|---|---|
+| `ref` | yes | string | 解決対象の canonical reference candidate。前後 whitespace は許容せず、入力文字列をそのまま評価する |
+
+Supported input は以下のみとする。
+
+| input form | ref kind | lookup source |
+|---|---|---|
+| active `spec:` document-level ref | `semantic_ref` | spec front matter `semantic_refs` |
+| active `spec:` section-level ref | `semantic_ref` | spec front matter `sections` |
+| `ADR-NNN` | `record_id` | `decision` record index |
+| `SPEC-<slug>` | `record_id` | `spec` record index |
+| `INV-<DOMAIN>-NNN` | `record_id` | `investigation` record index |
+
+`internal-design:` / `coverage:`、`COV-*`、`REQ-*`、`WORK-*`、physical path、および grammar に合わない ID form は supported input ではなく、direct query では tool execution error ではなく `status: "unsupported"` を返す。`yaml:` は reserved prefix だが、MVP は public resolver input または direct query response behavior を定義しない。
+
+### Response
+
+MVP が behavior を定義する direct query response は、常に以下の top-level field を持つ。
+
+| field | required | meaning |
+|---|---:|---|
+| `ref` | yes | request で受け取った文字列 |
+| `ref_kind` | yes | `semantic_ref` / `record_id` / `unsupported` |
+| `status` | yes | `resolved` / `unresolved` / `unsupported` |
+| `target` | yes | `resolved` の場合は target object、それ以外は `null` |
+| `diagnostics` | yes | resolution diagnostic list。正常解決では empty list |
+
+Resolved section-level `spec:` example:
+
+```json
+{
+  "ref": "spec:trace.semantic-ref.definition",
+  "ref_kind": "semantic_ref",
+  "status": "resolved",
+  "target": {
+    "target_type": "section",
+    "path": "docs/spec/concepts/traceability/semantic-ref.md",
+    "section": "Semantic ref definition"
+  },
+  "diagnostics": []
+}
+```
+
+Resolved document-level `spec:` target は `target_type: "document"` と `path` を返し、`section` を持たない。入力 canonical ref は top-level `ref` に保持するため、target に重複して返さない。Resolved section-level `spec:` target は `target_type: "section"`、`path`、`section` を返す。MVP は section-level ref と document-level ref の親子 relation を public response として定義せず、section-level ref の文字列 prefix から親 document ref を推定しない。Resolved record ID-as-ref target は `target_type: "record"`、`path`、`record_id`、`record_kind`、`title`、`status` を返す。
+
+Supported form だが lookup target が存在しない場合は `status: "unresolved"`、`target: null` とし、`diagnostics` に `unresolved_reference` を含める。同一 `spec:` ref または record ID が複数 target へ解決される場合、任意の一件を返してはならない。`status: "unresolved"`、`target: null` とし、`ambiguous_reference` diagnostic を返す。Validation では同一原因を `duplicate_semantic_ref` または `duplicate_id` の `error` として報告する。
+
+Unsupported example:
+
+```json
+{
+  "ref": "internal-design:resolver.semantic-ref-index",
+  "ref_kind": "unsupported",
+  "status": "unsupported",
+  "target": null,
+  "diagnostics": [
+    {
+      "category": "unsupported_reference",
+      "severity": "info",
+      "message": "reference form is outside the MVP resolver contract"
+    }
+  ]
+}
+```
+
+Direct query の `unsupported_reference` は resolver の failure ではなく input boundary の可視化であるため `info` とする。ただし unsupported input が investigation metadata の validation 対象 field に現れた場合の severity は、下記 `validate_records` の `unsupported_reference` contract に従う。Reserved `yaml:` の public resolver input / direct query response behavior、および investigation metadata validation behavior は MVP では定義しない。
 
 ## `validate_records`
 
@@ -329,11 +412,25 @@ MVP diagnostic category は `schema.md` の定義に従う。
 - `invalid_migrated_to_spec`
 - `missing_record_path`
 
-Investigation validation の severity boundary は以下とする。Concrete diagnostic category 名は実装着手前に `schema.md` と本 tool contract で確定する。
+Canonical reference / investigation validation の concrete category と severity は以下とする。
 
-- `source_refs` unresolved、記載済み `follow_up_results` unresolved、およびそれらの field に置かれた path-based noncanonical reference は `error`
-- canonical form で記載された unresolved `follow_up_candidates` は、予定された後続 artifact が未作成であることを示す `info`
-- path-based `follow_up_candidates` は、noncanonical candidate を示す `info`
+| category | severity | field / condition |
+|---|---|---|
+| `invalid_semantic_ref_declaration` | `error` | spec front matter の `semantic_refs` entry または `sections` key が active `spec:` grammar に従わない |
+| `missing_section_target` | `error` | spec front matter の `sections` value と一致する Markdown heading が存在しない |
+| `ambiguous_section_target` | `error` | spec front matter の `sections` value が同一 document 内の複数 heading に一致し、section target を単一解決できない |
+| `duplicate_semantic_ref` | `error` | 同一 active `spec:` ref が複数 target に宣言された |
+| `unresolved_source_ref` | `error` | investigation `source_refs` の supported canonical ref が解決不能 |
+| `unresolved_follow_up_result` | `error` | investigation `follow_up_results` の supported canonical ref が解決不能 |
+| `unresolved_follow_up_candidate` | `info` | investigation `follow_up_candidates` の supported canonical ref が未解決 |
+| `noncanonical_source_ref` | `error` | investigation `source_refs` に physical path が記載された |
+| `noncanonical_follow_up_result` | `error` | investigation `follow_up_results` に physical path が記載された |
+| `noncanonical_follow_up_candidate` | `info` | investigation `follow_up_candidates` に physical path が記載された |
+| `unsupported_reference` | `error` / `info` | MVP が unsupported と定義する metadata reference。`source_refs` / `follow_up_results` では `error`、`follow_up_candidates` では `info`。Reserved `yaml:` はこの category の対象に含めず、MVP では behavior を定義しない |
+
+Investigation reference diagnostic (`unresolved_*` / `noncanonical_*` / metadata field 由来の `unsupported_reference`) は、既存の diagnostic field に加えて `field`（`source_refs` / `follow_up_results` / `follow_up_candidates`）、`value`（入力 ref 文字列）、`ref_status`（`unresolved` / `unsupported` / `noncanonical`）を必須で返す。対象が record ID-as-ref の場合は `target_id` も返してよい。Investigation metadata が duplicate semantic ref または duplicate record ID を指して単一解決できない場合は field-specific diagnostic を追加せず、index defect を示す `duplicate_semantic_ref` または `duplicate_id` のみを返す。これら duplicate diagnostic および spec declaration / section lookup diagnostic は investigation metadata field 由来の追加 field を要求しない。
+
+`depends_on` は `ADR-*` / `SPEC-*` / `INV-*` の canonical record ID-as-ref を参照できる。したがって `ADR-086` の `depends_on: INV-DOCS-001` は contract 上 valid であり、investigation integration 実装前に返る `missing_depends_on_target` は既知 implementation gap である。M19 implementation 後は `INV-DOCS-001` の index integration によりこの diagnostic が解消されなければならない。
 
 `ok` は `error` diagnostic がない場合に `true` とし、`info` diagnostic が存在しても `false` にしない。
 Coverage mapping、semantic realization relation、`internal-design:` / `coverage:` / `COV-*` の解決・診断は MVP tool acceptance に含めない。

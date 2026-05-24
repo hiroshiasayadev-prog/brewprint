@@ -46,14 +46,25 @@ M19 が扱うもの:
 
 ## Phase A: contract refinement
 
-- [ ] `docs/spec/design-records-mcp/{overview,schema,tools}.md` の ADR-087 / ADR-088 反映状況を確認する
-- [ ] semantic/artifact ref resolve tool の名称、request、response schema を確定する
-- [ ] active `spec:` ref と record ID-as-ref の resolver input / output contract を確定する
-- [ ] investigation validation diagnostic category / severity を確定する
-- [ ] ADR / spec の `depends_on` が `INV-*` を参照できる contract と、investigation record integration 前の既知 unresolved の扱いを確定する
-- [ ] noncanonical physical path reference diagnostic の category / severity を確定する
-- [ ] record response の新 contract への切替条件を確定する
-- [ ] `docs/spec/concepts/traceability/resolve-and-validation.md` と矛盾がないことを確認する
+- [x] `docs/spec/design-records-mcp/{overview,schema,tools}.md` の ADR-087 / ADR-088 反映状況を確認する
+- [x] semantic/artifact ref resolve tool の名称、request、response schema を確定する
+- [x] active `spec:` ref と record ID-as-ref の resolver input / output contract を確定する
+- [x] investigation validation diagnostic category / severity を確定する
+- [x] ADR / spec の `depends_on` が `INV-*` を参照できる contract と、investigation record integration 前の既知 unresolved の扱いを確定する
+- [x] noncanonical physical path reference diagnostic の category / severity を確定する
+- [x] record response の新 contract への切替条件を確定する
+- [x] `docs/spec/concepts/traceability/resolve-and-validation.md` と矛盾がないことを確認する
+
+### Phase A contract result
+
+- Public resolver tool 名は `resolve_reference` とする。Request は `{ "ref": string }`、response は `ref` / `ref_kind` / `status` / `target` / `diagnostics` を必須とする。
+- Active resolve input は active `spec:` semantic ref と record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*`) のみとする。`internal-design:` / `coverage:` / `COV-*` / `REQ-*` / `WORK-*` / physical path / unsupported ID form は direct query では `status: unsupported` を返す。Reserved prefix `yaml:` の public resolver input / direct query response behavior、および investigation metadata validation behavior は MVP で定義しない。
+- `spec:` document-level target は document path を、section-level target は document path と heading text を返す。入力 canonical ref は top-level `ref` に保持し、target に重複して返さない。MVP は section-level ref と document-level ref の親子 relation を public response として定義せず、section ref の文字列 prefix から親 document ref は推定しない。Record ID target は indexed record の path / kind / title / status を返す。
+- Supported form が解決不能なら `unresolved_reference`、同一 ref が複数 target に解決されるなら `ambiguous_reference` とし、任意の一件を選択しない。Validation 側では duplicate を error として返す。
+- Semantic ref validation category は `invalid_semantic_ref_declaration` / `missing_section_target` / `ambiguous_section_target` / `duplicate_semantic_ref` とする。Investigation validation category は `unresolved_source_ref` / `unresolved_follow_up_result` / `unresolved_follow_up_candidate`、`noncanonical_source_ref` / `noncanonical_follow_up_result` / `noncanonical_follow_up_candidate`、および metadata field 由来の `unsupported_reference` とする。
+- `source_refs` / `follow_up_results` の unresolved・noncanonical・unsupported は error とし、`follow_up_candidates` の対応する状態は info とする。Investigation metadata が duplicate semantic ref または duplicate record ID を指す場合は field-specific diagnostic を追加せず、`duplicate_semantic_ref` / `duplicate_id` のみで報告する。`validate_records.ok` は error diagnostic の有無だけで決まる。
+- Public record response は common fields + kind-specific detail object のみを返し、旧 flat metadata field との compatibility 併存を設けない。Parser / index / list / get / validate と tests を同一切替単位で更新する。
+- ADR / spec の `depends_on` は `INV-*` を valid canonical record ID-as-ref として参照できる。開始時 baseline では `ADR-086 depends_on references missing record INV-DOCS-001` が既知 error として確認されており、Phase B/C/D で investigation integration 後の解消を検証する。
 
 ## Phase B: investigation record integration
 
@@ -80,7 +91,11 @@ M19 が扱うもの:
 - [ ] `INV-DOCS-001` を investigation record として取得し、record ID-as-ref `INV-DOCS-001` を解決できる test を追加する
 - [ ] `ADR-086` の `depends_on: INV-DOCS-001` が investigation record integration 後に resolve でき、現行 `missing_depends_on_target` error が解消される test を追加する
 - [ ] `INV-DOCS-001` の legacy path-based `follow_up_candidates` が、canonical resolution 成功の前提ではなく noncanonical candidate の `info` diagnostic 期待入力として扱われる test を追加する
-- [ ] active `spec:` semantic ref の document / section resolve test を追加する
+- [ ] active `spec:` semantic ref の document / section resolve test を追加する。Section response は path と heading text を返し、section ref の文字列 prefix から親 document ref を推定しないことを検証する
+- [ ] `spec:` declaration grammar error、section heading missing、同一 document 内の section heading ambiguity の validation test を追加する
+- [ ] supported canonical ref の unresolved response と、duplicate target に対する ambiguous response が任意 target を返さない contract test を追加する
+- [ ] investigation metadata が duplicate semantic ref または duplicate record ID を指す場合、field-specific diagnostic を追加せず `duplicate_semantic_ref` / `duplicate_id` のみを返す validation test を追加する
+- [ ] `internal-design:` / `coverage:` / `COV-*` / unsupported ID form の direct query が `status: unsupported` を返す contract test を追加する
 - [ ] `ADR-088` / `INV-DOCS-002` / `INV-DOCS-003` の ID-as-ref resolve test を追加する
 - [ ] unresolved `source_refs` / `follow_up_results` の error test を追加する
 - [ ] canonical form の unresolved `follow_up_candidates` が orphan error ではなく `info` diagnostic になる test を追加する

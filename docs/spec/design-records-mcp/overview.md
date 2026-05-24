@@ -86,7 +86,7 @@ ADR-088 により、MVP で必須とする resolver input は active `spec:` sem
 
 resolver が lookup source として読む artifact と、`list_records` / `get_record` が record kind として公開する artifact は同一集合である必要はない。
 
-具体的な resolve tool の名称と request / response schema は後続 tool contract で定義する。
+M19 Phase A で、resolver の public tool 名を `resolve_reference` とし、active `spec:` semantic ref と record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*`) を active lookup input として扱う contract を `tools.md` に定義する。`internal-design:` / `coverage:` / `COV-*` および未採用 ID form は `unsupported` response とする。Reserved prefix である `yaml:` の public resolver input / direct query response behavior は MVP で定義しない。
 
 > 由来: ADR-087 §4
 
@@ -97,6 +97,7 @@ MVP の P0 tool は以下である。
 - `list_records`
 - `get_record`
 - `validate_records`
+- `resolve_reference`
 
 P1 の任意補助 tool として、以下を許容する。
 
@@ -126,7 +127,6 @@ MVP では以下を扱わない。
 - section 単位の完全な traceability
 - `topics` / `affects` / `refines` / `conflicts_with` metadata
 - task file / UC docs / impl notes の record kind としての index 化
-- semantic/artifact ref resolve tool の具体 contract
 - `internal-design:` / `coverage:` / `COV-*` の resolve と semantic realization relation validation
 - coverage mapping query
 
