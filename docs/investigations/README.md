@@ -214,3 +214,7 @@ investigation の調査中に別領域の調査が必要になった場合、別
 - `docs/investigations/docs/INV-DOCS-001-investigation-artifact-format-and-lifecycle.md` — investigation artifact の directory / ID / format / lifecycle / authoring boundary を調査した。
 - `docs/investigations/docs/INV-DOCS-002-external-coverage-artifact-necessity.md` — semantic trace MVP で external coverage artifact が必要かを調査した。
 - `docs/investigations/docs/INV-DOCS-003-internal-design-semantic-trace-mvp-necessity.md` — `internal-design:` endpoint / realization relation の MVP 必要性を調査した。
+- `docs/investigations/docs/INV-DOCS-004-openfasttrace-adoption-feasibility-and-canonical-identity-boundary.md` — OFT が deferred realization coverage の候補となる場合の canonical identity / M19 contract 境界を調査する。
+- `docs/investigations/docs/INV-DOCS-005-doorstop-artifact-model-overlap-and-adoption-boundary.md` — Doorstop が requirements / spec / trace artifact ownership と重複する範囲および限定導入境界を調査する。
+- `docs/investigations/docs/INV-DOCS-006-llm-first-intent-transfer-and-external-tool-evaluation-boundary.md` — LLM-first の intent transfer と外部 tool 評価における agent I/O / connector cost 境界を調査する。
+- `docs/investigations/docs/INV-DOCS-007-kiro-specs-and-spec-kit-positioning-boundary.md` — Kiro Specs / GitHub Spec Kit と brewprint の positioning 境界を調査する。
