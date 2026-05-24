@@ -68,11 +68,11 @@ M19 が扱うもの:
 
 ## Phase B0: internal design refinement
 
-- [ ] `docs/internal-design/resolver/semantic-ref-index.md` を finalized Phase A contract に追従させる
-- [ ] investigation metadata parser / record discovery / index integration route を具体化する
-- [ ] `resolve_reference` の lookup source と `validate_records` の shared resolution route を具体化する
-- [ ] common fields + kind-specific detail response への切替箇所と、旧 flat response を残さない移行 route を具体化する
-- [ ] `yaml:`、REQ / WORK / task、coverage / internal-design relation を implementation scope に持ち込まないことを確認する
+- [x] `docs/internal-design/resolver/semantic-ref-index.md` を finalized Phase A contract に追従させる
+- [x] investigation metadata parser / record discovery / index integration route を具体化する
+- [x] `resolve_reference` の lookup source と `validate_records` の shared resolution route を具体化する
+- [x] common fields + kind-specific detail response への切替箇所と、旧 flat response を残さない移行 route を具体化する
+- [x] `yaml:`、REQ / WORK / task、coverage / internal-design relation を implementation scope に持ち込まないことを確認する
 
 ## Phase B: investigation record integration
 
