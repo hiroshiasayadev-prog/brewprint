@@ -66,6 +66,14 @@ M19 が扱うもの:
 - Public record response は common fields + kind-specific detail object のみを返し、旧 flat metadata field との compatibility 併存を設けない。Parser / index / list / get / validate と tests を同一切替単位で更新する。
 - ADR / spec の `depends_on` は `INV-*` を valid canonical record ID-as-ref として参照できる。開始時 baseline では `ADR-086 depends_on references missing record INV-DOCS-001` が既知 error として確認されており、Phase B/C/D で investigation integration 後の解消を検証する。
 
+## Phase B0: internal design refinement
+
+- [ ] `docs/internal-design/resolver/semantic-ref-index.md` を finalized Phase A contract に追従させる
+- [ ] investigation metadata parser / record discovery / index integration route を具体化する
+- [ ] `resolve_reference` の lookup source と `validate_records` の shared resolution route を具体化する
+- [ ] common fields + kind-specific detail response への切替箇所と、旧 flat response を残さない移行 route を具体化する
+- [ ] `yaml:`、REQ / WORK / task、coverage / internal-design relation を implementation scope に持ち込まないことを確認する
+
 ## Phase B: investigation record integration
 
 - [ ] investigation metadata parser を実装する
@@ -105,7 +113,7 @@ M19 が扱うもの:
 
 ## Done criteria
 
-- [ ] Design Records MCP spec が ADR-087 / ADR-088 に沿う concrete contract を定義している
+- [x] Design Records MCP spec が ADR-087 / ADR-088 に沿う concrete contract を定義している
 - [ ] Design Records MCP implementation が `investigation` kind を扱う
 - [ ] record response が ADR-087 の kind-specific detail contract に追従する
 - [ ] active `spec:` semantic ref と required record ID-as-ref の resolve が動作する
