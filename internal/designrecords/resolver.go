@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	activeSpecRefPattern = regexp.MustCompile(`^spec:[a-z0-9-]+(?:\.[a-z0-9-]+)+$`)
+	activeSpecRefPattern = regexp.MustCompile(`^spec:[a-z0-9-]+(?:\.[a-z0-9-]+)*$`)
 	recordIDRefPattern   = regexp.MustCompile(`^(ADR-\d{3}|SPEC-[A-Za-z0-9][A-Za-z0-9-]*|INV-[A-Z0-9-]+-\d{3})$`)
 	unsupportedIDPattern = regexp.MustCompile(`^(COV|REQ|WORK)-`)
 )

@@ -136,6 +136,21 @@ func TestValidateRecordsSemanticRefDeclarationDiagnostics(t *testing.T) {
 	}
 }
 
+func TestValidateRecordsAllowsRootSemanticRefDeclarations(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, root, "docs/spec/trace.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:trace\n  - spec:trace.semantic-ref\nsections:\n  spec:trace.resolve-and-validation: Resolve and validation\n\ndesign_record:\n  id: SPEC-trace\n  kind: spec\n  status: draft\n---\n# Trace\n## Resolve and validation\n")
+	writeTestFile(t, root, "docs/spec/project-artifact-model/index.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:project-artifact-model\nsections:\n  spec:project-artifact-model.responsibilities: Artifact responsibility matrix\n\ndesign_record:\n  id: SPEC-project-artifact-model\n  kind: spec\n  status: draft\n---\n# Project artifact model\n## Artifact responsibility matrix\n")
+
+	idx := buildTestIndex(t, root)
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	if !resp.OK || len(resp.Diagnostics) != 0 {
+		t.Fatalf("root semantic refs should be valid: %#v", resp)
+	}
+}
+
 func TestValidateRecordsInvestigationReferenceDiagnostics(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, root, "docs/adr/001-valid.md", "# 001: Valid\n- **status**: accepted\n")
@@ -159,6 +174,41 @@ func TestValidateRecordsInvestigationReferenceDiagnostics(t *testing.T) {
 	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnresolvedFollowUpCandidate, DiagnosticSeverityInfo, "follow_up_candidates", "SPEC-missing", "unresolved")
 	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticNoncanonicalFollowUpCandidate, DiagnosticSeverityInfo, "follow_up_candidates", "docs/spec/future.md", "noncanonical")
 	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnsupportedReference, DiagnosticSeverityInfo, "follow_up_candidates", "coverage:trace", "unsupported")
+}
+
+func TestValidateRecordsInvestigationSourceRefsResolveRootSemanticRefs(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, root, "docs/adr/001-valid.md", "# 001: Valid\n- **status**: accepted\n")
+	writeTestFile(t, root, "docs/spec/project-artifact-model/index.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:project-artifact-model\ndesign_record:\n  id: SPEC-project-artifact-model\n  kind: spec\n  status: draft\n---\n# Project artifact model\n")
+	writeTestFile(t, root, "docs/investigations/docs/INV-DOCS-001-test.md", "# INV-DOCS-001: Test investigation\n- **status**: concluded\n- **date**: 2026-05-19\n- **trigger**: ADR-001\n- **scope**: test\n- **non_scope**: none\n- **source_refs**:\n  - spec:project-artifact-model\n- **follow_up_candidates**:\n  - SPEC-project-artifact-model\n")
+
+	idx := buildTestIndex(t, root)
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	for _, diagnostic := range resp.Diagnostics {
+		if diagnostic.Category == DiagnosticUnsupportedReference || diagnostic.Category == DiagnosticUnresolvedSourceRef {
+			t.Fatalf("root source_ref should resolve without unsupported/unresolved diagnostics: %#v", resp.Diagnostics)
+		}
+	}
+	if !resp.OK {
+		t.Fatalf("root source_ref should not produce errors: %#v", resp.Diagnostics)
+	}
+}
+
+func TestValidateRecordsRejectsInvalidSemanticRefForms(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, root, "docs/spec/invalid.md", "---\nstatus: draft\nsemantic_refs:\n  - Spec:trace\n  - 'spec:'\n  - spec:trace/\n  - spec:trace..broken\n\ndesign_record:\n  id: SPEC-invalid\n  kind: spec\n  status: draft\n---\n# Invalid refs\n")
+
+	idx := buildTestIndex(t, root)
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	if got := countDiagnostics(resp.Diagnostics, DiagnosticInvalidSemanticRefDeclaration); got != 4 {
+		t.Fatalf("invalid semantic ref diagnostics = %d, want 4: %#v", got, resp.Diagnostics)
+	}
 }
 
 func TestValidateRecordsInfoOnlyDiagnosticsKeepOKTrue(t *testing.T) {

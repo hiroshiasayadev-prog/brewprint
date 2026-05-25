@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/traceability/resolve-and-validation.md
 status: draft
-last_updated: 2026-05-24
+last_updated: 2026-05-25
 summary: >
   canonical semantic/artifact ref resolution、investigation reference validation、
   noncanonical path diagnostic の MVP boundary を定義する。
@@ -28,8 +28,10 @@ Resolve は、canonical semantic ref または artifact ID-as-ref を実在 arti
 MVP example:
 
 ```text
+spec:trace -> docs/spec/concepts/traceability/index.md
 spec:trace.semantic-ref -> docs/spec/concepts/traceability/semantic-ref.md
 spec:trace.semantic-ref.definition -> docs/spec/concepts/traceability/semantic-ref.md § Semantic ref definition
+spec:project-artifact-model -> docs/spec/concepts/project-artifact-model/index.md
 ADR-088 -> docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
 INV-DOCS-003 -> docs/investigations/docs/INV-DOCS-003-internal-design-semantic-trace-mvp-necessity.md
 ```
@@ -132,7 +134,7 @@ MVP で unresolved error とするもの:
 
 MVP validation は以下を扱う。
 
-- `spec:` ref grammar / uniqueness / section lookup
+- `spec:` ref grammar / uniqueness / section lookup。Active `spec:` declaration grammar は root document ref (`spec:trace`) と dot 付き ref (`spec:trace.semantic-ref`) の双方を valid とする
 - record ID-as-ref resolution
 - investigation `source_refs` / 記載済み `follow_up_results` の canonicality と resolve
 - investigation `follow_up_candidates` の canonical form と、canonical だが unresolved な candidate の `info` diagnostic

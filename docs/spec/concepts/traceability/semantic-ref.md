@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/traceability/semantic-ref.md
 status: draft
-last_updated: 2026-05-24
+last_updated: 2026-05-25
 summary: >
   semantic ref の grammar、安定性、document-level / section-level ref、
   redirect / superseded の基本方針を定義する。
@@ -34,8 +34,10 @@ File rename、document split、document merge、section move が発生しても�
 MVP で active に扱う例:
 
 ```text
+spec:trace
 spec:trace.semantic-ref
 spec:trace.resolve-and-validation
+spec:project-artifact-model
 ```
 
 Semantic ref と artifact ID-as-ref は区別する。`ADR-*` / `SPEC-*` / `INV-*` は design record artifact を指す ID-as-ref であり、`spec:` のような semantic ref prefix ではない。`internal-design:` / `coverage:` は ADR-088 により MVP active scope から外れ、将来 requirement とともに再判断する。
@@ -47,15 +49,18 @@ ADR-087 により、investigation の `source_refs` および記載済み `follo
 MVP の prefix-ref grammar は以下とする。
 
 ```text
-<prefix>:<domain>.<concept>[.<subconcept>...]
+<prefix>:<domain>[.<concept>[.<subconcept>...]]
 ```
 
 MVP で active に扱う例:
 
 ```text
+spec:trace
 spec:trace.semantic-ref
 spec:trace.coverage-mapping
 spec:trace.resolve-and-validation
+spec:project-artifact-model
+spec:project-artifact-model.responsibilities
 ```
 
 ### Character rules
@@ -88,16 +93,23 @@ Semantic ref schema は document-level と section-level の表現を持つ。
 Document-level ref は、artifact 全体が表す概念を指す。
 Section-level ref は、artifact 内の特定 section が表す概念を指す。
 
+Root document ref は `<prefix>:<domain>` の形を取り、concept set または root document 全体を指す。
+Dot 付き ref は、その配下の nested document または section identity を指す。
+どちらも `spec:` の active semantic ref として canonical である。
+
 MVP で active に用いる semantic ref は `spec:` のみであり、document-level と section-level の双方を扱う。`internal-design:` / `coverage:` は endpoint identity 自体を後続判断へ送り、MVP では解決対象としない。
 
 例:
 
 ```yaml
 semantic_refs:
+  - spec:trace
   - spec:trace.semantic-ref
+  - spec:project-artifact-model
 sections:
   spec:trace.semantic-ref.definition: Semantic ref definition
   spec:trace.semantic-ref-grammar: Semantic ref grammar
+  spec:project-artifact-model.responsibilities: Artifact responsibility matrix
 ```
 
 `semantic_refs` は document-level ref を宣言する。

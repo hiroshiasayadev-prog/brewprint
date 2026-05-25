@@ -8,16 +8,26 @@ import (
 func TestResolveReferenceSemanticAndRecordTargets(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, root, "docs/adr/088-test.md", "# 088: Test ADR\n- **status**: accepted\n")
-	writeTestFile(t, root, "docs/spec/trace.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:trace.resolve-and-validation\nsections:\n  spec:trace.resolve: Resolve\n  spec:trace.validation: Validation\n\ndesign_record:\n  id: SPEC-trace\n  kind: spec\n  status: draft\n---\n# Trace spec\n## Resolve\n## Validation\n")
+	writeTestFile(t, root, "docs/spec/trace.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:trace\n  - spec:trace.resolve-and-validation\nsections:\n  spec:trace.resolve: Resolve\n  spec:trace.validation: Validation\n\ndesign_record:\n  id: SPEC-trace\n  kind: spec\n  status: draft\n---\n# Trace spec\n## Resolve\n## Validation\n")
+	writeTestFile(t, root, "docs/spec/project-artifact-model/index.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:project-artifact-model\nsections:\n  spec:project-artifact-model.responsibilities: Artifact responsibility matrix\n\ndesign_record:\n  id: SPEC-project-artifact-model\n  kind: spec\n  status: draft\n---\n# Project artifact model\n## Artifact responsibility matrix\n")
 	writeTestFile(t, root, "docs/investigations/docs/INV-DOCS-001-test.md", "# INV-DOCS-001: Test investigation\n- **status**: concluded\n- **date**: 2026-05-19\n- **trigger**: ADR-088\n- **scope**: test\n- **non_scope**: none\n- **source_refs**:\n  - ADR-088\n- **follow_up_candidates**:\n  - SPEC-trace\n")
 	idx := buildTestIndex(t, root)
 
-	document, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: "spec:trace.resolve-and-validation"})
-	if err != nil {
-		t.Fatalf("ResolveReference document: %v", err)
-	}
-	if document.Status != resolveStatusResolved || document.RefKind != refKindSemanticRef || document.Target == nil || document.Target.TargetType != "document" || document.Target.Path != "docs/spec/trace.md" {
-		t.Fatalf("document resolve = %#v", document)
+	for _, tt := range []struct {
+		ref  string
+		path string
+	}{
+		{ref: "spec:trace", path: "docs/spec/trace.md"},
+		{ref: "spec:project-artifact-model", path: "docs/spec/project-artifact-model/index.md"},
+		{ref: "spec:trace.resolve-and-validation", path: "docs/spec/trace.md"},
+	} {
+		document, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: tt.ref})
+		if err != nil {
+			t.Fatalf("ResolveReference document %s: %v", tt.ref, err)
+		}
+		if document.Status != resolveStatusResolved || document.RefKind != refKindSemanticRef || document.Target == nil || document.Target.TargetType != "document" || document.Target.Path != tt.path {
+			t.Fatalf("%s document resolve = %#v", tt.ref, document)
+		}
 	}
 
 	section, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: "spec:trace.resolve"})
