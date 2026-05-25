@@ -333,8 +333,19 @@ func cloneIndexForSuggestTest(idx *Index) *Index {
 	clone := *idx
 	clone.Records = append([]Record(nil), idx.Records...)
 	for i := range clone.Records {
-		clone.Records[i].DependsOn = cloneStringSliceForSuggestTest(idx.Records[i].DependsOn)
-		clone.Records[i].Supersedes = cloneStringSliceForSuggestTest(idx.Records[i].Supersedes)
+		if idx.Records[i].Decision != nil {
+			clone.Records[i].Decision = &DecisionDetail{
+				DependsOn:      cloneStringSliceForSuggestTest(idx.Records[i].Decision.DependsOn),
+				Supersedes:     cloneStringSliceForSuggestTest(idx.Records[i].Decision.Supersedes),
+				MigratedToSpec: idx.Records[i].Decision.MigratedToSpec,
+			}
+		}
+		if idx.Records[i].Spec != nil {
+			clone.Records[i].Spec = &SpecDetail{DependsOn: cloneStringSliceForSuggestTest(idx.Records[i].Spec.DependsOn)}
+		}
+		if idx.Records[i].Investigation != nil {
+			clone.Records[i].Investigation = cloneInvestigationDetail(idx.Records[i].Investigation)
+		}
 		clone.Records[i].Headings = cloneHeadingsForSuggestTest(idx.Records[i].Headings)
 	}
 	clone.Diagnostics = cloneDiagnosticsForSuggestTest(idx.Diagnostics)

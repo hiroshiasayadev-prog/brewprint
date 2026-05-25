@@ -53,10 +53,10 @@ func TestADRRecordParserIssuesAndMetadata(t *testing.T) {
 	if record.ID != "ADR-076" || record.Title != "Design Records MCP" || record.Status != RecordStatusAccepted {
 		t.Fatalf("record = %#v", record)
 	}
-	assertStrings(t, record.DependsOn, []string{"ADR-050", "ADR-068"})
-	assertStrings(t, record.Supersedes, []string{"ADR-001", "ADR-002"})
-	if record.MigratedToSpec == nil || *record.MigratedToSpec != "2026-05-12" {
-		t.Fatalf("MigratedToSpec = %#v", record.MigratedToSpec)
+	assertStrings(t, record.Decision.DependsOn, []string{"ADR-050", "ADR-068"})
+	assertStrings(t, record.Decision.Supersedes, []string{"ADR-001", "ADR-002"})
+	if record.Decision.MigratedToSpec == nil || *record.Decision.MigratedToSpec != "2026-05-12" {
+		t.Fatalf("MigratedToSpec = %#v", record.Decision.MigratedToSpec)
 	}
 	if !candidate.FilenameIDMismatch {
 		t.Fatal("FilenameIDMismatch = false, want true")
@@ -94,10 +94,10 @@ func TestADRMetadataEmptyValuesAndInvalidMigratedToSpec(t *testing.T) {
 	if record == nil {
 		t.Fatal("record is nil")
 	}
-	assertStrings(t, record.DependsOn, []string{})
-	assertStrings(t, record.Supersedes, []string{})
-	if record.MigratedToSpec == nil || *record.MigratedToSpec != "tomorrow" {
-		t.Fatalf("MigratedToSpec = %#v", record.MigratedToSpec)
+	assertStrings(t, record.Decision.DependsOn, []string{})
+	assertStrings(t, record.Decision.Supersedes, []string{})
+	if record.Decision.MigratedToSpec == nil || *record.Decision.MigratedToSpec != "tomorrow" {
+		t.Fatalf("MigratedToSpec = %#v", record.Decision.MigratedToSpec)
 	}
 	if !hasIssue(issues, DiagnosticInvalidMigratedToSpec) {
 		t.Fatalf("missing invalid migrated_to_spec issue: %#v", issues)
@@ -112,8 +112,8 @@ func TestADRMetadataEmptyValuesAndInvalidMigratedToSpec(t *testing.T) {
 	}
 
 	record, _, issues = parseADRRecord("docs/adr/076-design-records-mcp.md", "# 076: Design Records MCP\n- **migrated_to_spec**: \n")
-	if record.MigratedToSpec != nil {
-		t.Fatalf("empty MigratedToSpec = %#v, want nil", record.MigratedToSpec)
+	if record.Decision.MigratedToSpec != nil {
+		t.Fatalf("empty MigratedToSpec = %#v, want nil", record.Decision.MigratedToSpec)
 	}
 	if hasIssue(issues, DiagnosticInvalidMigratedToSpec) {
 		t.Fatalf("empty migrated_to_spec should not produce issue: %#v", issues)
@@ -146,10 +146,9 @@ func TestSpecRecordParser(t *testing.T) {
 	if record.Status != RecordStatusDraft {
 		t.Fatalf("Status = %q, want draft", record.Status)
 	}
-	assertStrings(t, record.DependsOn, []string{"ADR-076"})
-	assertStrings(t, record.Supersedes, []string{})
-	if record.MigratedToSpec != nil {
-		t.Fatalf("MigratedToSpec = %#v, want nil", record.MigratedToSpec)
+	assertStrings(t, record.Spec.DependsOn, []string{"ADR-076"})
+	if record.Decision != nil {
+		t.Fatalf("Decision = %#v, want nil", record.Decision)
 	}
 	if !hasIssue(issues, DiagnosticSpecStatusMismatch) {
 		t.Fatalf("missing status mismatch issue: %#v", issues)
@@ -187,6 +186,64 @@ func TestSpecInvalidH1Issue(t *testing.T) {
 	}
 }
 
+func TestInvestigationRecordParserIssuesAndMetadata(t *testing.T) {
+	raw := "# INV-DOCS-001: investigation artifact format and lifecycle\n\n" +
+		"- **status**: concluded\n" +
+		"- **date**: 2026-05-19\n" +
+		"- **trigger**: ADR-085\n" +
+		"- **scope**: investigation format\n" +
+		"- **non_scope**: writer tools\n" +
+		"- **source_refs**:\n" +
+		"  - ADR-085\n" +
+		"  - spec:trace.resolve-and-validation\n" +
+		"- **follow_up_candidates**:\n" +
+		"  - ADR-086\n" +
+		"- **follow_up_results**:\n" +
+		"  - ADR-087\n" +
+		"## Stop\n" +
+		"  - ADR-999\n"
+	record, candidate, issues := parseInvestigationRecord("docs/investigations/docs/INV-DOCS-001-investigation-artifact-format-and-lifecycle.md", raw)
+	if record == nil {
+		t.Fatal("record is nil")
+	}
+	if record.ID != "INV-DOCS-001" || record.Kind != RecordKindInvestigation || record.Title != "investigation artifact format and lifecycle" || record.Status != RecordStatusConcluded {
+		t.Fatalf("record = %#v", record)
+	}
+	if record.Investigation == nil {
+		t.Fatalf("Investigation detail missing: %#v", record)
+	}
+	if record.Investigation.Trigger != "ADR-085" || record.Investigation.Scope != "investigation format" || record.Investigation.NonScope != "writer tools" {
+		t.Fatalf("investigation scalar metadata = %#v", record.Investigation)
+	}
+	assertStrings(t, record.Investigation.SourceRefs, []string{"ADR-085", "spec:trace.resolve-and-validation"})
+	assertStrings(t, record.Investigation.FollowUpCandidates, []string{"ADR-086"})
+	assertStrings(t, record.Investigation.FollowUpResults, []string{"ADR-087"})
+	if candidate.FilenameIDMismatch || len(issues) != 0 {
+		t.Fatalf("candidate/issues = %#v %#v", candidate, issues)
+	}
+}
+
+func TestInvestigationInvalidH1AndFilenameMismatch(t *testing.T) {
+	record, candidate, issues := parseInvestigationRecord("docs/investigations/docs/INV-DOCS-001-valid.md", "# INV-docs-001: invalid\n")
+	if record != nil {
+		t.Fatalf("record = %#v, want nil", record)
+	}
+	if candidate.Included || candidate.SkipReason != "invalid_investigation_h1" {
+		t.Fatalf("candidate = %#v", candidate)
+	}
+	if !hasIssue(issues, DiagnosticInvalidH1Title) {
+		t.Fatalf("missing invalid H1 issue: %#v", issues)
+	}
+
+	record, candidate, issues = parseInvestigationRecord("docs/investigations/docs/INV-DOCS-002-mismatch.md", "# INV-DOCS-001: mismatch\n- **status**: concluded\n")
+	if record == nil {
+		t.Fatal("record is nil")
+	}
+	if !candidate.FilenameIDMismatch || !hasIssue(issues, DiagnosticFilenameIDMismatch) {
+		t.Fatalf("missing filename mismatch: candidate=%#v issues=%#v", candidate, issues)
+	}
+}
+
 func TestHeadingsExtractionExcludesFrontMatterAndFences(t *testing.T) {
 	raw := "---\nsummary: '# not a heading'\n---\n" +
 		"# Title\n" +
@@ -211,6 +268,7 @@ func TestBuildIndexDiscoversRecordsAndPreservesRawBody(t *testing.T) {
 	rawSpec := "---\nstatus: draft\ndesign_record:\n  id: SPEC-test\n  kind: spec\n  depends_on:\n    - ADR-001\n---\n# Test spec\n"
 	writeTestFile(t, root, "docs/spec/test.md", rawSpec)
 	writeTestFile(t, root, "docs/spec/existing.md", "---\nstatus: draft\n---\n# Existing\n")
+	writeTestFile(t, root, "docs/investigations/docs/INV-DOCS-001-test.md", "# INV-DOCS-001: Test investigation\n- **status**: concluded\n- **date**: 2026-05-19\n- **trigger**: ADR-001\n- **scope**: test\n- **non_scope**: none\n- **source_refs**:\n  - ADR-001\n- **follow_up_candidates**:\n  - SPEC-test\n")
 
 	cfg, err := NewConfig(root)
 	if err != nil {
@@ -220,15 +278,19 @@ func TestBuildIndexDiscoversRecordsAndPreservesRawBody(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BuildIndex: %v", err)
 	}
-	if len(idx.Records) != 2 {
-		t.Fatalf("records = %#v, want 2", idx.Records)
+	if len(idx.Records) != 3 {
+		t.Fatalf("records = %#v, want 3", idx.Records)
 	}
-	if got := recordIDs(idx.Records); !sameStrings(got, []string{"ADR-001", "SPEC-test"}) {
+	if got := recordIDs(idx.Records); !sameStrings(got, []string{"ADR-001", "INV-DOCS-001", "SPEC-test"}) {
 		t.Fatalf("record IDs = %#v", got)
 	}
 	spec := findRecord(idx.Records, "SPEC-test")
 	if spec == nil || spec.RawBody != rawSpec {
 		t.Fatalf("raw body was not preserved: %#v", spec)
+	}
+	investigation := findRecord(idx.Records, "INV-DOCS-001")
+	if investigation == nil || investigation.Kind != RecordKindInvestigation || investigation.Investigation == nil {
+		t.Fatalf("investigation not indexed: %#v", investigation)
 	}
 }
 
@@ -258,6 +320,15 @@ func TestBuildIndexRepositoryBootstrapRecords(t *testing.T) {
 		}
 		if record.Kind != RecordKindSpec {
 			t.Fatalf("%s kind = %q, want spec", id, record.Kind)
+		}
+	}
+	for _, id := range []string{"INV-DOCS-001", "INV-DOCS-002", "INV-DOCS-003"} {
+		record := findRecord(idx.Records, id)
+		if record == nil {
+			t.Fatalf("missing %s in repository index", id)
+		}
+		if record.Kind != RecordKindInvestigation {
+			t.Fatalf("%s kind = %q, want investigation", id, record.Kind)
 		}
 	}
 	if findRecord(idx.Records, "docs/spec/overview.md") != nil {

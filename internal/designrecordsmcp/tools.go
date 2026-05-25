@@ -14,9 +14,9 @@ func Tools() []Tool {
 	return []Tool{
 		{
 			Name:        "list_records",
-			Description: "List ADR/spec design records with optional metadata filters.",
+			Description: "List ADR/spec/investigation design records with optional metadata filters.",
 			InputSchema: objectSchema(map[string]any{
-				"kind":     enumStringSchema("decision", "spec"),
+				"kind":     enumStringSchema("decision", "spec", "investigation"),
 				"status":   map[string]any{"type": "string"},
 				"id":       map[string]any{"type": "string"},
 				"id_range": idRangeSchema(),
@@ -27,9 +27,9 @@ func Tools() []Tool {
 		},
 		{
 			Name:        "validate_records",
-			Description: "Validate indexed ADR/spec design record metadata.",
+			Description: "Validate indexed ADR/spec/investigation design record metadata.",
 			InputSchema: objectSchema(map[string]any{
-				"kind":     enumStringSchema("decision", "spec"),
+				"kind":     enumStringSchema("decision", "spec", "investigation"),
 				"id_range": idRangeSchema(),
 			}, nil),
 		},
@@ -40,6 +40,13 @@ func Tools() []Tool {
 				"id":           map[string]any{"type": "string"},
 				"include_body": map[string]any{"type": "boolean"},
 			}, []string{"id"}),
+		},
+		{
+			Name:        "resolve_reference",
+			Description: "Resolve one canonical semantic/artifact reference to a document, section, or record target.",
+			InputSchema: objectSchema(map[string]any{
+				"ref": map[string]any{"type": "string"},
+			}, []string{"ref"}),
 		},
 		{
 			Name:        "suggest_next_record",

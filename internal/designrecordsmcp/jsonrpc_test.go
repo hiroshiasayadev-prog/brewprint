@@ -48,10 +48,10 @@ func TestHandleJSONRPC(t *testing.T) {
 		}
 		result := resultMapAny(t, res.Result)
 		tools := result["tools"].([]any)
-		if len(tools) != 4 {
-			t.Fatalf("tools len = %d, want 4: %#v", len(tools), tools)
+		if len(tools) != 5 {
+			t.Fatalf("tools len = %d, want 5: %#v", len(tools), tools)
 		}
-		for _, name := range []string{"list_records", "validate_records", "get_record", "suggest_next_record"} {
+		for _, name := range []string{"list_records", "validate_records", "get_record", "resolve_reference", "suggest_next_record"} {
 			if !hasToolName(tools, name) {
 				t.Fatalf("%s missing from tools/list: %#v", name, tools)
 			}

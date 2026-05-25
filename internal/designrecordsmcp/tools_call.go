@@ -71,6 +71,15 @@ func (s *Server) HandleToolsCall(params json.RawMessage) ToolsCallResult {
 			return toolBuildIndexErrorResult(buildErr)
 		}
 		return toolHandlerResult(designrecords.GetRecord(ctx, idx, req))
+	case "resolve_reference":
+		var req designrecords.ResolveReferenceRequest
+		if err := decodeToolArguments(call.Arguments, &req); err != nil {
+			return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("invalid resolve_reference arguments: %v", err))
+		}
+		if buildErr != nil {
+			return toolBuildIndexErrorResult(buildErr)
+		}
+		return toolHandlerResult(designrecords.ResolveReference(ctx, idx, req))
 	case "suggest_next_record":
 		var req designrecords.SuggestNextRecordRequest
 		if err := decodeToolArguments(call.Arguments, &req); err != nil {

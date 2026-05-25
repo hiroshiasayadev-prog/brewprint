@@ -18,7 +18,7 @@ type listRecordsScope struct {
 	hasLimit bool
 }
 
-// ListRecords returns normalized ADR/spec record metadata with MVP filters,
+// ListRecords returns normalized design record metadata with MVP filters,
 // deterministic ID ordering, and optional limit handling.
 func ListRecords(ctx context.Context, idx *Index, req ListRecordsRequest) (ListRecordsResponse, error) {
 	if err := ctx.Err(); err != nil {
@@ -151,7 +151,7 @@ func SuggestNextRecord(ctx context.Context, idx *Index, req SuggestNextRecordReq
 func newListRecordsScope(req ListRecordsRequest) (listRecordsScope, error) {
 	scope := listRecordsScope{order: "asc"}
 	if req.Kind != "" {
-		if req.Kind != RecordKindDecision && req.Kind != RecordKindSpec {
+		if req.Kind != RecordKindDecision && req.Kind != RecordKindSpec && req.Kind != RecordKindInvestigation {
 			return scope, newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unsupported kind %q", req.Kind))
 		}
 		scope.kind = req.Kind
@@ -217,9 +217,6 @@ func sortRecordsByID(records []Record, order string) {
 }
 
 func compareRecordsByID(a, b Record, order string) int {
-	if rankA, rankB := recordKindSortRank(a.Kind), recordKindSortRank(b.Kind); rankA != rankB {
-		return rankA - rankB
-	}
 	cmp := compareRecordID(a, b)
 	if order == "desc" {
 		return -cmp
@@ -227,34 +224,15 @@ func compareRecordsByID(a, b Record, order string) int {
 	return cmp
 }
 
-func recordKindSortRank(kind RecordKind) int {
-	switch kind {
-	case RecordKindDecision:
-		return 0
-	case RecordKindSpec:
-		return 1
-	default:
-		return 2
-	}
-}
-
 func compareRecordID(a, b Record) int {
-	if a.Kind == RecordKindDecision && b.Kind == RecordKindDecision {
-		if numA, okA := decisionRecordNumber(a.ID); okA {
-			if numB, okB := decisionRecordNumber(b.ID); okB {
-				switch {
-				case numA < numB:
-					return -1
-				case numA > numB:
-					return 1
-				}
-			}
-		}
-	}
 	switch {
 	case a.ID < b.ID:
 		return -1
 	case a.ID > b.ID:
+		return 1
+	case a.Path < b.Path:
+		return -1
+	case a.Path > b.Path:
 		return 1
 	default:
 		return 0
@@ -263,34 +241,118 @@ func compareRecordID(a, b Record) int {
 
 func listedRecord(record Record) ListedRecord {
 	return ListedRecord{
-		ID:             record.ID,
-		Kind:           record.Kind,
-		Title:          record.Title,
-		Status:         record.Status,
-		Path:           record.Path,
-		DependsOn:      append([]string{}, record.DependsOn...),
-		Supersedes:     append([]string{}, record.Supersedes...),
-		MigratedToSpec: record.MigratedToSpec,
+		ID:            record.ID,
+		Kind:          record.Kind,
+		Title:         record.Title,
+		Status:        record.Status,
+		Path:          record.Path,
+		Decision:      responseDecisionDetail(record),
+		Spec:          responseSpecDetail(record),
+		Investigation: responseInvestigationDetail(record),
 	}
 }
 
 func getRecordResponseRecord(record Record, includeBody bool) GetRecordRecord {
 	out := GetRecordRecord{
-		ID:             record.ID,
-		Kind:           record.Kind,
-		Title:          record.Title,
-		Status:         record.Status,
-		Path:           record.Path,
-		DependsOn:      append([]string{}, record.DependsOn...),
-		Supersedes:     append([]string{}, record.Supersedes...),
-		MigratedToSpec: record.MigratedToSpec,
-		Headings:       append([]Heading{}, record.Headings...),
+		ID:            record.ID,
+		Kind:          record.Kind,
+		Title:         record.Title,
+		Status:        record.Status,
+		Path:          record.Path,
+		Decision:      responseDecisionDetail(record),
+		Spec:          responseSpecDetail(record),
+		Investigation: responseInvestigationDetail(record),
+		Headings:      append([]Heading{}, record.Headings...),
 	}
 	if includeBody {
 		body := record.RawBody
 		out.Body = &body
 	}
 	return out
+}
+
+// ResolveReference resolves an MVP canonical reference candidate without
+// selecting an arbitrary target when the index is ambiguous.
+func ResolveReference(ctx context.Context, idx *Index, req ResolveReferenceRequest) (ResolveReferenceResponse, error) {
+	if err := ctx.Err(); err != nil {
+		return ResolveReferenceResponse{}, err
+	}
+	if idx == nil {
+		return ResolveReferenceResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
+	}
+	if req.Ref == "" {
+		return ResolveReferenceResponse{}, newToolError(ErrorCodeInvalidRequest, "ref is required")
+	}
+	return resolveReference(idx, req.Ref), nil
+}
+
+func cloneDecisionDetail(in *DecisionDetail) *DecisionDetail {
+	if in == nil {
+		return nil
+	}
+	return &DecisionDetail{
+		DependsOn:      append([]string{}, in.DependsOn...),
+		Supersedes:     append([]string{}, in.Supersedes...),
+		MigratedToSpec: in.MigratedToSpec,
+	}
+}
+
+func responseDecisionDetail(record Record) *DecisionDetail {
+	if record.Kind != RecordKindDecision {
+		return nil
+	}
+	if record.Decision == nil {
+		return &DecisionDetail{DependsOn: []string{}, Supersedes: []string{}}
+	}
+	return cloneDecisionDetail(record.Decision)
+}
+
+func cloneSpecDetail(in *SpecDetail) *SpecDetail {
+	if in == nil {
+		return nil
+	}
+	return &SpecDetail{DependsOn: append([]string{}, in.DependsOn...)}
+}
+
+func responseSpecDetail(record Record) *SpecDetail {
+	if record.Kind != RecordKindSpec {
+		return nil
+	}
+	if record.Spec == nil {
+		return &SpecDetail{DependsOn: []string{}}
+	}
+	return cloneSpecDetail(record.Spec)
+}
+
+func cloneInvestigationDetail(in *InvestigationDetail) *InvestigationDetail {
+	if in == nil {
+		return nil
+	}
+	return &InvestigationDetail{
+		Trigger:               in.Trigger,
+		Scope:                 in.Scope,
+		NonScope:              in.NonScope,
+		SourceRefs:            append([]string{}, in.SourceRefs...),
+		FollowUpCandidates:    append([]string{}, in.FollowUpCandidates...),
+		Supersedes:            append([]string{}, in.Supersedes...),
+		RelatedRequirements:   append([]string{}, in.RelatedRequirements...),
+		RelatedWorkItems:      append([]string{}, in.RelatedWorkItems...),
+		RelatedADRs:           append([]string{}, in.RelatedADRs...),
+		RelatedSpecs:          append([]string{}, in.RelatedSpecs...),
+		RelatedInternalDesign: append([]string{}, in.RelatedInternalDesign...),
+		RelatedCoverage:       append([]string{}, in.RelatedCoverage...),
+		FollowUpResults:       append([]string{}, in.FollowUpResults...),
+	}
+}
+
+func responseInvestigationDetail(record Record) *InvestigationDetail {
+	if record.Kind != RecordKindInvestigation {
+		return nil
+	}
+	if record.Investigation == nil {
+		return &InvestigationDetail{SourceRefs: []string{}, FollowUpCandidates: []string{}}
+	}
+	return cloneInvestigationDetail(record.Investigation)
 }
 
 func suggestedDecisionRecordPath(num int, title string) string {

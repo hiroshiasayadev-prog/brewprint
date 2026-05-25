@@ -81,6 +81,18 @@ func TestToolsCallSuccess(t *testing.T) {
 			},
 		},
 		{
+			name:   "resolve_reference",
+			line:   `{"jsonrpc":"2.0","id":16,"method":"tools/call","params":{"name":"resolve_reference","arguments":{"ref":"spec:one.doc"}}}`,
+			wantID: "16",
+			assertText: func(t *testing.T, text string) {
+				var resp designrecords.ResolveReferenceResponse
+				unmarshalToolText(t, text, &resp)
+				if resp.Status != "resolved" || resp.Target == nil || resp.Target.Path != "docs/spec/one.md" {
+					t.Fatalf("resolve_reference response = %#v", resp)
+				}
+			},
+		},
+		{
 			name:   "suggest_next_record",
 			line:   `{"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"suggest_next_record","arguments":{"kind":"decision","title":"Next Thing"}}}`,
 			wantID: "13",
@@ -196,6 +208,11 @@ func TestToolsCallToolErrors(t *testing.T) {
 			code: designrecords.ErrorCodeInvalidRequest,
 		},
 		{
+			name: "resolve_reference unknown argument",
+			line: `{"jsonrpc":"2.0","id":251,"method":"tools/call","params":{"name":"resolve_reference","arguments":{"ref":"ADR-001","extra":true}}}`,
+			code: designrecords.ErrorCodeInvalidRequest,
+		},
+		{
 			name: "omitted arguments is empty object",
 			line: `{"jsonrpc":"2.0","id":26,"method":"tools/call","params":{"name":"get_record"}}`,
 			code: designrecords.ErrorCodeInvalidRequest,
@@ -294,7 +311,7 @@ func TestToolsCallIndexRebuildPolicy(t *testing.T) {
 }
 
 func toolsCallTestIndex() *designrecords.Index {
-	return &designrecords.Index{Records: []designrecords.Record{
+	idx := &designrecords.Index{Records: []designrecords.Record{
 		toolsCallRecord("ADR-001", "One"),
 		toolsCallRecord("ADR-002", "Two"),
 		{
@@ -304,8 +321,12 @@ func toolsCallTestIndex() *designrecords.Index {
 			Title:        "Spec One",
 			Status:       designrecords.RecordStatusDraft,
 			Path:         "docs/spec/one.md",
+			Spec:         &designrecords.SpecDetail{},
+			SemanticRefs: []designrecords.SemanticRefDecl{{Ref: "spec:one.doc", Path: "docs/spec/one.md", TargetType: designrecords.SemanticTargetDocument}},
 		},
 	}}
+	idx.SemanticRefs = []designrecords.SemanticRefDecl{{Ref: "spec:one.doc", Path: "docs/spec/one.md", TargetType: designrecords.SemanticTargetDocument}}
+	return idx
 }
 
 func toolsCallRecord(id, title string) designrecords.Record {

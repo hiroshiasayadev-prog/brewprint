@@ -1,7 +1,7 @@
 # WORK-MCP-001: Design Records MCP semantic trace support を実装追従する
 
 - **id**: WORK-MCP-001
-- **status**: implementation_pending
+- **status**: done
 - **date**: 2026-05-23
 - **source_requirement**: REQ-MCP-001
 - **impact_refs**:
@@ -23,8 +23,8 @@ ADR-087 / ADR-088 と traceability spec で確定した canonical reference reso
 | decision | done | ADR-087 / ADR-088 accepted |
 | design spec | done | active `spec:` / record ID / investigation canonical ref の concrete resolve tool / diagnostic contract を M19 Phase A で確定した |
 | internal design | done | M19 Phase B0 で finalized public contract に追従する resolver / record parser / validation route を具体化した。MVP endpoint としては扱わない |
-| implementation | pending | M19 Phase B/C で investigation kind、kind-specific response、canonical resolver、validator を実装する |
-| verification | pending | M19 Phase D で investigation record / `spec:` ref / record ID-as-ref の参照解決・診断 tests を追加する |
+| implementation | done | M19 Phase B/C で investigation kind、kind-specific response、canonical resolver、validator を実装した |
+| verification | done | M19 Phase D で investigation record / `spec:` ref / record ID-as-ref の参照解決・診断 tests を追加し、`go test ./internal/designrecords ./internal/designrecordsmcp` と `go test ./...` が通過した |
 
 ## Boundary
 

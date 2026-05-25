@@ -26,7 +26,7 @@ type numericIDRange struct {
 func newValidationScope(req ValidateRecordsRequest) (validationScope, error) {
 	scope := validationScope{}
 	if req.Kind != "" {
-		if req.Kind != RecordKindDecision && req.Kind != RecordKindSpec {
+		if req.Kind != RecordKindDecision && req.Kind != RecordKindSpec && req.Kind != RecordKindInvestigation {
 			return scope, newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unsupported kind %q", req.Kind))
 		}
 		scope.kind = req.Kind
@@ -103,7 +103,8 @@ func generateValidationDiagnostics(idx *Index, scope validationScope) []Diagnost
 
 	diagnostics = append(diagnostics, duplicateIDDiagnostics(recordsByID, scope)...)
 	diagnostics = append(diagnostics, parseIssueDiagnostics(idx.ParseIssues, recordsByPath, candidatesByPath, scope)...)
-	diagnostics = append(diagnostics, recordDiagnostics(idx.Records, recordsByID, scope)...)
+	diagnostics = append(diagnostics, semanticRefDiagnostics(idx, scope)...)
+	diagnostics = append(diagnostics, recordDiagnostics(idx.Records, recordsByID, semanticTargetsByRef(idx), scope)...)
 	diagnostics = append(diagnostics, pathIssueDiagnostics(idx.PathIssues, candidatesByPath, scope)...)
 	return diagnostics
 }
@@ -159,7 +160,7 @@ func parseIssueDiagnostics(issues []ParseIssue, recordsByPath map[string]Record,
 	return diagnostics
 }
 
-func recordDiagnostics(records []Record, recordsByID map[string][]Record, scope validationScope) []Diagnostic {
+func recordDiagnostics(records []Record, recordsByID map[string][]Record, semanticByRef map[string][]SemanticRefDecl, scope validationScope) []Diagnostic {
 	var diagnostics []Diagnostic
 	for _, record := range records {
 		if !scope.selectRecord(record) {
@@ -174,7 +175,7 @@ func recordDiagnostics(records []Record, recordsByID map[string][]Record, scope 
 				Message:  fmt.Sprintf("%s status %q is not valid for kind %s", record.ID, record.Status, record.Kind),
 			})
 		}
-		for _, targetID := range record.DependsOn {
+		for _, targetID := range recordDependsOn(record) {
 			if !recordIDExists(recordsByID, targetID) {
 				diagnostics = append(diagnostics, Diagnostic{
 					Category: DiagnosticMissingDependsOnTarget,
@@ -186,7 +187,7 @@ func recordDiagnostics(records []Record, recordsByID map[string][]Record, scope 
 				})
 			}
 		}
-		for _, targetID := range record.Supersedes {
+		for _, targetID := range recordSupersedes(record) {
 			if !recordIDExists(recordsByID, targetID) {
 				diagnostics = append(diagnostics, Diagnostic{
 					Category: DiagnosticMissingSupersedesTarget,
@@ -198,8 +199,131 @@ func recordDiagnostics(records []Record, recordsByID map[string][]Record, scope 
 				})
 			}
 		}
+		if record.Kind == RecordKindInvestigation && record.Investigation != nil {
+			diagnostics = append(diagnostics, investigationReferenceDiagnostics(record, recordsByID, semanticByRef)...)
+		}
 	}
 	return diagnostics
+}
+
+func semanticRefDiagnostics(idx *Index, scope validationScope) []Diagnostic {
+	var diagnostics []Diagnostic
+	if scope.hasKind && scope.kind != RecordKindSpec {
+		return diagnostics
+	}
+	byRef := map[string][]SemanticRefDecl{}
+	for _, source := range idx.SemanticRefSources {
+		for _, decl := range source.Decls {
+			if !activeSpecRefPattern.MatchString(decl.Ref) {
+				diagnostics = append(diagnostics, Diagnostic{
+					Category: DiagnosticInvalidSemanticRefDeclaration,
+					Severity: DiagnosticSeverityError,
+					RecordID: source.RecordID,
+					Path:     decl.Path,
+					Message:  fmt.Sprintf("semantic reference declaration %q is invalid", decl.Ref),
+				})
+				continue
+			}
+			if decl.TargetType == SemanticTargetSection {
+				matches := matchingHeadingCount(source.Headings, decl.Section)
+				switch matches {
+				case 0:
+					diagnostics = append(diagnostics, Diagnostic{
+						Category: DiagnosticMissingSectionTarget,
+						Severity: DiagnosticSeverityError,
+						RecordID: source.RecordID,
+						Path:     decl.Path,
+						Message:  fmt.Sprintf("section target %q for %s was not found", decl.Section, decl.Ref),
+					})
+				case 1:
+				default:
+					diagnostics = append(diagnostics, Diagnostic{
+						Category: DiagnosticAmbiguousSectionTarget,
+						Severity: DiagnosticSeverityError,
+						RecordID: source.RecordID,
+						Path:     decl.Path,
+						Message:  fmt.Sprintf("section target %q for %s matches multiple headings", decl.Section, decl.Ref),
+					})
+				}
+			}
+			byRef[decl.Ref] = append(byRef[decl.Ref], decl)
+		}
+	}
+	refs := make([]string, 0, len(byRef))
+	for ref, decls := range byRef {
+		if len(decls) > 1 {
+			refs = append(refs, ref)
+		}
+	}
+	sort.Strings(refs)
+	for _, ref := range refs {
+		decls := byRef[ref]
+		sort.Slice(decls, func(i, j int) bool {
+			if decls[i].Path == decls[j].Path {
+				return decls[i].Section < decls[j].Section
+			}
+			return decls[i].Path < decls[j].Path
+		})
+		for _, decl := range decls {
+			diagnostics = append(diagnostics, Diagnostic{
+				Category: DiagnosticDuplicateSemanticRef,
+				Severity: DiagnosticSeverityError,
+				Path:     decl.Path,
+				Message:  fmt.Sprintf("semantic reference %s has multiple targets", ref),
+			})
+		}
+	}
+	return diagnostics
+}
+
+func investigationReferenceDiagnostics(record Record, recordsByID map[string][]Record, semanticByRef map[string][]SemanticRefDecl) []Diagnostic {
+	var diagnostics []Diagnostic
+	diagnostics = append(diagnostics, diagnosticsForInvestigationRefs(record, "source_refs", record.Investigation.SourceRefs, DiagnosticUnresolvedSourceRef, DiagnosticNoncanonicalSourceRef, DiagnosticSeverityError, recordsByID, semanticByRef)...)
+	diagnostics = append(diagnostics, diagnosticsForInvestigationRefs(record, "follow_up_results", record.Investigation.FollowUpResults, DiagnosticUnresolvedFollowUpResult, DiagnosticNoncanonicalFollowUpResult, DiagnosticSeverityError, recordsByID, semanticByRef)...)
+	diagnostics = append(diagnostics, diagnosticsForInvestigationRefs(record, "follow_up_candidates", record.Investigation.FollowUpCandidates, DiagnosticUnresolvedFollowUpCandidate, DiagnosticNoncanonicalFollowUpCandidate, DiagnosticSeverityInfo, recordsByID, semanticByRef)...)
+	return diagnostics
+}
+
+func diagnosticsForInvestigationRefs(record Record, field string, values []string, unresolvedCategory, noncanonicalCategory DiagnosticCategory, severity DiagnosticSeverity, recordsByID map[string][]Record, semanticByRef map[string][]SemanticRefDecl) []Diagnostic {
+	var diagnostics []Diagnostic
+	for _, value := range values {
+		switch {
+		case strings.HasPrefix(value, "yaml:"):
+			continue
+		case isPhysicalPathReference(value):
+			diagnostics = append(diagnostics, investigationReferenceDiagnostic(record, noncanonicalCategory, severity, field, value, "noncanonical"))
+		case isExplicitUnsupportedReference(value):
+			diagnostics = append(diagnostics, investigationReferenceDiagnostic(record, DiagnosticUnsupportedReference, severity, field, value, "unsupported"))
+		case activeSpecRefPattern.MatchString(value):
+			targets := semanticByRef[value]
+			if len(targets) == 0 {
+				diagnostics = append(diagnostics, investigationReferenceDiagnostic(record, unresolvedCategory, severity, field, value, "unresolved"))
+			}
+		case recordIDRefPattern.MatchString(value):
+			targets := recordsByID[normalizeRecordID(value)]
+			if len(targets) == 0 {
+				diag := investigationReferenceDiagnostic(record, unresolvedCategory, severity, field, value, "unresolved")
+				diag.TargetID = value
+				diagnostics = append(diagnostics, diag)
+			}
+		default:
+			diagnostics = append(diagnostics, investigationReferenceDiagnostic(record, DiagnosticUnsupportedReference, severity, field, value, "unsupported"))
+		}
+	}
+	return diagnostics
+}
+
+func investigationReferenceDiagnostic(record Record, category DiagnosticCategory, severity DiagnosticSeverity, field, value, refStatus string) Diagnostic {
+	return Diagnostic{
+		Category:  category,
+		Severity:  severity,
+		RecordID:  record.ID,
+		Path:      record.Path,
+		Message:   fmt.Sprintf("%s contains %s reference %q", field, refStatus, value),
+		Field:     field,
+		Value:     value,
+		RefStatus: refStatus,
+	}
 }
 
 func pathIssueDiagnostics(issues []PathIssue, candidatesByPath map[string]RecordCandidate, scope validationScope) []Diagnostic {
@@ -224,6 +348,8 @@ func statusAllowedForKind(kind RecordKind, status RecordStatus) bool {
 		return status == RecordStatusProposed || status == RecordStatusAccepted || status == RecordStatusSuperseded
 	case RecordKindSpec:
 		return status == RecordStatusConfirmed || status == RecordStatusDraft || status == RecordStatusWIP
+	case RecordKindInvestigation:
+		return status == RecordStatusInvestigating || status == RecordStatusConcluded || status == RecordStatusSuperseded
 	default:
 		return false
 	}
@@ -341,7 +467,55 @@ func kindFromPath(path string) (RecordKind, bool) {
 		return RecordKindDecision, true
 	case strings.HasPrefix(path, "docs/spec/"):
 		return RecordKindSpec, true
+	case strings.HasPrefix(path, "docs/investigations/"):
+		return RecordKindInvestigation, true
 	default:
 		return "", false
 	}
+}
+
+func recordDependsOn(record Record) []string {
+	switch record.Kind {
+	case RecordKindDecision:
+		if record.Decision != nil {
+			return record.Decision.DependsOn
+		}
+	case RecordKindSpec:
+		if record.Spec != nil {
+			return record.Spec.DependsOn
+		}
+	}
+	return nil
+}
+
+func recordSupersedes(record Record) []string {
+	switch record.Kind {
+	case RecordKindDecision:
+		if record.Decision != nil {
+			return record.Decision.Supersedes
+		}
+	case RecordKindInvestigation:
+		if record.Investigation != nil {
+			return record.Investigation.Supersedes
+		}
+	}
+	return nil
+}
+
+func collectSemanticRefs(records []Record) []SemanticRefDecl {
+	var out []SemanticRefDecl
+	for _, record := range records {
+		out = append(out, record.SemanticRefs...)
+	}
+	return out
+}
+
+func matchingHeadingCount(headings []Heading, text string) int {
+	count := 0
+	for _, heading := range headings {
+		if heading.Text == text {
+			count++
+		}
+	}
+	return count
 }

@@ -3,6 +3,7 @@ package designrecords
 import (
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -10,12 +11,14 @@ import (
 )
 
 var (
-	adrH1Pattern       = regexp.MustCompile(`^#\s+(\d{3}):\s+(.+?)\s*$`)
-	specH1Pattern      = regexp.MustCompile(`^#\s+(.+?)\s*$`)
-	atxHeadingPattern  = regexp.MustCompile(`^(#{1,6})\s+(.+?)\s*$`)
-	metadataPattern    = regexp.MustCompile(`^-\s+\*\*([^*]+)\*\*:\s*(.*)$`)
-	filenameNumPattern = regexp.MustCompile(`^(\d{3})(?:-|\.md$)`)
-	datePattern        = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
+	adrH1Pattern                   = regexp.MustCompile(`^#\s+(\d{3}):\s+(.+?)\s*$`)
+	investigationH1Pattern         = regexp.MustCompile(`^#\s+(INV-[A-Z0-9-]+-\d{3}):\s+(.+?)\s*$`)
+	specH1Pattern                  = regexp.MustCompile(`^#\s+(.+?)\s*$`)
+	atxHeadingPattern              = regexp.MustCompile(`^(#{1,6})\s+(.+?)\s*$`)
+	metadataPattern                = regexp.MustCompile(`^-\s+\*\*([^*]+)\*\*:\s*(.*)$`)
+	filenameNumPattern             = regexp.MustCompile(`^(\d{3})(?:-|\.md$)`)
+	investigationFilenameIDPattern = regexp.MustCompile(`^(INV-[A-Z0-9-]+-\d{3})(?:-|\.md$)`)
+	datePattern                    = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 )
 
 type adrMetadata struct {
@@ -28,7 +31,9 @@ type adrMetadata struct {
 }
 
 type specFrontMatter struct {
-	Status       string `yaml:"status"`
+	Status       string            `yaml:"status"`
+	SemanticRefs []string          `yaml:"semantic_refs"`
+	Sections     map[string]string `yaml:"sections"`
 	DesignRecord *struct {
 		ID             string   `yaml:"id"`
 		Kind           string   `yaml:"kind"`
@@ -37,6 +42,23 @@ type specFrontMatter struct {
 		Supersedes     []string `yaml:"supersedes"`
 		MigratedToSpec string   `yaml:"migrated_to_spec"`
 	} `yaml:"design_record"`
+}
+
+type investigationMetadata struct {
+	Status                string
+	Trigger               string
+	Scope                 string
+	NonScope              string
+	SourceRefs            []string
+	FollowUpCandidates    []string
+	Supersedes            []string
+	RelatedRequirements   []string
+	RelatedWorkItems      []string
+	RelatedADRs           []string
+	RelatedSpecs          []string
+	RelatedInternalDesign []string
+	RelatedCoverage       []string
+	FollowUpResults       []string
 }
 
 func parseADRRecord(path, raw string) (*Record, RecordCandidate, []ParseIssue) {
@@ -87,17 +109,19 @@ func parseADRRecord(path, raw string) (*Record, RecordCandidate, []ParseIssue) {
 	metadata, metadataIssues := parseADRMetadata(lines, path, id)
 	issues = append(issues, metadataIssues...)
 	record := &Record{
-		ID:             id,
-		Kind:           RecordKindDecision,
-		Title:          title,
-		Status:         RecordStatus(metadata.Status),
-		Path:           path,
-		DependsOn:      metadata.DependsOn,
-		Supersedes:     metadata.Supersedes,
-		MigratedToSpec: metadata.MigratedToSpec,
-		Headings:       extractHeadings(raw),
-		RawBody:        raw,
-		NormalizedID:   normalizeRecordID(id),
+		ID:     id,
+		Kind:   RecordKindDecision,
+		Title:  title,
+		Status: RecordStatus(metadata.Status),
+		Path:   path,
+		Decision: &DecisionDetail{
+			DependsOn:      metadata.DependsOn,
+			Supersedes:     metadata.Supersedes,
+			MigratedToSpec: metadata.MigratedToSpec,
+		},
+		Headings:     extractHeadings(raw),
+		RawBody:      raw,
+		NormalizedID: normalizeRecordID(id),
 	}
 	return record, candidate, issues
 }
@@ -228,19 +252,224 @@ func parseSpecRecord(path, raw string) (*Record, RecordCandidate, []ParseIssue) 
 	}
 
 	record := &Record{
-		ID:             fm.DesignRecord.ID,
-		Kind:           kind,
-		Title:          title,
-		Status:         RecordStatus(fm.Status),
-		Path:           path,
-		DependsOn:      append([]string(nil), fm.DesignRecord.DependsOn...),
-		Supersedes:     []string{},
-		MigratedToSpec: nil,
-		Headings:       extractHeadings(raw),
-		RawBody:        raw,
-		NormalizedID:   normalizeRecordID(fm.DesignRecord.ID),
+		ID:           fm.DesignRecord.ID,
+		Kind:         kind,
+		Title:        title,
+		Status:       RecordStatus(fm.Status),
+		Path:         path,
+		Spec:         &SpecDetail{DependsOn: append([]string(nil), fm.DesignRecord.DependsOn...)},
+		SemanticRefs: semanticRefDecls(path, fm.SemanticRefs, fm.Sections),
+		Headings:     extractHeadings(raw),
+		RawBody:      raw,
+		NormalizedID: normalizeRecordID(fm.DesignRecord.ID),
 	}
 	return record, candidate, issues
+}
+
+func parseSpecSemanticRefSource(path, raw string) (SemanticRefSource, bool) {
+	fmBytes, _, ok := extractFrontMatter(raw)
+	if !ok {
+		return SemanticRefSource{}, false
+	}
+	var fm specFrontMatter
+	if err := yaml.Unmarshal([]byte(fmBytes), &fm); err != nil {
+		return SemanticRefSource{}, false
+	}
+	decls := semanticRefDecls(path, fm.SemanticRefs, fm.Sections)
+	if len(decls) == 0 {
+		return SemanticRefSource{}, false
+	}
+	recordID := ""
+	if fm.DesignRecord != nil {
+		recordID = fm.DesignRecord.ID
+	}
+	return SemanticRefSource{
+		Path:     path,
+		RecordID: recordID,
+		Decls:    decls,
+		Headings: extractHeadings(raw),
+	}, true
+}
+
+func parseInvestigationRecord(path, raw string) (*Record, RecordCandidate, []ParseIssue) {
+	lines := splitMarkdownLines(raw)
+	h1Line := firstLine(lines)
+	filenameID := investigationFilenameID(path)
+	candidate := RecordCandidate{
+		Path:           path,
+		Kind:           RecordKindInvestigation,
+		H1Line:         h1Line,
+		FilenameNumber: filenameID,
+		Included:       true,
+	}
+	var issues []ParseIssue
+
+	id, title, h1OK := parseInvestigationH1(h1Line)
+	candidate.H1Valid = h1OK
+	candidate.H1Number = id
+	if !h1OK {
+		candidate.Included = false
+		candidate.SkipReason = "invalid_investigation_h1"
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticInvalidH1Title,
+			Path:     path,
+			Message:  "investigation H1 is missing or invalid",
+			Details:  map[string]string{"h1": h1Line},
+		})
+		return nil, candidate, issues
+	}
+	candidate.ID = id
+	candidate.NormalizedID = normalizeRecordID(id)
+	if filenameID != id {
+		candidate.FilenameIDMismatch = true
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticFilenameIDMismatch,
+			Path:     path,
+			RecordID: id,
+			Message:  "investigation filename ID is missing or does not match H1 ID",
+			Details: map[string]string{
+				"h1_id":       id,
+				"filename_id": filenameID,
+			},
+		})
+	}
+
+	metadata := parseInvestigationMetadata(lines)
+	record := &Record{
+		ID:     id,
+		Kind:   RecordKindInvestigation,
+		Title:  title,
+		Status: RecordStatus(metadata.Status),
+		Path:   path,
+		Investigation: &InvestigationDetail{
+			Trigger:               metadata.Trigger,
+			Scope:                 metadata.Scope,
+			NonScope:              metadata.NonScope,
+			SourceRefs:            metadata.SourceRefs,
+			FollowUpCandidates:    metadata.FollowUpCandidates,
+			Supersedes:            metadata.Supersedes,
+			RelatedRequirements:   metadata.RelatedRequirements,
+			RelatedWorkItems:      metadata.RelatedWorkItems,
+			RelatedADRs:           metadata.RelatedADRs,
+			RelatedSpecs:          metadata.RelatedSpecs,
+			RelatedInternalDesign: metadata.RelatedInternalDesign,
+			RelatedCoverage:       metadata.RelatedCoverage,
+			FollowUpResults:       metadata.FollowUpResults,
+		},
+		Headings:     extractHeadings(raw),
+		RawBody:      raw,
+		NormalizedID: normalizeRecordID(id),
+	}
+	return record, candidate, issues
+}
+
+func parseInvestigationH1(line string) (string, string, bool) {
+	match := investigationH1Pattern.FindStringSubmatch(trimLineEnd(line))
+	if match == nil {
+		return "", "", false
+	}
+	title := strings.TrimSpace(match[2])
+	if title == "" {
+		return "", "", false
+	}
+	return match[1], title, true
+}
+
+func parseInvestigationMetadata(lines []string) investigationMetadata {
+	metadata := investigationMetadata{
+		SourceRefs:         []string{},
+		FollowUpCandidates: []string{},
+	}
+	block := metadataBlock(lines)
+	for i := 0; i < len(block); i++ {
+		line := trimLineEnd(block[i])
+		match := metadataPattern.FindStringSubmatch(line)
+		if match == nil {
+			continue
+		}
+		key := match[1]
+		value := strings.TrimSpace(match[2])
+		switch key {
+		case "status":
+			metadata.Status = value
+		case "date":
+			continue
+		case "trigger":
+			metadata.Trigger = value
+		case "scope":
+			metadata.Scope = value
+		case "non_scope":
+			metadata.NonScope = value
+		case "source_refs":
+			metadata.SourceRefs = collectIndentedList(block, i)
+		case "follow_up_candidates":
+			metadata.FollowUpCandidates = collectIndentedList(block, i)
+		case "supersedes":
+			metadata.Supersedes = collectIndentedList(block, i)
+		case "related_requirements":
+			metadata.RelatedRequirements = collectIndentedList(block, i)
+		case "related_work_items":
+			metadata.RelatedWorkItems = collectIndentedList(block, i)
+		case "related_adrs":
+			metadata.RelatedADRs = collectIndentedList(block, i)
+		case "related_specs":
+			metadata.RelatedSpecs = collectIndentedList(block, i)
+		case "related_internal_design":
+			metadata.RelatedInternalDesign = collectIndentedList(block, i)
+		case "related_coverage":
+			metadata.RelatedCoverage = collectIndentedList(block, i)
+		case "follow_up_results":
+			metadata.FollowUpResults = collectIndentedList(block, i)
+		}
+	}
+	return metadata
+}
+
+func collectIndentedList(block []string, index int) []string {
+	var out []string
+	for _, line := range block[index+1:] {
+		raw := trimLineEnd(line)
+		if metadataPattern.MatchString(raw) {
+			break
+		}
+		trimmedLeft := strings.TrimLeft(raw, " \t")
+		if len(raw) == len(trimmedLeft) {
+			continue
+		}
+		if !strings.HasPrefix(trimmedLeft, "- ") {
+			continue
+		}
+		item := strings.TrimSpace(strings.TrimPrefix(trimmedLeft, "- "))
+		if item != "" {
+			out = append(out, item)
+		}
+	}
+	return out
+}
+
+func semanticRefDecls(path string, semanticRefs []string, sections map[string]string) []SemanticRefDecl {
+	out := make([]SemanticRefDecl, 0, len(semanticRefs)+len(sections))
+	for _, ref := range semanticRefs {
+		out = append(out, SemanticRefDecl{
+			Ref:        strings.TrimSpace(ref),
+			Path:       path,
+			TargetType: SemanticTargetDocument,
+		})
+	}
+	keys := make([]string, 0, len(sections))
+	for ref := range sections {
+		keys = append(keys, ref)
+	}
+	sort.Strings(keys)
+	for _, ref := range keys {
+		out = append(out, SemanticRefDecl{
+			Ref:        strings.TrimSpace(ref),
+			Path:       path,
+			TargetType: SemanticTargetSection,
+			Section:    strings.TrimSpace(sections[ref]),
+		})
+	}
+	return out
 }
 
 func parseSpecH1(raw string) (string, string, bool) {
@@ -351,6 +580,15 @@ func trimLineEnd(line string) string {
 func filenameNumber(path string) string {
 	base := filepath.Base(path)
 	match := filenameNumPattern.FindStringSubmatch(base)
+	if match == nil {
+		return ""
+	}
+	return match[1]
+}
+
+func investigationFilenameID(path string) string {
+	base := filepath.Base(path)
+	match := investigationFilenameIDPattern.FindStringSubmatch(base)
 	if match == nil {
 		return ""
 	}

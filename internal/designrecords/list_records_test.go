@@ -13,7 +13,7 @@ func TestListRecordsBasicFiltersAndResponseShape(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListRecords: %v", err)
 	}
-	if got := listedRecordIDs(resp.Records); !sameStrings(got, []string{"ADR-066", "ADR-067", "ADR-076", "ADR-077", "ADR-078", "SPEC-design-records-mcp-overview", "SPEC-design-records-mcp-schema"}) {
+	if got := listedRecordIDs(resp.Records); !sameStrings(got, []string{"ADR-066", "ADR-067", "ADR-076", "ADR-077", "ADR-078", "INV-DOCS-001", "SPEC-design-records-mcp-overview", "SPEC-design-records-mcp-schema"}) {
 		t.Fatalf("record IDs = %#v", got)
 	}
 
@@ -24,10 +24,13 @@ func TestListRecordsBasicFiltersAndResponseShape(t *testing.T) {
 	if record.Kind != RecordKindDecision || record.Title != "Design Records MCP" || record.Status != RecordStatusAccepted || record.Path != "docs/adr/076-design-records-mcp.md" {
 		t.Fatalf("ADR-076 metadata = %#v", record)
 	}
-	assertStrings(t, record.DependsOn, []string{"ADR-067"})
-	assertStrings(t, record.Supersedes, []string{"ADR-066"})
-	if record.MigratedToSpec != nil {
-		t.Fatalf("MigratedToSpec = %#v, want nil", record.MigratedToSpec)
+	if record.Decision == nil {
+		t.Fatalf("Decision detail missing: %#v", record)
+	}
+	assertStrings(t, record.Decision.DependsOn, []string{"ADR-067"})
+	assertStrings(t, record.Decision.Supersedes, []string{"ADR-066"})
+	if record.Decision.MigratedToSpec != nil {
+		t.Fatalf("MigratedToSpec = %#v, want nil", record.Decision.MigratedToSpec)
 	}
 
 	encoded, err := json.Marshal(resp)
@@ -39,7 +42,7 @@ func TestListRecordsBasicFiltersAndResponseShape(t *testing.T) {
 		t.Fatalf("Unmarshal response: %v", err)
 	}
 	first := raw["records"][0]
-	for _, unexpected := range []string{"headings", "body", "RawBody", "raw_body"} {
+	for _, unexpected := range []string{"headings", "body", "RawBody", "raw_body", "depends_on", "supersedes", "migrated_to_spec"} {
 		if _, ok := first[unexpected]; ok {
 			t.Fatalf("response unexpectedly includes %q: %s", unexpected, encoded)
 		}
@@ -59,6 +62,18 @@ func TestListRecordsBasicFiltersAndResponseShape(t *testing.T) {
 	}
 	if got := listedRecordIDs(resp.Records); !sameStrings(got, []string{"SPEC-design-records-mcp-overview", "SPEC-design-records-mcp-schema"}) {
 		t.Fatalf("spec IDs = %#v", got)
+	}
+
+	resp, err = ListRecords(context.Background(), idx, ListRecordsRequest{Kind: RecordKindInvestigation})
+	if err != nil {
+		t.Fatalf("ListRecords investigation: %v", err)
+	}
+	if got := listedRecordIDs(resp.Records); !sameStrings(got, []string{"INV-DOCS-001"}) {
+		t.Fatalf("investigation IDs = %#v", got)
+	}
+	investigation := resp.Records[0]
+	if investigation.Investigation == nil || investigation.Investigation.Trigger != "ADR-076" {
+		t.Fatalf("investigation detail = %#v", investigation.Investigation)
 	}
 
 	assertListRecordsErrorCode(t, idx, ListRecordsRequest{Kind: RecordKind("task")}, ErrorCodeInvalidRequest)
@@ -227,7 +242,7 @@ func TestListRecordsSortOrderAndLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListRecords mixed desc: %v", err)
 	}
-	if got := listedRecordIDs(resp.Records); !sameStrings(got, []string{"ADR-078", "ADR-077", "ADR-076", "ADR-067", "ADR-066", "SPEC-design-records-mcp-schema", "SPEC-design-records-mcp-overview"}) {
+	if got := listedRecordIDs(resp.Records); !sameStrings(got, []string{"SPEC-design-records-mcp-schema", "SPEC-design-records-mcp-overview", "INV-DOCS-001", "ADR-078", "ADR-077", "ADR-076", "ADR-067", "ADR-066"}) {
 		t.Fatalf("mixed desc IDs = %#v", got)
 	}
 
@@ -259,7 +274,7 @@ func TestListRecordsRepositoryBootstrapQueries(t *testing.T) {
 		t.Fatalf("BuildIndex: %v", err)
 	}
 
-	latest, err := ListRecords(context.Background(), idx, ListRecordsRequest{OrderBy: "id", Order: "desc", Limit: intPtr(1)})
+	latest, err := ListRecords(context.Background(), idx, ListRecordsRequest{Kind: RecordKindDecision, OrderBy: "id", Order: "desc", Limit: intPtr(1)})
 	if err != nil {
 		t.Fatalf("ListRecords latest ADR: %v", err)
 	}
@@ -303,6 +318,7 @@ func buildListRecordsTestIndex(t *testing.T) *Index {
 	writeTestFile(t, root, "docs/adr/078-next.md", "# 078: Next\n- **status**: superseded\n- **depends_on**:\n- **supersedes**:\n- **migrated_to_spec**: 2026-05-12\n")
 	writeTestFile(t, root, "docs/spec/design-records-mcp/overview.md", "---\nstatus: draft\ndesign_record:\n  id: SPEC-design-records-mcp-overview\n  kind: spec\n  status: draft\n  depends_on:\n    - ADR-076\n---\n# Design Records MCP overview\n")
 	writeTestFile(t, root, "docs/spec/design-records-mcp/schema.md", "---\nstatus: confirmed\ndesign_record:\n  id: SPEC-design-records-mcp-schema\n  kind: spec\n  status: confirmed\n  depends_on:\n    - ADR-076\n---\n# Design Records MCP schema\n")
+	writeTestFile(t, root, "docs/investigations/docs/INV-DOCS-001-test.md", "# INV-DOCS-001: Test investigation\n- **status**: concluded\n- **date**: 2026-05-19\n- **trigger**: ADR-076\n- **scope**: test\n- **non_scope**: none\n- **source_refs**:\n  - ADR-076\n- **follow_up_candidates**:\n  - SPEC-design-records-mcp-schema\n")
 	return buildTestIndex(t, root)
 }
 

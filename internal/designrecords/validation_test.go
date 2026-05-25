@@ -100,6 +100,132 @@ func TestValidateRecordsOKWhenNoErrorDiagnostics(t *testing.T) {
 	}
 }
 
+func TestValidateRecordsInvestigationKnownDependencyTargetExists(t *testing.T) {
+	root := findRepoRoot(t)
+	idx := buildTestIndex(t, root)
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	for _, diagnostic := range resp.Diagnostics {
+		if diagnostic.Category == DiagnosticMissingDependsOnTarget && diagnostic.RecordID == "ADR-086" && diagnostic.TargetID == "INV-DOCS-001" {
+			t.Fatalf("ADR-086 -> INV-DOCS-001 still unresolved: %#v", diagnostic)
+		}
+	}
+}
+
+func TestValidateRecordsSemanticRefDeclarationDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, root, "docs/spec/a.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:trace.duplicate\n  - Spec:Bad\nsections:\n  spec:trace.missing: Missing heading\n  spec:trace.ambiguous: Duplicate\n\ndesign_record:\n  id: SPEC-a\n  kind: spec\n  status: draft\n---\n# A\n## Duplicate\n## Duplicate\n")
+	writeTestFile(t, root, "docs/spec/b.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:trace.duplicate\nsections:\n  bad/ref: Existing\n\ndesign_record:\n  id: SPEC-b\n  kind: spec\n  status: draft\n---\n# B\n## Existing\n")
+
+	idx := buildTestIndex(t, root)
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	for _, category := range []DiagnosticCategory{
+		DiagnosticInvalidSemanticRefDeclaration,
+		DiagnosticMissingSectionTarget,
+		DiagnosticAmbiguousSectionTarget,
+		DiagnosticDuplicateSemanticRef,
+	} {
+		if !hasDiagnostic(resp.Diagnostics, category) {
+			t.Fatalf("missing %s in %#v", category, resp.Diagnostics)
+		}
+	}
+}
+
+func TestValidateRecordsInvestigationReferenceDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, root, "docs/adr/001-valid.md", "# 001: Valid\n- **status**: accepted\n")
+	writeTestFile(t, root, "docs/spec/trace.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:trace.valid\ndesign_record:\n  id: SPEC-trace\n  kind: spec\n  status: draft\n---\n# Trace\n")
+	writeTestFile(t, root, "docs/investigations/docs/INV-DOCS-001-test.md", "# INV-DOCS-001: Test investigation\n- **status**: concluded\n- **date**: 2026-05-19\n- **trigger**: ADR-001\n- **scope**: test\n- **non_scope**: none\n- **source_refs**:\n  - ADR-999\n  - docs/adr/001-valid.md\n  - internal-design:resolver.semantic-ref-index\n- **follow_up_candidates**:\n  - SPEC-missing\n  - docs/spec/future.md\n  - coverage:trace\n- **follow_up_results**:\n  - spec:trace.missing\n  - docs/spec/trace.md\n  - COV-TRACE-001\n")
+	idx := buildTestIndex(t, root)
+
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	if resp.OK {
+		t.Fatalf("OK = true, want false: %#v", resp.Diagnostics)
+	}
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnresolvedSourceRef, DiagnosticSeverityError, "source_refs", "ADR-999", "unresolved")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticNoncanonicalSourceRef, DiagnosticSeverityError, "source_refs", "docs/adr/001-valid.md", "noncanonical")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnsupportedReference, DiagnosticSeverityError, "source_refs", "internal-design:resolver.semantic-ref-index", "unsupported")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnresolvedFollowUpResult, DiagnosticSeverityError, "follow_up_results", "spec:trace.missing", "unresolved")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticNoncanonicalFollowUpResult, DiagnosticSeverityError, "follow_up_results", "docs/spec/trace.md", "noncanonical")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnsupportedReference, DiagnosticSeverityError, "follow_up_results", "COV-TRACE-001", "unsupported")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnresolvedFollowUpCandidate, DiagnosticSeverityInfo, "follow_up_candidates", "SPEC-missing", "unresolved")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticNoncanonicalFollowUpCandidate, DiagnosticSeverityInfo, "follow_up_candidates", "docs/spec/future.md", "noncanonical")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnsupportedReference, DiagnosticSeverityInfo, "follow_up_candidates", "coverage:trace", "unsupported")
+}
+
+func TestValidateRecordsInfoOnlyDiagnosticsKeepOKTrue(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, root, "docs/adr/001-valid.md", "# 001: Valid\n- **status**: accepted\n")
+	writeTestFile(t, root, "docs/investigations/docs/INV-DOCS-001-test.md", "# INV-DOCS-001: Test investigation\n- **status**: concluded\n- **date**: 2026-05-19\n- **trigger**: ADR-001\n- **scope**: test\n- **non_scope**: none\n- **source_refs**:\n  - ADR-001\n- **follow_up_candidates**:\n  - SPEC-future\n  - docs/spec/future.md\n  - coverage:trace\n")
+	idx := buildTestIndex(t, root)
+
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	if !resp.OK {
+		t.Fatalf("OK = false for info-only diagnostics: %#v", resp.Diagnostics)
+	}
+	for _, diagnostic := range resp.Diagnostics {
+		if diagnostic.Severity != DiagnosticSeverityInfo {
+			t.Fatalf("non-info diagnostic in info-only test: %#v", diagnostic)
+		}
+	}
+}
+
+func TestValidateRecordsIgnoresYAMLRefsInInvestigationMetadata(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, root, "docs/adr/001-valid.md", "# 001: Valid\n- **status**: accepted\n")
+	writeTestFile(t, root, "docs/investigations/docs/INV-DOCS-001-test.md", "# INV-DOCS-001: Test investigation\n- **status**: concluded\n- **date**: 2026-05-19\n- **trigger**: ADR-001\n- **scope**: test\n- **non_scope**: none\n- **source_refs**:\n  - ADR-001\n  - yaml:uc-001\n- **follow_up_candidates**:\n  - yaml:future\n- **follow_up_results**:\n  - yaml:result\n")
+	idx := buildTestIndex(t, root)
+
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	if !resp.OK || len(resp.Diagnostics) != 0 {
+		t.Fatalf("yaml refs should be ignored by M19 validation: %#v", resp)
+	}
+}
+
+func TestValidateRecordsDuplicateTargetsDoNotAddFieldSpecificAmbiguousDiagnostics(t *testing.T) {
+	idx := &Index{
+		Records: []Record{
+			{ID: "ADR-001", NormalizedID: "ADR-001", Kind: RecordKindDecision, Title: "One", Status: RecordStatusAccepted, Path: "docs/adr/001-one.md"},
+			{ID: "ADR-001", NormalizedID: "ADR-001", Kind: RecordKindDecision, Title: "Duplicate", Status: RecordStatusAccepted, Path: "docs/adr/001-duplicate.md"},
+			{ID: "SPEC-a", NormalizedID: "SPEC-A", Kind: RecordKindSpec, Title: "A", Status: RecordStatusDraft, Path: "docs/spec/a.md", Spec: &SpecDetail{}, SemanticRefs: []SemanticRefDecl{{Ref: "spec:trace.duplicate", Path: "docs/spec/a.md", TargetType: SemanticTargetDocument}}},
+			{ID: "SPEC-b", NormalizedID: "SPEC-B", Kind: RecordKindSpec, Title: "B", Status: RecordStatusDraft, Path: "docs/spec/b.md", Spec: &SpecDetail{}, SemanticRefs: []SemanticRefDecl{{Ref: "spec:trace.duplicate", Path: "docs/spec/b.md", TargetType: SemanticTargetDocument}}},
+			{ID: "INV-DOCS-001", NormalizedID: "INV-DOCS-001", Kind: RecordKindInvestigation, Title: "Investigation", Status: RecordStatusConcluded, Path: "docs/investigations/docs/INV-DOCS-001-test.md", Investigation: &InvestigationDetail{SourceRefs: []string{"ADR-001", "spec:trace.duplicate"}, FollowUpCandidates: []string{}}},
+		},
+	}
+	idx.SemanticRefs = collectSemanticRefs(idx.Records)
+	idx.SemanticRefSources = []SemanticRefSource{
+		{Path: "docs/spec/a.md", RecordID: "SPEC-a", Decls: idx.Records[2].SemanticRefs},
+		{Path: "docs/spec/b.md", RecordID: "SPEC-b", Decls: idx.Records[3].SemanticRefs},
+	}
+
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	if !hasDiagnostic(resp.Diagnostics, DiagnosticDuplicateID) || !hasDiagnostic(resp.Diagnostics, DiagnosticDuplicateSemanticRef) {
+		t.Fatalf("missing duplicate diagnostics: %#v", resp.Diagnostics)
+	}
+	for _, diagnostic := range resp.Diagnostics {
+		if diagnostic.RecordID == "INV-DOCS-001" && diagnostic.Field != "" {
+			t.Fatalf("field-specific duplicate target diagnostic was added: %#v", diagnostic)
+		}
+	}
+}
+
 func TestValidateRecordsSpecStatusMismatchRequiresBothStatuses(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, root, "docs/spec/missing-top-level-status.md", "---\ndesign_record:\n  id: SPEC-missing-top-level-status\n  kind: spec\n  status: draft\n---\n# Missing top-level status\n")
@@ -345,4 +471,17 @@ func diagnosticsForRecord(diagnostics []Diagnostic, recordID string) []Diagnosti
 		}
 	}
 	return out
+}
+
+func assertInvestigationDiagnostic(t *testing.T, diagnostics []Diagnostic, category DiagnosticCategory, severity DiagnosticSeverity, field, value, refStatus string) {
+	t.Helper()
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Category == category && diagnostic.Severity == severity && diagnostic.Field == field && diagnostic.Value == value && diagnostic.RefStatus == refStatus {
+			if diagnostic.RecordID == "" || diagnostic.Path == "" {
+				t.Fatalf("record/path missing for %#v", diagnostic)
+			}
+			return
+		}
+	}
+	t.Fatalf("missing investigation diagnostic category=%s severity=%s field=%s value=%s ref_status=%s in %#v", category, severity, field, value, refStatus, diagnostics)
 }

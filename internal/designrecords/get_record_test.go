@@ -31,6 +31,18 @@ func TestGetRecordBasicDecisionAndSpecResponseShape(t *testing.T) {
 		"# Design Records MCP tools\n\n" +
 		"## get_record\n"
 	writeTestFile(t, root, "docs/spec/design-records-mcp/tools.md", specRaw)
+	investigationRaw := "# INV-DOCS-001: Test investigation\n\n" +
+		"- **status**: concluded\n" +
+		"- **date**: 2026-05-19\n" +
+		"- **trigger**: ADR-076\n" +
+		"- **scope**: test\n" +
+		"- **non_scope**: none\n" +
+		"- **source_refs**:\n" +
+		"  - ADR-076\n" +
+		"- **follow_up_candidates**:\n" +
+		"  - SPEC-design-records-mcp-tools\n" +
+		"## Result\n"
+	writeTestFile(t, root, "docs/investigations/docs/INV-DOCS-001-test.md", investigationRaw)
 	idx := buildTestIndex(t, root)
 
 	adrResp, err := GetRecord(context.Background(), idx, GetRecordRequest{ID: "ADR-076"})
@@ -41,10 +53,13 @@ func TestGetRecordBasicDecisionAndSpecResponseShape(t *testing.T) {
 	if adr.ID != "ADR-076" || adr.Kind != RecordKindDecision || adr.Title != "Design Records MCP" || adr.Status != RecordStatusAccepted || adr.Path != "docs/adr/076-design-records-mcp.md" {
 		t.Fatalf("ADR metadata = %#v", adr)
 	}
-	assertStrings(t, adr.DependsOn, []string{"ADR-050", "ADR-068"})
-	assertStrings(t, adr.Supersedes, []string{"ADR-001"})
-	if adr.MigratedToSpec != nil {
-		t.Fatalf("MigratedToSpec = %#v, want nil", adr.MigratedToSpec)
+	if adr.Decision == nil {
+		t.Fatalf("Decision detail missing: %#v", adr)
+	}
+	assertStrings(t, adr.Decision.DependsOn, []string{"ADR-050", "ADR-068"})
+	assertStrings(t, adr.Decision.Supersedes, []string{"ADR-001"})
+	if adr.Decision.MigratedToSpec != nil {
+		t.Fatalf("MigratedToSpec = %#v, want nil", adr.Decision.MigratedToSpec)
 	}
 	assertHeadings(t, adr.Headings, []Heading{
 		{Level: 1, Text: "076: Design Records MCP"},
@@ -64,7 +79,10 @@ func TestGetRecordBasicDecisionAndSpecResponseShape(t *testing.T) {
 	if spec.ID != "SPEC-design-records-mcp-tools" || spec.Kind != RecordKindSpec || spec.Title != "Design Records MCP tools" || spec.Status != RecordStatusDraft || spec.Path != "docs/spec/design-records-mcp/tools.md" {
 		t.Fatalf("spec metadata = %#v", spec)
 	}
-	assertStrings(t, spec.DependsOn, []string{"ADR-076"})
+	if spec.Spec == nil {
+		t.Fatalf("Spec detail missing: %#v", spec)
+	}
+	assertStrings(t, spec.Spec.DependsOn, []string{"ADR-076"})
 	assertHeadings(t, spec.Headings, []Heading{
 		{Level: 1, Text: "Design Records MCP tools"},
 		{Level: 2, Text: "get_record"},
@@ -72,6 +90,18 @@ func TestGetRecordBasicDecisionAndSpecResponseShape(t *testing.T) {
 	if spec.Body != nil {
 		t.Fatalf("spec body = %#v, want nil when include_body is omitted", *spec.Body)
 	}
+
+	invResp, err := GetRecord(context.Background(), idx, GetRecordRequest{ID: "INV-DOCS-001"})
+	if err != nil {
+		t.Fatalf("GetRecord investigation: %v", err)
+	}
+	inv := invResp.Record
+	if inv.Kind != RecordKindInvestigation || inv.Investigation == nil || inv.Investigation.Trigger != "ADR-076" {
+		t.Fatalf("investigation response = %#v", inv)
+	}
+	assertStrings(t, inv.Investigation.SourceRefs, []string{"ADR-076"})
+	assertStrings(t, inv.Investigation.FollowUpCandidates, []string{"SPEC-design-records-mcp-tools"})
+	assertGetRecordJSONShape(t, invResp, false)
 }
 
 func TestGetRecordIncludeBodyReturnsRawMarkdown(t *testing.T) {
@@ -264,15 +294,20 @@ func assertGetRecordJSONShape(t *testing.T, resp GetRecordResponse, wantBody boo
 		t.Fatalf("body presence = %v, want %v: %s", hasBody, wantBody, encoded)
 	}
 	allowed := map[string]bool{
-		"id":               true,
-		"kind":             true,
-		"title":            true,
-		"status":           true,
-		"path":             true,
-		"depends_on":       true,
-		"supersedes":       true,
-		"migrated_to_spec": true,
-		"headings":         true,
+		"id":       true,
+		"kind":     true,
+		"title":    true,
+		"status":   true,
+		"path":     true,
+		"headings": true,
+	}
+	switch resp.Record.Kind {
+	case RecordKindDecision:
+		allowed["decision"] = true
+	case RecordKindSpec:
+		allowed["spec"] = true
+	case RecordKindInvestigation:
+		allowed["investigation"] = true
 	}
 	if wantBody {
 		allowed["body"] = true
