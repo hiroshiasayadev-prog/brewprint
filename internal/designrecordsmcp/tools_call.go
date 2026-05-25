@@ -71,6 +71,15 @@ func (s *Server) HandleToolsCall(params json.RawMessage) ToolsCallResult {
 			return toolBuildIndexErrorResult(buildErr)
 		}
 		return toolHandlerResult(designrecords.GetRecord(ctx, idx, req))
+	case "get_records":
+		var req designrecords.GetRecordsRequest
+		if err := decodeToolArguments(call.Arguments, &req); err != nil {
+			return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("invalid get_records arguments: %v", err))
+		}
+		if buildErr != nil {
+			return toolBuildIndexErrorResult(buildErr)
+		}
+		return toolHandlerResult(designrecords.GetRecords(ctx, idx, req))
 	case "resolve_reference":
 		var req designrecords.ResolveReferenceRequest
 		if err := decodeToolArguments(call.Arguments, &req); err != nil {

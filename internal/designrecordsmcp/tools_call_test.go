@@ -81,6 +81,27 @@ func TestToolsCallSuccess(t *testing.T) {
 			},
 		},
 		{
+			name:   "get_records partial result and duplicate info",
+			line:   `{"jsonrpc":"2.0","id":121,"method":"tools/call","params":{"name":"get_records","arguments":{"ids":["ADR-001","SPEC-one","ADR-001","INV-DOCS-999"],"include_body":true}}}`,
+			wantID: "121",
+			assertText: func(t *testing.T, text string) {
+				var resp designrecords.GetRecordsResponse
+				unmarshalToolText(t, text, &resp)
+				if len(resp.Items) != 3 || resp.Items[0].ID != "ADR-001" || resp.Items[1].ID != "SPEC-one" || resp.Items[2].RetrievalStatus != designrecords.RetrievalStatusNotFound {
+					t.Fatalf("get_records response = %#v", resp)
+				}
+				if resp.Items[0].Record == nil || resp.Items[0].Record.Body == nil || *resp.Items[0].Record.Body == "" {
+					t.Fatalf("get_records found body = %#v", resp.Items[0])
+				}
+				if len(resp.Items[2].Diagnostics) != 1 || resp.Items[2].Diagnostics[0].RequestedID != "INV-DOCS-999" {
+					t.Fatalf("get_records missing diagnostic = %#v", resp.Items[2].Diagnostics)
+				}
+				if len(resp.Diagnostics) != 1 || resp.Diagnostics[0].RequestedID != "ADR-001" || resp.Diagnostics[0].FirstIndex == nil || *resp.Diagnostics[0].FirstIndex != 0 {
+					t.Fatalf("get_records duplicate diagnostic = %#v", resp.Diagnostics)
+				}
+			},
+		},
+		{
 			name:   "resolve_reference",
 			line:   `{"jsonrpc":"2.0","id":16,"method":"tools/call","params":{"name":"resolve_reference","arguments":{"ref":"spec:one.doc"}}}`,
 			wantID: "16",
@@ -176,6 +197,21 @@ func TestToolsCallToolErrors(t *testing.T) {
 			name: "get_record unknown id",
 			line: `{"jsonrpc":"2.0","id":21,"method":"tools/call","params":{"name":"get_record","arguments":{"id":"ADR-999"}}}`,
 			code: designrecords.ErrorCodeRecordNotFound,
+		},
+		{
+			name: "get_records missing ids",
+			line: `{"jsonrpc":"2.0","id":211,"method":"tools/call","params":{"name":"get_records","arguments":{}}}`,
+			code: designrecords.ErrorCodeInvalidRequest,
+		},
+		{
+			name: "get_records empty ids",
+			line: `{"jsonrpc":"2.0","id":212,"method":"tools/call","params":{"name":"get_records","arguments":{"ids":[]}}}`,
+			code: designrecords.ErrorCodeInvalidRequest,
+		},
+		{
+			name: "get_records non-string id",
+			line: `{"jsonrpc":"2.0","id":213,"method":"tools/call","params":{"name":"get_records","arguments":{"ids":["ADR-001",7]}}}`,
+			code: designrecords.ErrorCodeInvalidRequest,
 		},
 		{
 			name: "suggest_next_record spec kind",

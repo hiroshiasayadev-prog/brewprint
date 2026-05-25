@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/schema.md
 status: draft
-last_updated: 2026-05-24
+last_updated: 2026-05-26
 summary: >
   Design Records MCP MVP が読む design_record metadata schema、record model、
   H1 title 抽出、diagnostic category を定義する。
@@ -11,6 +11,7 @@ depends_on:
   - docs/adr/086-investigation-artifact-format-and-lifecycle.md
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
+  - docs/adr/090-design-records-mcp-batch-retrieval-tool-boundary.md
 design_record:
   id: SPEC-design-records-mcp-schema
   kind: spec
@@ -21,6 +22,7 @@ design_record:
     - ADR-086
     - ADR-087
     - ADR-088
+    - ADR-090
 ---
 
 # Design Records MCP schema
@@ -38,8 +40,8 @@ MVP で読む source は以下である。
 | spec YAML front matter | spec record の `scope` / `status` / `design_record` metadata。top-level `depends_on` は doc-policy 用出自 path list として読むが、record dependency には使わない |
 | Markdown H1 | `title` 抽出 |
 | file path | record path / filename ID validation |
-| Markdown headings | `get_record` response の headings |
-| Markdown body | `get_record(include_body=true)` の raw body |
+| Markdown headings | `get_record` / `get_records` の found record response の headings |
+| Markdown body | `get_record(include_body=true)` / `get_records(include_body=true)` の found record raw body |
 
 MVP では Markdown 本文の自然言語から依存関係や migration 状態を推定しない。
 
@@ -160,7 +162,7 @@ Kind-specific details:
 | `spec` | `depends_on` |
 | `investigation` | `trigger`, `scope`, `non_scope`, `source_refs`, `follow_up_candidates`, optional `supersedes`, `related_*`, `follow_up_results` |
 
-`headings` と requested raw `body` は `get_record` の取得内容として common response に追加できる。
+`headings` と requested raw `body` は `get_record` の取得内容として common response に追加でき、`get_records` の `retrieval_status: "found"` item でも同一 record representation を再利用する。
 
 ADR 箇条書きmetadataの `date` は parse してよいが、record response field としては持たせない。
 investigation の `date` も同様に metadata として parse するが、common response field には含めない。
@@ -372,20 +374,31 @@ Design Records MCP の internal record model は、少なくとも以下の情�
 | `spec` | spec `design_record` metadata | spec-specific detail object |
 | `investigation` | investigation bullet metadata | investigation-specific detail object |
 | `headings` | Markdown parse | heading list for `get_record` |
-| `body` | Markdown file | raw body, requested only when needed |
+| `body` | Markdown file | raw body, requested only when needed by `get_record` または `get_records` |
+
+`get_records` の response item wrapper は record model 自体ではない。`retrieval_status: "found"` item の `record` は上記 record model を返し、`retrieval_status: "not_found"` item の `record` は `null` とする。取得状態を表す `retrieval_status` は record lifecycle の `status` に混在させない。
 
 `headings` は ATX heading のみを対象とする。
 YAML front matter 内、および fenced code block 内の `#` で始まる行は heading として扱わない。
 setext heading は MVP では扱わない。
 
-`body` は `get_record(include_body=true)` の場合だけ response に含める。
-本文は整形・要約・正規化せず、元ファイル内容をそのまま返す。
+`body` は `get_record(include_body=true)` または `get_records(include_body=true)` の found record response にだけ含める。
+本文は整形・要約・正規化・truncate を行わず、元ファイル内容をそのまま返す。
 
 > 由来: ADR-077 §list_records の責務, ADR-077 §get_record の責務
 
 ## Diagnostic category
 
 `resolve_reference` は direct query の結果として、supported form だが target が存在しない場合に `unresolved_reference`、同一 ref が複数 target に一致して単一解決できない場合に `ambiguous_reference`、MVP resolver 対象外として behavior を定義する入力には `unsupported_reference` を返す。Reserved prefix `yaml:` の public resolver input / direct query response behavior、および investigation metadata validation behavior は MVP で定義しない。これら resolution response の diagnostic と、`validate_records` が参照元 field や index defect に対して返す下記 validation diagnostic は区別する。
+
+`get_records` は retrieval / request-level diagnostic として以下を返す。
+
+| category | severity | placement | required additional fields | meaning |
+|---|---|---|---|---|
+| `record_not_found` | error | item-level | `requested_id` | requested exact record ID lookup key が index に存在しない |
+| `duplicate_requested_id_ignored` | info | top-level | `requested_id`, `first_index`, `duplicate_indexes` | 同一 requested ID の2回目以降を無視し、first occurrence の item のみ返した |
+
+`first_index` と `duplicate_indexes` は request `ids` array の zero-based index とする。`duplicate_requested_id_ignored` は重複した requested ID ごとに一件返す。これらは request / retrieval に対する diagnostic であり、record metadata defect を示す `record_id` field は用いない。
 
 MVP の `validate_records` は以下の diagnostic category を返す。
 
@@ -429,7 +442,7 @@ MVP では以下を diagnostic category に含めない。
 `missing_record_path` は、filesystem scan または path normalization により record 候補 path を検出したが、実際の read/stat に失敗した場合に出す。
 例として、scan 後に file が削除された場合、permission denied、symlink target missing、path normalization 後の path が存在しない場合を含む。
 
-> 由来: ADR-077 §validate_records の責務
+> 由来: ADR-077 §validate_records の責務, ADR-090 §Partial result / Ordering と duplicate requested ID
 
 ## Bootstrap metadata
 

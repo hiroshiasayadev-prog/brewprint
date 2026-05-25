@@ -71,6 +71,74 @@ func GetRecord(ctx context.Context, idx *Index, req GetRecordRequest) (GetRecord
 	return GetRecordResponse{}, newToolError(ErrorCodeRecordNotFound, fmt.Sprintf("record %s was not found", req.ID))
 }
 
+// GetRecords returns first-occurrence ordered results for explicitly requested
+// record IDs. Missing IDs are item-level results; duplicate requested IDs are
+// ignored after their first occurrence and reported as informational diagnostics.
+func GetRecords(ctx context.Context, idx *Index, req GetRecordsRequest) (GetRecordsResponse, error) {
+	if err := ctx.Err(); err != nil {
+		return GetRecordsResponse{}, err
+	}
+	if idx == nil {
+		return GetRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
+	}
+	if len(req.IDs) == 0 {
+		return GetRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, "ids must be a non-empty array")
+	}
+
+	items := make([]GetRecordsItem, 0, len(req.IDs))
+	firstIndexes := make(map[string]int, len(req.IDs))
+	duplicateIndexes := make(map[string][]int)
+	duplicateOrder := make([]string, 0)
+
+	for index, id := range req.IDs {
+		if _, seen := firstIndexes[id]; seen {
+			if len(duplicateIndexes[id]) == 0 {
+				duplicateOrder = append(duplicateOrder, id)
+			}
+			duplicateIndexes[id] = append(duplicateIndexes[id], index)
+			continue
+		}
+		firstIndexes[id] = index
+
+		item := GetRecordsItem{
+			ID:          id,
+			Diagnostics: []Diagnostic{},
+		}
+		for _, record := range idx.Records {
+			if record.ID == id {
+				recordResponse := getRecordResponseRecord(record, req.IncludeBody)
+				item.RetrievalStatus = RetrievalStatusFound
+				item.Record = &recordResponse
+				break
+			}
+		}
+		if item.Record == nil {
+			item.RetrievalStatus = RetrievalStatusNotFound
+			item.Diagnostics = []Diagnostic{{
+				Category:    DiagnosticRecordNotFound,
+				Severity:    DiagnosticSeverityError,
+				RequestedID: id,
+				Message:     fmt.Sprintf("record %s was not found", id),
+			}}
+		}
+		items = append(items, item)
+	}
+
+	diagnostics := make([]Diagnostic, 0, len(duplicateOrder))
+	for _, id := range duplicateOrder {
+		firstIndex := firstIndexes[id]
+		diagnostics = append(diagnostics, Diagnostic{
+			Category:         DiagnosticDuplicateRequestedIDIgnored,
+			Severity:         DiagnosticSeverityInfo,
+			RequestedID:      id,
+			FirstIndex:       &firstIndex,
+			DuplicateIndexes: append([]int{}, duplicateIndexes[id]...),
+			Message:          "duplicate requested record ID was ignored after its first occurrence",
+		})
+	}
+	return GetRecordsResponse{Items: items, Diagnostics: diagnostics}, nil
+}
+
 // ValidateRecords checks the Phase 1 index materials and emits MVP validation
 // diagnostics for the selected record scope.
 func ValidateRecords(ctx context.Context, idx *Index, req ValidateRecordsRequest) (ValidateRecordsResponse, error) {

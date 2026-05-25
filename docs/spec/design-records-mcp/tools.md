@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/tools.md
 status: draft
-last_updated: 2026-05-24
+last_updated: 2026-05-26
 summary: >
   Design Records MCP MVP の read-only tool interface と責務境界を定義する。
 depends_on:
@@ -9,6 +9,7 @@ depends_on:
   - docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
+  - docs/adr/090-design-records-mcp-batch-retrieval-tool-boundary.md
 design_record:
   id: SPEC-design-records-mcp-tools
   kind: spec
@@ -18,6 +19,7 @@ design_record:
     - ADR-077
     - ADR-087
     - ADR-088
+    - ADR-090
 ---
 
 # Design Records MCP tools
@@ -29,7 +31,8 @@ Design Records MCP MVP の P0 tool は以下である。
 | tool | priority | purpose |
 |---|---|---|
 | `list_records` | P0 | record index を構造化して返す |
-| `get_record` | P0 | record ID から metadata / path / headings / raw body を取得する |
+| `get_record` | P0 | 単一 record ID から metadata / path / headings / raw body を取得する |
+| `get_records` | P0 | 明示された複数 record ID の detail representation をまとめて取得する |
 | `validate_records` | P0 | record metadata の基本整合性と canonical reference validation を検査する |
 | `resolve_reference` | P0 | canonical semantic/artifact reference を document / section / record へ解決する |
 
@@ -42,7 +45,7 @@ P1 の任意補助 tool として以下を許容する。
 MVP tool は read-only である。
 ファイル作成・更新・Evidence 書き換え・commit 操作は行わない。
 
-> 由来: ADR-077 §P0: MVP必須tool, ADR-077 §P1: MVPに含めてもよい補助tool
+> 由来: ADR-077 §P0: MVP必須tool, ADR-077 §P1: MVPに含めてもよい補助tool, ADR-090 §決定
 
 ## Common response conventions
 
@@ -247,6 +250,154 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
 `body` は元ファイル内容をそのまま返す。
 整形・要約・正規化を行ってはならない。
 構造化 metadata や headings は body とは別 field として返す。
+
+## `get_records`
+
+### Purpose
+
+`get_records` は、呼び出し側が明示した複数 record ID について、`get_record` と同じ record representation をまとめて取得する read-only tool である。
+
+候補探索と filter / range query は `list_records`、canonical reference resolution は `resolve_reference`、index integrity validation は `validate_records` の責務である。`get_records` はこれらを兼務しない。
+
+> 由来: ADR-090 §1〜§3
+
+### Request
+
+```json
+{
+  "ids": [
+    "ADR-077",
+    "SPEC-design-records-mcp-tools",
+    "INV-DOCS-001",
+    "ADR-077",
+    "INV-DOCS-999"
+  ],
+  "include_body": false
+}
+```
+
+| field | required | type | meaning |
+|---|---:|---|---|
+| `ids` | yes | non-empty array of string | 取得対象の exact record ID lookup key。入力順を保持する |
+| `include_body` | no | bool | 各 found record に Markdown raw body を含めるか。default は `false` |
+
+`ids` の欠落、空配列、array 以外の値、または string 以外の element は `invalid_request` tool error とする。
+
+`ids[]` は record index に対する exact lookup key としてのみ評価する。前後 whitespace の trim、case normalization、canonical reference resolution、input kind classification は行わない。したがって `spec:trace`、`REQ-MCP-002`、physical path、`adr-077`、` ADR-077 ` のような string input が indexed record ID と一致しない場合、tool error や `unsupported` ではなく item-level `not_found` とする。
+
+`get_records` は `kind` / `status` / `id_range` / `limit` を request field として持たない。record ごとに異なる `include_body` を指定する query plan 形式も採用しない。
+
+### Response
+
+```json
+{
+  "items": [
+    {
+      "id": "ADR-077",
+      "retrieval_status": "found",
+      "record": {
+        "id": "ADR-077",
+        "kind": "decision",
+        "title": "Design Records MCP MVP boundary and tool prioritization",
+        "status": "accepted",
+        "path": "docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md",
+        "decision": {
+          "depends_on": ["ADR-076"],
+          "supersedes": [],
+          "migrated_to_spec": null
+        },
+        "headings": []
+      },
+      "diagnostics": []
+    },
+    {
+      "id": "SPEC-design-records-mcp-tools",
+      "retrieval_status": "found",
+      "record": {
+        "id": "SPEC-design-records-mcp-tools",
+        "kind": "spec",
+        "title": "Design Records MCP tools",
+        "status": "draft",
+        "path": "docs/spec/design-records-mcp/tools.md",
+        "spec": {
+          "depends_on": ["ADR-076", "ADR-077", "ADR-087", "ADR-088", "ADR-090"]
+        },
+        "headings": []
+      },
+      "diagnostics": []
+    },
+    {
+      "id": "INV-DOCS-001",
+      "retrieval_status": "found",
+      "record": {
+        "id": "INV-DOCS-001",
+        "kind": "investigation",
+        "title": "investigation artifact format and lifecycle",
+        "status": "concluded",
+        "path": "docs/investigations/docs/INV-DOCS-001-investigation-artifact-format-and-lifecycle.md",
+        "investigation": {
+          "trigger": "ADR-085",
+          "scope": "investigation artifact format and lifecycle",
+          "non_scope": "public contract decisions",
+          "source_refs": ["ADR-085"],
+          "follow_up_candidates": []
+        },
+        "headings": []
+      },
+      "diagnostics": []
+    },
+    {
+      "id": "INV-DOCS-999",
+      "retrieval_status": "not_found",
+      "record": null,
+      "diagnostics": [
+        {
+          "category": "record_not_found",
+          "severity": "error",
+          "requested_id": "INV-DOCS-999",
+          "message": "record INV-DOCS-999 was not found"
+        }
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "category": "duplicate_requested_id_ignored",
+      "severity": "info",
+      "requested_id": "ADR-077",
+      "first_index": 0,
+      "duplicate_indexes": [3],
+      "message": "duplicate requested record ID was ignored after its first occurrence"
+    }
+  ]
+}
+```
+
+Top-level response fields:
+
+| field | required | meaning |
+|---|---:|---|
+| `items` | yes | dedupe 後の first occurrence order で並ぶ retrieval item list |
+| `diagnostics` | yes | request-level diagnostic list。正常時は empty list |
+
+Retrieval item fields:
+
+| field | required | meaning |
+|---|---:|---|
+| `id` | yes | request で指定された lookup key |
+| `retrieval_status` | yes | `found` / `not_found` |
+| `record` | yes | `found` では `get_record.record` と同一 representation、`not_found` では `null` |
+| `diagnostics` | yes | item-level diagnostic list。`found` では empty list |
+
+`items` は `records` と呼ばない。missing item も同じ collection に含むためである。
+
+全 ID が存在しない場合も tool error にはせず、normal response として各 first-occurrence input に `retrieval_status: "not_found"` item を返す。
+
+同一 ID が複数回指定された場合、最初の出現だけを `items` に返す。重複した ID ごとに top-level `duplicate_requested_id_ignored` diagnostic を一件返し、`first_index` と `duplicate_indexes` は request `ids` 配列の zero-based index とする。
+
+`include_body: true` の場合、各 `found` item の `record.body` に元 Markdown 全文を追加する。`get_record` と同様に本文の整形・要約・正規化・truncate は行わない。Response total length / body size の public numeric limit は定義しない。
+
+> 由来: ADR-090 §4〜§7
 
 ## `resolve_reference`
 
@@ -503,12 +654,12 @@ MVP tool error code は以下を最小とする。
 
 | code | meaning |
 |---|---|
-| `record_not_found` | 指定された record ID が存在しない |
-| `invalid_request` | request schema または field value が不正。例: `list_records` に `kind: task` を指定した場合 |
+| `record_not_found` | `get_record` で指定された単一 record ID が存在しない。`get_records` では tool error ではなく item-level diagnostic として用いる |
+| `invalid_request` | request schema または field value が不正。例: `list_records` に `kind: task` を指定した場合、または `get_records.ids` が欠落・空・非 array・非 string element を含む場合 |
 | `unsupported_kind` | tool が対象外の `kind` を指定された。例: `suggest_next_record` に `kind: spec` を指定した場合 |
 | `id_range_requires_decision_kind` | `id_range` が `decision` 以外の kind と併用された、または `SPEC-*` / `INV-*` range が指定された |
 
-MVP では、存在しない record ID を指定した場合、tool は machine-readable な error を返す。
+`get_record` では、存在しない単一 record ID を指定した場合、tool は machine-readable な error を返す。
 
 例:
 
@@ -521,7 +672,7 @@ MVP では、存在しない record ID を指定した場合、tool は machine-
 }
 ```
 
-`record_not_found` は tool 実行 error であり、`validate_records` diagnostic category ではない。
+`get_record` の `record_not_found` は tool execution error であり、`validate_records` diagnostic category ではない。`get_records` の missing requested ID は batch response 内の item-level `record_not_found` diagnostic として返し、batch tool execution 自体は成功とする。
 
 ## Write tool policy
 

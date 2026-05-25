@@ -42,6 +42,18 @@ func Tools() []Tool {
 			}, []string{"id"}),
 		},
 		{
+			Name:        "get_records",
+			Description: "Get multiple explicitly requested design records by exact ID, with item-level partial results.",
+			InputSchema: objectSchema(map[string]any{
+				"ids": map[string]any{
+					"type":     "array",
+					"minItems": 1,
+					"items":    map[string]any{"type": "string"},
+				},
+				"include_body": map[string]any{"type": "boolean"},
+			}, []string{"ids"}),
+		},
+		{
 			Name:        "resolve_reference",
 			Description: "Resolve one canonical semantic/artifact reference to a document, section, or record target.",
 			InputSchema: objectSchema(map[string]any{

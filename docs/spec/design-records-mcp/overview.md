@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/overview.md
 status: draft
-last_updated: 2026-05-24
+last_updated: 2026-05-26
 summary: >
   Design Records MCP の目的、対象範囲、既存 brewprint MCP との責務境界、
   MVP の非目標を定義する。
@@ -10,6 +10,7 @@ depends_on:
   - docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
+  - docs/adr/090-design-records-mcp-batch-retrieval-tool-boundary.md
 design_record:
   id: SPEC-design-records-mcp-overview
   kind: spec
@@ -19,6 +20,7 @@ design_record:
     - ADR-077
     - ADR-087
     - ADR-088
+    - ADR-090
 ---
 
 # Design Records MCP overview
@@ -31,6 +33,7 @@ Design Records MCP は、brewprint の design record 運用を machine-readable 
 
 - ADR / spec / investigation の record index を構築する
 - record の ID / kind / status / path と kind 固有 metadata を構造化して取得できるようにする
+- 選択済みの複数 record ID について detail representation をまとめて取得できるようにする
 - record metadata の基本不整合を検出する
 - docs artifact 間の semantic/artifact ref を解決し、参照切れ検査に利用できるようにする
 - 別セッションの LLM が、読むべき design record を本文読解前に絞り込めるようにする
@@ -96,6 +99,7 @@ MVP の P0 tool は以下である。
 
 - `list_records`
 - `get_record`
+- `get_records`
 - `validate_records`
 - `resolve_reference`
 
@@ -105,7 +109,7 @@ P1 の任意補助 tool として、以下を許容する。
 
 P0 tool は read-only であり、record 本文を読む前の候補絞り込みと metadata 整合性検証を目的とする。
 
-> 由来: ADR-077 §P0: MVP必須tool, ADR-077 §P1: MVPに含めてもよい補助tool
+> 由来: ADR-077 §P0: MVP必須tool, ADR-077 §P1: MVPに含めてもよい補助tool, ADR-090 §決定
 
 ## MVP 外
 
@@ -141,7 +145,7 @@ Design Records MCP は汎用 filesystem tool の代替ではない。
 
 Design Records MCP が扱うもの:
 
-- record ID から metadata / path / headings / raw body を取得する
+- 単一または明示された複数の record ID から metadata / path / headings / raw body を取得する
 - record 一覧を構造化して返す
 - record metadata の基本不整合を検証する
 - 次の ADR 番号と推奨 path を提案する
@@ -154,4 +158,4 @@ Design Records MCP が扱わないもの:
 - commit hash の自動書き換え
 - git 操作
 
-> 由来: ADR-077 §filesystemとの責務境界
+> 由来: ADR-077 §filesystemとの責務境界, ADR-090 §決定

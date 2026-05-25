@@ -153,6 +153,8 @@ const (
 	DiagnosticUnsupportedReference          DiagnosticCategory = "unsupported_reference"
 	DiagnosticUnresolvedReference           DiagnosticCategory = "unresolved_reference"
 	DiagnosticAmbiguousReference            DiagnosticCategory = "ambiguous_reference"
+	DiagnosticRecordNotFound                DiagnosticCategory = "record_not_found"
+	DiagnosticDuplicateRequestedIDIgnored   DiagnosticCategory = "duplicate_requested_id_ignored"
 )
 
 type DiagnosticSeverity string
@@ -163,15 +165,18 @@ const (
 )
 
 type Diagnostic struct {
-	Category  DiagnosticCategory `json:"category"`
-	Severity  DiagnosticSeverity `json:"severity"`
-	RecordID  string             `json:"record_id,omitempty"`
-	Path      string             `json:"path,omitempty"`
-	Message   string             `json:"message"`
-	TargetID  string             `json:"target_id,omitempty"`
-	Field     string             `json:"field,omitempty"`
-	Value     string             `json:"value,omitempty"`
-	RefStatus string             `json:"ref_status,omitempty"`
+	Category         DiagnosticCategory `json:"category"`
+	Severity         DiagnosticSeverity `json:"severity"`
+	RecordID         string             `json:"record_id,omitempty"`
+	Path             string             `json:"path,omitempty"`
+	Message          string             `json:"message"`
+	TargetID         string             `json:"target_id,omitempty"`
+	Field            string             `json:"field,omitempty"`
+	Value            string             `json:"value,omitempty"`
+	RefStatus        string             `json:"ref_status,omitempty"`
+	RequestedID      string             `json:"requested_id,omitempty"`
+	FirstIndex       *int               `json:"first_index,omitempty"`
+	DuplicateIndexes []int              `json:"duplicate_indexes,omitempty"`
 }
 
 type ErrorCode string
@@ -249,6 +254,30 @@ type GetRecordRecord struct {
 
 type GetRecordResponse struct {
 	Record GetRecordRecord `json:"record"`
+}
+
+type GetRecordsRequest struct {
+	IDs         []string `json:"ids"`
+	IncludeBody bool     `json:"include_body,omitempty"`
+}
+
+type RetrievalStatus string
+
+const (
+	RetrievalStatusFound    RetrievalStatus = "found"
+	RetrievalStatusNotFound RetrievalStatus = "not_found"
+)
+
+type GetRecordsItem struct {
+	ID              string           `json:"id"`
+	RetrievalStatus RetrievalStatus  `json:"retrieval_status"`
+	Record          *GetRecordRecord `json:"record"`
+	Diagnostics     []Diagnostic     `json:"diagnostics"`
+}
+
+type GetRecordsResponse struct {
+	Items       []GetRecordsItem `json:"items"`
+	Diagnostics []Diagnostic     `json:"diagnostics"`
 }
 
 type ValidateRecordsRequest struct {
