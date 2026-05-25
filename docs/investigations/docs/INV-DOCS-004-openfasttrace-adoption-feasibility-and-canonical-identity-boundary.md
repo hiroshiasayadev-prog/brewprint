@@ -1,6 +1,6 @@
 # INV-DOCS-004: OpenFastTrace adoption feasibility and canonical identity boundary
 
-- **status**: investigating
+- **status**: concluded
 - **date**: 2026-05-24
 - **trigger**: ADR-088 により MVP 外へ送った semantic realization coverage 領域について、OpenFastTrace (OFT) が外部実装候補になり得る可能性が判明し、M19 contract 確定前に canonical identity と将来接続境界への影響を確認する必要が生じた
 - **scope**: OFT が deferred realization coverage の実装候補となり得るか、およびその可能性が semantic trace MVP foundation / M19 contract に与える設計上の影響
@@ -13,12 +13,6 @@
   - spec:trace.artifact-refs
   - spec:trace.coverage-mapping
 - **follow_up_candidates**:
-  - ADR refinement for external coverage tool interoperability and canonical identity ownership
-  - spec:trace.artifact-refs
-  - spec:trace.coverage-mapping
-  - spec:trace.resolve-and-validation
-  - M19 contract refinement gate before implementation
-  - OFT compatibility spike for a minimal normative spec to implementation/test coverage chain
 
 > 本 investigation は OFT の採用を決定するものではない。また、ADR-088 が定めた「semantic realization relation を MVP operational scope に含めない」という現行方針を、この時点で変更するものではない。
 > 対象は、将来の external coverage tool 候補が現実的に存在する場合に、現在確定しようとしている canonical reference foundation が不要な二重 identity や後戻りを生まないかである。
@@ -243,14 +237,22 @@ M18 は ADR-088 に基づく方針同期を完了して closed である。M19 �
 4. M19 Phase A の contract 確定に先立ち、将来 external tool integration を閉じないための制約または extension point が必要かを判断する。
 5. 具体的な変更が必要な場合のみ、ADR / spec / M19 task の refinement 候補へ渡す。
 
-## 後続判断に渡す候補
+## 終結時の結論
+
+本 investigation は、OFT を Brewprint の external coverage backend または canonical identity bridge の採用候補として追跡しない結論で終結する。
+
+ADR-088 により semantic realization coverage は MVP scope 外であり、現時点では evidence matrix、audit、sign-off、cross-layer coverage のような external backend を必要とする concrete requirement は存在しない。Brewprint の中心責務は、外部 trace tool との互換性ではなく、制約された architecture semantics と canonical query / validation boundary を所有することにある。
+
+したがって OFT compatibility spike、M19 contract refinement、OFT interoperability 用の ADR / spec 更新は起票しない。将来、外部 assurance または coverage 管理の具体要求が成立した場合は、本 investigation の candidate を再利用せず、その要求を起点に改めて調査する。
+
+## 起票時点の後続判断候補（終結により採用しない）
 
 - OFT が coverage backend 候補になり得る場合、Brewprint が所有する canonical identity と外部 tool item identity の関係を ADR または traceability spec refinement で明文化するか。
 - M19 Phase A を進める前に、`spec:` resolver contract が external item identity との mapping を妨げないことを acceptance / non-goal として追記するか。
 - `docs/spec/**` 内の normative section を最小 OFT spike の起点とし、requirements / YAML / internal-design endpoint を早期に active 化しない境界を維持できるか。
 - OFT を採用しない場合でも、外部 coverage tool 候補が再度現れたときに評価可能な extension boundary を残すべきか。
 
-## 後続 artifact 候補
+## 起票時点の後続 artifact 候補（終結により採用しない）
 
 | category | candidate artifact / action | purpose |
 | --- | --- | --- |

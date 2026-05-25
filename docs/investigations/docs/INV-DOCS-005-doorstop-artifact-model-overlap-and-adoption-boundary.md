@@ -1,6 +1,6 @@
 # INV-DOCS-005: Doorstop artifact model overlap and adoption boundary
 
-- **status**: investigating
+- **status**: concluded
 - **date**: 2026-05-24
 - **trigger**: INV-DOCS-004 による OpenFastTrace (OFT) 評価の開始後、Doorstop が requirements / design / test document tree と traceability validation を提供する既存 OSS 候補として判明し、Brewprint の requirements / spec / future trace artifact ownership と競合し得る範囲を別途確認する必要が生じた
 - **scope**: Doorstop の document / item / link / review / reference model が Brewprint の requirements layer、spec-first ownership、semantic trace foundation、および deferred realization coverage に与える影響と代替可能性
@@ -14,13 +14,6 @@
   - spec:trace.artifact-refs
   - spec:trace.coverage-mapping
 - **follow_up_candidates**:
-  - ADR refinement for external requirements / traceability tool ownership boundary
-  - spec:project-artifact-model
-  - spec:trace.artifact-refs
-  - spec:trace.coverage-mapping
-  - requirements layer boundary clarification for external trace tools
-  - comparative recommendation across OFT / Doorstop / Brewprint-native continuation
-  - Doorstop compatibility spike only if artifact ownership fit remains plausible
 
 > 本 investigation は Doorstop の採用を決定するものではない。Doorstop は OFT と同一の問いではなく、coverage validator 候補に留まらず、requirements / document tree / review lifecycle の owner になり得るため、別 investigation として扱う。
 > ADR-088 により deferred とされた realization coverage を MVP に戻す判断、または ADR-081 が定める requirements / spec の責務境界を変更する判断は、本 artifact では行わない。
@@ -183,7 +176,15 @@ M19 の直接 scope は `spec:` / record ID-as-ref / investigation canonical ref
 3. Doorstop の文書 tree / review / validation workflow に価値がある場合でも、normative spec または限定的 verification subset で試せるかを先に確認すべきである。
 4. OFT と Doorstop は役割が異なるため、各調査の結果を得た後に、coverage backend、artifact system owner、または不採用の候補として比較する方が判断を誤りにくい。
 
-## 後続判断に渡す候補
+## 終結時の結論
+
+本 investigation は、Doorstop を Brewprint の artifact ownership または traceability backend の採用候補として追跡しない結論で終結する。
+
+Doorstop の document tree / review / traceability model は有用になり得るが、Brewprint が所有する spec-first boundary、ADR による判断履歴、YAML architecture semantics、MCP query / validation の中心責務とは対象とする運用主体と制約が異なる。現時点で、その責務境界を変更して外部 requirements / traceability system を導入する concrete requirement は存在しない。
+
+したがって Doorstop compatibility spike、OFT との比較継続、外部 trace tool 所有境界の ADR / spec 更新は起票しない。将来、人間主導の assurance / review workflow を外部管理する具体要求が成立した場合のみ、その要求を起点に改めて評価する。
+
+## 起票時点の後続判断候補（終結により採用しない）
 
 - Doorstop の公式 item / document / reference / review model を追加確認し、Brewprint の `spec:` canonical identity を維持した限定利用が成立するか。
 - Doorstop item と `docs/requirements/` の意味差を踏まえ、capture requirement を外部 tool 管理対象から外す boundary を維持すべきか。
@@ -191,7 +192,7 @@ M19 の直接 scope は `spec:` / record ID-as-ref / investigation canonical ref
 - Doorstop compatibility spike を行う場合、既存 docs を移行せず、isolated sample document tree に限定すべきか。
 - Doorstop 採用可能性が低い場合でも、Doorstop が提供する suspect link / review / publish workflow から Brewprint future requirements へ抽出すべき要件があるか。
 
-## 後続 artifact 候補
+## 起票時点の後続 artifact 候補（終結により採用しない）
 
 | category | candidate artifact / action | purpose |
 | --- | --- | --- |

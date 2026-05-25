@@ -1,6 +1,6 @@
 # INV-DOCS-006: LLM-first intent transfer and external tool evaluation boundary
 
-- **status**: investigating
+- **status**: concluded
 - **date**: 2026-05-24
 - **trigger**: OFT / Doorstop の機能・artifact ownership 適合性を評価する過程で、brewprint が「人間が直接 artifact を編集・閲覧する」ことよりも「人間が意図を伝え、LLM が structured artifact を作成・探索・検証する」ことを主用途とするという設計意図が明示され、外部 tool 評価に LLM I/O suitability と connector cost の軸が不足していることが判明した
 - **scope**: LLM-first 設計原則、intent transfer problem、brewprint artifact model / MCP boundary の役割、および OFT / Doorstop 等の外部 tool を LLM 主体の運用へ接続する際の評価軸と後続設計含意
@@ -17,13 +17,6 @@
   - spec:trace.artifact-refs
   - spec:trace.coverage-mapping
 - **follow_up_candidates**:
-  - ADR for LLM-first design principle and human-intent / agent-artifact boundary
-  - spec:project-artifact-model
-  - spec:trace
-  - Design Records MCP read / write / validation capability roadmap
-  - external tool evaluation rubric including agent I/O and connector cost
-  - comparative investigation across Brewprint-native / OFT adapter / Doorstop adapter approaches
-  - isolated agent-facing connector spike only after rubric-based screening
 - **follow_up_results**:
   - ADR-089
   - INV-DOCS-007
@@ -309,7 +302,15 @@ Brewprint は architecture description language の性質を持つ一方、LLM �
 4. LLM-first は外部 tool 排除の原則ではなく、external backend を採用する場合にも LLM-mediated workflow 全体の正確性・摩擦・保守費用を評価する原則として扱う方が合理的である。
 5. Brewprint artifact model と read-first MCP foundation は intent transfer の substrate として有望であり、まず dogfooding によって現行項目・参照・diagnostic の必要十分性を測るべきである。LLM による controlled write、追加の ambiguity / approval / provenance contract は、不足が観測された場合の後続判断として明示する価値がある。
 
-## 後続判断に渡す候補
+## 終結時の結論
+
+本 investigation は、LLM-first principle に関する判断が `ADR-089` として結果化されたため終結する。
+
+OFT / Doorstop 等の外部 tool を継続比較すること、agent-facing connector を試作すること、MCP writer / controlled mutation capability を追加することは、現時点の具体要求ではない。Brewprint は read-first MCP と制約された architecture semantic artifact を維持し、実際の dogfooding で不足が観測された場合にのみ新たな requirement または investigation を起票する。
+
+`ADR-089` と `INV-DOCS-007` は既存の `follow_up_results` として保持し、結果化しなかった roadmap / rubric / comparative investigation / spike 候補は追跡対象から外す。
+
+## 起票時点の後続判断候補（結果化済みを含む起票時点の記録）
 
 - LLM-first を project-wide design principle として ADR に記録し、「人間が意図と承認を担い、LLM が structured artifact の起草・探索・検証・許可された更新を担う」境界を正式化するか。
 - `spec:project-artifact-model` に、intent capture → investigation / decision → current spec → YAML / implementation → validation / query という LLM-mediated flow を追加するか。
@@ -319,7 +320,7 @@ Brewprint は architecture description language の性質を持つ一方、LLM �
 - `docs/requirements/` または `docs/investigations/` に、会話由来の intent、未確定前提、解消すべき ambiguity、ユーザー承認点を記録する追加 metadata / authoring guidance が必要かを、dogfooding の観測結果に基づいて判断するか。
 - External backend connector spike を行う場合、OFT / Doorstop の機能だけでなく「LLM が一回の tool session で問いを解き、診断を理解し、安全な修正候補を出せるか」を acceptance criterion にするか。
 
-## 後続 artifact 候補
+## 起票時点の後続 artifact 候補（結果化済みを含む起票時点の記録）
 
 | category | candidate artifact / action | purpose |
 | --- | --- | --- |

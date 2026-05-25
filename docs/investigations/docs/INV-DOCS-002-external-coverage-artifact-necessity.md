@@ -13,18 +13,14 @@
   - ADR-086
   - ADR-087
 - **follow_up_candidates**:
-  - ADR refinement for MVP relation ownership
-  - spec:project-artifact-model
-  - spec:trace.artifact-refs
-  - spec:trace.metadata-schema
-  - spec:trace.coverage-mapping
-  - spec:trace.resolve-and-validation
-  - spec:trace.out-of-scope
-  - M18 / M19 milestone alignment
-  - MCP relation resolution handoff
 - **follow_up_results**:
   - INV-DOCS-003
   - ADR-088
+  - spec:project-artifact-model
+  - spec:trace.artifact-refs
+  - spec:trace.coverage-mapping
+  - spec:trace.resolve-and-validation
+  - spec:trace.out-of-scope
 
 > 本 investigation は `docs/coverage/` を残す前提で正当化するものではない。`source_refs` は調査時点で authoritative だった accepted ADR のみに限定し、本文で観測した M18 draft / example は後続同期後の current spec を provenance source として遡及参照しない。
 > 以下の推奨は後続判断の候補であり、本 artifact 自体は決定を所有しない。

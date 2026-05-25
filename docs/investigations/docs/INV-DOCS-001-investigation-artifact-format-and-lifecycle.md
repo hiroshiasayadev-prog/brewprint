@@ -13,11 +13,8 @@
   - ADR-084
   - ADR-085
 - **follow_up_candidates**:
-  - docs/investigations/README.md
-  - docs/doc-policy.md
-  - docs/adr-authoring-guide.md
-  - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
-  - docs/tasks/m18-semantic-traceability-foundation.md
+- **follow_up_results**:
+  - ADR-086
 
 > この investigation は、ADR-085 により導入された `docs/investigations/` の初回調査 artifact である。
 > 本文中の format / status / ID / lifecycle は、調査対象であり、起票時点では確定仕様ではない。

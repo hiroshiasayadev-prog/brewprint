@@ -11,17 +11,10 @@
   - ADR-087
   - INV-DOCS-002
 - **follow_up_candidates**:
-  - ADR refinement for semantic trace MVP active endpoints and relation ownership
-  - spec:project-artifact-model
-  - spec:trace.artifact-refs
-  - spec:trace.metadata-schema
-  - spec:trace.coverage-mapping
-  - spec:trace.resolve-and-validation
-  - spec:trace.out-of-scope
-  - M18 / M19 milestone alignment
-  - Design Records MCP resolver acceptance target refinement
 - **follow_up_results**:
   - ADR-088
+  - spec:project-artifact-model
+  - spec:trace.artifact-refs
 
 > 本 investigation は、`docs/internal-design/` を不要と結論付けるものではない。対象は semantic trace MVP の active endpoint / operational relation として internal design を今すぐ要求する必要があるかである。
 > `source_refs` は調査時点で authoritative だった accepted ADR と prior investigation に限定する。本文で観測した draft spec / task / requirement は、ADR-088 反映後の current artifact を provenance source として遡及参照しない。

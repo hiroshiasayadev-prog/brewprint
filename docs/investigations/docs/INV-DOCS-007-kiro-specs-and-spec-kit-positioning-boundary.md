@@ -1,6 +1,6 @@
 # INV-DOCS-007: Kiro Specs / GitHub Spec Kit と LLM-first architecture artifact positioning の境界
 
-- **status**: investigating
+- **status**: concluded
 - **date**: 2026-05-24
 - **trigger**: INV-DOCS-006 において Kiro Specs と GitHub Spec Kit が LLM-first intent-to-artifact workflow の近接事例として確認され、ADR-089 により LLM-first を設計原則として採用した後の brewprint の positioning と競合境界を、OFT / Doorstop とは別軸で評価する必要が生じた
 - **scope**: Kiro Specs / GitHub Spec Kit の公式 workflow・artifact・model-facing interface・対象フェーズを確認し、brewprint の LLM-first architecture artifact system としての重複領域、差別化候補、将来競合リスク、および positioning への含意を評価する
@@ -10,11 +10,6 @@
   - ADR-089
   - ADR-088
 - **follow_up_candidates**:
-  - comparative investigation across Kiro Specs / GitHub Spec Kit / brewprint positioning
-  - project overview or positioning refinement for LLM-mediated architecture artifact system
-  - spec:project-artifact-model refinement candidate for LLM-mediated design flow
-  - external adjacent-tool evaluation rubric for workflow overlap and domain overlap
-  - dogfooding evaluation of brewprint architecture-query value beyond feature-spec workflows
 
 > 本 investigation は、Kiro Specs / GitHub Spec Kit を競合と確定するものではない。また、brewprint がこれらより優位であることを前提にしない。公式情報から確認できる workflow と artifact の重複、および確認できない差分を分けて記録し、brewprint の positioning 判断材料を作る。
 >
@@ -357,7 +352,15 @@ GitHub Spec Kit は、公式 repository 上で複数の supported coding agent i
 5. Spec Kit は多数の coding agent integration と `generic` option を公式に持つが、これは coding agent 間の portability であり、chat client を含む任意 MCP client に semantic service を公開する Brewprint の意図とは別の拡張性である。したがって MCP client independence は対 Spec Kit でも差分候補となり得るが、Spec Kit の portability を過小評価せず、architecture semantic DSL / MCP query / canonical ownership と組み合わせて評価すべきである。
 6. ADR-089 に従い、現時点で新たな integration / writer / workflow expansion を決定せず、まず Brewprint の read-first MCP と architecture artifact model の価値を dogfooding で観測する方が適切である。
 
-## 後続判断に渡す候補
+## 終結時の結論
+
+本 investigation は、Kiro Specs / GitHub Spec Kit を Brewprint の直接競合または integration 前提の隣接 workflow として継続評価しない結論で終結する。
+
+両者は intent-to-artifact / agent execution workflow に強みを持つが、Brewprint が対象とする制約付き architecture semantic model、canonical ownership、MCP query / validation boundary とは中心責務が異なる。Brewprint は汎用 feature-spec-to-implementation workflow を目指さず、中規模以上の system design を LLM が正確に探索・検証できる制約された設計言語と service boundary に集中する。
+
+この整理から追加の comparative investigation、positioning refinement、rubric 更新、dogfooding work item を本 investigation の後続 artifact としては起票しない。将来、具体的な利用要求または責務変更の判断が生じた場合のみ、現在の candidate を継承せず新たな根拠で判断する。
+
+## 起票時点の後続判断候補（終結により採用しない）
 
 - Brewprint の positioning を `LLM-mediated architecture artifact system` または `LLM-native architecture specification and query layer` のどちらへ寄せるかを、Kiro / Spec Kit comparison と dogfooding 結果を基に判断するか。
 - `LLM-first` は internal design principle として維持し、external positioning では architecture semantic DSL / query / validation を中心に表現するか。
@@ -366,7 +369,7 @@ GitHub Spec Kit は、公式 repository 上で複数の supported coding agent i
 - Spec Kit の constitution / spec / plan / task flow から、Brewprint の dogfooding evaluation または authoring guidance に取り入れるべき workflow practice があるか。
 - Project overview / spec overview / README に positioning を反映する必要が成立した場合、ADR または spec refinement を起票するか。
 
-## 後続 artifact 候補
+## 起票時点の後続 artifact 候補（終結により採用しない）
 
 | category | candidate artifact / action | purpose |
 | --- | --- | --- |
