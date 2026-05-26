@@ -29,7 +29,7 @@ docs/work-items/<domain>/WORK-<DOMAIN>-NNN-<slug>.md
 ## Minimal metadata
 
 初期運用では Markdown 冒頭の bullet metadata を使う。
-完全な machine-readable schema と MCP record kind への追加は後続 spec / ADR の対象とする。
+Design Records MCP の parser / public record schema / validation diagnostic は `docs/spec/design-records-mcp/` が所有し、この README は authoring guidance を所有する。
 
 ```markdown
 # WORK-<DOMAIN>-NNN: <title>

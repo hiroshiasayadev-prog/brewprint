@@ -13,7 +13,7 @@ func TestListRecordsBasicFiltersAndResponseShape(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListRecords: %v", err)
 	}
-	if got := listedRecordIDs(resp.Records); !sameStrings(got, []string{"ADR-066", "ADR-067", "ADR-076", "ADR-077", "ADR-078", "INV-DOCS-001", "SPEC-design-records-mcp-overview", "SPEC-design-records-mcp-schema"}) {
+	if got := listedRecordIDs(resp.Records); !sameStrings(got, []string{"ADR-066", "ADR-067", "ADR-076", "ADR-077", "ADR-078", "INV-DOCS-001", "REQ-MCP-003", "SPEC-design-records-mcp-overview", "SPEC-design-records-mcp-schema", "TASK-MCP-003-01", "WORK-MCP-003"}) {
 		t.Fatalf("record IDs = %#v", got)
 	}
 
@@ -76,7 +76,40 @@ func TestListRecordsBasicFiltersAndResponseShape(t *testing.T) {
 		t.Fatalf("investigation detail = %#v", investigation.Investigation)
 	}
 
-	assertListRecordsErrorCode(t, idx, ListRecordsRequest{Kind: RecordKind("task")}, ErrorCodeInvalidRequest)
+	resp, err = ListRecords(context.Background(), idx, ListRecordsRequest{Kind: RecordKindRequirement})
+	if err != nil {
+		t.Fatalf("ListRecords requirement: %v", err)
+	}
+	if got := listedRecordIDs(resp.Records); !sameStrings(got, []string{"REQ-MCP-003"}) {
+		t.Fatalf("requirement IDs = %#v", got)
+	}
+	if resp.Records[0].Requirement == nil || resp.Records[0].Requirement.WorkItems[0] != "WORK-MCP-003" {
+		t.Fatalf("requirement detail = %#v", resp.Records[0].Requirement)
+	}
+
+	resp, err = ListRecords(context.Background(), idx, ListRecordsRequest{Kind: RecordKindWorkItem})
+	if err != nil {
+		t.Fatalf("ListRecords work_item: %v", err)
+	}
+	if got := listedRecordIDs(resp.Records); !sameStrings(got, []string{"WORK-MCP-003"}) {
+		t.Fatalf("work item IDs = %#v", got)
+	}
+	if resp.Records[0].WorkItem == nil || resp.Records[0].WorkItem.SourceRequirement != "REQ-MCP-003" {
+		t.Fatalf("work item detail = %#v", resp.Records[0].WorkItem)
+	}
+
+	resp, err = ListRecords(context.Background(), idx, ListRecordsRequest{Kind: RecordKindTask})
+	if err != nil {
+		t.Fatalf("ListRecords task: %v", err)
+	}
+	if got := listedRecordIDs(resp.Records); !sameStrings(got, []string{"TASK-MCP-003-01"}) {
+		t.Fatalf("task IDs = %#v", got)
+	}
+	if resp.Records[0].Task == nil || resp.Records[0].Task.WorkItem != "WORK-MCP-003" {
+		t.Fatalf("task detail = %#v", resp.Records[0].Task)
+	}
+
+	assertListRecordsErrorCode(t, idx, ListRecordsRequest{Kind: RecordKind("milestone")}, ErrorCodeInvalidRequest)
 }
 
 func TestListRecordsStatusAndIDFilters(t *testing.T) {
@@ -172,12 +205,27 @@ func TestListRecordsRequestErrors(t *testing.T) {
 	}{
 		{
 			name: "invalid kind",
-			req:  ListRecordsRequest{Kind: RecordKind("task")},
+			req:  ListRecordsRequest{Kind: RecordKind("milestone")},
 			code: ErrorCodeInvalidRequest,
 		},
 		{
 			name: "kind spec with id range",
 			req:  ListRecordsRequest{Kind: RecordKindSpec, IDRange: &IDRange{From: "ADR-067"}},
+			code: ErrorCodeIDRangeRequiresDecisionKind,
+		},
+		{
+			name: "kind requirement with id range",
+			req:  ListRecordsRequest{Kind: RecordKindRequirement, IDRange: &IDRange{From: "ADR-067"}},
+			code: ErrorCodeIDRangeRequiresDecisionKind,
+		},
+		{
+			name: "kind work_item with id range",
+			req:  ListRecordsRequest{Kind: RecordKindWorkItem, IDRange: &IDRange{From: "ADR-067"}},
+			code: ErrorCodeIDRangeRequiresDecisionKind,
+		},
+		{
+			name: "kind task with id range",
+			req:  ListRecordsRequest{Kind: RecordKindTask, IDRange: &IDRange{From: "ADR-067"}},
 			code: ErrorCodeIDRangeRequiresDecisionKind,
 		},
 		{
@@ -242,7 +290,7 @@ func TestListRecordsSortOrderAndLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListRecords mixed desc: %v", err)
 	}
-	if got := listedRecordIDs(resp.Records); !sameStrings(got, []string{"SPEC-design-records-mcp-schema", "SPEC-design-records-mcp-overview", "INV-DOCS-001", "ADR-078", "ADR-077", "ADR-076", "ADR-067", "ADR-066"}) {
+	if got := listedRecordIDs(resp.Records); !sameStrings(got, []string{"WORK-MCP-003", "TASK-MCP-003-01", "SPEC-design-records-mcp-schema", "SPEC-design-records-mcp-overview", "REQ-MCP-003", "INV-DOCS-001", "ADR-078", "ADR-077", "ADR-076", "ADR-067", "ADR-066"}) {
 		t.Fatalf("mixed desc IDs = %#v", got)
 	}
 
@@ -305,6 +353,23 @@ func TestListRecordsRepositoryBootstrapQueries(t *testing.T) {
 		}
 	}
 
+	for _, tt := range []struct {
+		kind RecordKind
+		id   string
+	}{
+		{RecordKindRequirement, "REQ-MCP-003"},
+		{RecordKindWorkItem, "WORK-MCP-003"},
+		{RecordKindTask, "TASK-MCP-003-01"},
+	} {
+		resp, err := ListRecords(context.Background(), idx, ListRecordsRequest{Kind: tt.kind})
+		if err != nil {
+			t.Fatalf("ListRecords %s: %v", tt.kind, err)
+		}
+		if findListedRecord(resp.Records, tt.id) == nil {
+			t.Fatalf("%s records missing %s in %#v", tt.kind, tt.id, listedRecordIDs(resp.Records))
+		}
+	}
+
 	assertListRecordsErrorCode(t, idx, ListRecordsRequest{Kind: RecordKindSpec, IDRange: &IDRange{From: "ADR-067"}}, ErrorCodeIDRangeRequiresDecisionKind)
 }
 
@@ -319,6 +384,9 @@ func buildListRecordsTestIndex(t *testing.T) *Index {
 	writeTestFile(t, root, "docs/spec/design-records-mcp/overview.md", "---\nstatus: draft\ndesign_record:\n  id: SPEC-design-records-mcp-overview\n  kind: spec\n  status: draft\n  depends_on:\n    - ADR-076\n---\n# Design Records MCP overview\n")
 	writeTestFile(t, root, "docs/spec/design-records-mcp/schema.md", "---\nstatus: confirmed\ndesign_record:\n  id: SPEC-design-records-mcp-schema\n  kind: spec\n  status: confirmed\n  depends_on:\n    - ADR-076\n---\n# Design Records MCP schema\n")
 	writeTestFile(t, root, "docs/investigations/docs/INV-DOCS-001-test.md", "# INV-DOCS-001: Test investigation\n- **status**: concluded\n- **date**: 2026-05-19\n- **trigger**: ADR-076\n- **scope**: test\n- **non_scope**: none\n- **source_refs**:\n  - ADR-076\n- **follow_up_candidates**:\n  - SPEC-design-records-mcp-schema\n")
+	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-test.md", "# REQ-MCP-003: Test requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n  - ADR-076\n- **work_items**:\n  - WORK-MCP-003\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-test.md", "# WORK-MCP-003: Test work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n  - ADR-076\n- **tasks**:\n  - TASK-MCP-003-01\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-test.md", "# TASK-MCP-003-01: Test task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - test\n")
 	return buildTestIndex(t, root)
 }
 

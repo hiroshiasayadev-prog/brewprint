@@ -3,6 +3,7 @@ package designrecords
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -89,6 +90,9 @@ func TestValidateRecordsOKWhenNoErrorDiagnostics(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, root, "docs/adr/001-valid.md", "# 001: Valid\n- **status**: accepted\n- **depends_on**:\n- **supersedes**:\n")
 	writeTestFile(t, root, "docs/spec/valid.md", "---\nstatus: draft\ndesign_record:\n  id: SPEC-valid\n  kind: spec\n  depends_on:\n    - ADR-001\n---\n# Valid spec\n")
+	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-valid.md", "# REQ-MCP-003: Valid requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n  - ADR-001\n- **work_items**:\n  - WORK-MCP-003\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-valid.md", "# WORK-MCP-003: Valid work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n  - ADR-001\n- **tasks**:\n  - TASK-MCP-003-01\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-valid.md", "# TASK-MCP-003-01: Valid task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - test\n")
 
 	idx := buildTestIndex(t, root)
 	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
@@ -97,6 +101,389 @@ func TestValidateRecordsOKWhenNoErrorDiagnostics(t *testing.T) {
 	}
 	if !resp.OK || len(resp.Diagnostics) != 0 {
 		t.Fatalf("response = %#v, want ok with no diagnostics", resp)
+	}
+}
+
+func TestValidateRecordsWorkflowStatusAndParseDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-001-bad-status.md", "# REQ-MCP-001: Bad requirement status\n- **id**: REQ-MCP-001\n- **status**: todo\n- **date**: 2026-05-25\n- **source_refs**:\n- **work_items**:\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-001-bad-status.md", "# WORK-MCP-001: Bad work status\n- **id**: WORK-MCP-001\n- **status**: accepted\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-001-01-bad-status.md", "# TASK-MCP-001-01: Bad task status\n- **id**: TASK-MCP-001-01\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-001\n- **source_requirement**: REQ-MCP-001\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-mcp-001-02-invalid.md", "# TASK-mcp-001-02: Invalid task ID\n- **id**: TASK-mcp-001-02\n- **status**: todo\n")
+	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-002-mismatch.md", "# REQ-MCP-002: Mismatch\n- **id**: REQ-MCP-003\n- **status**: accepted\n")
+
+	idx := buildTestIndex(t, root)
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	for _, id := range []string{"REQ-MCP-001", "WORK-MCP-001", "TASK-MCP-001-01"} {
+		if !hasDiagnosticForRecord(resp.Diagnostics, DiagnosticInvalidStatusForKind, id) {
+			t.Fatalf("missing invalid_status_for_kind for %s in %#v", id, resp.Diagnostics)
+		}
+	}
+	if !hasDiagnostic(resp.Diagnostics, DiagnosticInvalidWorkflowID) {
+		t.Fatalf("missing invalid_workflow_id in %#v", resp.Diagnostics)
+	}
+	if !hasDiagnosticForRecord(resp.Diagnostics, DiagnosticFilenameIDMismatch, "REQ-MCP-002") {
+		t.Fatalf("missing filename_id_mismatch in %#v", resp.Diagnostics)
+	}
+}
+
+func TestValidateRecordsWorkflowRelationHappyPath(t *testing.T) {
+	root := t.TempDir()
+	writeWorkflowHappyPathFixture(t, root)
+	idx := buildTestIndex(t, root)
+
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	if !resp.OK {
+		t.Fatalf("OK = false, diagnostics = %#v", resp.Diagnostics)
+	}
+	assertNoWorkflowRelationDiagnostics(t, resp.Diagnostics)
+}
+
+func TestValidateRecordsWorkflowRelationUnresolvedTargets(t *testing.T) {
+	tests := []struct {
+		name     string
+		records  []Record
+		recordID string
+		field    string
+		value    string
+	}{
+		{
+			name:     "requirement work_items",
+			records:  []Record{requirementTestRecord("REQ-MCP-003", []string{"WORK-MCP-999"})},
+			recordID: "REQ-MCP-003",
+			field:    "work_items",
+			value:    "WORK-MCP-999",
+		},
+		{
+			name:     "work item source_requirement",
+			records:  []Record{workItemTestRecord("WORK-MCP-003", "REQ-MCP-999", nil)},
+			recordID: "WORK-MCP-003",
+			field:    "source_requirement",
+			value:    "REQ-MCP-999",
+		},
+		{
+			name:     "work item tasks",
+			records:  []Record{workItemTestRecord("WORK-MCP-003", "", []string{"TASK-MCP-003-99"})},
+			recordID: "WORK-MCP-003",
+			field:    "tasks",
+			value:    "TASK-MCP-003-99",
+		},
+		{
+			name:     "task work_item",
+			records:  []Record{taskTestRecord("TASK-MCP-003-01", "WORK-MCP-999", "", nil)},
+			recordID: "TASK-MCP-003-01",
+			field:    "work_item",
+			value:    "WORK-MCP-999",
+		},
+		{
+			name:     "task source_requirement",
+			records:  []Record{taskTestRecord("TASK-MCP-003-01", "", "REQ-MCP-999", nil)},
+			recordID: "TASK-MCP-003-01",
+			field:    "source_requirement",
+			value:    "REQ-MCP-999",
+		},
+		{
+			name:     "task depends_on",
+			records:  []Record{taskTestRecord("TASK-MCP-003-01", "", "", []string{"TASK-MCP-003-99"})},
+			recordID: "TASK-MCP-003-01",
+			field:    "depends_on",
+			value:    "TASK-MCP-003-99",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := ValidateRecords(context.Background(), workflowTestIndex(tt.records...), ValidateRecordsRequest{})
+			if err != nil {
+				t.Fatalf("ValidateRecords: %v", err)
+			}
+			assertWorkflowDiagnostic(t, resp.Diagnostics, DiagnosticUnresolvedWorkflowRelation, tt.recordID, tt.field, tt.value, "unresolved", tt.value)
+		})
+	}
+}
+
+func TestValidateRecordsWorkflowRelationInvalidTargets(t *testing.T) {
+	tests := []struct {
+		name     string
+		records  []Record
+		recordID string
+		field    string
+		value    string
+	}{
+		{
+			name: "requirement work_items wrong ID form",
+			records: []Record{
+				requirementTestRecord("REQ-MCP-003", []string{"TASK-MCP-003-01"}),
+				taskTestRecord("TASK-MCP-003-01", "", "", nil),
+			},
+			recordID: "REQ-MCP-003",
+			field:    "work_items",
+			value:    "TASK-MCP-003-01",
+		},
+		{
+			name: "work item source_requirement wrong ID form",
+			records: []Record{
+				workItemTestRecord("WORK-MCP-003", "WORK-MCP-004", nil),
+				workItemTestRecord("WORK-MCP-004", "", nil),
+			},
+			recordID: "WORK-MCP-003",
+			field:    "source_requirement",
+			value:    "WORK-MCP-004",
+		},
+		{
+			name: "work item tasks wrong ID form",
+			records: []Record{
+				workItemTestRecord("WORK-MCP-003", "", []string{"REQ-MCP-003"}),
+				requirementTestRecord("REQ-MCP-003", nil),
+			},
+			recordID: "WORK-MCP-003",
+			field:    "tasks",
+			value:    "REQ-MCP-003",
+		},
+		{
+			name: "task work_item wrong ID form",
+			records: []Record{
+				taskTestRecord("TASK-MCP-003-01", "TASK-MCP-003-02", "", nil),
+				taskTestRecord("TASK-MCP-003-02", "", "", nil),
+			},
+			recordID: "TASK-MCP-003-01",
+			field:    "work_item",
+			value:    "TASK-MCP-003-02",
+		},
+		{
+			name: "task source_requirement wrong ID form",
+			records: []Record{
+				taskTestRecord("TASK-MCP-003-01", "", "WORK-MCP-003", nil),
+				workItemTestRecord("WORK-MCP-003", "", nil),
+			},
+			recordID: "TASK-MCP-003-01",
+			field:    "source_requirement",
+			value:    "WORK-MCP-003",
+		},
+		{
+			name: "task depends_on wrong ID form",
+			records: []Record{
+				taskTestRecord("TASK-MCP-003-01", "", "", []string{"WORK-MCP-003"}),
+				workItemTestRecord("WORK-MCP-003", "", nil),
+			},
+			recordID: "TASK-MCP-003-01",
+			field:    "depends_on",
+			value:    "WORK-MCP-003",
+		},
+		{
+			name: "actual indexed target kind must match ID form",
+			records: []Record{
+				requirementTestRecord("REQ-MCP-003", []string{"WORK-MCP-003"}),
+				{ID: "WORK-MCP-003", NormalizedID: "WORK-MCP-003", Kind: RecordKindRequirement, Title: "Wrong actual kind", Status: RecordStatusAccepted, Path: "docs/requirements/mcp/WORK-MCP-003-wrong.md", Requirement: &RequirementDetail{WorkItems: []string{}}},
+			},
+			recordID: "REQ-MCP-003",
+			field:    "work_items",
+			value:    "WORK-MCP-003",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := ValidateRecords(context.Background(), workflowTestIndex(tt.records...), ValidateRecordsRequest{})
+			if err != nil {
+				t.Fatalf("ValidateRecords: %v", err)
+			}
+			assertWorkflowDiagnostic(t, resp.Diagnostics, DiagnosticInvalidWorkflowRelationTarget, tt.recordID, tt.field, tt.value, "invalid_target", tt.value)
+		})
+	}
+}
+
+func TestValidateRecordsWorkflowRelationBidirectionalMismatch(t *testing.T) {
+	tests := []struct {
+		name     string
+		records  []Record
+		recordID string
+		field    string
+		value    string
+		targetID string
+	}{
+		{
+			name: "requirement lists work item pointing to another requirement",
+			records: []Record{
+				requirementTestRecord("REQ-MCP-003", []string{"WORK-MCP-003"}),
+				requirementTestRecord("REQ-MCP-004", []string{"WORK-MCP-003"}),
+				workItemTestRecord("WORK-MCP-003", "REQ-MCP-004", nil),
+			},
+			recordID: "REQ-MCP-003",
+			field:    "work_items",
+			value:    "WORK-MCP-003",
+			targetID: "WORK-MCP-003",
+		},
+		{
+			name: "work item points to requirement that does not list it",
+			records: []Record{
+				requirementTestRecord("REQ-MCP-003", nil),
+				workItemTestRecord("WORK-MCP-003", "REQ-MCP-003", nil),
+			},
+			recordID: "WORK-MCP-003",
+			field:    "source_requirement",
+			value:    "REQ-MCP-003",
+			targetID: "REQ-MCP-003",
+		},
+		{
+			name: "work item lists task pointing to another work item",
+			records: []Record{
+				workItemTestRecord("WORK-MCP-003", "", []string{"TASK-MCP-003-01"}),
+				workItemTestRecord("WORK-MCP-004", "", []string{"TASK-MCP-003-01"}),
+				taskTestRecord("TASK-MCP-003-01", "WORK-MCP-004", "", nil),
+			},
+			recordID: "WORK-MCP-003",
+			field:    "tasks",
+			value:    "TASK-MCP-003-01",
+			targetID: "TASK-MCP-003-01",
+		},
+		{
+			name: "task points to work item that does not list it",
+			records: []Record{
+				workItemTestRecord("WORK-MCP-003", "", nil),
+				taskTestRecord("TASK-MCP-003-01", "WORK-MCP-003", "", nil),
+			},
+			recordID: "TASK-MCP-003-01",
+			field:    "work_item",
+			value:    "WORK-MCP-003",
+			targetID: "WORK-MCP-003",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := ValidateRecords(context.Background(), workflowTestIndex(tt.records...), ValidateRecordsRequest{})
+			if err != nil {
+				t.Fatalf("ValidateRecords: %v", err)
+			}
+			assertWorkflowDiagnostic(t, resp.Diagnostics, DiagnosticWorkflowRelationMismatch, tt.recordID, tt.field, tt.value, "mismatch", tt.targetID)
+		})
+	}
+}
+
+func TestValidateRecordsTaskSourceRequirementMismatch(t *testing.T) {
+	idx := workflowTestIndex(
+		requirementTestRecord("REQ-MCP-003", []string{"WORK-MCP-003"}),
+		requirementTestRecord("REQ-MCP-004", nil),
+		workItemTestRecord("WORK-MCP-003", "REQ-MCP-003", []string{"TASK-MCP-003-01"}),
+		taskTestRecord("TASK-MCP-003-01", "WORK-MCP-003", "REQ-MCP-004", nil),
+	)
+
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	assertWorkflowDiagnostic(t, resp.Diagnostics, DiagnosticWorkflowSourceReqMismatch, "TASK-MCP-003-01", "source_requirement", "REQ-MCP-004", "mismatch", "REQ-MCP-003")
+}
+
+func TestValidateRecordsTaskDependsOnBoundary(t *testing.T) {
+	validBase := []Record{
+		requirementTestRecord("REQ-MCP-003", []string{"WORK-MCP-003"}),
+		workItemTestRecord("WORK-MCP-003", "REQ-MCP-003", []string{"TASK-MCP-003-01", "TASK-MCP-003-02"}),
+		taskTestRecord("TASK-MCP-003-01", "WORK-MCP-003", "REQ-MCP-003", nil),
+		taskTestRecord("TASK-MCP-003-02", "WORK-MCP-003", "REQ-MCP-003", []string{"TASK-MCP-003-01"}),
+	}
+	resp, err := ValidateRecords(context.Background(), workflowTestIndex(validBase...), ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords valid dependencies: %v", err)
+	}
+	assertNoWorkflowRelationDiagnostics(t, resp.Diagnostics)
+
+	selfDependency := []Record{
+		requirementTestRecord("REQ-MCP-003", []string{"WORK-MCP-003"}),
+		workItemTestRecord("WORK-MCP-003", "REQ-MCP-003", []string{"TASK-MCP-003-01"}),
+		taskTestRecord("TASK-MCP-003-01", "WORK-MCP-003", "REQ-MCP-003", []string{"TASK-MCP-003-01"}),
+	}
+	resp, err = ValidateRecords(context.Background(), workflowTestIndex(selfDependency...), ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords self dependency: %v", err)
+	}
+	assertNoWorkflowRelationDiagnostics(t, resp.Diagnostics)
+
+	missingDependency := []Record{
+		requirementTestRecord("REQ-MCP-003", []string{"WORK-MCP-003"}),
+		workItemTestRecord("WORK-MCP-003", "REQ-MCP-003", []string{"TASK-MCP-003-01"}),
+		taskTestRecord("TASK-MCP-003-01", "WORK-MCP-003", "REQ-MCP-003", []string{"TASK-MCP-003-99"}),
+	}
+	resp, err = ValidateRecords(context.Background(), workflowTestIndex(missingDependency...), ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords missing dependency: %v", err)
+	}
+	assertWorkflowDiagnostic(t, resp.Diagnostics, DiagnosticUnresolvedWorkflowRelation, "TASK-MCP-003-01", "depends_on", "TASK-MCP-003-99", "unresolved", "TASK-MCP-003-99")
+
+	wrongKindDependency := []Record{
+		taskTestRecord("TASK-MCP-003-01", "", "", []string{"WORK-MCP-003"}),
+		workItemTestRecord("WORK-MCP-003", "", nil),
+	}
+	resp, err = ValidateRecords(context.Background(), workflowTestIndex(wrongKindDependency...), ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords wrong-kind dependency: %v", err)
+	}
+	assertWorkflowDiagnostic(t, resp.Diagnostics, DiagnosticInvalidWorkflowRelationTarget, "TASK-MCP-003-01", "depends_on", "WORK-MCP-003", "invalid_target", "WORK-MCP-003")
+}
+
+func TestValidateRecordsWorkflowRelationKindFilter(t *testing.T) {
+	idx := workflowTestIndex(
+		requirementTestRecord("REQ-MCP-003", []string{"WORK-MCP-003"}),
+		requirementTestRecord("REQ-MCP-004", nil),
+		workItemTestRecord("WORK-MCP-003", "REQ-MCP-004", []string{"TASK-MCP-003-01"}),
+		workItemTestRecord("WORK-MCP-004", "REQ-MCP-004", nil),
+		taskTestRecord("TASK-MCP-003-01", "WORK-MCP-004", "REQ-MCP-004", nil),
+	)
+
+	for _, tt := range []struct {
+		name string
+		kind RecordKind
+		want RecordKind
+	}{
+		{name: "requirement sources only", kind: RecordKindRequirement, want: RecordKindRequirement},
+		{name: "work item sources only", kind: RecordKindWorkItem, want: RecordKindWorkItem},
+		{name: "task sources only", kind: RecordKindTask, want: RecordKindTask},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{Kind: tt.kind})
+			if err != nil {
+				t.Fatalf("ValidateRecords: %v", err)
+			}
+			if len(resp.Diagnostics) == 0 {
+				t.Fatalf("expected diagnostics for kind %s", tt.kind)
+			}
+			for _, diagnostic := range resp.Diagnostics {
+				if !isWorkflowRelationDiagnostic(diagnostic.Category) {
+					continue
+				}
+				record := findRecord(idx.Records, diagnostic.RecordID)
+				if record == nil {
+					t.Fatalf("diagnostic record not found: %#v", diagnostic)
+				}
+				if record.Kind != tt.want {
+					t.Fatalf("diagnostic leaked from kind %s into %s filter: %#v", record.Kind, tt.kind, diagnostic)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateRecordsRepositoryWorkflowRelationBootstrap(t *testing.T) {
+	root := findRepoRoot(t)
+	idx := buildTestIndex(t, root)
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	for _, diagnostic := range resp.Diagnostics {
+		if !isWorkflowRelationDiagnostic(diagnostic.Category) {
+			continue
+		}
+		if diagnostic.RecordID == "REQ-MCP-003" || diagnostic.RecordID == "WORK-MCP-003" || strings.HasPrefix(diagnostic.RecordID, "TASK-MCP-003-") {
+			t.Fatalf("unexpected repository workflow relation diagnostic: %#v", diagnostic)
+		}
 	}
 }
 
@@ -174,6 +561,46 @@ func TestValidateRecordsInvestigationReferenceDiagnostics(t *testing.T) {
 	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnresolvedFollowUpCandidate, DiagnosticSeverityInfo, "follow_up_candidates", "SPEC-missing", "unresolved")
 	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticNoncanonicalFollowUpCandidate, DiagnosticSeverityInfo, "follow_up_candidates", "docs/spec/future.md", "noncanonical")
 	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnsupportedReference, DiagnosticSeverityInfo, "follow_up_candidates", "coverage:trace", "unsupported")
+}
+
+func TestValidateRecordsInvestigationWorkflowReferenceBoundary(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, root, "docs/adr/001-valid.md", "# 001: Valid\n- **status**: accepted\n")
+	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-valid.md", "# REQ-MCP-003: Valid requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n  - ADR-001\n- **work_items**:\n  - WORK-MCP-003\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-valid.md", "# WORK-MCP-003: Valid work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n  - ADR-001\n- **tasks**:\n  - TASK-MCP-003-01\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-valid.md", "# TASK-MCP-003-01: Valid task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - test\n")
+	writeTestFile(t, root, "docs/investigations/docs/INV-DOCS-001-test.md", "# INV-DOCS-001: Test investigation\n- **status**: concluded\n- **date**: 2026-05-19\n- **trigger**: TASK-MCP-003-01\n- **scope**: test\n- **non_scope**: none\n- **source_refs**:\n  - REQ-MCP-003\n  - WORK-MCP-003\n  - REQ-MCP-999\n  - WORK-MCP-999\n  - TASK-MCP-003-01\n  - TASK-MCP-999-99\n- **follow_up_candidates**:\n  - REQ-MCP-003\n  - WORK-MCP-003\n  - REQ-MCP-998\n  - WORK-MCP-998\n  - TASK-MCP-003-01\n  - TASK-MCP-998-99\n- **follow_up_results**:\n  - REQ-MCP-003\n  - WORK-MCP-003\n  - REQ-MCP-997\n  - WORK-MCP-997\n  - TASK-MCP-003-01\n  - TASK-MCP-997-99\n- **related_requirements**:\n  - REQ-MCP-999\n  - TASK-MCP-003-01\n- **related_work_items**:\n  - WORK-MCP-999\n")
+	idx := buildTestIndex(t, root)
+
+	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
+	if err != nil {
+		t.Fatalf("ValidateRecords: %v", err)
+	}
+	if resp.OK {
+		t.Fatalf("OK = true, want false: %#v", resp.Diagnostics)
+	}
+
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnresolvedSourceRef, DiagnosticSeverityError, "source_refs", "REQ-MCP-999", "unresolved")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnresolvedSourceRef, DiagnosticSeverityError, "source_refs", "WORK-MCP-999", "unresolved")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnsupportedReference, DiagnosticSeverityError, "source_refs", "TASK-MCP-003-01", "unsupported")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnsupportedReference, DiagnosticSeverityError, "source_refs", "TASK-MCP-999-99", "unsupported")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnresolvedFollowUpResult, DiagnosticSeverityError, "follow_up_results", "REQ-MCP-997", "unresolved")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnresolvedFollowUpResult, DiagnosticSeverityError, "follow_up_results", "WORK-MCP-997", "unresolved")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnsupportedReference, DiagnosticSeverityError, "follow_up_results", "TASK-MCP-003-01", "unsupported")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnsupportedReference, DiagnosticSeverityError, "follow_up_results", "TASK-MCP-997-99", "unsupported")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnresolvedFollowUpCandidate, DiagnosticSeverityInfo, "follow_up_candidates", "REQ-MCP-998", "unresolved")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnresolvedFollowUpCandidate, DiagnosticSeverityInfo, "follow_up_candidates", "WORK-MCP-998", "unresolved")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnsupportedReference, DiagnosticSeverityInfo, "follow_up_candidates", "TASK-MCP-003-01", "unsupported")
+	assertInvestigationDiagnostic(t, resp.Diagnostics, DiagnosticUnsupportedReference, DiagnosticSeverityInfo, "follow_up_candidates", "TASK-MCP-998-99", "unsupported")
+
+	for _, value := range []string{"REQ-MCP-003", "WORK-MCP-003"} {
+		assertNoInvestigationDiagnosticValue(t, resp.Diagnostics, value)
+	}
+	for _, diagnostic := range resp.Diagnostics {
+		if diagnostic.Field == "trigger" || diagnostic.Field == "related_requirements" || diagnostic.Field == "related_work_items" {
+			t.Fatalf("unexpected validation for out-of-scope investigation field: %#v", diagnostic)
+		}
+	}
 }
 
 func TestValidateRecordsInvestigationSourceRefsResolveRootSemanticRefs(t *testing.T) {
@@ -311,6 +738,7 @@ func TestValidateRecordsKindFilter(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, root, "docs/adr/001-decision.md", "# 001: Decision\n- **status**: draft\n")
 	writeTestFile(t, root, "docs/spec/spec.md", "---\nstatus: accepted\ndesign_record:\n  id: SPEC-bad\n  kind: spec\n---\n# Spec\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-task.md", "# TASK-MCP-003-01: Task\n- **id**: TASK-MCP-003-01\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n")
 
 	idx := buildTestIndex(t, root)
 	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{Kind: RecordKindDecision})
@@ -322,6 +750,17 @@ func TestValidateRecordsKindFilter(t *testing.T) {
 	}
 	if hasDiagnosticForRecord(resp.Diagnostics, DiagnosticInvalidStatusForKind, "SPEC-bad") {
 		t.Fatalf("spec diagnostic leaked into decision filter: %#v", resp.Diagnostics)
+	}
+
+	resp, err = ValidateRecords(context.Background(), idx, ValidateRecordsRequest{Kind: RecordKindTask})
+	if err != nil {
+		t.Fatalf("ValidateRecords task: %v", err)
+	}
+	if !hasDiagnosticForRecord(resp.Diagnostics, DiagnosticInvalidStatusForKind, "TASK-MCP-003-01") {
+		t.Fatalf("task diagnostic missing: %#v", resp.Diagnostics)
+	}
+	if hasDiagnosticForRecord(resp.Diagnostics, DiagnosticInvalidStatusForKind, "ADR-001") || hasDiagnosticForRecord(resp.Diagnostics, DiagnosticInvalidStatusForKind, "SPEC-bad") {
+		t.Fatalf("non-task diagnostic leaked into task filter: %#v", resp.Diagnostics)
 	}
 }
 
@@ -395,12 +834,17 @@ func TestValidateRecordsRequestErrors(t *testing.T) {
 	}{
 		{
 			name: "invalid kind",
-			req:  ValidateRecordsRequest{Kind: RecordKind("task")},
+			req:  ValidateRecordsRequest{Kind: RecordKind("milestone")},
 			code: ErrorCodeInvalidRequest,
 		},
 		{
 			name: "kind spec with id range",
 			req:  ValidateRecordsRequest{Kind: RecordKindSpec, IDRange: &IDRange{From: "ADR-001"}},
+			code: ErrorCodeIDRangeRequiresDecisionKind,
+		},
+		{
+			name: "kind task with id range",
+			req:  ValidateRecordsRequest{Kind: RecordKindTask, IDRange: &IDRange{From: "ADR-001"}},
 			code: ErrorCodeIDRangeRequiresDecisionKind,
 		},
 		{
@@ -534,4 +978,110 @@ func assertInvestigationDiagnostic(t *testing.T, diagnostics []Diagnostic, categ
 		}
 	}
 	t.Fatalf("missing investigation diagnostic category=%s severity=%s field=%s value=%s ref_status=%s in %#v", category, severity, field, value, refStatus, diagnostics)
+}
+
+func assertNoInvestigationDiagnosticValue(t *testing.T, diagnostics []Diagnostic, value string) {
+	t.Helper()
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Value == value {
+			t.Fatalf("unexpected investigation diagnostic for %s: %#v", value, diagnostic)
+		}
+	}
+}
+
+func workflowTestIndex(records ...Record) *Index {
+	out := &Index{Records: make([]Record, len(records))}
+	copy(out.Records, records)
+	return out
+}
+
+func requirementTestRecord(id string, workItems []string) Record {
+	return Record{
+		ID:           id,
+		NormalizedID: normalizeRecordID(id),
+		Kind:         RecordKindRequirement,
+		Title:        id,
+		Status:       RecordStatusAccepted,
+		Path:         "docs/requirements/mcp/" + id + "-test.md",
+		Requirement:  &RequirementDetail{SourceRefs: []string{}, WorkItems: append([]string{}, workItems...)},
+	}
+}
+
+func workItemTestRecord(id, sourceRequirement string, tasks []string) Record {
+	return Record{
+		ID:           id,
+		NormalizedID: normalizeRecordID(id),
+		Kind:         RecordKindWorkItem,
+		Title:        id,
+		Status:       RecordStatusImplementationPending,
+		Path:         "docs/work-items/mcp/" + id + "-test.md",
+		WorkItem: &WorkItemDetail{
+			SourceRequirement: sourceRequirement,
+			ImpactRefs:        []string{},
+			Tasks:             append([]string{}, tasks...),
+		},
+	}
+}
+
+func taskTestRecord(id, workItem, sourceRequirement string, dependsOn []string) Record {
+	return Record{
+		ID:           id,
+		NormalizedID: normalizeRecordID(id),
+		Kind:         RecordKindTask,
+		Title:        id,
+		Status:       RecordStatusTodo,
+		Path:         "docs/tasks/mcp/" + id + "-test.md",
+		Task: &TaskDetail{
+			WorkItem:          workItem,
+			SourceRequirement: sourceRequirement,
+			Estimate:          "0.5d",
+			DependsOn:         append([]string{}, dependsOn...),
+			Outputs:           []string{},
+		},
+	}
+}
+
+func writeWorkflowHappyPathFixture(t *testing.T, root string) {
+	t.Helper()
+	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-valid.md", "# REQ-MCP-003: Valid requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-003\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-valid.md", "# WORK-MCP-003: Valid work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-003-01\n  - TASK-MCP-003-02\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-valid.md", "# TASK-MCP-003-01: First task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - first\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-02-valid.md", "# TASK-MCP-003-02: Second task\n- **id**: TASK-MCP-003-02\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n  - TASK-MCP-003-01\n- **outputs**:\n  - second\n")
+}
+
+func isWorkflowRelationDiagnostic(category DiagnosticCategory) bool {
+	switch category {
+	case DiagnosticUnresolvedWorkflowRelation,
+		DiagnosticInvalidWorkflowRelationTarget,
+		DiagnosticWorkflowRelationMismatch,
+		DiagnosticWorkflowSourceReqMismatch:
+		return true
+	default:
+		return false
+	}
+}
+
+func assertNoWorkflowRelationDiagnostics(t *testing.T, diagnostics []Diagnostic) {
+	t.Helper()
+	for _, diagnostic := range diagnostics {
+		if isWorkflowRelationDiagnostic(diagnostic.Category) {
+			t.Fatalf("unexpected workflow relation diagnostic: %#v", diagnostic)
+		}
+	}
+}
+
+func assertWorkflowDiagnostic(t *testing.T, diagnostics []Diagnostic, category DiagnosticCategory, recordID, field, value, refStatus, targetID string) {
+	t.Helper()
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Category == category && diagnostic.RecordID == recordID && diagnostic.Field == field && diagnostic.Value == value && diagnostic.RefStatus == refStatus && diagnostic.TargetID == targetID {
+			if diagnostic.Severity != DiagnosticSeverityError {
+				t.Fatalf("severity = %q, want error for %#v", diagnostic.Severity, diagnostic)
+			}
+			if diagnostic.Path == "" {
+				t.Fatalf("path missing for %#v", diagnostic)
+			}
+			return
+		}
+	}
+	t.Fatalf("missing workflow diagnostic category=%s record=%s field=%s value=%s ref_status=%s target=%s in %#v", category, recordID, field, value, refStatus, targetID, diagnostics)
 }

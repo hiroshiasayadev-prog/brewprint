@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/overview.md
 status: draft
-last_updated: 2026-05-26
+last_updated: 2026-05-27
 summary: >
   Design Records MCP の目的、対象範囲、既存 brewprint MCP との責務境界、
   MVP の非目標を定義する。
@@ -11,6 +11,7 @@ depends_on:
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
   - docs/adr/090-design-records-mcp-batch-retrieval-tool-boundary.md
+  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
 design_record:
   id: SPEC-design-records-mcp-overview
   kind: spec
@@ -21,17 +22,18 @@ design_record:
     - ADR-087
     - ADR-088
     - ADR-090
+    - ADR-092
 ---
 
 # Design Records MCP overview
 
 ## 目的
 
-Design Records MCP は、brewprint の design record 運用を machine-readable metadata と MCP query / validation で支援する補助 MCP である。ADR / spec に加え、調査 artifact である investigation も対象とする。
+Design Records MCP は、brewprint の design record / workflow artifact 運用を machine-readable metadata と MCP query / validation で支援する補助 MCP である。ADR / spec / investigation に加え、requirement / work item / task も対象とする。
 
 主目的は以下である。
 
-- ADR / spec / investigation の record index を構築する
+- ADR / spec / investigation / requirement / work item / task の record index を構築する
 - record の ID / kind / status / path と kind 固有 metadata を構造化して取得できるようにする
 - 選択済みの複数 record ID について detail representation をまとめて取得できるようにする
 - record metadata の基本不整合を検出する
@@ -53,15 +55,17 @@ index / query / validation 対象は以下とする。
 | `decision` | `docs/adr/**` に置かれる ADR |
 | `spec` | `docs/spec/**` のうち YAML front matter に `design_record.id` と `design_record.kind` を持つ spec |
 | `investigation` | `docs/investigations/<domain>/INV-<DOMAIN>-NNN-*.md` に置かれる investigation artifact |
+| `requirement` | `docs/requirements/<domain>/REQ-<DOMAIN>-NNN-*.md` に置かれる requirement artifact |
+| `work_item` | `docs/work-items/<domain>/WORK-<DOMAIN>-NNN-*.md` に置かれる work item artifact |
+| `task` | `docs/tasks/<domain>/TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>-*.md` に置かれる新形式 task artifact |
 
 `design_record` を持たない既存 spec は index 対象外とし、`missing_design_record` diagnostic も出さない。
+既存 `docs/tasks/m*.md` と `docs/TASKS.md` の M-series は legacy record / historical label であり、`task` record discovery の対象に含めない。
 
-本specは record kind 全体を閉じた列挙として確定しない。後続判断により `requirement` その他の artifact kind を追加しうる。
+本specは record kind 全体を閉じた列挙として確定しない。後続判断により他の artifact kind を追加しうる。
+MVP では UC docs / impl notes は record kind として index 対象に含めない。
 
-MVP では task file / UC docs / impl notes は record kind として index 対象に含めない。
-これらは ADR-068 の責務境界上の artifact ではあるが、作業状態・実例・実装引継ぎの性質が強く、ADR/spec とは更新頻度と正とする情報が異なるためである。
-
-> 由来: ADR-076 §MVP対象
+> 由来: ADR-076 §MVP対象, ADR-087 §1, ADR-091 §1〜§6, ADR-092 §1
 
 ## 既存 brewprint MCP との責務境界
 
@@ -70,7 +74,7 @@ Design Records MCP は、既存 brewprint MCP とは別の対象データソー�
 | MCP | 対象 | 主な責務 |
 |---|---|---|
 | brewprint MCP | brewprint YAML から構築された `ResolvedProject` | semantic object の query / inspect / impact analysis |
-| Design Records MCP | `docs/adr/**` / `docs/investigations/**` の箇条書きmetadataと、`design_record` を持つ `docs/spec/**` の YAML front matter | design record の index / read / validation、および traceability spec に従う semantic/artifact ref resolve |
+| Design Records MCP | `docs/adr/**` / `docs/investigations/**` / `docs/requirements/**` / `docs/work-items/**` / 新形式 `docs/tasks/<domain>/TASK-*.md` の箇条書きmetadataと、`design_record` を持つ `docs/spec/**` の YAML front matter | design record / workflow artifact の index / read / validation、および traceability spec に従う semantic/artifact ref resolve |
 
 Design Records MCP は、既存 brewprint MCP とは独立して起動・検証できる構成を第一候補とする。
 既存 `QueryService` の責務を docs 管理へそのまま拡張しない。
@@ -83,15 +87,17 @@ Design Records MCP は、既存 brewprint MCP とは独立して起動・検証�
 
 Design Records MCP は、traceability spec が定める canonical reference model に従い、ref の resolve とその結果を用いた validation を担う。
 
-ADR-088 により、MVP で必須とする resolver input は active `spec:` semantic ref、Design Records MCP が扱う record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*`)、および investigation canonical reference validation に限定する。
+ADR-088 / ADR-092 により、MVP で必須とする resolver input は active `spec:` semantic ref、Design Records MCP が扱う record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*`)、investigation canonical reference validation、および workflow relation integrity validation とする。
 
-`internal-design:` / `coverage:` / `COV-*`、coverage mapping、semantic realization relation は MVP required resolver scope に含めない。Requirement / work item の public resolve contract も concrete consumer requirement が成立した時点で判断する。
+Investigation metadata が canonical reference として追加利用できる workflow ID-as-ref は `REQ-*` / `WORK-*` に限定し、`TASK-*` は direct resolver input および workflow artifact 間 relation のみで support する。
+
+`internal-design:` / `coverage:` / `COV-*`、coverage mapping、semantic realization relation は MVP required resolver scope に含めない。Orphan workflow artifact diagnostics、task status 由来 progress projection、workflow 専用 traversal tool も MVP に含めない。
 
 resolver が lookup source として読む artifact と、`list_records` / `get_record` が record kind として公開する artifact は同一集合である必要はない。
 
-M19 Phase A で、resolver の public tool 名を `resolve_reference` とし、active `spec:` semantic ref と record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*`) を active lookup input として扱う contract を `tools.md` に定義する。`internal-design:` / `coverage:` / `COV-*` および未採用 ID form は `unsupported` response とする。Reserved prefix である `yaml:` の public resolver input / direct query response behavior は MVP で定義しない。
+Resolver の public tool 名は `resolve_reference` とし、active `spec:` semantic ref と record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*`) を active lookup input として扱う contract を `tools.md` に定義する。`internal-design:` / `coverage:` / `COV-*`、physical path、および未採用 ID form は `unsupported` response とする。Reserved prefix である `yaml:` の public resolver input / direct query response behavior は MVP で定義しない。
 
-> 由来: ADR-087 §4
+> 由来: ADR-087 §4, ADR-088, ADR-092 §3〜§7
 
 ## MVP tool set
 
@@ -130,14 +136,19 @@ MVP では以下を扱わない。
 - 汎用 OSS CLI としての公開 contract
 - section 単位の完全な traceability
 - `topics` / `affects` / `refines` / `conflicts_with` metadata
-- task file / UC docs / impl notes の record kind としての index 化
+- legacy M-series task record / UC docs / impl notes の record kind としての index 化
 - `internal-design:` / `coverage:` / `COV-*` の resolve と semantic realization relation validation
 - coverage mapping query
+- orphan requirement / orphan work item / orphan task diagnostics
+- task status から work item progress を導出する projection
+- workflow 専用 traversal / tree / graph query tool
+- task dependency cycle detection / execution order projection
+- investigation metadata から `TASK-*` を canonical reference として辿ること
 
-MVP は ADR の箇条書きmetadata、spec の YAML front matter、H1、path から得られる明示情報だけを扱う。
+MVP は ADR / investigation / requirement / work item / task の箇条書きmetadata、spec の YAML front matter、H1、path から得られる明示情報だけを扱う。
 自然言語本文の推定や運用 gap 診断は、MVP の validator を実データへ当てた後に追加可否を判断する。
 
-> 由来: ADR-076 §MVPスコープ外, ADR-077 §MVP外
+> 由来: ADR-076 §MVPスコープ外, ADR-077 §MVP外, ADR-092 §7
 
 ## filesystem tool との責務境界
 

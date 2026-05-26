@@ -77,7 +77,7 @@ Workflow artifact 間の canonical relation は `REQ-*` / `WORK-*` / `TASK-*` ID
 `docs/internal-design/` は、spec を実装へ落とす internal wiring / route を保持する。ただし MVP semantic trace endpoint ではない。
 External relation / assurance artifact は、gap / evidence / sign-off / lifecycle 等を中央管理する concrete requirement が生じた場合に、配置と責務を含めて新設判断する。MVP では directory や authoring entrance を設けない。
 
-semantic trace MVP の active semantic prefix は `spec:` のみとし、Design Records MCP が扱う `ADR-*` / `SPEC-*` / `INV-*` と investigation の canonical references を resolve / validate 対象とする。
+semantic trace MVP の active semantic prefix は `spec:` のみとし、Design Records MCP が扱う `ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` と investigation の canonical references を resolve / validate 対象とする。Investigation metadata で追加利用できる workflow ID-as-ref は `REQ-*` / `WORK-*` に限定し、`TASK-*` は investigation metadata canonical reference としては扱わない。
 `internal-design:` / `coverage:` / `COV-*`、および `maps_to` / `covers` を用いた semantic realization relation は MVP に含めない。
 `yaml:` は brewprint DSL YAML 用の reserved prefix であり、MVP では active trace 対象にしない。
 fixture / golden は project-level semantic trace foundation の対象外とする。
@@ -178,11 +178,11 @@ ADR本文の仕様記述がspecと矛盾する場合、現行仕様としてはs
 
 ## 7. Design Records MCP
 
-現行実装では、ADR / spec / investigation の record 検索・検証・取得に Design Records MCP を利用できる。
+現行実装では、ADR / spec / investigation / requirement / work item / task の record 検索・検証・取得に Design Records MCP を利用できる。
 ADR-087 / ADR-088 に基づく investigation integration と canonical reference resolve / validation は M19 で実装追従済みである。
 ADR-090 に基づき、明示 ID 配列による複数 record detail retrieval の `get_records` も利用できる。
-現行 resolve / validation は `spec:` semantic ref、`ADR-*` / `SPEC-*` / `INV-*` ID-as-ref、investigation canonical references を対象とし、internal-design / coverage relation resolution は必須範囲外である。
-ADR-091 が定めた workflow artifact 間の `REQ-*` / `WORK-*` / `TASK-*` ID-as-ref の MCP support は REQ-MCP-003 の後続判断対象であり、現行 tool で利用可能であると仮定しない。Physical path は supported canonical relation に含めない。
+現行 resolve / validation は `spec:` semantic ref、`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` ID-as-ref、investigation canonical references、workflow artifact の declared relation integrity を対象とし、internal-design / coverage relation resolution は必須範囲外である。
+ADR-091 / ADR-092 に従い、workflow artifact 間の relation と direct resolver input は `REQ-*` / `WORK-*` / `TASK-*` ID-as-ref を用いる。Physical path は supported canonical relation に含めない。Investigation metadata で追加利用できる workflow ID-as-ref は `REQ-*` / `WORK-*` に限定し、`TASK-*` は unsupported とする。
 resolver が読む artifact と record kind として公開する artifact は同一集合である必要はない。
 tool の request / response 仕様は `docs/spec/design-records-mcp/tools.md` を参照する。
 
@@ -206,5 +206,4 @@ ADR-057でbrewprint v1.0.0-spec を凍結した際に、以下の運用が確定
 - プロジェクトルートに `DISCLAIMER.md` を新設する方針が確定（ADR-057 §5）。
 - 文面はユーザーが起草する。AIアシスタントは起案しない。
 - 法務的主張（業務時間外開発、会社リソース不使用、公知技術の組合せ）を記載する。
-
 

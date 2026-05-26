@@ -49,6 +49,31 @@ func TestResolveReferenceSemanticAndRecordTargets(t *testing.T) {
 	}
 }
 
+func TestResolveReferenceWorkflowRecordTargets(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-test.md", "# REQ-MCP-003: Test requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-003\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-test.md", "# WORK-MCP-003: Test work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-003-01\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-test.md", "# TASK-MCP-003-01: Test task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - test\n")
+	idx := buildTestIndex(t, root)
+
+	for _, tt := range []struct {
+		ref  string
+		kind RecordKind
+	}{
+		{ref: "REQ-MCP-003", kind: RecordKindRequirement},
+		{ref: "WORK-MCP-003", kind: RecordKindWorkItem},
+		{ref: "TASK-MCP-003-01", kind: RecordKindTask},
+	} {
+		resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: tt.ref})
+		if err != nil {
+			t.Fatalf("ResolveReference %s: %v", tt.ref, err)
+		}
+		if resp.Status != resolveStatusResolved || resp.RefKind != refKindRecordID || resp.Target == nil || resp.Target.TargetType != "record" || resp.Target.RecordID != tt.ref || resp.Target.RecordKind != tt.kind {
+			t.Fatalf("%s resolve = %#v", tt.ref, resp)
+		}
+	}
+}
+
 func TestResolveReferenceUsesSemanticRefsFromNonRecordSpec(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, root, "docs/spec/non-record.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:non-record.doc\nsections:\n  spec:non-record.section: Target Section\n---\n# Non-record spec\n## Target Section\n")
@@ -113,7 +138,7 @@ func TestValidateRecordsSemanticRefDiagnosticsFromNonRecordSpec(t *testing.T) {
 func TestResolveReferenceRepositoryBootstrapIDs(t *testing.T) {
 	root := findRepoRoot(t)
 	idx := buildTestIndex(t, root)
-	for _, id := range []string{"ADR-088", "INV-DOCS-001", "INV-DOCS-002", "INV-DOCS-003"} {
+	for _, id := range []string{"ADR-088", "INV-DOCS-001", "INV-DOCS-002", "INV-DOCS-003", "REQ-MCP-003", "WORK-MCP-003", "TASK-MCP-003-01"} {
 		resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: id})
 		if err != nil {
 			t.Fatalf("ResolveReference %s: %v", id, err)
@@ -144,6 +169,16 @@ func TestResolveReferenceUnresolvedAmbiguousAndUnsupported(t *testing.T) {
 		t.Fatalf("unresolved = %#v", unresolved)
 	}
 
+	for _, ref := range []string{"REQ-MCP-999", "WORK-MCP-999", "TASK-MCP-999-99"} {
+		resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: ref})
+		if err != nil {
+			t.Fatalf("ResolveReference unresolved %s: %v", ref, err)
+		}
+		if resp.Status != resolveStatusUnresolved || resp.RefKind != refKindRecordID || resp.Target != nil || !hasDiagnostic(resp.Diagnostics, DiagnosticUnresolvedReference) {
+			t.Fatalf("%s unresolved response = %#v", ref, resp)
+		}
+	}
+
 	ambiguousRecord, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: "ADR-001"})
 	if err != nil {
 		t.Fatalf("ResolveReference ambiguous record: %v", err)
@@ -160,7 +195,7 @@ func TestResolveReferenceUnresolvedAmbiguousAndUnsupported(t *testing.T) {
 		t.Fatalf("ambiguous semantic = %#v", ambiguousSemantic)
 	}
 
-	for _, ref := range []string{"internal-design:resolver.semantic-ref-index", "coverage:trace", "COV-TRACE-001", "REQ-MCP-001", "WORK-MCP-001", "docs/spec/trace.md", "ADR-abc"} {
+	for _, ref := range []string{"internal-design:resolver.semantic-ref-index", "coverage:trace", "COV-TRACE-001", "docs/spec/trace.md", "ADR-abc", "TASK-MCP-003-1", "REQ-mcp-003", "WORK-MCP-003-extra-01"} {
 		resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: ref})
 		if err != nil {
 			t.Fatalf("ResolveReference unsupported %s: %v", ref, err)

@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/tools.md
 status: draft
-last_updated: 2026-05-26
+last_updated: 2026-05-27
 summary: >
   Design Records MCP MVP の read-only tool interface と責務境界を定義する。
 depends_on:
@@ -10,6 +10,7 @@ depends_on:
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
   - docs/adr/090-design-records-mcp-batch-retrieval-tool-boundary.md
+  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
 design_record:
   id: SPEC-design-records-mcp-tools
   kind: spec
@@ -20,6 +21,7 @@ design_record:
     - ADR-087
     - ADR-088
     - ADR-090
+    - ADR-092
 ---
 
 # Design Records MCP tools
@@ -87,6 +89,23 @@ Investigation example:
 }
 ```
 
+Workflow artifact example:
+
+```json
+{
+  "id": "WORK-MCP-003",
+  "kind": "work_item",
+  "title": "Workflow artifact MCP support の最小 public contract を判断・実現する",
+  "status": "design_spec_pending",
+  "path": "docs/work-items/mcp/WORK-MCP-003-workflow-artifact-mcp-support.md",
+  "work_item": {
+    "source_requirement": "REQ-MCP-003",
+    "impact_refs": ["ADR-092", "SPEC-design-records-mcp-tools"],
+    "tasks": ["TASK-MCP-003-01", "TASK-MCP-003-02", "TASK-MCP-003-03"]
+  }
+}
+```
+
 旧 flat response field と kind 固有 detail object は併存させない。spec を新 contract に更新した後、実装と tests は同一の切替単位で追従する。
 
 `title` は H1 から抽出する。
@@ -101,10 +120,10 @@ MVP では response 内で Markdown 本文を整形・要約・正規化しな�
 
 ### Purpose
 
-`list_records` は、decision / spec / investigation を扱う record index を構造化して返す query tool である。
+`list_records` は、decision / spec / investigation / requirement / work_item / task を扱う record index を構造化して返す query tool である。
 
 目的は、Markdown 本文を読む前に候補 record を絞り込むことである。
-単なる filesystem listing ではなく、ADR / investigation の箇条書きmetadataまたは spec の YAML front matter から正規化した record metadata と H1 title を含む一覧を返す。
+単なる filesystem listing ではなく、ADR / investigation / requirement / work item / task の箇条書きmetadataまたは spec の YAML front matter から正規化した record metadata と H1 title を含む一覧を返す。
 
 > 由来: ADR-077 §list_records の責務
 
@@ -129,7 +148,7 @@ MVP request schema:
 
 | field | required | type | meaning |
 |---|---:|---|---|
-| `kind` | no | string | `decision` / `spec` / `investigation` で絞り込む |
+| `kind` | no | string | `decision` / `spec` / `investigation` / `requirement` / `work_item` / `task` で絞り込む |
 | `status` | no | string | status で絞り込む |
 | `id` | no | string | exact ID で絞り込む |
 | `id_range` | no | object | ID range で絞り込む |
@@ -147,8 +166,8 @@ MVP の `id_range` は `ADR-NNN` 形式の `decision` record にのみ適用す�
 比較は `NNN` の数値比較とする。
 `kind` が省略され、かつ `id_range` が指定された場合は `kind: decision` と同等に扱う。
 `id_range` を指定する request では、`kind` は省略されているか `decision` でなければならない。
-`kind: spec` / `kind: investigation` と `id_range` の併用、または `SPEC-*` / `INV-*` への range 指定は request error とする。
-Investigation の domain-scoped ID に対する range / domain filter はこの版では扱わず、後続 spec refinement に委ねる。
+`kind: spec` / `kind: investigation` / `kind: requirement` / `kind: work_item` / `kind: task` と `id_range` の併用、または `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` への range 指定は request error とする。
+Investigation と workflow artifact の domain-scoped ID に対する range / domain filter はこの版では扱わず、後続 spec refinement に委ねる。
 
 ### Response
 
@@ -283,7 +302,7 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
 
 `ids` の欠落、空配列、array 以外の値、または string 以外の element は `invalid_request` tool error とする。
 
-`ids[]` は record index に対する exact lookup key としてのみ評価する。前後 whitespace の trim、case normalization、canonical reference resolution、input kind classification は行わない。したがって `spec:trace`、`REQ-MCP-002`、physical path、`adr-077`、` ADR-077 ` のような string input が indexed record ID と一致しない場合、tool error や `unsupported` ではなく item-level `not_found` とする。
+`ids[]` は record index に対する exact lookup key としてのみ評価する。前後 whitespace の trim、case normalization、canonical reference resolution、input kind classification は行わない。したがって `spec:trace`、physical path、`adr-077`、` ADR-077 `、または grammar に合わない workflow ID のような string input が indexed record ID と一致しない場合、tool error や `unsupported` ではなく item-level `not_found` とする。`REQ-MCP-003` / `WORK-MCP-003` / `TASK-MCP-003-01` は index 済みの場合に found record を返す exact lookup key である。
 
 `get_records` は `kind` / `status` / `id_range` / `limit` を request field として持たない。record ごとに異なる `include_body` を指定する query plan 形式も採用しない。
 
@@ -426,8 +445,11 @@ Supported input は以下のみとする。
 | `ADR-NNN` | `record_id` | `decision` record index |
 | `SPEC-<slug>` | `record_id` | `spec` record index |
 | `INV-<DOMAIN>-NNN` | `record_id` | `investigation` record index |
+| `REQ-<DOMAIN>-NNN` | `record_id` | `requirement` record index |
+| `WORK-<DOMAIN>-NNN` | `record_id` | `work_item` record index |
+| `TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>` | `record_id` | `task` record index |
 
-`internal-design:` / `coverage:`、`COV-*`、`REQ-*`、`WORK-*`、physical path、および grammar に合わない ID form は supported input ではなく、direct query では tool execution error ではなく `status: "unsupported"` を返す。`yaml:` は reserved prefix だが、MVP は public resolver input または direct query response behavior を定義しない。
+`internal-design:` / `coverage:`、`COV-*`、physical path、および grammar に合わない ID form は supported input ではなく、direct query では tool execution error ではなく `status: "unsupported"` を返す。Workflow ID grammar として、requirement / work item sequence および task の work sequence は3桁ゼロ埋め、task sequence は2桁ゼロ埋めとする。`yaml:` は reserved prefix だが、MVP は public resolver input または direct query response behavior を定義しない。
 
 ### Response
 
@@ -479,7 +501,7 @@ Unsupported example:
 }
 ```
 
-Direct query の `unsupported_reference` は resolver の failure ではなく input boundary の可視化であるため `info` とする。ただし unsupported input が investigation metadata の validation 対象 field に現れた場合の severity は、下記 `validate_records` の `unsupported_reference` contract に従う。Reserved `yaml:` の public resolver input / direct query response behavior、および investigation metadata validation behavior は MVP では定義しない。
+Direct query の `unsupported_reference` は resolver の failure ではなく input boundary の可視化であるため `info` とする。ただし unsupported input が investigation metadata の validation 対象 field に現れた場合の severity は、下記 `validate_records` の `unsupported_reference` contract に従う。Reserved `yaml:` については、public resolver input / direct query response behavior、および investigation metadata に現れた場合の validation behavior を MVP では定義しない。
 
 ## `validate_records`
 
@@ -487,9 +509,9 @@ Direct query の `unsupported_reference` は resolver の failure ではなく i
 
 `validate_records` は、Design Records MCP の metadata index が信頼できる状態かを検証する tool である。
 
-record metadata の基本整合性検査に加え、active `spec:` semantic ref、record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*`)、および investigation の `source_refs` / 記載済み `follow_up_results` が canonical reference として解決可能であることを検査する。
+record metadata の基本整合性検査に加え、active `spec:` semantic ref、record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*`)、investigation の `source_refs` / 記載済み `follow_up_results` が canonical reference として解決可能であること、および workflow relation field の宣言済み integrity を検査する。
 `follow_up_candidates` に artifact reference が記載された場合は canonical form を検査する。Canonical form の unresolved candidate は予定された後続 artifact が未作成であることを示す `info` diagnostic とし、physical path による candidate は noncanonical candidate を示す `info` diagnostic とする。
-ADR-088 により、`internal-design:` / `coverage:` / `COV-*`、semantic realization relation、coverage mapping query は MVP required scope として扱わない。
+ADR-088 / ADR-092 により、`internal-design:` / `coverage:` / `COV-*`、semantic realization relation、coverage mapping query、orphan workflow artifact diagnostics、progress projection、workflow traversal query は MVP required scope として扱わない。Investigation metadata の canonical workflow reference 拡張は `REQ-*` / `WORK-*` に限定し、同 field 内の `TASK-*` は unsupported reference として扱う。
 
 > 由来: ADR-077 §validate_records の責務
 
@@ -513,7 +535,7 @@ ADR-088 により、`internal-design:` / `coverage:` / `COV-*`、semantic realiz
 request が空の場合、MVP index 対象の全 record を検証する。
 
 `id_range` の扱いは `list_records` と同じく、`ADR-NNN` 形式の `decision` record 専用とする。
-`kind: spec` / `kind: investigation` と `id_range` の併用、または `SPEC-*` / `INV-*` への range 指定は request error とする。
+`kind: spec` / `kind: investigation` / `kind: requirement` / `kind: work_item` / `kind: task` と `id_range` の併用、または `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` への range 指定は request error とする。
 
 ### Response
 
@@ -556,6 +578,7 @@ MVP diagnostic category は `schema.md` の定義に従う。
 - `duplicate_id`
 - `filename_id_mismatch`
 - `invalid_h1_title`
+- `invalid_workflow_id`
 - `invalid_status_for_kind`
 - `spec_status_mismatch`
 - `missing_depends_on_target`
@@ -577,16 +600,22 @@ Canonical reference / investigation validation の concrete category と severit
 | `noncanonical_source_ref` | `error` | investigation `source_refs` に physical path が記載された |
 | `noncanonical_follow_up_result` | `error` | investigation `follow_up_results` に physical path が記載された |
 | `noncanonical_follow_up_candidate` | `info` | investigation `follow_up_candidates` に physical path が記載された |
-| `unsupported_reference` | `error` / `info` | MVP が unsupported と定義する metadata reference。`source_refs` / `follow_up_results` では `error`、`follow_up_candidates` では `info`。Reserved `yaml:` はこの category の対象に含めず、MVP では behavior を定義しない |
+| `unsupported_reference` | `error` / `info` | MVP が unsupported と定義する investigation metadata reference。`source_refs` / `follow_up_results` では `error`、`follow_up_candidates` では `info`。Investigation field に現れる `TASK-*` を含む。Reserved `yaml:` はこの category の対象に含めず、MVP では behavior を定義しない |
+| `unresolved_workflow_relation` | `error` | workflow relation field に記載された supported `REQ-*` / `WORK-*` / `TASK-*` が解決不能 |
+| `invalid_workflow_relation_target` | `error` | workflow relation field に field が要求する kind / ID form ではない target が記載された |
+| `workflow_relation_mismatch` | `error` | `REQ.work_items` と `WORK.source_requirement`、または `WORK.tasks` と `TASK.work_item` の宣言済み双方向 relation が一致しない |
+| `workflow_source_requirement_mismatch` | `error` | task の `source_requirement` が parent work item の `source_requirement` と一致しない |
+
+Workflow relation diagnostic (`unresolved_workflow_relation` / `invalid_workflow_relation_target` / `workflow_relation_mismatch` / `workflow_source_requirement_mismatch`) は、既存の diagnostic field に加えて `field`（`work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on`）、`value`（入力 ID-as-ref）、`ref_status`（`unresolved` / `invalid_target` / `mismatch`）を必須で返す。
 
 Investigation reference diagnostic (`unresolved_*` / `noncanonical_*` / metadata field 由来の `unsupported_reference`) は、既存の diagnostic field に加えて `field`（`source_refs` / `follow_up_results` / `follow_up_candidates`）、`value`（入力 ref 文字列）、`ref_status`（`unresolved` / `unsupported` / `noncanonical`）を必須で返す。対象が record ID-as-ref の場合は `target_id` も返してよい。Investigation metadata が duplicate semantic ref または duplicate record ID を指して単一解決できない場合は field-specific diagnostic を追加せず、index defect を示す `duplicate_semantic_ref` または `duplicate_id` のみを返す。これら duplicate diagnostic および spec declaration / section lookup diagnostic は investigation metadata field 由来の追加 field を要求しない。
 
 `depends_on` は `ADR-*` / `SPEC-*` / `INV-*` の canonical record ID-as-ref を参照できる。したがって `ADR-086` の `depends_on: INV-DOCS-001` は contract 上 valid であり、investigation integration 実装前に返る `missing_depends_on_target` は既知 implementation gap である。M19 implementation 後は `INV-DOCS-001` の index integration によりこの diagnostic が解消されなければならない。
 
 `ok` は `error` diagnostic がない場合に `true` とし、`info` diagnostic が存在しても `false` にしない。
-Coverage mapping、semantic realization relation、`internal-design:` / `coverage:` / `COV-*` の解決・診断は MVP tool acceptance に含めない。
+Coverage mapping、semantic realization relation、`internal-design:` / `coverage:` / `COV-*` の解決・診断は MVP tool acceptance に含めない。Workflow relation validation は宣言済み relation の存在と整合性に限り、未接続 artifact の orphan diagnostics、task dependency cycle detection、execution order projection、task status 由来 progress projection は含めない。
 
-`accepted_but_not_migrated` / `missing_design_record` などの運用 gap 診断は MVP 外である。
+`accepted_but_not_migrated` / `missing_design_record` などの運用 gap 診断、および orphan requirement / orphan work item / orphan task diagnostic は MVP 外である。
 
 `missing_record_path` は、filesystem scan または path normalization により record 候補 path を検出したが、実際の read/stat に失敗した場合に出す。
 例として、scan 後に file が削除された場合、permission denied、symlink target missing、path normalization 後の path が存在しない場合を含む。
@@ -655,9 +684,9 @@ MVP tool error code は以下を最小とする。
 | code | meaning |
 |---|---|
 | `record_not_found` | `get_record` で指定された単一 record ID が存在しない。`get_records` では tool error ではなく item-level diagnostic として用いる |
-| `invalid_request` | request schema または field value が不正。例: `list_records` に `kind: task` を指定した場合、または `get_records.ids` が欠落・空・非 array・非 string element を含む場合 |
+| `invalid_request` | request schema または field value が不正。例: `list_records` に未知の `kind` を指定した場合、または `get_records.ids` が欠落・空・非 array・非 string element を含む場合 |
 | `unsupported_kind` | tool が対象外の `kind` を指定された。例: `suggest_next_record` に `kind: spec` を指定した場合 |
-| `id_range_requires_decision_kind` | `id_range` が `decision` 以外の kind と併用された、または `SPEC-*` / `INV-*` range が指定された |
+| `id_range_requires_decision_kind` | `id_range` が `decision` 以外の kind と併用された、または `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` range が指定された |
 
 `get_record` では、存在しない単一 record ID を指定した場合、tool は machine-readable な error を返す。
 

@@ -219,7 +219,7 @@ func SuggestNextRecord(ctx context.Context, idx *Index, req SuggestNextRecordReq
 func newListRecordsScope(req ListRecordsRequest) (listRecordsScope, error) {
 	scope := listRecordsScope{order: "asc"}
 	if req.Kind != "" {
-		if req.Kind != RecordKindDecision && req.Kind != RecordKindSpec && req.Kind != RecordKindInvestigation {
+		if !isListableRecordKind(req.Kind) {
 			return scope, newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unsupported kind %q", req.Kind))
 		}
 		scope.kind = req.Kind
@@ -317,6 +317,9 @@ func listedRecord(record Record) ListedRecord {
 		Decision:      responseDecisionDetail(record),
 		Spec:          responseSpecDetail(record),
 		Investigation: responseInvestigationDetail(record),
+		Requirement:   responseRequirementDetail(record),
+		WorkItem:      responseWorkItemDetail(record),
+		Task:          responseTaskDetail(record),
 	}
 }
 
@@ -330,6 +333,9 @@ func getRecordResponseRecord(record Record, includeBody bool) GetRecordRecord {
 		Decision:      responseDecisionDetail(record),
 		Spec:          responseSpecDetail(record),
 		Investigation: responseInvestigationDetail(record),
+		Requirement:   responseRequirementDetail(record),
+		WorkItem:      responseWorkItemDetail(record),
+		Task:          responseTaskDetail(record),
 		Headings:      append([]Heading{}, record.Headings...),
 	}
 	if includeBody {
@@ -421,6 +427,79 @@ func responseInvestigationDetail(record Record) *InvestigationDetail {
 		return &InvestigationDetail{SourceRefs: []string{}, FollowUpCandidates: []string{}}
 	}
 	return cloneInvestigationDetail(record.Investigation)
+}
+
+func cloneRequirementDetail(in *RequirementDetail) *RequirementDetail {
+	if in == nil {
+		return nil
+	}
+	return &RequirementDetail{
+		SourceRefs: append([]string{}, in.SourceRefs...),
+		WorkItems:  append([]string{}, in.WorkItems...),
+	}
+}
+
+func responseRequirementDetail(record Record) *RequirementDetail {
+	if record.Kind != RecordKindRequirement {
+		return nil
+	}
+	if record.Requirement == nil {
+		return &RequirementDetail{SourceRefs: []string{}, WorkItems: []string{}}
+	}
+	return cloneRequirementDetail(record.Requirement)
+}
+
+func cloneWorkItemDetail(in *WorkItemDetail) *WorkItemDetail {
+	if in == nil {
+		return nil
+	}
+	return &WorkItemDetail{
+		SourceRequirement: in.SourceRequirement,
+		ImpactRefs:        append([]string{}, in.ImpactRefs...),
+		Tasks:             append([]string{}, in.Tasks...),
+	}
+}
+
+func responseWorkItemDetail(record Record) *WorkItemDetail {
+	if record.Kind != RecordKindWorkItem {
+		return nil
+	}
+	if record.WorkItem == nil {
+		return &WorkItemDetail{ImpactRefs: []string{}, Tasks: []string{}}
+	}
+	return cloneWorkItemDetail(record.WorkItem)
+}
+
+func cloneTaskDetail(in *TaskDetail) *TaskDetail {
+	if in == nil {
+		return nil
+	}
+	return &TaskDetail{
+		WorkItem:          in.WorkItem,
+		SourceRequirement: in.SourceRequirement,
+		Estimate:          in.Estimate,
+		DependsOn:         append([]string{}, in.DependsOn...),
+		Outputs:           append([]string{}, in.Outputs...),
+	}
+}
+
+func responseTaskDetail(record Record) *TaskDetail {
+	if record.Kind != RecordKindTask {
+		return nil
+	}
+	if record.Task == nil {
+		return &TaskDetail{DependsOn: []string{}, Outputs: []string{}}
+	}
+	return cloneTaskDetail(record.Task)
+}
+
+func isListableRecordKind(kind RecordKind) bool {
+	switch kind {
+	case RecordKindDecision, RecordKindSpec, RecordKindInvestigation, RecordKindRequirement, RecordKindWorkItem, RecordKindTask:
+		return true
+	default:
+		return false
+	}
 }
 
 func suggestedDecisionRecordPath(num int, title string) string {

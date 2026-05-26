@@ -43,6 +43,9 @@ func TestGetRecordBasicDecisionAndSpecResponseShape(t *testing.T) {
 		"  - SPEC-design-records-mcp-tools\n" +
 		"## Result\n"
 	writeTestFile(t, root, "docs/investigations/docs/INV-DOCS-001-test.md", investigationRaw)
+	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-test.md", "# REQ-MCP-003: Test requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n  - ADR-076\n- **work_items**:\n  - WORK-MCP-003\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-test.md", "# WORK-MCP-003: Test work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n  - ADR-076\n- **tasks**:\n  - TASK-MCP-003-01\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-test.md", "# TASK-MCP-003-01: Test task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - implementation\n")
 	idx := buildTestIndex(t, root)
 
 	adrResp, err := GetRecord(context.Background(), idx, GetRecordRequest{ID: "ADR-076"})
@@ -102,6 +105,38 @@ func TestGetRecordBasicDecisionAndSpecResponseShape(t *testing.T) {
 	assertStrings(t, inv.Investigation.SourceRefs, []string{"ADR-076"})
 	assertStrings(t, inv.Investigation.FollowUpCandidates, []string{"SPEC-design-records-mcp-tools"})
 	assertGetRecordJSONShape(t, invResp, false)
+
+	reqResp, err := GetRecord(context.Background(), idx, GetRecordRequest{ID: "REQ-MCP-003"})
+	if err != nil {
+		t.Fatalf("GetRecord requirement: %v", err)
+	}
+	if reqResp.Record.Kind != RecordKindRequirement || reqResp.Record.Requirement == nil {
+		t.Fatalf("requirement response = %#v", reqResp.Record)
+	}
+	assertStrings(t, reqResp.Record.Requirement.SourceRefs, []string{"ADR-076"})
+	assertStrings(t, reqResp.Record.Requirement.WorkItems, []string{"WORK-MCP-003"})
+	assertGetRecordJSONShape(t, reqResp, false)
+
+	workResp, err := GetRecord(context.Background(), idx, GetRecordRequest{ID: "WORK-MCP-003"})
+	if err != nil {
+		t.Fatalf("GetRecord work item: %v", err)
+	}
+	if workResp.Record.Kind != RecordKindWorkItem || workResp.Record.WorkItem == nil || workResp.Record.WorkItem.SourceRequirement != "REQ-MCP-003" {
+		t.Fatalf("work item response = %#v", workResp.Record)
+	}
+	assertStrings(t, workResp.Record.WorkItem.Tasks, []string{"TASK-MCP-003-01"})
+	assertGetRecordJSONShape(t, workResp, false)
+
+	taskResp, err := GetRecord(context.Background(), idx, GetRecordRequest{ID: "TASK-MCP-003-01"})
+	if err != nil {
+		t.Fatalf("GetRecord task: %v", err)
+	}
+	if taskResp.Record.Kind != RecordKindTask || taskResp.Record.Task == nil || taskResp.Record.Task.WorkItem != "WORK-MCP-003" {
+		t.Fatalf("task response = %#v", taskResp.Record)
+	}
+	assertStrings(t, taskResp.Record.Task.DependsOn, []string{})
+	assertStrings(t, taskResp.Record.Task.Outputs, []string{"implementation"})
+	assertGetRecordJSONShape(t, taskResp, false)
 }
 
 func TestGetRecordIncludeBodyReturnsRawMarkdown(t *testing.T) {
@@ -229,6 +264,23 @@ func TestGetRecordRepositoryBootstrapRecords(t *testing.T) {
 	if specResp.Record.Kind != RecordKindSpec || specResp.Record.Title != "Design Records MCP tools" {
 		t.Fatalf("spec record = %#v", specResp.Record)
 	}
+
+	for _, tt := range []struct {
+		id   string
+		kind RecordKind
+	}{
+		{"REQ-MCP-003", RecordKindRequirement},
+		{"WORK-MCP-003", RecordKindWorkItem},
+		{"TASK-MCP-003-01", RecordKindTask},
+	} {
+		resp, err := GetRecord(context.Background(), idx, GetRecordRequest{ID: tt.id})
+		if err != nil {
+			t.Fatalf("GetRecord %s: %v", tt.id, err)
+		}
+		if resp.Record.Kind != tt.kind {
+			t.Fatalf("%s kind = %q, want %q", tt.id, resp.Record.Kind, tt.kind)
+		}
+	}
 }
 
 func TestGetRecordEmptyHeadingsJSONShape(t *testing.T) {
@@ -308,6 +360,12 @@ func assertGetRecordJSONShape(t *testing.T, resp GetRecordResponse, wantBody boo
 		allowed["spec"] = true
 	case RecordKindInvestigation:
 		allowed["investigation"] = true
+	case RecordKindRequirement:
+		allowed["requirement"] = true
+	case RecordKindWorkItem:
+		allowed["work_item"] = true
+	case RecordKindTask:
+		allowed["task"] = true
 	}
 	if wantBody {
 		allowed["body"] = true

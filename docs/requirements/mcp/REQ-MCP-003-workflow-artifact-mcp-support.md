@@ -1,14 +1,16 @@
 # REQ-MCP-003: Requirement / work item / task の MCP support が必要
 
 - **id**: REQ-MCP-003
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-05-25
 - **source_refs**:
   - ADR-081
   - ADR-083
   - ADR-087
   - ADR-091
+  - ADR-092
 - **work_items**:
+  - WORK-MCP-003
 
 ## 要求
 
@@ -47,6 +49,18 @@ REQ-MCP-002 -> WORK-MCP-002 -> TASK-MCP-002-01 ... TASK-MCP-002-06
 - Design Records MCP の batch retrieval capability は REQ-MCP-002 / ADR-090 で完了済みであり、本 requirement は `get_records` 等が workflow artifact を扱う場合の拡張境界を後続判断する。
 - requirements / work-items / tasks の docs artifact 運用自体は、本 requirement の採用判断を待たず継続できる。
 
-## Next decision
+## Decision result
 
-`WORK-MCP-002` dogfooding と ADR-091 を evidence として、`REQ-*` / `WORK-*` / `TASK-*` ID-as-ref を public record / resolver / validation contract に含める最小 scope を判断する。
+`ADR-092` により、workflow artifact MCP support の最小 public contract を採用した。
+
+- `requirement` / `work_item` / `task` を既存 Design Records MCP の record-oriented surface に追加する。
+- `REQ-*` / `WORK-*` / `TASK-*` を public record retrieval と direct resolver input の対象に追加する。
+- Workflow relation の参照先存在確認と宣言済み relation の双方向 integrity validation を MVP に含める。
+- Investigation metadata の canonical reference 拡張対象は `REQ-*` / `WORK-*` に限定し、`TASK-*` は含めない。
+- Orphan diagnostics、progress projection、workflow 専用 traversal は MVP 外へ送る。
+
+Spec 更新、implementation、tests、runtime verification、close evidence は `WORK-MCP-003` で追跡し、2026-05-27 に完了した。
+
+Close review では、`WORK-MCP-003` completion condition 1 が満たされたと判定した。`REQ-MCP-003 -> WORK-MCP-003 -> TASK-MCP-003-*` の target chain に capability completion blocker はない。
+
+MVP 外 capability として残した orphan diagnostics、progress projection、workflow traversal、dependency cycle / order projection は引き続き後続 requirement / work の判断対象である。Repository-wide validation では、target chain 外の legacy artifact `WORK-MCP-001.tasks = M19` が `invalid_workflow_relation_target` となる既知 migration gap が残るが、本 requirement の採用済み capability 完了を否定しない。

@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/traceability/index.md
 status: draft
-last_updated: 2026-05-24
+last_updated: 2026-05-27
 summary: >
   semantic traceability spec の入口。
   canonical reference resolution foundation と future realization scope の境界を定義する。
@@ -11,6 +11,8 @@ depends_on:
   - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
+  - docs/adr/091-workflow-artifact-work-item-task-milestone.md
+  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
 semantic_refs:
   - spec:trace
 ---
@@ -21,16 +23,17 @@ semantic_refs:
 
 この spec set は、brewprint docs の semantic trace MVP を定義する。
 
-ADR-088 により、MVP の目的は artifact 間の realization graph を先取りすることではなく、設計 record と investigation が physical path に依存せず根拠を参照・検証できる **canonical reference resolution foundation** を提供することになった。
+ADR-088 / ADR-092 により、MVP の目的は artifact 間の realization graph を先取りすることではなく、設計 record、investigation、および workflow artifact が physical path に依存せず canonical reference と宣言済み relation を解決・検証できる **canonical reference resolution foundation** を提供することになった。
 
 ## MVP scope
 
 MVP が扱うもの:
 
 - `spec:` semantic ref の宣言、安定性、document / section 解決
-- `ADR-*` / `SPEC-*` / `INV-*` など record ID-as-ref の解決
-- investigation の `source_refs` および記載済み `follow_up_results` の canonical reference 解決と unresolved error
-- `follow_up_candidates` に artifact reference を記載する場合の canonical form 検査。未作成候補の存在は要求しない
+- `ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` record ID-as-ref の解決
+- investigation の `source_refs` および記載済み `follow_up_results` の canonical reference 解決と unresolved error。追加 workflow ID-as-ref は `REQ-*` / `WORK-*` に限定する
+- `follow_up_candidates` に artifact reference を記載する場合の canonical form 検査。追加 workflow ID-as-ref は `REQ-*` / `WORK-*` に限定し、未作成候補の存在は要求しない
+- workflow artifact 間の宣言済み ID-as-ref relation の存在確認と双方向整合性確認
 - physical path を canonical reference としない boundary
 
 MVP の active semantic ref prefix は以下に限定する。
@@ -53,6 +56,8 @@ MVP は以下を operational mechanism として扱わない。
 - `maps_to` / `covers` / `validates` relation
 - `spec:` → `internal-design:` realization mapping
 - YAML endpoint、fixture / golden traceability、coverage / evidence matrix
+- workflow artifact の orphan diagnostics、task status 由来 progress projection、workflow 専用 traversal query、task dependency cycle / execution order projection
+- investigation metadata における `TASK-*` canonical reference support
 
 `docs/internal-design/` artifact layer 自体は存続する。MVP 外なのは、同 layer を semantic trace endpoint として resolve / validate する contract である。External relation / assurance artifact は必要性が成立した時点で配置と責務を含めて新設判断し、MVP layout には directory を予約しない。
 
@@ -78,6 +83,9 @@ Design Records MCP が扱う record artifact を指す stable ID。
 ADR-088
 SPEC-<slug>
 INV-DOCS-003
+REQ-MCP-003
+WORK-MCP-003
+TASK-MCP-003-01
 ```
 
 ### brewprint DSL YAML
@@ -113,3 +121,5 @@ Artifact system 全体の責務境界は [`../project-artifact-model/index.md`](
 - ADR-084: semantic trace MVP scope と artifact boundary
 - ADR-087: Design Records MCP investigation support and semantic ref resolve
 - ADR-088: Reduce semantic trace MVP to a canonical reference resolution foundation
+- ADR-091: Workflow artifact の work item / task 責務分離と legacy milestone 移行
+- ADR-092: Design Records MCP workflow artifact record and relation boundary

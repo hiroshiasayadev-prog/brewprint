@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/traceability/out-of-scope.md
 status: draft
-last_updated: 2026-05-24
+last_updated: 2026-05-27
 summary: >
   canonical reference resolution foundation の scope 外と、
   future extension を再判断する trigger を定義する。
@@ -12,6 +12,8 @@ depends_on:
   - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
+  - docs/adr/091-workflow-artifact-work-item-task-milestone.md
+  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
 semantic_refs:
   - spec:trace.out-of-scope
 sections:
@@ -80,9 +82,19 @@ Scope 外:
 - render expected comparison semantics
 - test harness schema / golden update workflow
 
-## Requirement / work-item semantic endpoints
+## Workflow semantic prefixes and derived operations
 
-Requirement / work item は `REQ-*` / `WORK-*` の stable ID を持つが、MVP は `requirement:` / `work-item:` semantic prefix や relation endpoint 化を定義しない。Design Records MCP の public resolve contract に含めるかも、consumer requirement が成立した時点で判断する。
+Requirement / work item / task は `REQ-*` / `WORK-*` / `TASK-*` ID-as-ref により Design Records MCP の public record / resolver / declared relation validation 対象となる。一方、MVP は `requirement:` / `work-item:` / `task:` semantic prefix を定義しない。
+
+Workflow artifact support に関して、以下は MVP 外である。
+
+- orphan requirement / orphan work item / orphan task diagnostics
+- task status から work item progress を導出する projection
+- workflow 専用 traversal / tree / graph query tool
+- task dependency cycle detection / execution order projection
+- investigation metadata による `TASK-*` canonical reference
+
+これらは declared relation integrity validation または direct ID-as-ref resolution の成立条件ではなく、具体的な運用要件が確認された時点で判断する。
 
 ## Full MCP writer tools
 
@@ -106,8 +118,9 @@ Writer tool を導入する場合は、dry-run diff、user confirmation、confli
 | external relation artifact | gap / evidence / sign-off / lifecycle の中央管理が必要になった場合 |
 | `yaml:` active 化 | YAML entity ref / cross-layer trace が必要になった場合 |
 | fixture-level traceability | golden fixture と docs/spec の対応を長期管理する必要が生じた場合 |
-| requirement / work-item prefix | それらを semantic endpoint として扱う必要が生じた場合 |
-| MCP resolve contract refinement | ADR-087 / ADR-088 の canonical reference resolve を実装可能な request / response / diagnostic contract にする場合 |
+| workflow semantic prefix | `REQ-*` / `WORK-*` / `TASK-*` ID-as-ref では不足する section-level addressing requirement が生じた場合 |
+| workflow orphan / progress / traversal capability | 未接続診断、status 集約 view、専用 graph traversal の concrete requirement が生じた場合 |
+| MCP resolve contract refinement | 採用済み canonical reference / workflow relation validation contract の追加 refinement が必要になった場合 |
 | MCP writer tools | canonical metadata を tool で生成・更新する必要が生じた場合 |
 
 ## Follow-up artifact placement
@@ -122,4 +135,4 @@ Future extension が必要になった場合、要求・判断・進捗・contra
 - canonical reference / tool-independent trace contract: `docs/spec/concepts/traceability/`
 - MCP tool contract: `docs/spec/design-records-mcp/`
 
-> 由来: ADR-082, ADR-083, ADR-084, ADR-087, ADR-088; INV-DOCS-002; INV-DOCS-003
+> 由来: ADR-082, ADR-083, ADR-084, ADR-087, ADR-088, ADR-091, ADR-092; INV-DOCS-002; INV-DOCS-003

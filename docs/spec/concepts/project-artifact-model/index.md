@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/project-artifact-model/index.md
 status: draft
-last_updated: 2026-05-26
+last_updated: 2026-05-27
 summary: >
   brewprint project に存在する design / operation artifact の責務境界、
   artifact 間の意味関係、および traceability / MCP の位置付けを定義する。
@@ -13,6 +13,7 @@ depends_on:
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
   - docs/adr/091-workflow-artifact-work-item-task-milestone.md
+  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
 semantic_refs:
   - spec:project-artifact-model
 sections:
@@ -89,11 +90,11 @@ brewprint の artifact system は、大きく以下の3群から成る。
 
 | mechanism | role |
 |---|---|
-| trace metadata | `spec:` semantic ref と investigation canonical reference を宣言・参照する metadata |
+| trace metadata | `spec:` semantic ref、investigation canonical reference、workflow ID-as-ref relation を宣言・参照する metadata |
 | semantic ref / ID-as-ref | path に依存しない参照 identity |
-| Design Records MCP | design record / investigation の探索と canonical ref の resolve / validation を担う tool boundary |
+| Design Records MCP | design record / workflow artifact の探索と canonical ref / declared workflow relation の resolve / validation を担う tool boundary |
 
-MVP は canonical reference resolution foundation に限定する。Active semantic ref は `spec:` とし、record artifact ID-as-ref と investigation の `source_refs` / 記載済み `follow_up_results` の resolve / validation を扱う。
+MVP は canonical reference resolution foundation に限定する。Active semantic ref は `spec:` とし、record artifact ID-as-ref、investigation の `source_refs` / 記載済み `follow_up_results` の resolve / validation、および workflow artifact の宣言済み ID-as-ref relation integrity validation を扱う。Investigation metadata から workflow artifact への canonical reference は `REQ-*` / `WORK-*` に限定し、`TASK-*` は workflow artifact 間 relation と direct resolver input に限る。
 
 `docs/internal-design/` layer は存続するが、`internal-design:` endpoint、semantic realization relation、および external relation / assurance artifact は MVP の operational trace mechanism として扱わない。これらは navigation / impact analysis、YAML cross-layer trace、gap / evidence / sign-off / lifecycle 管理などの concrete requirement が成立した場合に、配置と責務を含めて新設判断する future candidate とする。
 
@@ -206,10 +207,10 @@ MVP における traceability の範囲:
 | item | MVP treatment |
 |---|---|
 | active semantic prefix | `spec:` のみ |
-| ID-as-ref | 現行 MCP は `ADR-*` / `SPEC-*` / `INV-*` の canonical resolution を扱う。`REQ-*` / `WORK-*` / `TASK-*` は workflow relation の canonical identity として ADR-091 で確定済みだが、public resolve / validation contract は REQ-MCP-003 の後続判断。`COV-*` は MVP 外 |
+| ID-as-ref | Design Records MCP は `ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` の canonical resolution を扱う。Workflow artifact 間の declared relation integrity validation も扱うが、physical path、orphan diagnostics、progress projection、workflow traversal は含めない。`COV-*` は MVP 外 |
 | MVP semantic realization relation | 扱わない。`internal-design:` endpoint とともに future decision へ送る |
 | external coverage artifact | MVP では operational に扱わない。導入 trigger が満たされた場合に再判断する |
-| investigation trace | `source_refs` / 記載済み `follow_up_results` の resolve validation。`follow_up_candidates` は canonical form を検査するが存在は要求しない |
+| investigation trace | `source_refs` / 記載済み `follow_up_results` の resolve validation。`follow_up_candidates` は canonical form を検査するが存在は要求しない。Workflow ID-as-ref 拡張は `REQ-*` / `WORK-*` に限定し、`TASK-*` は investigation metadata の canonical reference 対象外 |
 | implementation boundary | Design Records MCP が resolve / validation を担い、concrete contract / implementation は M19 で追跡する |
 
 `docs/spec/concepts/traceability/` は、この mechanism の semantic ref grammar、canonical metadata boundary、resolve / validation rule を定義する下位 concept spec set である。本 document が所有する artifact system 全体の責務境界を置き換えない。Semantic realization mapping と external coverage artifact は ADR-088 により MVP 外である。
@@ -262,7 +263,7 @@ Future extension として判断を延期しているもの:
 - `maps_to` / `covers` relation の operational 導入
 - mapping group
 - fixture / golden traceability
-- requirement / work item / task の Design Records MCP record kind 化、および `REQ-*` / `WORK-*` / `TASK-*` ID-as-ref resolve / validation（physical path は supported canonical relation に含めない）
+- workflow artifact の orphan diagnostics / task status 由来 progress projection / workflow 専用 traversal query / task dependency cycle or execution order projection
 - MCP writer tools
 
 これらは将来の必要性を否定するものではなく、machine-readable trace / tool contract と external artifact の採否・配置を後続判断へ送るものである。MVP は external artifact 用 directory や authoring entrance を設けない。
@@ -276,5 +277,6 @@ Future extension として判断を延期しているもの:
 - ADR-087: Design Records MCP investigation support and semantic ref resolve
 - ADR-088: Reduce semantic trace MVP to a canonical reference resolution foundation
 - ADR-091: Workflow artifact の work item / task 責務分離と legacy milestone 移行
+- ADR-092: Design Records MCP workflow artifact record and relation boundary
 - INV-DOCS-002: external coverage artifact necessity for semantic trace MVP
 - INV-DOCS-003: internal-design endpoint necessity for semantic trace MVP

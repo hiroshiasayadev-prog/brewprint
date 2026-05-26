@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -244,6 +245,97 @@ func TestInvestigationInvalidH1AndFilenameMismatch(t *testing.T) {
 	}
 }
 
+func TestWorkflowRecordParsersMetadataAndDiagnostics(t *testing.T) {
+	reqRaw := "# REQ-MCP-003: Workflow support\n\n" +
+		"- **id**: REQ-MCP-003\n" +
+		"- **status**: accepted\n" +
+		"- **date**: 2026-05-25\n" +
+		"- **source_refs**:\n" +
+		"  - ADR-091\n" +
+		"- **work_items**:\n" +
+		"  - WORK-MCP-003\n"
+	req, candidate, issues := parseRequirementRecord("docs/requirements/mcp/REQ-MCP-003-workflow-support.md", reqRaw)
+	if req == nil || candidate.FilenameIDMismatch || len(issues) != 0 {
+		t.Fatalf("requirement parse = %#v candidate=%#v issues=%#v", req, candidate, issues)
+	}
+	if req.Kind != RecordKindRequirement || req.ID != "REQ-MCP-003" || req.Title != "Workflow support" || req.Status != RecordStatusAccepted {
+		t.Fatalf("requirement record = %#v", req)
+	}
+	assertStrings(t, req.Requirement.SourceRefs, []string{"ADR-091"})
+	assertStrings(t, req.Requirement.WorkItems, []string{"WORK-MCP-003"})
+
+	workRaw := "# WORK-MCP-003: Workflow implementation\n\n" +
+		"- **id**: WORK-MCP-003\n" +
+		"- **status**: implementation_pending\n" +
+		"- **date**: 2026-05-26\n" +
+		"- **source_requirement**: REQ-MCP-003\n" +
+		"- **impact_refs**:\n" +
+		"  - ADR-092\n" +
+		"- **tasks**:\n" +
+		"  - TASK-MCP-003-04\n"
+	work, candidate, issues := parseWorkItemRecord("docs/work-items/mcp/WORK-MCP-003-workflow-implementation.md", workRaw)
+	if work == nil || candidate.FilenameIDMismatch || len(issues) != 0 {
+		t.Fatalf("work item parse = %#v candidate=%#v issues=%#v", work, candidate, issues)
+	}
+	if work.Kind != RecordKindWorkItem || work.ID != "WORK-MCP-003" || work.Status != RecordStatusImplementationPending {
+		t.Fatalf("work item record = %#v", work)
+	}
+	if work.WorkItem.SourceRequirement != "REQ-MCP-003" {
+		t.Fatalf("source requirement = %q", work.WorkItem.SourceRequirement)
+	}
+	assertStrings(t, work.WorkItem.ImpactRefs, []string{"ADR-092"})
+	assertStrings(t, work.WorkItem.Tasks, []string{"TASK-MCP-003-04"})
+
+	taskRaw := "# TASK-MCP-003-04: Implement workflow records\n\n" +
+		"- **id**: TASK-MCP-003-04\n" +
+		"- **status**: doing\n" +
+		"- **date**: 2026-05-26\n" +
+		"- **work_item**: WORK-MCP-003\n" +
+		"- **source_requirement**: REQ-MCP-003\n" +
+		"- **estimate**: 1.5d\n" +
+		"- **depends_on**:\n" +
+		"- **outputs**:\n" +
+		"  - implementation\n"
+	task, candidate, issues := parseTaskRecord("docs/tasks/mcp/TASK-MCP-003-04-implement-workflow-records.md", taskRaw)
+	if task == nil || candidate.FilenameIDMismatch || len(issues) != 0 {
+		t.Fatalf("task parse = %#v candidate=%#v issues=%#v", task, candidate, issues)
+	}
+	if task.Kind != RecordKindTask || task.ID != "TASK-MCP-003-04" || task.Status != RecordStatusDoing {
+		t.Fatalf("task record = %#v", task)
+	}
+	if task.Task.WorkItem != "WORK-MCP-003" || task.Task.SourceRequirement != "REQ-MCP-003" || task.Task.Estimate != "1.5d" {
+		t.Fatalf("task scalar metadata = %#v", task.Task)
+	}
+	assertStrings(t, task.Task.DependsOn, []string{})
+	assertStrings(t, task.Task.Outputs, []string{"implementation"})
+}
+
+func TestWorkflowRecordParserIssues(t *testing.T) {
+	record, candidate, issues := parseRequirementRecord("docs/requirements/mcp/REQ-MCP-003-valid.md", "# REQ-MCP-003 missing colon\n- **id**: REQ-MCP-003\n")
+	if record != nil {
+		t.Fatalf("record = %#v, want nil", record)
+	}
+	if candidate.Included || candidate.SkipReason != "invalid_workflow_h1" || !hasIssue(issues, DiagnosticInvalidH1Title) {
+		t.Fatalf("invalid H1 candidate/issues = %#v %#v", candidate, issues)
+	}
+
+	record, candidate, issues = parseRequirementRecord("docs/requirements/mcp/REQ-MCP-003-mismatch.md", "# REQ-MCP-003: Mismatch\n- **id**: REQ-MCP-004\n- **status**: accepted\n")
+	if record == nil {
+		t.Fatal("record is nil")
+	}
+	if !candidate.FilenameIDMismatch || !hasIssue(issues, DiagnosticFilenameIDMismatch) {
+		t.Fatalf("metadata mismatch candidate/issues = %#v %#v", candidate, issues)
+	}
+
+	task, candidate, issues := parseTaskRecord("docs/tasks/mcp/TASK-mcp-003-04-invalid.md", "# TASK-mcp-003-04: Invalid\n- **id**: TASK-mcp-003-04\n- **status**: todo\n")
+	if task != nil {
+		t.Fatalf("task = %#v, want nil", task)
+	}
+	if candidate.Included || candidate.SkipReason != "invalid_workflow_id" || !hasIssue(issues, DiagnosticInvalidWorkflowID) {
+		t.Fatalf("invalid workflow ID candidate/issues = %#v %#v", candidate, issues)
+	}
+}
+
 func TestHeadingsExtractionExcludesFrontMatterAndFences(t *testing.T) {
 	raw := "---\nsummary: '# not a heading'\n---\n" +
 		"# Title\n" +
@@ -269,6 +361,10 @@ func TestBuildIndexDiscoversRecordsAndPreservesRawBody(t *testing.T) {
 	writeTestFile(t, root, "docs/spec/test.md", rawSpec)
 	writeTestFile(t, root, "docs/spec/existing.md", "---\nstatus: draft\n---\n# Existing\n")
 	writeTestFile(t, root, "docs/investigations/docs/INV-DOCS-001-test.md", "# INV-DOCS-001: Test investigation\n- **status**: concluded\n- **date**: 2026-05-19\n- **trigger**: ADR-001\n- **scope**: test\n- **non_scope**: none\n- **source_refs**:\n  - ADR-001\n- **follow_up_candidates**:\n  - SPEC-test\n")
+	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-test.md", "# REQ-MCP-003: Test requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n  - ADR-001\n- **work_items**:\n  - WORK-MCP-003\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-test.md", "# WORK-MCP-003: Test work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n  - ADR-001\n- **tasks**:\n  - TASK-MCP-003-01\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-test.md", "# TASK-MCP-003-01: Test task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - test\n")
+	writeTestFile(t, root, "docs/tasks/m17-legacy.md", "# Legacy task\n")
 
 	cfg, err := NewConfig(root)
 	if err != nil {
@@ -278,10 +374,10 @@ func TestBuildIndexDiscoversRecordsAndPreservesRawBody(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BuildIndex: %v", err)
 	}
-	if len(idx.Records) != 3 {
-		t.Fatalf("records = %#v, want 3", idx.Records)
+	if len(idx.Records) != 6 {
+		t.Fatalf("records = %#v, want 6", idx.Records)
 	}
-	if got := recordIDs(idx.Records); !sameStrings(got, []string{"ADR-001", "INV-DOCS-001", "SPEC-test"}) {
+	if got := recordIDs(idx.Records); !sameStrings(got, []string{"ADR-001", "INV-DOCS-001", "REQ-MCP-003", "SPEC-test", "TASK-MCP-003-01", "WORK-MCP-003"}) {
 		t.Fatalf("record IDs = %#v", got)
 	}
 	spec := findRecord(idx.Records, "SPEC-test")
@@ -291,6 +387,9 @@ func TestBuildIndexDiscoversRecordsAndPreservesRawBody(t *testing.T) {
 	investigation := findRecord(idx.Records, "INV-DOCS-001")
 	if investigation == nil || investigation.Kind != RecordKindInvestigation || investigation.Investigation == nil {
 		t.Fatalf("investigation not indexed: %#v", investigation)
+	}
+	if legacy := findRecord(idx.Records, "m17"); legacy != nil {
+		t.Fatalf("legacy task was indexed as workflow task: %#v", legacy)
 	}
 }
 
@@ -329,6 +428,29 @@ func TestBuildIndexRepositoryBootstrapRecords(t *testing.T) {
 		}
 		if record.Kind != RecordKindInvestigation {
 			t.Fatalf("%s kind = %q, want investigation", id, record.Kind)
+		}
+	}
+	for _, tt := range []struct {
+		id   string
+		kind RecordKind
+	}{
+		{"REQ-MCP-003", RecordKindRequirement},
+		{"WORK-MCP-003", RecordKindWorkItem},
+		{"TASK-MCP-003-01", RecordKindTask},
+		{"TASK-MCP-003-03", RecordKindTask},
+		{"TASK-MCP-003-04", RecordKindTask},
+	} {
+		record := findRecord(idx.Records, tt.id)
+		if record == nil {
+			t.Fatalf("missing %s in repository index", tt.id)
+		}
+		if record.Kind != tt.kind {
+			t.Fatalf("%s kind = %q, want %q", tt.id, record.Kind, tt.kind)
+		}
+	}
+	for _, record := range idx.Records {
+		if record.Kind == RecordKindTask && isLegacyMSeriesTaskPath(record.Path) {
+			t.Fatalf("legacy M-series task was indexed: %#v", record)
 		}
 	}
 	if findRecord(idx.Records, "docs/spec/overview.md") != nil {
@@ -409,4 +531,13 @@ func findRepoRoot(t *testing.T) string {
 		}
 		dir = next
 	}
+}
+
+func isLegacyMSeriesTaskPath(path string) bool {
+	prefix := "docs/tasks/m"
+	if !strings.HasPrefix(path, prefix) || len(path) <= len(prefix) {
+		return false
+	}
+	next := path[len(prefix)]
+	return next >= '0' && next <= '9'
 }

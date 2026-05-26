@@ -18,6 +18,12 @@ var (
 	metadataPattern                = regexp.MustCompile(`^-\s+\*\*([^*]+)\*\*:\s*(.*)$`)
 	filenameNumPattern             = regexp.MustCompile(`^(\d{3})(?:-|\.md$)`)
 	investigationFilenameIDPattern = regexp.MustCompile(`^(INV-[A-Z0-9-]+-\d{3})(?:-|\.md$)`)
+	requirementIDPattern           = regexp.MustCompile(`^REQ-[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?-\d{3}$`)
+	workItemIDPattern              = regexp.MustCompile(`^WORK-[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?-\d{3}$`)
+	taskIDPattern                  = regexp.MustCompile(`^TASK-[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?-\d{3}-\d{2}$`)
+	requirementFilenameIDPattern   = regexp.MustCompile(`^(REQ-[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?-\d{3})(?:-|$)`)
+	workItemFilenameIDPattern      = regexp.MustCompile(`^(WORK-[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?-\d{3})(?:-|$)`)
+	taskFilenameIDPattern          = regexp.MustCompile(`^(TASK-[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?-\d{3}-\d{2})(?:-|$)`)
 	datePattern                    = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 )
 
@@ -59,6 +65,31 @@ type investigationMetadata struct {
 	RelatedInternalDesign []string
 	RelatedCoverage       []string
 	FollowUpResults       []string
+}
+
+type requirementMetadata struct {
+	ID         string
+	Status     string
+	SourceRefs []string
+	WorkItems  []string
+}
+
+type workItemMetadata struct {
+	ID                string
+	Status            string
+	SourceRequirement string
+	ImpactRefs        []string
+	Tasks             []string
+}
+
+type taskMetadata struct {
+	ID                string
+	Status            string
+	WorkItem          string
+	SourceRequirement string
+	Estimate          string
+	DependsOn         []string
+	Outputs           []string
 }
 
 func parseADRRecord(path, raw string) (*Record, RecordCandidate, []ParseIssue) {
@@ -425,8 +456,251 @@ func parseInvestigationMetadata(lines []string) investigationMetadata {
 	return metadata
 }
 
+func parseRequirementRecord(path, raw string) (*Record, RecordCandidate, []ParseIssue) {
+	lines := splitMarkdownLines(raw)
+	return parseWorkflowRecord(path, raw, lines, RecordKindRequirement)
+}
+
+func parseWorkItemRecord(path, raw string) (*Record, RecordCandidate, []ParseIssue) {
+	lines := splitMarkdownLines(raw)
+	return parseWorkflowRecord(path, raw, lines, RecordKindWorkItem)
+}
+
+func parseTaskRecord(path, raw string) (*Record, RecordCandidate, []ParseIssue) {
+	lines := splitMarkdownLines(raw)
+	return parseWorkflowRecord(path, raw, lines, RecordKindTask)
+}
+
+func parseWorkflowRecord(path, raw string, lines []string, kind RecordKind) (*Record, RecordCandidate, []ParseIssue) {
+	h1Line := firstLine(lines)
+	filenameID := workflowFilenameID(path, kind)
+	candidate := RecordCandidate{
+		Path:           path,
+		Kind:           kind,
+		H1Line:         h1Line,
+		FilenameNumber: filenameID,
+		Included:       true,
+	}
+	var issues []ParseIssue
+
+	h1ID, title, h1FormOK := parseWorkflowH1(h1Line)
+	candidate.H1Valid = h1FormOK
+	candidate.H1Number = h1ID
+	if !h1FormOK {
+		candidate.Included = false
+		candidate.SkipReason = "invalid_workflow_h1"
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticInvalidH1Title,
+			Path:     path,
+			Message:  "workflow H1 is missing or invalid",
+			Details:  map[string]string{"h1": h1Line},
+		})
+		return nil, candidate, issues
+	}
+
+	metadataID, status := "", ""
+	var requirement *RequirementDetail
+	var workItem *WorkItemDetail
+	var task *TaskDetail
+	switch kind {
+	case RecordKindRequirement:
+		metadata := parseRequirementMetadata(lines)
+		metadataID = metadata.ID
+		status = metadata.Status
+		requirement = &RequirementDetail{
+			SourceRefs: metadata.SourceRefs,
+			WorkItems:  metadata.WorkItems,
+		}
+	case RecordKindWorkItem:
+		metadata := parseWorkItemMetadata(lines)
+		metadataID = metadata.ID
+		status = metadata.Status
+		workItem = &WorkItemDetail{
+			SourceRequirement: metadata.SourceRequirement,
+			ImpactRefs:        metadata.ImpactRefs,
+			Tasks:             metadata.Tasks,
+		}
+	case RecordKindTask:
+		metadata := parseTaskMetadata(lines)
+		metadataID = metadata.ID
+		status = metadata.Status
+		task = &TaskDetail{
+			WorkItem:          metadata.WorkItem,
+			SourceRequirement: metadata.SourceRequirement,
+			Estimate:          metadata.Estimate,
+			DependsOn:         metadata.DependsOn,
+			Outputs:           metadata.Outputs,
+		}
+	}
+
+	if !validWorkflowIDForKind(h1ID, kind) || (metadataID != "" && !validWorkflowIDForKind(metadataID, kind)) || (filenameID != "" && !validWorkflowIDForKind(filenameID, kind)) {
+		candidate.Included = false
+		candidate.SkipReason = "invalid_workflow_id"
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticInvalidWorkflowID,
+			Path:     path,
+			RecordID: h1ID,
+			Message:  "workflow ID does not match the required grammar",
+			Details: map[string]string{
+				"h1_id":       h1ID,
+				"metadata_id": metadataID,
+				"filename_id": filenameID,
+			},
+		})
+		return nil, candidate, issues
+	}
+
+	id := h1ID
+	candidate.ID = id
+	candidate.NormalizedID = normalizeRecordID(id)
+	if metadataID == "" || metadataID != h1ID || filenameID == "" || filenameID != h1ID {
+		candidate.FilenameIDMismatch = true
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticFilenameIDMismatch,
+			Path:     path,
+			RecordID: id,
+			Message:  "workflow metadata ID, H1 ID, and filename ID must match",
+			Details: map[string]string{
+				"h1_id":       h1ID,
+				"metadata_id": metadataID,
+				"filename_id": filenameID,
+			},
+		})
+	}
+
+	record := &Record{
+		ID:           id,
+		Kind:         kind,
+		Title:        title,
+		Status:       RecordStatus(status),
+		Path:         path,
+		Requirement:  requirement,
+		WorkItem:     workItem,
+		Task:         task,
+		Headings:     extractHeadings(raw),
+		RawBody:      raw,
+		NormalizedID: normalizeRecordID(id),
+	}
+	return record, candidate, issues
+}
+
+func parseWorkflowH1(line string) (string, string, bool) {
+	line = trimLineEnd(line)
+	if !strings.HasPrefix(line, "# ") {
+		return "", "", false
+	}
+	rest := strings.TrimSpace(strings.TrimPrefix(line, "# "))
+	id, title, ok := strings.Cut(rest, ": ")
+	if !ok {
+		return "", "", false
+	}
+	title = strings.TrimSpace(title)
+	if strings.TrimSpace(id) != id || id == "" || title == "" {
+		return "", "", false
+	}
+	if !strings.HasPrefix(id, "REQ-") && !strings.HasPrefix(id, "WORK-") && !strings.HasPrefix(id, "TASK-") {
+		return "", "", false
+	}
+	return id, title, true
+}
+
+func parseRequirementMetadata(lines []string) requirementMetadata {
+	metadata := requirementMetadata{SourceRefs: []string{}, WorkItems: []string{}}
+	block := metadataBlock(lines)
+	for i := 0; i < len(block); i++ {
+		key, value, ok := parseMetadataLine(block[i])
+		if !ok {
+			continue
+		}
+		switch key {
+		case "id":
+			metadata.ID = value
+		case "status":
+			metadata.Status = value
+		case "date":
+			continue
+		case "source_refs":
+			metadata.SourceRefs = metadataListValue(block, i, value)
+		case "work_items":
+			metadata.WorkItems = metadataListValue(block, i, value)
+		}
+	}
+	return metadata
+}
+
+func parseWorkItemMetadata(lines []string) workItemMetadata {
+	metadata := workItemMetadata{ImpactRefs: []string{}, Tasks: []string{}}
+	block := metadataBlock(lines)
+	for i := 0; i < len(block); i++ {
+		key, value, ok := parseMetadataLine(block[i])
+		if !ok {
+			continue
+		}
+		switch key {
+		case "id":
+			metadata.ID = value
+		case "status":
+			metadata.Status = value
+		case "date":
+			continue
+		case "source_requirement":
+			metadata.SourceRequirement = value
+		case "impact_refs":
+			metadata.ImpactRefs = metadataListValue(block, i, value)
+		case "tasks":
+			metadata.Tasks = metadataListValue(block, i, value)
+		}
+	}
+	return metadata
+}
+
+func parseTaskMetadata(lines []string) taskMetadata {
+	metadata := taskMetadata{DependsOn: []string{}, Outputs: []string{}}
+	block := metadataBlock(lines)
+	for i := 0; i < len(block); i++ {
+		key, value, ok := parseMetadataLine(block[i])
+		if !ok {
+			continue
+		}
+		switch key {
+		case "id":
+			metadata.ID = value
+		case "status":
+			metadata.Status = value
+		case "date":
+			continue
+		case "work_item":
+			metadata.WorkItem = value
+		case "source_requirement":
+			metadata.SourceRequirement = value
+		case "estimate":
+			metadata.Estimate = value
+		case "depends_on":
+			metadata.DependsOn = metadataListValue(block, i, value)
+		case "outputs":
+			metadata.Outputs = metadataListValue(block, i, value)
+		}
+	}
+	return metadata
+}
+
+func parseMetadataLine(line string) (string, string, bool) {
+	match := metadataPattern.FindStringSubmatch(trimLineEnd(line))
+	if match == nil {
+		return "", "", false
+	}
+	return match[1], strings.TrimSpace(match[2]), true
+}
+
+func metadataListValue(block []string, index int, value string) []string {
+	if strings.TrimSpace(value) != "" {
+		return splitCommaList(value)
+	}
+	return collectIndentedList(block, index)
+}
+
 func collectIndentedList(block []string, index int) []string {
-	var out []string
+	out := []string{}
 	for _, line := range block[index+1:] {
 		raw := trimLineEnd(line)
 		if metadataPattern.MatchString(raw) {
@@ -593,6 +867,45 @@ func investigationFilenameID(path string) string {
 		return ""
 	}
 	return match[1]
+}
+
+func workflowFilenameID(path string, kind RecordKind) string {
+	base := filepath.Base(path)
+	base = strings.TrimSuffix(base, filepath.Ext(base))
+	switch kind {
+	case RecordKindRequirement:
+		return filenameIDMatch(requirementFilenameIDPattern, base)
+	case RecordKindWorkItem:
+		return filenameIDMatch(workItemFilenameIDPattern, base)
+	case RecordKindTask:
+		return filenameIDMatch(taskFilenameIDPattern, base)
+	default:
+		return ""
+	}
+}
+
+func filenameIDMatch(pattern *regexp.Regexp, base string) string {
+	match := pattern.FindStringSubmatch(base)
+	if match != nil {
+		return match[1]
+	}
+	if strings.HasPrefix(base, "REQ-") || strings.HasPrefix(base, "WORK-") || strings.HasPrefix(base, "TASK-") {
+		return base
+	}
+	return ""
+}
+
+func validWorkflowIDForKind(id string, kind RecordKind) bool {
+	switch kind {
+	case RecordKindRequirement:
+		return requirementIDPattern.MatchString(id)
+	case RecordKindWorkItem:
+		return workItemIDPattern.MatchString(id)
+	case RecordKindTask:
+		return taskIDPattern.MatchString(id)
+	default:
+		return false
+	}
 }
 
 func splitCommaList(value string) []string {

@@ -1,10 +1,10 @@
 ---
 scope: docs/spec/design-records-mcp/schema.md
 status: draft
-last_updated: 2026-05-26
+last_updated: 2026-05-27
 summary: >
-  Design Records MCP MVP が読む design_record metadata schema、record model、
-  H1 title 抽出、diagnostic category を定義する。
+  Design Records MCP MVP が読む design record / workflow artifact metadata schema、
+  record model、H1 title 抽出、diagnostic category を定義する。
 depends_on:
   - docs/adr/076-design-records-mcp.md
   - docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
@@ -12,6 +12,7 @@ depends_on:
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
   - docs/adr/090-design-records-mcp-batch-retrieval-tool-boundary.md
+  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
 design_record:
   id: SPEC-design-records-mcp-schema
   kind: spec
@@ -23,6 +24,7 @@ design_record:
     - ADR-087
     - ADR-088
     - ADR-090
+    - ADR-092
 ---
 
 # Design Records MCP schema
@@ -37,6 +39,9 @@ MVP で読む source は以下である。
 |---|---|
 | ADR 箇条書きmetadata | decision record の `status` / `date` / `depends_on` / `supersedes` / `migrated_to_spec` |
 | investigation 箇条書きmetadata | investigation record の `status` / `date` / `trigger` / `scope` / `non_scope` / `source_refs` / `follow_up_candidates` / optional related metadata / `follow_up_results` |
+| requirement 箇条書きmetadata | requirement record の `id` / `status` / `date` / `source_refs` / `work_items` |
+| work item 箇条書きmetadata | work item record の `id` / `status` / `date` / `source_requirement` / `impact_refs` / `tasks` |
+| task 箇条書きmetadata | task record の `id` / `status` / `date` / `work_item` / `source_requirement` / `estimate` / `depends_on` / `outputs` |
 | spec YAML front matter | spec record の `scope` / `status` / `design_record` metadata。top-level `depends_on` は doc-policy 用出自 path list として読むが、record dependency には使わない |
 | Markdown H1 | `title` 抽出 |
 | file path | record path / filename ID validation |
@@ -49,7 +54,7 @@ MVP では Markdown 本文の自然言語から依存関係や migration 状態�
 
 ## Metadata source
 
-Design Records MCP では、decision / spec / investigation で metadata source が異なる。
+Design Records MCP では、decision / spec / investigation / requirement / work item / task で metadata source が異なる。
 
 ADR は既存フォーマットを維持し、H1直下の箇条書きmetadataを読む。
 
@@ -138,7 +143,43 @@ ADR-088 により、`internal-design:` / `coverage:` / `COV-*` は MVP canonical
 `follow_up_candidates` に artifact reference が記載される場合も、record ID-as-ref または active `spec:` semantic ref の canonical form を用いる。候補は未作成 artifact を指しうるため、canonical form の unresolved は error にせず、予定された後続 artifact が未作成であることを示す `info` diagnostic として返す。Physical path による candidate は canonical form ではなく、noncanonical candidate を示す `info` diagnostic として返す。
 `trigger` / `related_*` の resolve / validation rule はこの版では確定しない。
 
-> 由来: ADR-086 §4〜§7, ADR-087 §5〜§8
+ADR-092 により、investigation の上記 validated reference field に追加で使用できる workflow artifact ID-as-ref は `REQ-<DOMAIN>-NNN` / `WORK-<DOMAIN>-NNN` とする。`TASK-*` は workflow artifact 間 relation と direct resolver input では supported だが、investigation metadata field の canonical reference form には含めない。`TASK-*` が investigation の `source_refs` / `follow_up_results` に現れた場合は `unsupported_reference` error、`follow_up_candidates` に現れた場合は `unsupported_reference` info とする。
+
+### Workflow artifact bullet metadata 文法
+
+Requirement / work item / task の metadata block は ADR / investigation と同様に H1 直後から最初の H2 行または blockquote 行の直前までとする。認識する metadata 行は `- **<key>**: <value>` と、その直下のインデント付き list item とする。
+
+Workflow artifact ID grammar は以下とする。
+
+```text
+REQ-<DOMAIN>-NNN
+WORK-<DOMAIN>-NNN
+TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>
+```
+
+- `<DOMAIN>` は uppercase ASCII letter / digit / hyphen で構成し、先頭と末尾を hyphen にしない。
+- Requirement / work item の `NNN` と task の `<WORK-SEQUENCE>` は3桁ゼロ埋め decimal sequence とする。
+- Task の `<TASK-SEQUENCE>` は2桁ゼロ埋め decimal sequence とする。
+- ID は metadata `id`、H1 ID、filename prefix で一致しなければならない。
+- Workflow relation は metadata field に記載された ID-as-ref だけから読み、task ID 文字列または path から親 relation を推定しない。
+
+Requirement の認識 field:
+
+- required: `id`, `status`, `date`, `source_refs`, `work_items`
+
+Work item の認識 field:
+
+- required: `id`, `status`, `date`, `source_requirement`, `impact_refs`, `tasks`
+
+Task の認識 field:
+
+- required: `id`, `status`, `date`, `work_item`, `source_requirement`, `estimate`, `depends_on`, `outputs`
+
+`task.depends_on` は field が存在し、値と直下の list item がともに空の場合、empty list `[]` として正規化する。この場合、workflow relation diagnostic は生成しない。
+
+`source_refs` / `impact_refs` / `outputs` の workflow 外 reference rule は既存 canonical reference 方針に従い、本 schema は ADR-092 により新しい validation rule を追加しない。`work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on` は workflow relation field として下記 relation integrity validation の対象とする。
+
+> 由来: ADR-086 §4〜§7, ADR-087 §5〜§8, ADR-091 §6, ADR-092 §3〜§6
 
 ## Field definitions
 
@@ -161,6 +202,9 @@ Kind-specific details:
 | `decision` | `depends_on`, `supersedes`, `migrated_to_spec` |
 | `spec` | `depends_on` |
 | `investigation` | `trigger`, `scope`, `non_scope`, `source_refs`, `follow_up_candidates`, optional `supersedes`, `related_*`, `follow_up_results` |
+| `requirement` | `source_refs`, `work_items` |
+| `work_item` | `source_requirement`, `impact_refs`, `tasks` |
+| `task` | `work_item`, `source_requirement`, `estimate`, `depends_on`, `outputs` |
 
 `headings` と requested raw `body` は `get_record` の取得内容として common response に追加でき、`get_records` の `retrieval_status: "found"` item でも同一 record representation を再利用する。
 
@@ -188,15 +232,18 @@ MVP の discovery は以下の規則に従う。
 | `decision` | `docs/adr/*.md` の Markdown file を ADR 候補として読む |
 | `spec` | `docs/spec/**/*.md` のうち YAML front matter に `design_record.id` と `design_record.kind` を持つ file のみを spec record として読む |
 | `investigation` | `docs/investigations/*/INV-*-*.md` の Markdown file を investigation 候補として読む |
+| `requirement` | `docs/requirements/*/REQ-*-*.md` の Markdown file を requirement 候補として読む |
+| `work_item` | `docs/work-items/*/WORK-*-*.md` の Markdown file を work item 候補として読む |
+| `task` | `docs/tasks/*/TASK-*-*.md` の Markdown file を新形式 task 候補として読む。`docs/tasks/m*.md` は含めない |
 
 `design_record` を持たない spec は index 対象外とする。
 その場合も `missing_design_record` diagnostic は出さない。
 
 spec の `design_record.kind` が `spec` 以外の場合、この版では index 対象外とし、diagnostic は出さない。
 
-本specは後続の `requirement` その他の record kind 追加を制限しない。
+本specは後続の他の record kind 追加を制限しない。
 
-> 由来: ADR-076 §bootstrap方針, ADR-077 §validate_records の責務
+> 由来: ADR-076 §bootstrap方針, ADR-077 §validate_records の責務, ADR-092 §1
 
 ## `id`
 
@@ -209,12 +256,17 @@ MVP で扱う ID 形式は以下とする。
 | `decision` | `ADR-076` | ADR 番号を3桁ゼロ埋めで持つ |
 | `spec` | `SPEC-design-records-mcp-schema` | spec 用の stable ID |
 | `investigation` | `INV-MCP-001` | ADR-086 に従う domain-scoped ID |
+| `requirement` | `REQ-MCP-003` | domain-scoped ID。`REQ-<DOMAIN>-NNN` |
+| `work_item` | `WORK-MCP-003` | domain-scoped ID。`WORK-<DOMAIN>-NNN` |
+| `task` | `TASK-MCP-003-01` | parent work item sequence と task sequence を含む ID。`TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>` |
 
 `decision` record の canonical ID は、H1 の番号から `ADR-NNN` として導出する。
 filename 先頭の番号は canonical ID との一致検査にのみ使う。
 H1 が不正な場合は `invalid_h1_title` を出し、filename 由来の ID を canonical ID として採用しない。
 
 canonical ID の番号と filename 先頭の番号が一致していなければならない。
+
+Requirement / work item / task の canonical ID は metadata `id` と H1 の ID から取得し、両者および filename の ID prefix が一致しなければならない。Workflow ID の syntax が上記 grammar に従わない場合、または metadata / H1 / filename prefix が一致しない場合は `invalid_workflow_id` または `filename_id_mismatch` とする。
 
 例:
 
@@ -237,11 +289,14 @@ path: docs/adr/076-design-records-mcp.md
 | `decision` | ADR |
 | `spec` | spec |
 | `investigation` | investigation artifact |
+| `requirement` | requirement artifact |
+| `work_item` | work item artifact |
+| `task` | 新形式の短期 task artifact |
 
-この表は record kind の閉じた列挙ではない。ADR-081 により予約された `requirement` その他の kind は、後続判断で追加しうる。
-MVP では task / UC / impl note を record kind として扱わない。
+この表は record kind の閉じた列挙ではない。後続判断により他の kind を追加しうる。
+MVP では legacy M-series task record / UC / impl note を record kind として扱わない。
 
-> 由来: ADR-076 §MVP対象, ADR-087 §1
+> 由来: ADR-076 §MVP対象, ADR-087 §1, ADR-092 §1
 
 ## `status`
 
@@ -252,6 +307,9 @@ MVP では task / UC / impl note を record kind として扱わない。
 | `decision` | `proposed` / `accepted` / `superseded` |
 | `spec` | `confirmed` / `draft` / `wip` |
 | `investigation` | `investigating` / `concluded` / `superseded` |
+| `requirement` | `captured` / `decision_needed` / `accepted` / `deferred` / `rejected` |
+| `work_item` | `not_started` / `decision_pending` / `design_spec_pending` / `internal_design_pending` / `yaml_pending` / `implementation_pending` / `fixture_pending` / `verification_pending` / `done` / `blocked` |
+| `task` | `todo` / `doing` / `blocked` / `done` |
 
 `decision` record の `status` は ADR 箇条書きmetadataから読む。
 
@@ -260,28 +318,33 @@ MVP では task / UC / impl note を record kind として扱わない。
 不一致の場合は `spec_status_mismatch` とする。
 
 `investigation` record の `status` は investigation 箇条書きmetadataから読む。
+`requirement` / `work_item` / `task` record の `status` はそれぞれの箇条書きmetadataから読む。
 
 `kind` に対して許可されない `status` は `invalid_status_for_kind` とする。
 
-> 由来: ADR-076 §front matter 方針, ADR-077 §validate_records の責務, ADR-086 §5
+> 由来: ADR-076 §front matter 方針, ADR-077 §validate_records の責務, ADR-086 §5, ADR-091, ADR-092
 
 ## `depends_on`
 
-`depends_on` は、この record が判断・仕様上依存する record ID の list である。
+`depends_on` という field 名は、design record dependency と task graph dependency で異なる意味を持つため、kind ごとに解釈する。
 
-`decision` record の `depends_on` は ADR 箇条書きmetadataから読む。
+### Decision / spec dependency
 
-`spec` record の record dependency は `design_record.depends_on` から読む。
-spec top-level front matter の `depends_on` は doc-policy 用の出自 path list であり、record dependency としては扱わない。
+`decision` record の `depends_on` は、その判断が依存する record ID の list として ADR 箇条書きmetadataから読む。
 
-MVP では参照先 ID の存在確認のみを行う。
-参照元・参照先の status 組み合わせは検査しない。
+`spec` record の `depends_on` は、その仕様が依存する record ID の list として `design_record.depends_on` から読む。Spec top-level front matter の `depends_on` は doc-policy 用の出自 path listであり、record dependency としては扱わない。
 
-`depends_on` が参照できる canonical record ID-as-ref は `ADR-*` / `SPEC-*` / `INV-*` とする。したがって ADR / spec が investigation record (`INV-*`) に依存することは valid である。
+Decision / spec dependency が参照できる canonical record ID-as-ref は `ADR-*` / `SPEC-*` / `INV-*` とする。したがって ADR / spec が investigation record (`INV-*`) に依存することは valid である。
 
-存在しない ID を参照している場合、`missing_depends_on_target` とする。現行 implementation は investigation record integration 前であるため、`ADR-086` が参照する `INV-DOCS-001` に対して同 diagnostic を返すが、これは invalid dependency ではなく M19 で解消すべき implementation gap である。
+存在しない ID を参照している場合、`missing_depends_on_target` とする。MVP では参照元・参照先の status 組み合わせは検査しない。
 
-> 由来: ADR-077 §validate_records の責務
+### Task dependency relation
+
+`task` record の `depends_on` は、同 task の実行が依存する task artifact を指す workflow relation field として task 箇条書きmetadataから読む。Canonical target form は `TASK-*` とする。
+
+`task.depends_on` は decision / spec dependency ではなく、`unresolved_workflow_relation` / `invalid_workflow_relation_target` の対象とする。MVP は参照先の存在確認を行うが、same-work-item 制約、cycle detection、execution order projection は扱わない。
+
+> 由来: ADR-077 §validate_records の責務, ADR-091 §3・§6, ADR-092 §4・§7
 
 ## `supersedes`
 
@@ -355,9 +418,19 @@ investigation record の H1 は以下の形式のみ valid とする。
 
 investigation の canonical ID は H1 の `id` から取得する。filename は `INV-<DOMAIN>-NNN-<slug>.md` 形式であり、H1 の canonical ID と prefix が一致しなければならない。不一致は filename / ID mismatch として診断対象にする。
 
+Workflow artifact record の H1 は以下の形式のみ valid とする。
+
+```text
+^#\s+(?P<id>REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*-\d{3}):\s+(?P<title>.+?)\s*$
+^#\s+(?P<id>WORK-[A-Z0-9]+(?:-[A-Z0-9]+)*-\d{3}):\s+(?P<title>.+?)\s*$
+^#\s+(?P<id>TASK-[A-Z0-9]+(?:-[A-Z0-9]+)*-\d{3}-\d{2}):\s+(?P<title>.+?)\s*$
+```
+
+Requirement / work item / task の canonical ID は metadata `id` と H1 の `id` が一致したとき、その ID とする。H1 または metadata `id` が grammar に従わない場合は `invalid_workflow_id`、両者または filename の ID prefix が一致しない場合は `filename_id_mismatch` とする。
+
 filename からの title 推定は MVP では行わない。
 
-> 由来: ADR-077 §list_records の責務, ADR-077 §理由
+> 由来: ADR-077 §list_records の責務, ADR-077 §理由, ADR-092 §3
 
 ## Record model
 
@@ -373,6 +446,9 @@ Design Records MCP の internal record model は、少なくとも以下の情�
 | `decision` | ADR bullet metadata | decision-specific detail object |
 | `spec` | spec `design_record` metadata | spec-specific detail object |
 | `investigation` | investigation bullet metadata | investigation-specific detail object |
+| `requirement` | requirement bullet metadata | requirement-specific detail object |
+| `work_item` | work item bullet metadata | work-item-specific detail object |
+| `task` | task bullet metadata | task-specific detail object |
 | `headings` | Markdown parse | heading list for `get_record` |
 | `body` | Markdown file | raw body, requested only when needed by `get_record` または `get_records` |
 
@@ -407,8 +483,9 @@ Diagnostic は検査軸ごとに独立して発火し、1 record に複数 diagn
 | category | severity | meaning |
 |---|---|---|
 | `duplicate_id` | error | 複数 record が同じ正規化後 record ID を持つ |
-| `filename_id_mismatch` | error | `decision` または `investigation` record の canonical ID と filename ID 部分が一致しない |
+| `filename_id_mismatch` | error | `decision` / `investigation` / workflow artifact record の canonical ID または metadata ID と filename ID 部分が一致しない |
 | `invalid_h1_title` | error | H1 が存在しない、または期待形式に合わない |
+| `invalid_workflow_id` | error | requirement / work item / task の metadata ID または H1 ID が workflow ID grammar に従わない |
 | `invalid_status_for_kind` | error | `kind` に対して許可されない `status` を持つ |
 | `spec_status_mismatch` | error | spec top-level `status` と `design_record.status` が一致しない |
 | `missing_depends_on_target` | error | `depends_on` の参照先 ID が存在しない |
@@ -425,11 +502,17 @@ Diagnostic は検査軸ごとに独立して発火し、1 record に複数 diagn
 | `noncanonical_source_ref` | error | investigation `source_refs` に physical path が記載された |
 | `noncanonical_follow_up_result` | error | investigation `follow_up_results` に physical path が記載された |
 | `noncanonical_follow_up_candidate` | info | investigation `follow_up_candidates` に physical path が記載された |
-| `unsupported_reference` | error / info | MVP が unsupported と定義する metadata reference。`source_refs` / `follow_up_results` では error、`follow_up_candidates` では info。Reserved `yaml:` はこの category の対象に含めず、MVP では behavior を定義しない |
+| `unsupported_reference` | error / info | MVP が unsupported と定義する investigation metadata reference。`source_refs` / `follow_up_results` では error、`follow_up_candidates` では info。Investigation field に現れる `TASK-*` を含む。Reserved `yaml:` はこの category の対象に含めず、MVP では behavior を定義しない |
+| `unresolved_workflow_relation` | error | workflow relation field に記載された supported `REQ-*` / `WORK-*` / `TASK-*` が解決不能 |
+| `invalid_workflow_relation_target` | error | workflow relation field に、field が要求する kind / ID form ではない target が記載された |
+| `workflow_relation_mismatch` | error | `REQ.work_items` と `WORK.source_requirement`、または `WORK.tasks` と `TASK.work_item` の宣言済み双方向 relation が一致しない |
+| `workflow_source_requirement_mismatch` | error | task の `source_requirement` が parent work item の `source_requirement` と一致しない |
+
+Workflow relation diagnostic は、通常の `category` / `severity` / `record_id` / `path` / `message` に加えて、`field`、`value`、`ref_status` を必須で返す。`field` は `work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on` のいずれか、`value` は入力 ID-as-ref、`ref_status` は `unresolved` / `invalid_target` / `mismatch` のいずれかとする。対象 ID が特定できる場合は `target_id` も返す。
 
 Investigation reference diagnostic (`unresolved_*` / `noncanonical_*` / metadata field 由来の `unsupported_reference`) は、通常の `category` / `severity` / `record_id` / `path` / `message` に加えて、`field`、`value`、`ref_status` を必須で返す。`field` は `source_refs` / `follow_up_results` / `follow_up_candidates` のいずれか、`value` は入力 reference 文字列、`ref_status` は `unresolved` / `unsupported` / `noncanonical` のいずれかとする。Investigation metadata が duplicate semantic ref または duplicate record ID を指して単一解決できない場合は field-specific diagnostic を追加せず、index defect を示す `duplicate_semantic_ref` または `duplicate_id` のみを返す。これら duplicate diagnostic および spec declaration / section lookup diagnostic は investigation metadata field 由来の追加 field を要求しない。
 
-`follow_up_candidates` の参照先が未作成であること自体は error としない。`validate_records.ok` は error diagnostic の有無だけで決まり、info diagnostic が存在しても failure にはならない。Coverage mapping、semantic realization relation、`internal-design:` / `coverage:` / `COV-*` の解決・診断は MVP diagnostic scope に含めない。
+`follow_up_candidates` の参照先が未作成であること自体は error としない。`validate_records.ok` は error diagnostic の有無だけで決まり、info diagnostic が存在しても failure にはならない。Coverage mapping、semantic realization relation、`internal-design:` / `coverage:` / `COV-*` の解決・診断は MVP diagnostic scope に含めない。Workflow relation validation は宣言済み relation の存在と整合性に限り、未接続 artifact の orphan diagnostics、task dependency cycle detection、execution order projection、task status 由来 progress projection は含めない。
 
 MVP では以下を diagnostic category に含めない。
 
@@ -438,11 +521,14 @@ MVP では以下を diagnostic category に含めない。
 - status 組み合わせの妥当性
 - spec section 単位の由来不足
 - 自然言語本文と metadata の意味的不一致
+- orphan requirement / orphan work item / orphan task
+- task dependency cycle / execution order projection
+- task status 由来 progress projection
 
 `missing_record_path` は、filesystem scan または path normalization により record 候補 path を検出したが、実際の read/stat に失敗した場合に出す。
 例として、scan 後に file が削除された場合、permission denied、symlink target missing、path normalization 後の path が存在しない場合を含む。
 
-> 由来: ADR-077 §validate_records の責務, ADR-090 §Partial result / Ordering と duplicate requested ID
+> 由来: ADR-077 §validate_records の責務, ADR-090 §Partial result / Ordering と duplicate requested ID, ADR-092 §4〜§7
 
 ## Bootstrap metadata
 

@@ -6,19 +6,38 @@ const (
 	RecordKindDecision      RecordKind = "decision"
 	RecordKindSpec          RecordKind = "spec"
 	RecordKindInvestigation RecordKind = "investigation"
+	RecordKindRequirement   RecordKind = "requirement"
+	RecordKindWorkItem      RecordKind = "work_item"
+	RecordKindTask          RecordKind = "task"
 )
 
 type RecordStatus string
 
 const (
-	RecordStatusProposed      RecordStatus = "proposed"
-	RecordStatusAccepted      RecordStatus = "accepted"
-	RecordStatusSuperseded    RecordStatus = "superseded"
-	RecordStatusConfirmed     RecordStatus = "confirmed"
-	RecordStatusDraft         RecordStatus = "draft"
-	RecordStatusWIP           RecordStatus = "wip"
-	RecordStatusInvestigating RecordStatus = "investigating"
-	RecordStatusConcluded     RecordStatus = "concluded"
+	RecordStatusProposed              RecordStatus = "proposed"
+	RecordStatusAccepted              RecordStatus = "accepted"
+	RecordStatusSuperseded            RecordStatus = "superseded"
+	RecordStatusConfirmed             RecordStatus = "confirmed"
+	RecordStatusDraft                 RecordStatus = "draft"
+	RecordStatusWIP                   RecordStatus = "wip"
+	RecordStatusInvestigating         RecordStatus = "investigating"
+	RecordStatusConcluded             RecordStatus = "concluded"
+	RecordStatusCaptured              RecordStatus = "captured"
+	RecordStatusDecisionNeeded        RecordStatus = "decision_needed"
+	RecordStatusDeferred              RecordStatus = "deferred"
+	RecordStatusRejected              RecordStatus = "rejected"
+	RecordStatusNotStarted            RecordStatus = "not_started"
+	RecordStatusDecisionPending       RecordStatus = "decision_pending"
+	RecordStatusDesignSpecPending     RecordStatus = "design_spec_pending"
+	RecordStatusInternalDesignPending RecordStatus = "internal_design_pending"
+	RecordStatusYAMLPending           RecordStatus = "yaml_pending"
+	RecordStatusImplementationPending RecordStatus = "implementation_pending"
+	RecordStatusFixturePending        RecordStatus = "fixture_pending"
+	RecordStatusVerificationPending   RecordStatus = "verification_pending"
+	RecordStatusBlocked               RecordStatus = "blocked"
+	RecordStatusTodo                  RecordStatus = "todo"
+	RecordStatusDoing                 RecordStatus = "doing"
+	RecordStatusDone                  RecordStatus = "done"
 )
 
 type Heading struct {
@@ -35,6 +54,9 @@ type Record struct {
 	Decision      *DecisionDetail      `json:"decision,omitempty"`
 	Spec          *SpecDetail          `json:"spec,omitempty"`
 	Investigation *InvestigationDetail `json:"investigation,omitempty"`
+	Requirement   *RequirementDetail   `json:"requirement,omitempty"`
+	WorkItem      *WorkItemDetail      `json:"work_item,omitempty"`
+	Task          *TaskDetail          `json:"task,omitempty"`
 	SemanticRefs  []SemanticRefDecl    `json:"-"`
 	Headings      []Heading            `json:"headings"`
 	Body          *string              `json:"body,omitempty"`
@@ -66,6 +88,25 @@ type InvestigationDetail struct {
 	RelatedInternalDesign []string `json:"related_internal_design,omitempty"`
 	RelatedCoverage       []string `json:"related_coverage,omitempty"`
 	FollowUpResults       []string `json:"follow_up_results,omitempty"`
+}
+
+type RequirementDetail struct {
+	SourceRefs []string `json:"source_refs"`
+	WorkItems  []string `json:"work_items"`
+}
+
+type WorkItemDetail struct {
+	SourceRequirement string   `json:"source_requirement"`
+	ImpactRefs        []string `json:"impact_refs"`
+	Tasks             []string `json:"tasks"`
+}
+
+type TaskDetail struct {
+	WorkItem          string   `json:"work_item"`
+	SourceRequirement string   `json:"source_requirement"`
+	Estimate          string   `json:"estimate"`
+	DependsOn         []string `json:"depends_on"`
+	Outputs           []string `json:"outputs"`
 }
 
 type SemanticTargetType string
@@ -134,6 +175,7 @@ const (
 	DiagnosticDuplicateID                   DiagnosticCategory = "duplicate_id"
 	DiagnosticFilenameIDMismatch            DiagnosticCategory = "filename_id_mismatch"
 	DiagnosticInvalidH1Title                DiagnosticCategory = "invalid_h1_title"
+	DiagnosticInvalidWorkflowID             DiagnosticCategory = "invalid_workflow_id"
 	DiagnosticInvalidStatusForKind          DiagnosticCategory = "invalid_status_for_kind"
 	DiagnosticSpecStatusMismatch            DiagnosticCategory = "spec_status_mismatch"
 	DiagnosticMissingDependsOnTarget        DiagnosticCategory = "missing_depends_on_target"
@@ -153,6 +195,10 @@ const (
 	DiagnosticUnsupportedReference          DiagnosticCategory = "unsupported_reference"
 	DiagnosticUnresolvedReference           DiagnosticCategory = "unresolved_reference"
 	DiagnosticAmbiguousReference            DiagnosticCategory = "ambiguous_reference"
+	DiagnosticUnresolvedWorkflowRelation    DiagnosticCategory = "unresolved_workflow_relation"
+	DiagnosticInvalidWorkflowRelationTarget DiagnosticCategory = "invalid_workflow_relation_target"
+	DiagnosticWorkflowRelationMismatch      DiagnosticCategory = "workflow_relation_mismatch"
+	DiagnosticWorkflowSourceReqMismatch     DiagnosticCategory = "workflow_source_requirement_mismatch"
 	DiagnosticRecordNotFound                DiagnosticCategory = "record_not_found"
 	DiagnosticDuplicateRequestedIDIgnored   DiagnosticCategory = "duplicate_requested_id_ignored"
 )
@@ -228,6 +274,9 @@ type ListedRecord struct {
 	Decision      *DecisionDetail      `json:"decision,omitempty"`
 	Spec          *SpecDetail          `json:"spec,omitempty"`
 	Investigation *InvestigationDetail `json:"investigation,omitempty"`
+	Requirement   *RequirementDetail   `json:"requirement,omitempty"`
+	WorkItem      *WorkItemDetail      `json:"work_item,omitempty"`
+	Task          *TaskDetail          `json:"task,omitempty"`
 }
 
 type ListRecordsResponse struct {
@@ -248,6 +297,9 @@ type GetRecordRecord struct {
 	Decision      *DecisionDetail      `json:"decision,omitempty"`
 	Spec          *SpecDetail          `json:"spec,omitempty"`
 	Investigation *InvestigationDetail `json:"investigation,omitempty"`
+	Requirement   *RequirementDetail   `json:"requirement,omitempty"`
+	WorkItem      *WorkItemDetail      `json:"work_item,omitempty"`
+	Task          *TaskDetail          `json:"task,omitempty"`
 	Headings      []Heading            `json:"headings"`
 	Body          *string              `json:"body,omitempty"`
 }

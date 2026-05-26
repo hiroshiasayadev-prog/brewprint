@@ -10,7 +10,7 @@ import (
 var (
 	activeSpecRefPattern = regexp.MustCompile(`^spec:[a-z0-9-]+(?:\.[a-z0-9-]+)*$`)
 	recordIDRefPattern   = regexp.MustCompile(`^(ADR-\d{3}|SPEC-[A-Za-z0-9][A-Za-z0-9-]*|INV-[A-Z0-9-]+-\d{3})$`)
-	unsupportedIDPattern = regexp.MustCompile(`^(COV|REQ|WORK)-`)
+	unsupportedIDPattern = regexp.MustCompile(`^COV-`)
 )
 
 const (
@@ -48,10 +48,23 @@ func classifyReference(ref string) string {
 	if activeSpecRefPattern.MatchString(ref) {
 		return refKindSemanticRef
 	}
-	if recordIDRefPattern.MatchString(ref) {
+	if isSupportedRecordIDReference(ref) {
 		return refKindRecordID
 	}
 	return refKindUnsupported
+}
+
+func isSupportedRecordIDReference(ref string) bool {
+	return recordIDRefPattern.MatchString(ref) ||
+		requirementIDPattern.MatchString(ref) ||
+		workItemIDPattern.MatchString(ref) ||
+		taskIDPattern.MatchString(ref)
+}
+
+func isSupportedInvestigationRecordIDReference(ref string) bool {
+	return recordIDRefPattern.MatchString(ref) ||
+		requirementIDPattern.MatchString(ref) ||
+		workItemIDPattern.MatchString(ref)
 }
 
 func resolveSemanticReference(idx *Index, ref string) ResolveReferenceResponse {

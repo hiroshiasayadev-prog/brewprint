@@ -26,7 +26,7 @@ type numericIDRange struct {
 func newValidationScope(req ValidateRecordsRequest) (validationScope, error) {
 	scope := validationScope{}
 	if req.Kind != "" {
-		if req.Kind != RecordKindDecision && req.Kind != RecordKindSpec && req.Kind != RecordKindInvestigation {
+		if !isListableRecordKind(req.Kind) {
 			return scope, newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unsupported kind %q", req.Kind))
 		}
 		scope.kind = req.Kind
@@ -202,6 +202,7 @@ func recordDiagnostics(records []Record, recordsByID map[string][]Record, semant
 		if record.Kind == RecordKindInvestigation && record.Investigation != nil {
 			diagnostics = append(diagnostics, investigationReferenceDiagnostics(record, recordsByID, semanticByRef)...)
 		}
+		diagnostics = append(diagnostics, workflowRelationDiagnostics(record, recordsByID)...)
 	}
 	return diagnostics
 }
@@ -290,6 +291,8 @@ func diagnosticsForInvestigationRefs(record Record, field string, values []strin
 		switch {
 		case strings.HasPrefix(value, "yaml:"):
 			continue
+		case strings.HasPrefix(value, "TASK-"):
+			diagnostics = append(diagnostics, investigationReferenceDiagnostic(record, DiagnosticUnsupportedReference, severity, field, value, "unsupported"))
 		case isPhysicalPathReference(value):
 			diagnostics = append(diagnostics, investigationReferenceDiagnostic(record, noncanonicalCategory, severity, field, value, "noncanonical"))
 		case isExplicitUnsupportedReference(value):
@@ -299,7 +302,7 @@ func diagnosticsForInvestigationRefs(record Record, field string, values []strin
 			if len(targets) == 0 {
 				diagnostics = append(diagnostics, investigationReferenceDiagnostic(record, unresolvedCategory, severity, field, value, "unresolved"))
 			}
-		case recordIDRefPattern.MatchString(value):
+		case isSupportedInvestigationRecordIDReference(value):
 			targets := recordsByID[normalizeRecordID(value)]
 			if len(targets) == 0 {
 				diag := investigationReferenceDiagnostic(record, unresolvedCategory, severity, field, value, "unresolved")
@@ -326,6 +329,182 @@ func investigationReferenceDiagnostic(record Record, category DiagnosticCategory
 	}
 }
 
+func workflowRelationDiagnostics(record Record, recordsByID map[string][]Record) []Diagnostic {
+	switch record.Kind {
+	case RecordKindRequirement:
+		if record.Requirement == nil {
+			return nil
+		}
+		return requirementWorkflowRelationDiagnostics(record, recordsByID)
+	case RecordKindWorkItem:
+		if record.WorkItem == nil {
+			return nil
+		}
+		return workItemWorkflowRelationDiagnostics(record, recordsByID)
+	case RecordKindTask:
+		if record.Task == nil {
+			return nil
+		}
+		return taskWorkflowRelationDiagnostics(record, recordsByID)
+	default:
+		return nil
+	}
+}
+
+func requirementWorkflowRelationDiagnostics(record Record, recordsByID map[string][]Record) []Diagnostic {
+	var diagnostics []Diagnostic
+	for _, value := range record.Requirement.WorkItems {
+		target, ok, targetDiagnostics := validateWorkflowRelationTarget(record, "work_items", value, RecordKindWorkItem, recordsByID)
+		diagnostics = append(diagnostics, targetDiagnostics...)
+		if !ok {
+			continue
+		}
+		if target.WorkItem == nil || target.WorkItem.SourceRequirement != record.ID {
+			diagnostics = append(diagnostics, workflowMismatchDiagnostic(record, "work_items", value, target.ID, fmt.Sprintf("%s.work_items contains %s but %s.source_requirement is %q", record.ID, value, target.ID, workflowSourceRequirement(target))))
+		}
+	}
+	return diagnostics
+}
+
+func workItemWorkflowRelationDiagnostics(record Record, recordsByID map[string][]Record) []Diagnostic {
+	var diagnostics []Diagnostic
+	if record.WorkItem.SourceRequirement != "" {
+		target, ok, targetDiagnostics := validateWorkflowRelationTarget(record, "source_requirement", record.WorkItem.SourceRequirement, RecordKindRequirement, recordsByID)
+		diagnostics = append(diagnostics, targetDiagnostics...)
+		if ok && (target.Requirement == nil || !containsString(target.Requirement.WorkItems, record.ID)) {
+			diagnostics = append(diagnostics, workflowMismatchDiagnostic(record, "source_requirement", record.WorkItem.SourceRequirement, target.ID, fmt.Sprintf("%s.source_requirement is %s but %s.work_items does not contain %s", record.ID, record.WorkItem.SourceRequirement, target.ID, record.ID)))
+		}
+	}
+	for _, value := range record.WorkItem.Tasks {
+		target, ok, targetDiagnostics := validateWorkflowRelationTarget(record, "tasks", value, RecordKindTask, recordsByID)
+		diagnostics = append(diagnostics, targetDiagnostics...)
+		if !ok {
+			continue
+		}
+		if target.Task == nil || target.Task.WorkItem != record.ID {
+			diagnostics = append(diagnostics, workflowMismatchDiagnostic(record, "tasks", value, target.ID, fmt.Sprintf("%s.tasks contains %s but %s.work_item is %q", record.ID, value, target.ID, workflowTaskWorkItem(target))))
+		}
+	}
+	return diagnostics
+}
+
+func taskWorkflowRelationDiagnostics(record Record, recordsByID map[string][]Record) []Diagnostic {
+	var diagnostics []Diagnostic
+	var parent Record
+	parentOK := false
+	if record.Task.WorkItem != "" {
+		target, ok, targetDiagnostics := validateWorkflowRelationTarget(record, "work_item", record.Task.WorkItem, RecordKindWorkItem, recordsByID)
+		diagnostics = append(diagnostics, targetDiagnostics...)
+		parent = target
+		parentOK = ok
+		if ok && (target.WorkItem == nil || !containsString(target.WorkItem.Tasks, record.ID)) {
+			diagnostics = append(diagnostics, workflowMismatchDiagnostic(record, "work_item", record.Task.WorkItem, target.ID, fmt.Sprintf("%s.work_item is %s but %s.tasks does not contain %s", record.ID, record.Task.WorkItem, target.ID, record.ID)))
+		}
+	}
+	sourceRequirementOK := false
+	if record.Task.SourceRequirement != "" {
+		_, ok, targetDiagnostics := validateWorkflowRelationTarget(record, "source_requirement", record.Task.SourceRequirement, RecordKindRequirement, recordsByID)
+		diagnostics = append(diagnostics, targetDiagnostics...)
+		sourceRequirementOK = ok
+	}
+	for _, value := range record.Task.DependsOn {
+		_, _, targetDiagnostics := validateWorkflowRelationTarget(record, "depends_on", value, RecordKindTask, recordsByID)
+		diagnostics = append(diagnostics, targetDiagnostics...)
+	}
+	if parentOK && sourceRequirementOK && parent.WorkItem != nil && parent.WorkItem.SourceRequirement != "" && record.Task.SourceRequirement != parent.WorkItem.SourceRequirement {
+		diagnostics = append(diagnostics, workflowSourceRequirementMismatchDiagnostic(record, parent.WorkItem.SourceRequirement))
+	}
+	return diagnostics
+}
+
+func validateWorkflowRelationTarget(record Record, field, value string, expectedKind RecordKind, recordsByID map[string][]Record) (Record, bool, []Diagnostic) {
+	if strings.TrimSpace(value) == "" {
+		return Record{}, false, nil
+	}
+	if !validWorkflowIDForKind(value, expectedKind) {
+		return Record{}, false, []Diagnostic{workflowTargetDiagnostic(record, DiagnosticInvalidWorkflowRelationTarget, field, value, "invalid_target", value)}
+	}
+	targets := recordsByID[normalizeRecordID(value)]
+	if len(targets) == 0 {
+		return Record{}, false, []Diagnostic{workflowTargetDiagnostic(record, DiagnosticUnresolvedWorkflowRelation, field, value, "unresolved", value)}
+	}
+	for _, target := range targets {
+		if target.Kind == expectedKind {
+			return target, true, nil
+		}
+	}
+	return Record{}, false, []Diagnostic{workflowTargetDiagnostic(record, DiagnosticInvalidWorkflowRelationTarget, field, value, "invalid_target", value)}
+}
+
+func workflowTargetDiagnostic(record Record, category DiagnosticCategory, field, value, refStatus, targetID string) Diagnostic {
+	message := fmt.Sprintf("%s.%s contains %s but target is absent", record.ID, field, value)
+	if category == DiagnosticInvalidWorkflowRelationTarget {
+		message = fmt.Sprintf("%s.%s contains invalid target %s", record.ID, field, value)
+	}
+	return Diagnostic{
+		Category:  category,
+		Severity:  DiagnosticSeverityError,
+		RecordID:  record.ID,
+		Path:      record.Path,
+		Message:   message,
+		TargetID:  targetID,
+		Field:     field,
+		Value:     value,
+		RefStatus: refStatus,
+	}
+}
+
+func workflowMismatchDiagnostic(record Record, field, value, targetID, message string) Diagnostic {
+	return Diagnostic{
+		Category:  DiagnosticWorkflowRelationMismatch,
+		Severity:  DiagnosticSeverityError,
+		RecordID:  record.ID,
+		Path:      record.Path,
+		Message:   message,
+		TargetID:  targetID,
+		Field:     field,
+		Value:     value,
+		RefStatus: "mismatch",
+	}
+}
+
+func workflowSourceRequirementMismatchDiagnostic(record Record, expected string) Diagnostic {
+	return Diagnostic{
+		Category:  DiagnosticWorkflowSourceReqMismatch,
+		Severity:  DiagnosticSeverityError,
+		RecordID:  record.ID,
+		Path:      record.Path,
+		Message:   fmt.Sprintf("%s.source_requirement is %s but parent work item source_requirement is %s", record.ID, record.Task.SourceRequirement, expected),
+		TargetID:  expected,
+		Field:     "source_requirement",
+		Value:     record.Task.SourceRequirement,
+		RefStatus: "mismatch",
+	}
+}
+
+func workflowSourceRequirement(record Record) string {
+	if record.WorkItem == nil {
+		return ""
+	}
+	return record.WorkItem.SourceRequirement
+}
+
+func workflowTaskWorkItem(record Record) string {
+	if record.Task == nil {
+		return ""
+	}
+	return record.Task.WorkItem
+}
+
+func containsString(values []string, needle string) bool {
+	for _, value := range values {
+		if value == needle {
+			return true
+		}
+	}
+	return false
+}
+
 func pathIssueDiagnostics(issues []PathIssue, candidatesByPath map[string]RecordCandidate, scope validationScope) []Diagnostic {
 	diagnostics := make([]Diagnostic, 0, len(issues))
 	for _, issue := range issues {
@@ -350,6 +529,12 @@ func statusAllowedForKind(kind RecordKind, status RecordStatus) bool {
 		return status == RecordStatusConfirmed || status == RecordStatusDraft || status == RecordStatusWIP
 	case RecordKindInvestigation:
 		return status == RecordStatusInvestigating || status == RecordStatusConcluded || status == RecordStatusSuperseded
+	case RecordKindRequirement:
+		return status == RecordStatusCaptured || status == RecordStatusDecisionNeeded || status == RecordStatusAccepted || status == RecordStatusDeferred || status == RecordStatusRejected
+	case RecordKindWorkItem:
+		return status == RecordStatusNotStarted || status == RecordStatusDecisionPending || status == RecordStatusDesignSpecPending || status == RecordStatusInternalDesignPending || status == RecordStatusYAMLPending || status == RecordStatusImplementationPending || status == RecordStatusFixturePending || status == RecordStatusVerificationPending || status == RecordStatusDone || status == RecordStatusBlocked
+	case RecordKindTask:
+		return status == RecordStatusTodo || status == RecordStatusDoing || status == RecordStatusBlocked || status == RecordStatusDone
 	default:
 		return false
 	}
@@ -469,6 +654,12 @@ func kindFromPath(path string) (RecordKind, bool) {
 		return RecordKindSpec, true
 	case strings.HasPrefix(path, "docs/investigations/"):
 		return RecordKindInvestigation, true
+	case strings.HasPrefix(path, "docs/requirements/"):
+		return RecordKindRequirement, true
+	case strings.HasPrefix(path, "docs/work-items/"):
+		return RecordKindWorkItem, true
+	case strings.HasPrefix(path, "docs/tasks/"):
+		return RecordKindTask, true
 	default:
 		return "", false
 	}

@@ -128,11 +128,13 @@ investigation は、起点、調査根拠、後続候補、実際に生まれた
 この investigation を根拠に実際に作成・更新された artifact の記録に限る。
 作業状態や完了状態の管理は work item / task が所有する。
 
-`source_refs` は調査根拠であり、MVP の canonical reference として Design Records MCP が扱う record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*`) または active `spec:` semantic ref を書く。記載値が解決できない場合は validation error とする。
+`source_refs` は調査根拠であり、MVP の canonical reference として Design Records MCP が扱う record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*`) または active `spec:` semantic ref を書く。記載値が解決できない場合は validation error とする。
 
-`follow_up_results` は実際に作成・更新された artifact の参照である。記載する場合は、MVP の canonical reference として record ID-as-ref または active `spec:` semantic ref を書き、解決できない場合は validation error とする。
+`follow_up_results` は実際に作成・更新された artifact の参照である。記載する場合は、MVP の canonical reference として record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*`) または active `spec:` semantic ref を書き、解決できない場合は validation error とする。
 
-`follow_up_candidates` に artifact reference を記載する場合は、canonical reference として record ID-as-ref または active `spec:` semantic ref を書く。未作成 artifact の候補を含みうるため、canonical form で記載された参照先がまだ存在しないこと自体は validation error としない。未作成であることは、予定された後続 artifact が未解決であることを示す `info` diagnostic として可視化する。
+`follow_up_candidates` に artifact reference を記載する場合は、canonical reference として record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*`) または active `spec:` semantic ref を書く。未作成 artifact の候補を含みうるため、canonical form で記載された参照先がまだ存在しないこと自体は validation error としない。未作成であることは、予定された後続 artifact が未解決であることを示す `info` diagnostic として可視化する。
+
+`TASK-*` は workflow artifact 間 relation と direct resolver input では support されるが、investigation metadata の canonical reference には含めない。`source_refs` / `follow_up_results` に現れた場合は unsupported error、`follow_up_candidates` に現れた場合は unsupported info として扱う。
 
 ADR-088 により、`internal-design:` / `coverage:` / `COV-*` は MVP canonical reference / validation target として要求しない。
 

@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/traceability/artifact-refs.md
 status: draft
-last_updated: 2026-05-24
+last_updated: 2026-05-27
 summary: >
   traceability MVP の active / reserved / deferred semantic ref と、
   canonical ID-as-ref の境界を定義する。
@@ -11,6 +11,8 @@ depends_on:
   - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
+  - docs/adr/091-workflow-artifact-work-item-task-milestone.md
+  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
 semantic_refs:
   - spec:trace.artifact-refs
 sections:
@@ -89,15 +91,20 @@ id_as_ref:
   decision: "ADR-NNN"
   spec_record: "SPEC-<slug>"
   investigation: "INV-<DOMAIN>-NNN"
+  requirement: "REQ-<DOMAIN>-NNN"
+  work_item: "WORK-<DOMAIN>-NNN"
+  task: "TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>"
 ```
 
 ### `ADR-*` / `SPEC-*` / `INV-*`
 
 `ADR-*` / `SPEC-*` / `INV-*` は Design Records MCP が index / query / validation の対象とする record artifact ID である。Investigation の `source_refs` および記載済み `follow_up_results` は、これらの ID-as-ref または active `spec:` ref を canonical reference として使用できる。
 
-### `REQ-*` / `WORK-*`
+### `REQ-*` / `WORK-*` / `TASK-*`
 
-Requirement / work item は stable ID を持つ artifact である。MVP でそれらを Design Records MCP の record kind または semantic relation endpoint に含めるかは確定しない。Metadata 上で参照する具体 rule は、consumer requirement と tool contract が必要になった時点で定義する。
+`REQ-*` / `WORK-*` / `TASK-*` は Design Records MCP が index / query / validation の対象とする workflow artifact ID-as-ref である。Workflow artifact 間の canonical relation はこれらの ID-as-ref を用い、physical path や semantic prefix を relation identity として使用しない。
+
+Investigation metadata の `source_refs` / 記載済み `follow_up_results` / `follow_up_candidates` に追加して使用できる workflow artifact ID-as-ref は `REQ-*` / `WORK-*` に限定する。`TASK-*` は workflow artifact 間 relation と direct resolver input としては supported だが、investigation metadata canonical reference としては unsupported とする。
 
 ### `COV-*`
 
@@ -111,7 +118,7 @@ MVP は semantic realization relation の endpoint を定義しない。`spec:` 
 
 `fixture:` は MVP の active prefix でも reserved prefix でもない。Fixture / golden は processor / renderer / validator の検証資産であり、project-level canonical reference foundation には含めない。
 
-`requirement:` / `work-item:` prefix も MVP では採用しない。
+`requirement:` / `work-item:` / `task:` prefix も MVP では採用しない。Workflow artifact は `REQ-*` / `WORK-*` / `TASK-*` ID-as-ref で解決する。
 
 ## 由来
 
@@ -119,3 +126,5 @@ MVP は semantic realization relation の endpoint を定義しない。`spec:` 
 - ADR-083 §8: physical path から trace identity を分離する原則
 - ADR-087: Design Records MCP resolve responsibility と investigation canonical reference rule
 - ADR-088: realization endpoint / external coverage artifact を MVP 外へ送り、canonical reference resolution foundation に縮小
+- ADR-091: workflow artifact 間 relation の ID-as-ref boundary
+- ADR-092: workflow artifact record / resolve / relation validation boundary

@@ -14,9 +14,9 @@ func Tools() []Tool {
 	return []Tool{
 		{
 			Name:        "list_records",
-			Description: "List ADR/spec/investigation design records with optional metadata filters.",
+			Description: "List design records and workflow artifact records with optional metadata filters.",
 			InputSchema: objectSchema(map[string]any{
-				"kind":     enumStringSchema("decision", "spec", "investigation"),
+				"kind":     enumStringSchema("decision", "spec", "investigation", "requirement", "work_item", "task"),
 				"status":   map[string]any{"type": "string"},
 				"id":       map[string]any{"type": "string"},
 				"id_range": idRangeSchema(),
@@ -27,9 +27,9 @@ func Tools() []Tool {
 		},
 		{
 			Name:        "validate_records",
-			Description: "Validate indexed ADR/spec/investigation design record metadata.",
+			Description: "Validate indexed design record and workflow artifact metadata.",
 			InputSchema: objectSchema(map[string]any{
-				"kind":     enumStringSchema("decision", "spec", "investigation"),
+				"kind":     enumStringSchema("decision", "spec", "investigation", "requirement", "work_item", "task"),
 				"id_range": idRangeSchema(),
 			}, nil),
 		},

@@ -51,8 +51,8 @@ func TestToolsCallSuccess(t *testing.T) {
 			assertText: func(t *testing.T, text string) {
 				var resp designrecords.ListRecordsResponse
 				unmarshalToolText(t, text, &resp)
-				if got := len(resp.Records); got != 3 {
-					t.Fatalf("records len = %d, want 3", got)
+				if got := len(resp.Records); got != 6 {
+					t.Fatalf("records len = %d, want 6", got)
 				}
 			},
 		},
@@ -63,8 +63,32 @@ func TestToolsCallSuccess(t *testing.T) {
 			assertText: func(t *testing.T, text string) {
 				var resp designrecords.ListRecordsResponse
 				unmarshalToolText(t, text, &resp)
-				if got := len(resp.Records); got != 3 {
-					t.Fatalf("records len = %d, want 3", got)
+				if got := len(resp.Records); got != 6 {
+					t.Fatalf("records len = %d, want 6", got)
+				}
+			},
+		},
+		{
+			name:   "list_records workflow requirement",
+			line:   `{"jsonrpc":"2.0","id":151,"method":"tools/call","params":{"name":"list_records","arguments":{"kind":"requirement"}}}`,
+			wantID: "151",
+			assertText: func(t *testing.T, text string) {
+				var resp designrecords.ListRecordsResponse
+				unmarshalToolText(t, text, &resp)
+				if len(resp.Records) != 1 || resp.Records[0].ID != "REQ-MCP-003" || resp.Records[0].Requirement == nil {
+					t.Fatalf("requirement list response = %#v", resp)
+				}
+			},
+		},
+		{
+			name:   "get_record workflow task",
+			line:   `{"jsonrpc":"2.0","id":152,"method":"tools/call","params":{"name":"get_record","arguments":{"id":"TASK-MCP-003-01"}}}`,
+			wantID: "152",
+			assertText: func(t *testing.T, text string) {
+				var resp designrecords.GetRecordResponse
+				unmarshalToolText(t, text, &resp)
+				if resp.Record.ID != "TASK-MCP-003-01" || resp.Record.Task == nil || resp.Record.Task.WorkItem != "WORK-MCP-003" {
+					t.Fatalf("task get_record response = %#v", resp)
 				}
 			},
 		},
@@ -110,6 +134,30 @@ func TestToolsCallSuccess(t *testing.T) {
 				unmarshalToolText(t, text, &resp)
 				if resp.Status != "resolved" || resp.Target == nil || resp.Target.Path != "docs/spec/one.md" {
 					t.Fatalf("resolve_reference response = %#v", resp)
+				}
+			},
+		},
+		{
+			name:   "resolve_reference workflow requirement",
+			line:   `{"jsonrpc":"2.0","id":161,"method":"tools/call","params":{"name":"resolve_reference","arguments":{"ref":"REQ-MCP-003"}}}`,
+			wantID: "161",
+			assertText: func(t *testing.T, text string) {
+				var resp designrecords.ResolveReferenceResponse
+				unmarshalToolText(t, text, &resp)
+				if resp.Status != "resolved" || resp.RefKind != "record_id" || resp.Target == nil || resp.Target.RecordID != "REQ-MCP-003" || resp.Target.RecordKind != designrecords.RecordKindRequirement {
+					t.Fatalf("resolve_reference requirement response = %#v", resp)
+				}
+			},
+		},
+		{
+			name:   "resolve_reference workflow task",
+			line:   `{"jsonrpc":"2.0","id":162,"method":"tools/call","params":{"name":"resolve_reference","arguments":{"ref":"TASK-MCP-003-01"}}}`,
+			wantID: "162",
+			assertText: func(t *testing.T, text string) {
+				var resp designrecords.ResolveReferenceResponse
+				unmarshalToolText(t, text, &resp)
+				if resp.Status != "resolved" || resp.RefKind != "record_id" || resp.Target == nil || resp.Target.RecordID != "TASK-MCP-003-01" || resp.Target.RecordKind != designrecords.RecordKindTask {
+					t.Fatalf("resolve_reference task response = %#v", resp)
 				}
 			},
 		},
@@ -179,6 +227,32 @@ func TestToolsCallValidateDiagnosticsAreNormalResponse(t *testing.T) {
 	diagnostics, ok := text["diagnostics"].([]any)
 	if !ok || len(diagnostics) == 0 {
 		t.Fatalf("diagnostics missing from response text: %#v", text)
+	}
+}
+
+func TestToolsListWorkflowKindEnums(t *testing.T) {
+	tools := Tools()
+	for _, toolName := range []string{"list_records", "validate_records"} {
+		tool := findToolForTest(tools, toolName)
+		if tool == nil {
+			t.Fatalf("missing tool %s", toolName)
+		}
+		kind, ok := tool.InputSchema["properties"].(map[string]any)["kind"].(map[string]any)
+		if !ok {
+			t.Fatalf("%s kind schema missing: %#v", toolName, tool.InputSchema)
+		}
+		enumValues, ok := kind["enum"].([]any)
+		if !ok {
+			t.Fatalf("%s kind enum missing: %#v", toolName, kind)
+		}
+		for _, want := range []string{"decision", "spec", "investigation", "requirement", "work_item", "task"} {
+			if !hasEnumValue(enumValues, want) {
+				t.Fatalf("%s kind enum missing %q: %#v", toolName, want, enumValues)
+			}
+		}
+	}
+	if !strings.Contains(Tools()[0].Description, "workflow") {
+		t.Fatalf("list_records description does not mention workflow artifacts: %q", Tools()[0].Description)
 	}
 }
 
@@ -360,9 +434,70 @@ func toolsCallTestIndex() *designrecords.Index {
 			Spec:         &designrecords.SpecDetail{},
 			SemanticRefs: []designrecords.SemanticRefDecl{{Ref: "spec:one.doc", Path: "docs/spec/one.md", TargetType: designrecords.SemanticTargetDocument}},
 		},
+		{
+			ID:           "REQ-MCP-003",
+			NormalizedID: "REQ-MCP-003",
+			Kind:         designrecords.RecordKindRequirement,
+			Title:        "Workflow support",
+			Status:       designrecords.RecordStatusAccepted,
+			Path:         "docs/requirements/mcp/REQ-MCP-003-workflow-support.md",
+			RawBody:      "# REQ-MCP-003: Workflow support\n",
+			Requirement: &designrecords.RequirementDetail{
+				SourceRefs: []string{"ADR-092"},
+				WorkItems:  []string{"WORK-MCP-003"},
+			},
+		},
+		{
+			ID:           "WORK-MCP-003",
+			NormalizedID: "WORK-MCP-003",
+			Kind:         designrecords.RecordKindWorkItem,
+			Title:        "Workflow implementation",
+			Status:       designrecords.RecordStatusImplementationPending,
+			Path:         "docs/work-items/mcp/WORK-MCP-003-workflow-implementation.md",
+			RawBody:      "# WORK-MCP-003: Workflow implementation\n",
+			WorkItem: &designrecords.WorkItemDetail{
+				SourceRequirement: "REQ-MCP-003",
+				ImpactRefs:        []string{"ADR-092"},
+				Tasks:             []string{"TASK-MCP-003-01"},
+			},
+		},
+		{
+			ID:           "TASK-MCP-003-01",
+			NormalizedID: "TASK-MCP-003-01",
+			Kind:         designrecords.RecordKindTask,
+			Title:        "Workflow evidence",
+			Status:       designrecords.RecordStatusDone,
+			Path:         "docs/tasks/mcp/TASK-MCP-003-01-workflow-evidence.md",
+			RawBody:      "# TASK-MCP-003-01: Workflow evidence\n",
+			Task: &designrecords.TaskDetail{
+				WorkItem:          "WORK-MCP-003",
+				SourceRequirement: "REQ-MCP-003",
+				Estimate:          "0.5d",
+				DependsOn:         []string{},
+				Outputs:           []string{"evidence"},
+			},
+		},
 	}}
 	idx.SemanticRefs = []designrecords.SemanticRefDecl{{Ref: "spec:one.doc", Path: "docs/spec/one.md", TargetType: designrecords.SemanticTargetDocument}}
 	return idx
+}
+
+func findToolForTest(tools []Tool, name string) *Tool {
+	for i := range tools {
+		if tools[i].Name == name {
+			return &tools[i]
+		}
+	}
+	return nil
+}
+
+func hasEnumValue(values []any, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
 }
 
 func toolsCallRecord(id, title string) designrecords.Record {

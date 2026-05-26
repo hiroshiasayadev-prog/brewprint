@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// BuildIndex discovers ADR/spec Markdown records and builds the Phase 1 index.
+// BuildIndex discovers design record and workflow artifact Markdown records.
 func BuildIndex(ctx context.Context, cfg Config) (*Index, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -35,6 +35,15 @@ func BuildIndex(ctx context.Context, cfg Config) (*Index, error) {
 		return nil, err
 	}
 	if err := discoverInvestigationRecords(ctx, normalized.Root, idx); err != nil {
+		return nil, err
+	}
+	if err := discoverRequirementRecords(ctx, normalized.Root, idx); err != nil {
+		return nil, err
+	}
+	if err := discoverWorkItemRecords(ctx, normalized.Root, idx); err != nil {
+		return nil, err
+	}
+	if err := discoverTaskRecords(ctx, normalized.Root, idx); err != nil {
 		return nil, err
 	}
 	return idx, nil
@@ -166,6 +175,73 @@ func discoverSpecRecords(ctx context.Context, root string, idx *Index) error {
 	}
 	if err != nil {
 		return fmt.Errorf("discover spec records: %w", err)
+	}
+	return nil
+}
+
+func discoverRequirementRecords(ctx context.Context, root string, idx *Index) error {
+	return discoverWorkflowRecords(ctx, root, idx, filepath.Join("docs", "requirements"), "REQ-*.md", RecordKindRequirement, parseRequirementRecord)
+}
+
+func discoverWorkItemRecords(ctx context.Context, root string, idx *Index) error {
+	return discoverWorkflowRecords(ctx, root, idx, filepath.Join("docs", "work-items"), "WORK-*.md", RecordKindWorkItem, parseWorkItemRecord)
+}
+
+func discoverTaskRecords(ctx context.Context, root string, idx *Index) error {
+	return discoverWorkflowRecords(ctx, root, idx, filepath.Join("docs", "tasks"), "TASK-*.md", RecordKindTask, parseTaskRecord)
+}
+
+func discoverWorkflowRecords(ctx context.Context, root string, idx *Index, rootRel, pattern string, kind RecordKind, parser func(string, string) (*Record, RecordCandidate, []ParseIssue)) error {
+	baseRoot := filepath.Join(root, rootRel)
+	if _, err := os.Stat(baseRoot); os.IsNotExist(err) {
+		return nil
+	}
+	domains, err := os.ReadDir(baseRoot)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("discover workflow %s records: %w", kind, err)
+	}
+	for _, domain := range domains {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if !domain.IsDir() {
+			continue
+		}
+		matches, err := filepath.Glob(filepath.Join(baseRoot, domain.Name(), pattern))
+		if err != nil {
+			return fmt.Errorf("discover workflow %s records: %w", kind, err)
+		}
+		sort.Strings(matches)
+		for _, path := range matches {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			if strings.ToLower(filepath.Ext(path)) != ".md" {
+				continue
+			}
+			if workflowFilenameID(path, kind) == "" {
+				continue
+			}
+			rel := relativePath(root, path)
+			if _, err := os.Stat(path); err != nil {
+				idx.PathIssues = append(idx.PathIssues, PathIssue{Path: rel, Operation: "stat", Err: err})
+				continue
+			}
+			content, err := os.ReadFile(path)
+			if err != nil {
+				idx.PathIssues = append(idx.PathIssues, PathIssue{Path: rel, Operation: "read", Err: err})
+				continue
+			}
+			record, candidate, issues := parser(rel, string(content))
+			idx.Candidates = append(idx.Candidates, candidate)
+			idx.ParseIssues = append(idx.ParseIssues, issues...)
+			if record != nil {
+				idx.Records = append(idx.Records, *record)
+			}
+		}
 	}
 	return nil
 }

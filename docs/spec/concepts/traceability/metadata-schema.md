@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/traceability/metadata-schema.md
 status: draft
-last_updated: 2026-05-24
+last_updated: 2026-05-27
 summary: >
   canonical reference resolution foundation のための spec front matter と
   investigation reference metadata boundary を定義する。
@@ -12,6 +12,8 @@ depends_on:
   - docs/adr/086-investigation-artifact-format-and-lifecycle.md
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
+  - docs/adr/091-workflow-artifact-work-item-task-milestone.md
+  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
 semantic_refs:
   - spec:trace.metadata-schema
 sections:
@@ -31,6 +33,7 @@ MVP でこの spec が定義する metadata は次に限定する。
 
 - spec front matter の `semantic_refs` / `sections`
 - investigation metadata に記載される canonical reference の許容形と validation boundary
+- workflow artifact metadata に記載される `REQ-*` / `WORK-*` / `TASK-*` declared relation の validation boundary
 
 Internal-design relation metadata、coverage mapping YAML、relation entry schema は MVP では定義しない。
 
@@ -114,9 +117,30 @@ MVP は external coverage artifact、`coverage:` ref、`COV-*` ID、coverage map
 
 Gap / completeness / evidence / sign-off / audit / approved relation set を外部 artifact で保持する必要が生じた場合、名称と schema を含めて後続判断する。
 
-## Requirement / work item metadata boundary
+## Workflow artifact metadata boundary
 
-Requirement / work item は stable ID を持つが、本 spec はその完全 schema、Design Records MCP record kind 化、または semantic relation endpoint 化を定義しない。
+Requirement / work item / task は、Design Records MCP が扱う workflow record artifact である。Workflow artifact の完全 parser / response schema と diagnostic category は Design Records MCP spec が所有し、本 spec は canonical relation boundary のみを定義する。
+
+Workflow artifact 間 relation は次の ID-as-ref field により宣言する。
+
+| source artifact | field | canonical target |
+|---|---|---|
+| requirement | `work_items` | `WORK-*` |
+| work item | `source_requirement` | `REQ-*` |
+| work item | `tasks` | `TASK-*` |
+| task | `work_item` | `WORK-*` |
+| task | `source_requirement` | `REQ-*` |
+| task | `depends_on` | `TASK-*` |
+
+Workflow relation は metadata の ID-as-ref のみから読み、physical path または ID 文字列構造から親 relation を導出しない。`req:` / `work:` / `task:` semantic prefix も導入しない。
+
+MVP は上記 field の参照先存在確認と、declared relation の以下の整合性確認を扱う。
+
+- requirement と work item の相互 relation: `requirement.work_items` と `work_item.source_requirement`
+- work item と task の相互 relation: `work_item.tasks` と `task.work_item`
+- task の source requirement と parent work item の source requirement の一致
+
+未接続 artifact の orphan diagnostics、task status 由来 progress projection、workflow traversal query、task dependency cycle / execution order projection は扱わない。
 
 ## Investigation reference metadata
 
@@ -127,26 +151,30 @@ Investigation metadata の field 構成、required / optional 区分、status、
 - `source_refs` は record ID-as-ref または active `spec:` semantic ref を用い、記載値は resolve 可能でなければならない
 - `follow_up_results` は記載する場合、record ID-as-ref または active `spec:` semantic ref を用い、記載値は resolve 可能でなければならない
 - `follow_up_candidates` に artifact reference を記載する場合、canonical form を用いる。未作成 artifact 候補を指しうるため、unresolved は error にせず `info` diagnostic として可視化する
+- workflow artifact ID-as-ref のうち、investigation metadata が追加で使用できるものは `REQ-*` / `WORK-*` に限定する
+- `TASK-*` は direct resolver input と workflow artifact 間 relation では supported だが、investigation metadata canonical reference には含めない。`source_refs` / `follow_up_results` に現れた場合は unsupported error、`follow_up_candidates` に現れた場合は unsupported info として扱う
 - physical path は canonical reference としない。`source_refs` / `follow_up_results` に現れた場合は error diagnostic、`follow_up_candidates` に現れた場合は noncanonical candidate を示す `info` diagnostic として扱う
 - `trigger` / `related_*` の resolve / validation rule は後続 contract で定義する
 
 ## Validation responsibility
 
-MVP validation は relation validation ではなく canonical reference validation である。
+MVP validation は canonical reference validation と、workflow artifact が明示的に宣言した ID-as-ref relation の integrity validation である。
 
 - `semantic_refs` / `sections` の grammar と uniqueness
 - `sections` value と実在 heading の一致
 - investigation `source_refs` / 記載済み `follow_up_results` の canonicality と resolve
 - investigation `follow_up_candidates` に記載された artifact reference の canonical form と、unresolved candidate の `info` diagnostic
+- investigation metadata での `REQ-*` / `WORK-*` 許容と `TASK-*` 非対応 boundary
 - physical path の noncanonical diagnostic。`source_refs` / `follow_up_results` は error、`follow_up_candidates` は `info` とする
+- workflow relation field の canonical target kind / resolution / declared bidirectional consistency
 
-Coverage mapping endpoint、relation direction、`COV-*`、`internal-design:` resolve は MVP validation 対象外である。
+Coverage mapping endpoint、semantic realization relation、`COV-*`、`internal-design:` resolve、workflow orphan diagnostics、progress projection、traversal query は MVP validation 対象外である。
 
 ## Out of scope
 
 - brewprint DSL YAML schema / entity-level semantic ref
 - internal-design semantic ref / relation metadata schema
 - coverage mapping schema
-- requirement / work item の完全 lifecycle schema
+- workflow artifact の orphan diagnostics / progress projection / traversal query / dependency cycle detection
 - MCP writer tool request / response
 - fixture-level traceability

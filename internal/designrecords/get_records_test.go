@@ -44,25 +44,65 @@ func TestGetRecordsMixedKindsPartialResultsAndDuplicates(t *testing.T) {
 			Headings: []Heading{{Level: 1, Text: "INV-DOCS-001: Investigation"}},
 			RawBody:  "# INV-DOCS-001: Investigation\n",
 		},
+		{
+			ID:      "REQ-MCP-003",
+			Kind:    RecordKindRequirement,
+			Title:   "Workflow support",
+			Status:  RecordStatusAccepted,
+			Path:    "docs/requirements/mcp/REQ-MCP-003-workflow-support.md",
+			RawBody: "# REQ-MCP-003: Workflow support\n",
+			Requirement: &RequirementDetail{
+				SourceRefs: []string{"ADR-092"},
+				WorkItems:  []string{"WORK-MCP-003"},
+			},
+		},
+		{
+			ID:      "WORK-MCP-003",
+			Kind:    RecordKindWorkItem,
+			Title:   "Workflow implementation",
+			Status:  RecordStatusImplementationPending,
+			Path:    "docs/work-items/mcp/WORK-MCP-003-workflow-implementation.md",
+			RawBody: "# WORK-MCP-003: Workflow implementation\n",
+			WorkItem: &WorkItemDetail{
+				SourceRequirement: "REQ-MCP-003",
+				ImpactRefs:        []string{"ADR-092"},
+				Tasks:             []string{"TASK-MCP-003-01"},
+			},
+		},
+		{
+			ID:      "TASK-MCP-003-01",
+			Kind:    RecordKindTask,
+			Title:   "Workflow evidence",
+			Status:  RecordStatusDone,
+			Path:    "docs/tasks/mcp/TASK-MCP-003-01-workflow-evidence.md",
+			RawBody: "# TASK-MCP-003-01: Workflow evidence\n",
+			Task: &TaskDetail{
+				WorkItem:          "WORK-MCP-003",
+				SourceRequirement: "REQ-MCP-003",
+				Estimate:          "0.5d",
+				DependsOn:         []string{},
+				Outputs:           []string{"evidence"},
+			},
+		},
 	}}
 
 	resp, err := GetRecords(context.Background(), idx, GetRecordsRequest{
-		IDs:         []string{"ADR-077", "SPEC-design-records-mcp-tools", "INV-DOCS-001", "ADR-077", "INV-DOCS-999", "ADR-077"},
+		IDs:         []string{"ADR-077", "SPEC-design-records-mcp-tools", "INV-DOCS-001", "REQ-MCP-003", "WORK-MCP-003", "TASK-MCP-003-01", "ADR-077", "TASK-MCP-999-99", "ADR-077"},
 		IncludeBody: true,
 	})
 	if err != nil {
 		t.Fatalf("GetRecords: %v", err)
 	}
-	if got := len(resp.Items); got != 4 {
-		t.Fatalf("items len = %d, want 4", got)
+	if got := len(resp.Items); got != 7 {
+		t.Fatalf("items len = %d, want 7", got)
 	}
-	wantIDs := []string{"ADR-077", "SPEC-design-records-mcp-tools", "INV-DOCS-001", "INV-DOCS-999"}
+	wantIDs := []string{"ADR-077", "SPEC-design-records-mcp-tools", "INV-DOCS-001", "REQ-MCP-003", "WORK-MCP-003", "TASK-MCP-003-01", "TASK-MCP-999-99"}
 	for i, wantID := range wantIDs {
 		if resp.Items[i].ID != wantID {
 			t.Fatalf("items[%d].id = %q, want %q", i, resp.Items[i].ID, wantID)
 		}
 	}
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 6; i++ {
 		if resp.Items[i].RetrievalStatus != RetrievalStatusFound || resp.Items[i].Record == nil {
 			t.Fatalf("items[%d] = %#v, want found record", i, resp.Items[i])
 		}
@@ -73,11 +113,14 @@ func TestGetRecordsMixedKindsPartialResultsAndDuplicates(t *testing.T) {
 			t.Fatalf("items[%d].diagnostics = %#v, want empty", i, resp.Items[i].Diagnostics)
 		}
 	}
-	missing := resp.Items[3]
+	if resp.Items[3].Record.Requirement == nil || resp.Items[4].Record.WorkItem == nil || resp.Items[5].Record.Task == nil {
+		t.Fatalf("workflow detail objects missing: %#v", resp.Items)
+	}
+	missing := resp.Items[6]
 	if missing.RetrievalStatus != RetrievalStatusNotFound || missing.Record != nil {
 		t.Fatalf("missing item = %#v", missing)
 	}
-	if len(missing.Diagnostics) != 1 || missing.Diagnostics[0].Category != DiagnosticRecordNotFound || missing.Diagnostics[0].Severity != DiagnosticSeverityError || missing.Diagnostics[0].RequestedID != "INV-DOCS-999" {
+	if len(missing.Diagnostics) != 1 || missing.Diagnostics[0].Category != DiagnosticRecordNotFound || missing.Diagnostics[0].Severity != DiagnosticSeverityError || missing.Diagnostics[0].RequestedID != "TASK-MCP-999-99" {
 		t.Fatalf("missing diagnostics = %#v", missing.Diagnostics)
 	}
 	if len(resp.Diagnostics) != 1 {
@@ -90,8 +133,8 @@ func TestGetRecordsMixedKindsPartialResultsAndDuplicates(t *testing.T) {
 	if duplicate.FirstIndex == nil || *duplicate.FirstIndex != 0 {
 		t.Fatalf("first_index = %#v, want 0", duplicate.FirstIndex)
 	}
-	if len(duplicate.DuplicateIndexes) != 2 || duplicate.DuplicateIndexes[0] != 3 || duplicate.DuplicateIndexes[1] != 5 {
-		t.Fatalf("duplicate_indexes = %#v, want [3 5]", duplicate.DuplicateIndexes)
+	if len(duplicate.DuplicateIndexes) != 2 || duplicate.DuplicateIndexes[0] != 6 || duplicate.DuplicateIndexes[1] != 8 {
+		t.Fatalf("duplicate_indexes = %#v, want [6 8]", duplicate.DuplicateIndexes)
 	}
 
 	encoded, err := json.Marshal(resp)
