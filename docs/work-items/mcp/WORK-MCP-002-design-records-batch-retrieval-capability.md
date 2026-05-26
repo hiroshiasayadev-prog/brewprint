@@ -4,7 +4,6 @@
 - **status**: done
 - **date**: 2026-05-26
 - **source_requirement**: REQ-MCP-002
-- **milestone**: unset
 - **impact_refs**:
   - ADR-077
   - ADR-087
@@ -28,7 +27,7 @@ LLM が複数の design record を確認するときの反復取得負荷を検�
 - 本 work item は REQ-MCP-002 を解消する作業フロー、影響範囲、進捗集約を所有する。
 - tool 名、request / response schema、件数上限、partial result contract は判断 task の完了前には確定事項として扱わない。
 - requirement / work item / task の MCP support は REQ-MCP-003 の対象であり、本 work item では扱わない。
-- milestone / task の正式な新運用方針は、本 dogfooding 後に別 ADR で判断する。
+- 従来 milestone と呼んでいた実行計画を work item が引き取り、task を短期作業へ分離する正式方針は、本 dogfooding 後に別 ADR で判断する。
 
 ## Impact scope
 
@@ -78,7 +77,7 @@ flowchart TD
 1. Capability を採用し、必要な判断記録、spec、implementation、tests、runtime verification、evidence 更新が完了している。
 2. Capability を延期または不採用と判断し、その根拠と REQ-MCP-002 の status が反映されている。
 
-close 時には、本 work item の task 粒度と flowchart 形式について、後続の workflow artifact ADR 起票に必要な所感または不足点を記録する。
+close 時には、本 work item の task 粒度と flowchart 形式、および旧 milestone 役割を work item に統合する運用について、後続の workflow artifact ADR 起票に必要な所感または不足点を記録する。
 
 ## Current blockers
 

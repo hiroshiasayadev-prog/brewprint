@@ -68,11 +68,11 @@ ADR は、spec / task file / UC docs / fixture / impl notes など、他責務 a
 | ADR | 設計判断、背景、理由、却下案、影響範囲 | 現行仕様本文、具体task、fixture migration詳細、実装手順、調査ログ、trace mapping 詳細 |
 | investigation | 調査結果、根拠、影響範囲の仮説、未確定点、選択肢、後続 artifact 候補 | 設計判断、現行仕様、要求そのもの、作業進捗、完了状態 |
 | requirement | 要求、不足、要望、stable requirement ID | 実装手順、完了状態、個別 trace mapping |
-| work item | source requirement を持つ横断作業、進捗、影響範囲 | 現行仕様本文、設計判断の長い理由 |
+| work item | source requirement を解消する到達点、作業フロー全体、横断進捗、影響範囲、task graph | 現行仕様本文、設計判断の長い理由、個別 task の status 正本 |
+| task file | 短期に閉じられる具体作業、完了条件、個別 status、verification evidence | 設計判断の長い理由、現行仕様本文、work item 全体の到達点・task graph |
 | spec | 現在の正しい仕様、semantic ref declaration | ADRの判断背景（由来注記）、具体実装手順 |
 | internal design | spec を実装へ落とす internal wiring / route | 設計判断、要求、横断進捗、MVP の semantic endpoint contract |
 | external relation / assurance artifact | concrete requirement が成立した場合に配置・責務を含めて新設判断する将来候補（MVP operational scope 外） | 現行 MVP の canonical reference contract、各 artifact が所有する意味本文、fixture-level validation |
-| task file | 具体作業項目、順序、完了条件、実装・migration checklist | 設計判断の長い理由、現行仕様本文 |
 | UC docs / fixture | 実例、固定入力、期待出力、fixture-local 検証補助 | 汎用仕様、project-level trace relation、横断 gap / migration 進捗 |
 
 この境界により、ADR は時間が経っても「なぜその判断をしたか」を保持し、現行仕様・作業状態・実例の変化はそれぞれの責務文書で更新できる。
@@ -84,6 +84,8 @@ Semantic trace MVP では、現行 `spec:` semantic ref と investigation canoni
 
 ADR が traceability に影響する場合は、更新対象の spec / internal design / 将来新設を判断しうる external artifact を影響範囲として示し、trace detail を ADR 本文に二重管理しない。
 設計判断から現行仕様を辿る場合は、spec の由来注記と canonical reference contract を用いる。
+
+ADR-091 に基づき、requirement / work item / task 間の canonical relation は `REQ-*` / `WORK-*` / `TASK-*` ID-as-ref を用い、physical path は supported canonical relation として扱わない。Workflow artifact から他 artifact への参照規則は既存の canonical reference 方針に従い、ADR authoring guide で追加拡張しない。
 
 ### ADR と investigation の境界
 
@@ -232,11 +234,13 @@ ADR の「影響」には、後続作業が発生する事実や影響範囲を�
 ### 良い例
 
 ```markdown
-### M15 への影響
+### Data layer expressiveness work への影響
 
-本ADRにより、M15 Phase C では enum model の spec / implementation / UC-002 fixture migration が必要になる。
-具体的な作業項目、順序、完了条件は `docs/tasks/m15-data-layer-expressiveness.md` および UC-002 側の task file で追跡する。
+本ADRにより、対応する work item では enum model の spec / implementation / UC-002 fixture migration が必要になる。
+具体的な作業項目、順序、完了条件は work item 配下の短期 task file で追跡する。
 ```
+
+既存 `docs/tasks/m*.md` を参照する場合、それは ADR-091 以前の legacy milestone-shaped work record の所在を示す場合に限り、canonical workflow relation として扱わない。新形式に `milestone` artifact または relation を追加しない。
 
 ### 悪い例
 

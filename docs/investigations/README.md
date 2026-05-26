@@ -37,7 +37,7 @@ INV-<DOMAIN>-NNN
 - `DOMAIN` は uppercase の短い domain label とする。
 - `NNN` は investigation の `DOMAIN` ごとに 001 から始まる3桁ゼロ埋め連番とする。
 - investigation ID は、他 artifact の ID / 番号体系から独立して採番する。
-- ADR number、requirement ID、work item ID、task milestone、coverage mapping ID などとは結合しない。
+- ADR number、requirement ID、work item ID、task ID、旧 M-series label、coverage mapping ID などとは結合しない。
 
 file name は ID を大文字で残す。
 

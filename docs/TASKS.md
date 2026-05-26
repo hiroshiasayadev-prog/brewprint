@@ -1,31 +1,35 @@
 # TASKS
 
-brewprintの積みタスク一覧。
-詳細は milestone 別ファイルを参照する。
+brewprint の旧 M-series index。
+
+ADR-091 により、新規の実行計画と到達点は work item が所有し、具体作業は work item 配下の短期 task として管理する。下表の `M*` は移行前の歴史的ラベルであり、参照先の `docs/tasks/m*.md` は work item 相当の計画と具体 task が混在した legacy record である。
 
 ---
 
 ## 読み方
 
 - セッション開始時はこのファイルだけ読む
-- 作業対象 milestone が決まってから `docs/tasks/mXX-*.md` を読む
-- closed milestone は原則読まない
+- 新規 work は requirement -> work item -> `docs/tasks/<domain>/TASK-*.md` の短期 task として追跡する
+- 旧 M-series 記録の確認が必要な場合のみ、対応する `docs/tasks/mXX-*.md` を legacy record として読む
+- closed な旧 M-series 記録の詳細は原則読まない
 - 実装後の詳細な引継ぎは `docs/impl/go-mX-summary.md` を参照する
-- task file は未来向きのチェックリスト、impl summary は過去向きの実装引継ぎ
+- 新形式 task は未来向きの短期実行単位、legacy record は旧計画・完了履歴、impl summary は過去向きの実装引継ぎとして扱う
 
 ---
 
-## Status
+## Legacy M-series status
 
-- `open`: 未完了taskあり
-- `closed`: milestone内task完了
-- `paused`: 一時停止中
+- `open`: 当該 legacy record が未完了である
+- `closed`: 当該 legacy record が完了済みである
+- `paused`: 当該 legacy record を一時停止中である
+
+この status は旧 M-series 記録の状態であり、新形式の work item または task artifact の `status` contract ではない。
 
 ---
 
-## Milestones
+## Legacy M-series records
 
-| milestone | status | detail | notes |
+| legacy label | status | detail | notes |
 |---|---|---|---|
 | M0: implementation boundary | closed | [tasks/m0-boundary.md](tasks/m0-boundary.md) | ADR-047〜049 |
 | M1: DAG vertical slice | closed | [tasks/m1-dag-vertical-slice.md](tasks/m1-dag-vertical-slice.md) | UC-001 auth.login |
@@ -47,10 +51,17 @@ brewprintの積みタスク一覧。
 | M16: Design Records MCP MVP | closed | [tasks/m16-design-records-mcp-mvp.md](tasks/m16-design-records-mcp-mvp.md) | ADR-076 / ADR-077。ADR/spec record index + read-only MCP MVP |
 | M17: Design Records MCP stdio transport | closed | [tasks/m17-design-records-mcp-stdio-transport.md](tasks/m17-design-records-mcp-stdio-transport.md) | M16 handlers を stdio MCP server として公開 |
 | M18: semantic traceability foundation | closed | [tasks/m18-semantic-traceability-foundation.md](tasks/m18-semantic-traceability-foundation.md) | ADR-081〜088。ADR-088 により MVP を canonical reference resolution foundation に縮小し、spec / policy / handoff 同期と最終独立レビュー完了。MCP実装追従は M19 へ分離 |
-| M19: Design Records MCP semantic trace support | open | [tasks/m19-design-records-semantic-trace-support.md](tasks/m19-design-records-semantic-trace-support.md) | REQ-MCP-001 / WORK-MCP-001 / ADR-087 / ADR-088。`spec:` + record ID + investigation canonical ref resolve / validation 実装 |
+| M19: Design Records MCP semantic trace support | closed | [tasks/m19-design-records-semantic-trace-support.md](tasks/m19-design-records-semantic-trace-support.md) | REQ-MCP-001 / WORK-MCP-001 / ADR-087 / ADR-088。investigation integration + canonical ref resolve / validation 実装・runtime validation確認完了 |
 
 ---
 
+## Migration note
+
+- 既存 `docs/tasks/m*.md` の archive 化は未実施であり、別 migration work で扱う。
+- Open な M14 / M14a / M15 は、対象に着手する際に `WORK-*` / short `TASK-*` へ明示的に移行する。
+- 新規 task authoring guidance は `docs/tasks/README.md`、work item authoring guidance は `docs/work-items/README.md` を参照する。
+- 新形式に `milestone` field、milestone artifact、または milestone relation は導入しない。
+
 ## 検討中
 
-（現在検討中の項目はなし。v1後検討事項は ADR-057 §6 / doc-policy.md §11 を参照）
+- ADR-091 追従として、legacy M-series record の archive 移行と open record の分解方針を後続 work で扱う。
