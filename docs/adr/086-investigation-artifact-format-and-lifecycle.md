@@ -318,6 +318,6 @@ ADR-083 の artifact placement decision rule は、investigation layer を含む
 
 ## Evidence
 
-- commit: tbd
+- commit: 5688941
 - impl commit: tbd
 - 参考: ADR-085 investigation artifact boundary, INV-DOCS-001 investigation artifact format and lifecycle

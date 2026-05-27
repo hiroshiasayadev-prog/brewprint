@@ -291,6 +291,6 @@ ADR-086本文は起票時点のスナップショットとして遡及修正し�
 
 ## Evidence
 
-- commit: tbd
+- commit: 81deb03
 - impl commit: tbd
 - 参考: ADR-076 Design Records MCP、ADR-077 MVP boundary and tool prioritization、ADR-084 semantic trace MVP scope and artifact boundary、ADR-085 investigation artifact boundary、ADR-086 investigation artifact format and lifecycle、`docs/tasks/m18-semantic-traceability-foundation.md`、`docs/spec/concepts/traceability/resolve-and-validation.md`、`docs/spec/concepts/traceability/semantic-ref.md`
