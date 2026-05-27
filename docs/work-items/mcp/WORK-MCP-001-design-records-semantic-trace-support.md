@@ -10,7 +10,7 @@
   - spec:trace.resolve-and-validation
   - spec:trace.metadata-schema
 - **tasks**:
-  - M19
+  - TASK-MCP-001-01
 
 ## Goal
 
@@ -29,9 +29,16 @@ ADR-087 / ADR-088 と traceability spec で確定した canonical reference reso
 ## Boundary
 
 - 本 work item は横断進捗と影響範囲を所有する。
-- 具体的な実装順序とチェックリストは M19 task が所有する。
+- 過去の具体的な実装順序、チェックリスト、完了 evidence の正本は legacy record `docs/tasks/m19-design-records-semantic-trace-support.md` が保持する。
+- `TASK-MCP-001-01` は、legacy `M19` の完了 evidence を current canonical workflow relation に接続する retrospective migration bridge であり、過去工程を再実行または再分解するものではない。
 - `internal-design:` / `coverage:` / `COV-*` の resolve、semantic realization relation、coverage mapping query、MCP writer tools は本 work item の必須完了条件に含めない。
 
 ## Done condition
 
 M19 の完了条件を満たし、Design Records MCP が ADR-087 / ADR-088 に基づく investigation integration と canonical reference resolution / validation を contract・implementation・tests の同一切替単位で提供できること。
+
+## Migration bridge evidence
+
+- 2026-05-27: Workflow artifact MCP validation の runtime verification により、旧 relation `tasks: M19` が `invalid_workflow_relation_target` として検出された。
+- 2026-05-27: Legacy `M19` は historical completion evidence の正本として維持し、current workflow relation のみを `TASK-MCP-001-01` に接続した。
+- 2026-05-27: 本修正は closed M-series 全体の archive / migration ではなく、既に新形式で存在する `WORK-MCP-001` の canonical relation clean-up に限定する。
