@@ -1,5 +1,8 @@
 # M19: Design Records MCP semantic trace support
 
+- **status**: closed
+- **closed_at**: 2026-05-26
+
 ## Goal
 
 ADR-087 / ADR-088 と semantic traceability spec に従い、Design Records MCP に investigation record integration と canonical semantic/artifact ref resolve / validation を実装する。
@@ -120,3 +123,12 @@ M19 が扱うもの:
 - [x] investigation canonical reference validation と noncanonical path diagnostic が動作する
 - [x] coverage / internal-design realization relation を前提にしない acceptance tests が通る
 - [x] `WORK-MCP-001` の status を反映できる状態になっている
+
+## Close note
+
+- `kind: investigation`、kind-specific detail response、`resolve_reference`、semantic / investigation reference validation を実装し、MCP runtime で確認した。
+- Runtime `get_record("INV-DOCS-001")` は `kind: "investigation"` と investigation detail を返すことを確認した。
+- Runtime `validate_records` は `ok: true` を返し、開始時 baseline の `ADR-086 depends_on references missing record INV-DOCS-001` error が解消されたことを確認した。
+- Root document semantic ref (`spec:trace` / `spec:project-artifact-model`) は既存 docs intent に基づく canonical ref として grammar / implementation gap を修正し、runtime validation error が解消されたことを確認した。
+- `validate_records` には `follow_up_candidates` 由来の info diagnostic が30件残る（`noncanonical_follow_up_candidate`: 15、`unsupported_reference`: 13、`unresolved_follow_up_candidate`: 2）。これは M19 contract 上の informational debt であり、M19 close blocker ではない。
+- Follow-up requirement として `REQ-MCP-002`（batch retrieval capability）および `REQ-MCP-003`（requirement / work item / task MCP support）を captured 済みとする。
