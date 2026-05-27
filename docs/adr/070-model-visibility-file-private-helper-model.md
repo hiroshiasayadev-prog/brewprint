@@ -1,6 +1,6 @@
 # 070: model visibility と file-private helper model
 
-- **status**: proposed
+- **status**: accepted
 - **date**: 2026-05-11
 
 > このADRは起票時点での決定を記録したスナップショットである。
