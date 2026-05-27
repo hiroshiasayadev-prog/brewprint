@@ -409,13 +409,15 @@ flowchart TD
   NOTE["yaml note<br/>DSL source内の補足"]
   Q3["Q3. spec / internal design / YAML の<br/>対応関係・coverageか？"]
   COV["docs/coverage<br/>coverage / trace"]
-  Q4["Q4. 要求・不足・要望か？"]
+  Q4["Q4. 判断前の調査結果・根拠・<br/>影響範囲の仮説・選択肢・未確定点を<br/>保存する必要があるか？"]
+  INV["docs/investigations<br/>investigation"]
+  Q5["Q5. 要求・不足・要望か？"]
   REQ["docs/requirements<br/>requirements"]
-  Q5["Q5. 横断進捗・影響範囲か？<br/>複数artifactの更新状態を追うものか？"]
+  Q6["Q6. 横断進捗・影響範囲か？<br/>複数artifactの更新状態を追うものか？"]
   WORK["docs/work-items<br/>work item"]
-  Q6["Q6. 具体的な作業手順か？<br/>編集順序・コマンド・checklistか？"]
+  Q7["Q7. 具体的な作業手順か？<br/>編集順序・コマンド・checklistか？"]
   TASK["docs/tasks<br/>concrete checklist"]
-  Q7["Q7. 外部仕様ではないが、<br/>複数componentにまたがって長期的に守る<br/>内部構造・責務境界・index/cache/phase分担か？"]
+  Q8["Q8. 外部仕様ではないが、<br/>複数componentにまたがって長期的に守る<br/>内部構造・責務境界・index/cache/phase分担か？"]
   INTERNAL["docs/internal-design<br/>internal design"]
   IMPL["docs/impl または code comment<br/>実装メモ・局所補足"]
 
@@ -426,14 +428,16 @@ flowchart TD
   Q2 -->|no| Q3
   Q3 -->|yes| COV
   Q3 -->|no| Q4
-  Q4 -->|yes| REQ
+  Q4 -->|yes| INV
   Q4 -->|no| Q5
-  Q5 -->|yes| WORK
+  Q5 -->|yes| REQ
   Q5 -->|no| Q6
-  Q6 -->|yes| TASK
+  Q6 -->|yes| WORK
   Q6 -->|no| Q7
-  Q7 -->|yes| INTERNAL
-  Q7 -->|no| IMPL
+  Q7 -->|yes| TASK
+  Q7 -->|no| Q8
+  Q8 -->|yes| INTERNAL
+  Q8 -->|no| IMPL
 ```
 
 判定基準は以下とする。
@@ -441,11 +445,12 @@ flowchart TD
 1. 現行仕様として confirmed な外部contract は `docs/spec/` が所有する。YAML schema、YAML semantics、render output、diagnostic code / condition、public MCP / API contract は spec に置く。未採用の要求・不足・要望は、外から観測できる期待であっても spec ではなく requirements に置く。
 2. YAML内の設計意図や補足は YAML の `note` に置く。
 3. spec / internal design / YAML の対応関係、どの YAML がどの仕様を cover するかは `docs/coverage/` に置く。
-4. 要求・不足・要望は `docs/requirements/` に置く。
-5. 複数 artifact にまたがる横断進捗・影響範囲は `docs/work-items/` に置く。
-6. 具体的な作業手順、編集順序、コマンド、チェックリストは `docs/tasks/` に置く。
-7. 外部仕様ではないが、複数 implementation component にまたがって長期的に維持すべき内部構造・責務境界・index/cache所有・phase分担は `docs/internal-design/` に置く。公開挙動として観測される limitation、diagnostic behavior、response field、tool guarantee は spec に残す。component ownership、internal phase ordering、cache / index ownership、raw decode structs、resolver implementation order は internal design に置く。
-8. 上記に該当しない局所的な実装メモは `docs/impl/` または code comment に置く。`docs/impl/` は handoff / review / migration memo の置き場であり、長期的な design authority ではない。
+4. 判断前の調査結果、根拠、影響範囲の仮説、未確定点、選択肢、後続 artifact 候補を保存する必要がある場合は `docs/investigations/` に置く。investigation は必須 gate ではなく、決定、現行仕様、要求そのもの、横断進捗、完了状態、具体作業手順を所有しない。
+5. 要求・不足・要望は `docs/requirements/` に置く。
+6. 複数 artifact にまたがる横断進捗・影響範囲は `docs/work-items/` に置く。
+7. 具体的な作業手順、編集順序、コマンド、チェックリストは `docs/tasks/` に置く。
+8. 外部仕様ではないが、複数 implementation component にまたがって長期的に維持すべき内部構造・責務境界・index/cache所有・phase分担は `docs/internal-design/` に置く。公開挙動として観測される limitation、diagnostic behavior、response field、tool guarantee は spec に残す。component ownership、internal phase ordering、cache / index ownership、raw decode structs、resolver implementation order は internal design に置く。
+9. 上記に該当しない局所的な実装メモは `docs/impl/` または code comment に置く。`docs/impl/` は handoff / review / migration memo の置き場であり、長期的な design authority ではない。
 
 internal design は、外部仕様ではないが task や code comment に置くには長期性・横断性が高い内部設計判断がある場合にのみ使う。
 以下は internal design の対象ではない。
@@ -456,6 +461,9 @@ internal design は、外部仕様ではないが task や code comment に置�
 - spec / YAML / internal design coverage
 - YAML note
 - task checklist
+- investigation が所有する調査結果・根拠・影響範囲の仮説・選択肢・未確定点
+
+> ADR-085 / ADR-086 により `docs/investigations/` が導入されたため、本 rule は investigation layer を含む形に更新された。
 
 ### 12. ADR-081 / ADR-082 は本ADRを踏まえて再レビューする
 
