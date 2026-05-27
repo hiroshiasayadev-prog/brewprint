@@ -206,6 +206,15 @@ M17 is done when:
 
 ---
 
+## Close note
+
+- stdio MCP smoke passed.
+- `validate_records` against current repo docs currently returns `ok:false` with 16 existing docs metadata diagnostics.
+- These diagnostics are existing docs metadata issues, not M17 stdio transport blockers.
+- Cleanup should be handled as follow-up.
+
+---
+
 ## Follow-up candidates
 
 - HTTP transport
@@ -214,3 +223,5 @@ M17 is done when:
 - project isolation
 - integration with existing brewprint MCP launcher
 - `cmd/brewprint` subcommand integration
+- cleanup existing ADR metadata diagnostics reported by `validate_records`
+- section filter for `get_record` (e.g. `section: "決定"`) to reduce context cost when reading dependency ADRs for LLM review sessions
