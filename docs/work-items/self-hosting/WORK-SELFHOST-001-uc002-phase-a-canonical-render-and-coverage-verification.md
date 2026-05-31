@@ -1,7 +1,7 @@
 # WORK-SELFHOST-001: Verify UC-002 Phase A canonical render and coverage
 
 - **id**: WORK-SELFHOST-001
-- **status**: fixture_pending
+- **status**: done
 - **date**: 2026-05-31
 - **source_requirement**: REQ-SELFHOST-001
 - **impact_refs**:
@@ -12,6 +12,8 @@
   - WORK-RESOLVE-001
 - **tasks**:
   - TASK-SELFHOST-001-01
+  - TASK-SELFHOST-001-02
+  - TASK-SELFHOST-001-03
 
 ## Goal
 
@@ -47,8 +49,8 @@ Establish UC-002 Phase A as a verified current baseline by validating and render
 | prerequisite data work | `WORK-DATA-001` done | Treat M15 F1 boundary as closed baseline |
 | prerequisite resolver work | `WORK-RESOLVE-001` done | Treat duplicate task QID / unresolved flow issue as resolved |
 | UC-002 YAML | Phase A files are placed | Validate and render current YAML |
-| UC-002 renders | Canonical render artifacts are not yet generated/reviewed | Generate and review |
-| UC-002 coverage | Coverage says render/test are unconfirmed | Synchronize after verification |
+| UC-002 renders | Canonical render artifacts are generated/reviewed | Accepted as the Phase A canonical fixture baseline |
+| UC-002 coverage | Coverage and gap log are synchronized | Completed by `TASK-SELFHOST-001-03` |
 
 ## Task flow
 
@@ -66,8 +68,19 @@ flowchart TD
 - `TASK-SELFHOST-001-02`: Generated render review and canonical fixture update.
 - `TASK-SELFHOST-001-03`: Coverage / TASKS-UC-002 synchronization and close evidence.
 
-Task artifacts are intentionally not created in this migration step. Therefore these candidate IDs are shown only in the body and are not listed in the metadata `tasks` field.
+All three task artifacts have been created and completed. `fixture_pending` was the pre-close stage while canonical render review and coverage synchronization were still pending; the final work item status is `done`.
 
 ## Completion Condition
 
 This work item can be marked `done` when UC-002 Phase A validate / render evidence is recorded, canonical renders are reviewed, coverage and gap logs reflect the current baseline, and no M14a or M15 closed scope has been reopened.
+
+## Close outcome
+
+`WORK-SELFHOST-001` is done.
+
+- `TASK-SELFHOST-001-01` is done: `go test ./...` passed, UC-002 Phase A validate returned `ok`, and canonical render generation completed with `rendered 11 file(s)`.
+- `TASK-SELFHOST-001-02` is done: generated renders were reviewed, canonical and temp render outputs matched byte-for-byte, and the 11 files were accepted as the Phase A canonical fixture baseline.
+- `TASK-SELFHOST-001-03` is done: `coverage.md` and `TASKS-UC-002.md` now reflect the completed Phase A validate / render / review evidence.
+- Phase A render coverage now records project index, MCP group index, 8 MCP tool DAG renders, and the expected empty ER render as generated and reviewed.
+- No new UC-002 YAML, renderer implementation, or render artifact change was required by the close pass.
+- Scope exclusions were preserved: M14 self-hosting remains paused, M14a and M15 remain closed, and legacy M14 / M14a / M15 records were not edited.

@@ -13,7 +13,7 @@
 
 ## 1. 現時点の結論
 
-Phase AのMCP公開contract blueprintは、YAML配置としては一通り揃っている。
+Phase AのMCP公開contract blueprintは、YAML配置・validate・render・generated render review まで完了している。
 
 - actor定義は配置済み
 - 共通modelは配置済み
@@ -21,12 +21,10 @@ Phase AのMCP公開contract blueprintは、YAML配置としては一通り揃っ
 - 8 MCP toolすべての request / response model は配置済み
 - 8 MCP toolすべての task / flow は配置済み
 - Phase A ER view YAML は配置済み
-
-未確認:
-
-- `brewprint render` の実行結果
-- `go test ./...` の実行結果
-- `renders/` の生成物レビュー
+- `go test ./...` は `TASK-SELFHOST-001-01` で pass 済み
+- UC-002 Phase A validate は `TASK-SELFHOST-001-01` で ok 済み
+- canonical renders は11 files生成済み
+- generated render review は `TASK-SELFHOST-001-02` で完了し、canonical fixture として採用可能と判定済み
 
 ---
 
@@ -96,10 +94,10 @@ Phase AのMCP公開contract blueprintは、YAML配置としては一通り揃っ
 
 | render | 対象ファイル | status | notes |
 |---|---|---|---|
-| Project index | `renders/index.md` | 未生成 / 未確認 | `brewprint render` 実行後に確認する。 |
-| MCP group index | `renders/mcp/index.md` | 未生成 / 未確認 | `render_index.yaml` で `mcp` groupを定義済み。 |
-| DAG render | `renders/mcp/dag-*.md` | 未生成 / 未確認 | 8 MCP tool taskが対象になる想定。 |
-| ER render | `renders/_cross/er.md` | 未生成 / 未確認 | `yaml/views/er.yaml` は配置済み。ただしPhase AはDB storeを持たないため、ER図のentityは出ない想定。 |
+| Project index | `renders/index.md` | 生成・review済み | 11 file canonical render set のproject indexとして生成済み。 |
+| MCP group index | `renders/mcp/index.md` | 生成・review済み | `render_index.yaml` の `mcp` groupに対応し、8 DAG renders を列挙する。 |
+| DAG render | `renders/mcp/dag-*.md` | 生成・review済み | 8 MCP tool taskのDAGが生成済み。各DAGは `request -> validate_request -> query_service -> build_response -> response` のPhase A flowを保持する。 |
+| ER render | `renders/_cross/er.md` | 生成・review済み | 空の `erDiagram` として生成済み。Phase AはDB storeを持たないため、現行仕様どおりの非issueとして扱う。 |
 | API Table render | `renders/_cross/api.md` | 対象外 | MCP toolはHTTP endpointではないため、tool taskに `endpoint: true` は付けない。 |
 | State / Sequence / Wireframe | `renders/mcp/state-*.md`, `renders/mcp/seq-*.md`, `renders/mcp/wireframe-*.html` | 対象外 | Phase Aは公開I/O contract中心。FSM / scenario / wireframeは未使用。 |
 
@@ -144,30 +142,45 @@ MCP request / response / common schema modelもDB entityではなくcontract sch
 
 ## 8. render実行チェック
 
-実行予定コマンド:
+実行済みコマンド:
 
 ```powershell
-brewprint render --yaml-root docs/uc/002-brewprint-self-hosting/yaml --out docs/uc/002-brewprint-self-hosting/renders --clean
 go test ./...
+go run ./cmd/brewprint validate --yaml-root docs\uc\002-brewprint-self-hosting\yaml
+go run ./cmd/brewprint render --yaml-root docs\uc\002-brewprint-self-hosting\yaml --out docs\uc\002-brewprint-self-hosting\renders --clean
+go run ./cmd/brewprint render --yaml-root docs\uc\002-brewprint-self-hosting\yaml --out $env:TEMP\brewprint-uc002-render-review --clean
 ```
 
 実行結果:
 
-- `brewprint render`: 未実行
-- `go test ./...`: 未実行
+- `go test ./...`: pass (`TASK-SELFHOST-001-01`)
+- UC-002 Phase A validate: `ok` (`TASK-SELFHOST-001-01`)
+- canonical render generation: `rendered 11 file(s)` (`TASK-SELFHOST-001-01`)
+- generated render review: blockingなし、canonical fixture として採用可能 (`TASK-SELFHOST-001-02`)
+- temp render comparison: canonical と file list / byte-level content が一致 (`TASK-SELFHOST-001-02`)
 
-理由:
+生成済みrender files:
 
-- この作業ではファイル統合確認までを行い、ローカルコマンド実行環境でのrender/test確認は未実施。
+- `renders/index.md`
+- `renders/mcp/index.md`
+- `renders/mcp/dag-analyze_impact.md`
+- `renders/mcp/dag-get_reference_tree.md`
+- `renders/mcp/dag-get_references.md`
+- `renders/mcp/dag-get_signature.md`
+- `renders/mcp/dag-get_source.md`
+- `renders/mcp/dag-inspect.md`
+- `renders/mcp/dag-list_endpoints.md`
+- `renders/mcp/dag-list_objects.md`
+- `renders/_cross/er.md`
 
 ---
 
 ## 9. 次の確認ポイント
 
-ローカルで以下を確認する。
+Phase A validate / render / review に残作業はない。
 
-- `brewprint render` が通る
-- `go test ./...` が通る
-- `renders/` のDAG / ER / index出力が期待どおりである
-- `renders/mcp/dag-*.md` に8 MCP tool taskのDAGが生成される
-- ER図が空または限定的になる場合、coverage.mdの説明どおり現行仕様上の挙動として受け入れられるか確認する
+次の未完項目は、`WORK-SELFHOST-001` の範囲外として扱う。
+
+- M14 Phase B internal layer blueprinting は未着手のまま。
+- v1表現力gapは既存ログどおり v2向け構造変更候補として残る。
+- MCP coverage実用検証レポートと editor / viewer notes のspec昇格判断は、UC-002全体作業で扱う。

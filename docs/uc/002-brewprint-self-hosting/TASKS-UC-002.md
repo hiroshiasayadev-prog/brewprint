@@ -56,10 +56,13 @@ M14の方針に従い、UC-002は v1.0.0-spec を基準に self-hosting を進�
   - 各tool taskは `validate_request -> query_service -> build_response` のflowを持つ
   - 各 `query_service` sub taskは `resolved_project_store` を `reads` する
   - MCP toolはHTTP endpointではないため `endpoint: true` は付けていない
-- [ ] Phase A範囲のrenderを生成・確認する
+- [x] Phase A範囲のrenderを生成・確認する
   - `yaml/views/er.yaml` と `docs/coverage.md` は起票済み
   - Phase A YAMLは配置済み
-  - `brewprint render` / `go test ./...` は未実行
+  - `go test ./...` は `TASK-SELFHOST-001-01` で pass 済み
+  - Phase A validate は `TASK-SELFHOST-001-01` で ok 済み
+  - canonical renders は11 files生成済み
+  - generated render review は `TASK-SELFHOST-001-02` で完了し、blockingなし
 
 ---
 
