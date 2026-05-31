@@ -13,6 +13,7 @@
 - **tasks**:
   - TASK-DATA-003-01
   - TASK-DATA-003-02
+  - TASK-DATA-003-03
 
 ## Goal
 
@@ -73,7 +74,7 @@ flowchart TD
 - `TASK-DATA-003-03`: Model-file render implementation and verification.
 - `TASK-DATA-003-04`: UC-002 model response helper migration.
 
-`TASK-DATA-003-01` and `TASK-DATA-003-02` are created task artifacts and are listed in metadata `tasks`. `TASK-DATA-003-03` and `TASK-DATA-003-04` remain body-only candidates until their task artifacts are created.
+`TASK-DATA-003-01`, `TASK-DATA-003-02`, and `TASK-DATA-003-03` are created task artifacts and are listed in metadata `tasks`. `TASK-DATA-003-04` remains a body-only candidate until its task artifact is created.
 
 ## Completion Condition
 
