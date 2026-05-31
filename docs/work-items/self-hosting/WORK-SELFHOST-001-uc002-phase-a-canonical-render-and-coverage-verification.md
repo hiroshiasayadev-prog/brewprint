@@ -1,7 +1,7 @@
 # WORK-SELFHOST-001: Verify UC-002 Phase A canonical render and coverage
 
 - **id**: WORK-SELFHOST-001
-- **status**: not_started
+- **status**: fixture_pending
 - **date**: 2026-05-31
 - **source_requirement**: REQ-SELFHOST-001
 - **impact_refs**:
@@ -11,6 +11,7 @@
   - REQ-RESOLVE-001
   - WORK-RESOLVE-001
 - **tasks**:
+  - TASK-SELFHOST-001-01
 
 ## Goal
 
@@ -70,4 +71,3 @@ Task artifacts are intentionally not created in this migration step. Therefore t
 ## Completion Condition
 
 This work item can be marked `done` when UC-002 Phase A validate / render evidence is recorded, canonical renders are reviewed, coverage and gap logs reflect the current baseline, and no M14a or M15 closed scope has been reopened.
-
