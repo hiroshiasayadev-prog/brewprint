@@ -4,6 +4,7 @@
 nodes:
   - id: item
     type: model
+    main: true
     kind: struct
     fields:
       - name: id

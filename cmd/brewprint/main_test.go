@@ -65,7 +65,7 @@ func TestRunRender(t *testing.T) {
 	if err := run([]string{"render", "--yaml-root", yamlRoot, "--out", outRoot}, strings.NewReader(""), &stdout, &stderr); err != nil {
 		t.Fatalf("run render: %v\nstderr=%s", err, stderr.String())
 	}
-	if got := strings.TrimSpace(stdout.String()); got != "rendered 23 file(s)" {
+	if got := strings.TrimSpace(stdout.String()); got != "rendered 37 file(s)" {
 		t.Fatalf("render stdout = %q", got)
 	}
 	if got := strings.TrimSpace(stderr.String()); got != "" {
@@ -77,6 +77,8 @@ func TestRunRender(t *testing.T) {
 		"auth/index.md",
 		"commerce/index.md",
 		"catalog/index.md",
+		"auth/model-login_form.md",
+		"commerce/model-cart_item_list.md",
 		"commerce/dag-add_to_cart.md",
 		"catalog/dag-get_items.md",
 		"auth/dag-login.md",
@@ -104,7 +106,7 @@ func TestRunRenderCleanRemovesStaleFiles(t *testing.T) {
 	if err := run([]string{"render", "--yaml-root", yamlRoot, "--out", outRoot, "--clean"}, strings.NewReader(""), &stdout, &stderr); err != nil {
 		t.Fatalf("run render clean: %v\nstderr=%s", err, stderr.String())
 	}
-	if got := strings.TrimSpace(stdout.String()); got != "rendered 23 file(s)" {
+	if got := strings.TrimSpace(stdout.String()); got != "rendered 37 file(s)" {
 		t.Fatalf("render clean stdout = %q", got)
 	}
 	if _, err := os.Stat(stalePath); !os.IsNotExist(err) {

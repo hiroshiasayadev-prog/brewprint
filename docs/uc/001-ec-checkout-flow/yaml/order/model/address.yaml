@@ -6,6 +6,7 @@
 nodes:
   - id: address
     type: model
+    main: true
     kind: struct
     fields:
       - name: zip_code

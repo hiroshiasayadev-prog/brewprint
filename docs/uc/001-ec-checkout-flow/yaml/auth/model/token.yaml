@@ -5,6 +5,7 @@
 nodes:
   - id: token
     type: model
+    main: true
     kind: struct
     fields:
       - name: access_token

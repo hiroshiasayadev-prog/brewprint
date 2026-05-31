@@ -4,6 +4,7 @@
 nodes:
   - id: login_form
     type: model
+    main: true
     kind: struct
     fields:
       - name: username
@@ -12,3 +13,45 @@ nodes:
       - name: password
         type: str
         note: "フォーム入力されたパスワード"
+      - name: factors
+        type: login_factor_list
+        note: "ログイン時に提示された追加認証要素"
+      - name: status
+        type: login_form_status
+        note: "フォーム入力の検証状態"
+      - name: metadata
+        type: login_metadata
+        note: "フォーム送信時の補助メタデータ"
+
+  - id: login_factor
+    type: model
+    kind: struct
+    fields:
+      - name: kind
+        type: str
+        note: "認証要素の種別"
+      - name: value
+        type: str
+        note: "認証要素の値"
+    note: "login_form 内だけで使う追加認証要素。"
+
+  - id: login_form_status
+    type: model
+    kind: enum
+    values:
+      - draft
+      - submitted
+      - rejected
+    note: "login_form 内だけで使う入力状態。"
+
+  - id: login_factor_list
+    type: model
+    kind: list
+    element: login_factor
+    note: "login_form 内だけで使う追加認証要素リスト。"
+
+  - id: login_metadata
+    type: model
+    kind: dict
+    value: str
+    note: "login_form 内だけで使う送信メタデータ。"

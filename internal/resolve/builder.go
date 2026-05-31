@@ -34,9 +34,10 @@ func Build(raw *rawyaml.Project) (*semantic.Project, []semantic.Diagnostic) {
 		}
 		fileID := semantic.FileID(file.ID)
 		module := moduleForFileID(fileID)
+		modelFileHasMain := isModelFileID(fileID) && nodeFileHasMainModel(file.NodeFile)
 
 		for _, model := range file.NodeFile.Models {
-			symbols.addNode(buildModel(fileID, module, model, isTaskFileID(fileID) && !model.Main))
+			symbols.addNode(buildModel(fileID, module, model, isPrivateModel(fileID, model, modelFileHasMain)))
 		}
 		for _, store := range file.NodeFile.Stores {
 			symbols.addNode(buildStore(fileID, module, store))
@@ -75,6 +76,28 @@ func Build(raw *rawyaml.Project) (*semantic.Project, []semantic.Diagnostic) {
 	validateProject(project, symbols)
 	buildReferences(project)
 	return project, sortedDiagnostics(symbols.diags)
+}
+
+func nodeFileHasMainModel(file *rawyaml.NodeFile) bool {
+	if file == nil {
+		return false
+	}
+	for _, model := range file.Models {
+		if model.Main {
+			return true
+		}
+	}
+	return false
+}
+
+func isPrivateModel(fileID semantic.FileID, model rawyaml.Model, modelFileHasMain bool) bool {
+	if model.Main {
+		return false
+	}
+	if isTaskFileID(fileID) {
+		return true
+	}
+	return isModelFileID(fileID) && modelFileHasMain
 }
 
 func buildTask(fileID semantic.FileID, module string, raw rawyaml.Task) *semantic.Task {

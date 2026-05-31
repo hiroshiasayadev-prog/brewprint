@@ -131,6 +131,50 @@ func TestPublicModelFileMainModelRemainsValid(t *testing.T) {
 	}
 }
 
+func TestModelFileHelperModelsResolveSameFileTypeRefs(t *testing.T) {
+	project, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{{
+		ID:   "auth/model/login_form.yaml",
+		Kind: rawyaml.FileKindNode,
+		NodeFile: &rawyaml.NodeFile{Models: []rawyaml.Model{
+			{
+				ID:   "login_form",
+				Main: true,
+				Kind: "struct",
+				Fields: []rawyaml.ModelField{
+					{Name: "factors", Type: "login_factor_list"},
+					{Name: "status", Type: "login_form_status"},
+					{Name: "metadata", Type: "login_metadata"},
+				},
+			},
+			{ID: "login_factor", Kind: "struct", Fields: []rawyaml.ModelField{{Name: "kind", Type: "str"}}},
+			{ID: "login_form_status", Kind: "enum", Values: []string{"draft", "submitted"}},
+			{ID: "login_factor_list", Kind: "list", Element: "login_factor"},
+			{ID: "login_metadata", Kind: "dict", Value: "str"},
+		}},
+	}}})
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v, want none", diagnostics)
+	}
+
+	main := project.ModelsByQID["auth.model.login_form"]
+	if main == nil {
+		t.Fatalf("public main model not found")
+	}
+	if project.ModelsByQID["auth.model.login_factor"] != nil {
+		t.Fatalf("model-file helper leaked as public model")
+	}
+	helper := project.PrivateModelsByFile["auth/model/login_form.yaml"]["login_factor_list"]
+	if helper == nil {
+		t.Fatalf("login_factor_list helper not found")
+	}
+	if got, want := helper.ElementRef.Model, semantic.QualifiedID("auth/model/login_form.yaml#login_factor"); got != want {
+		t.Fatalf("helper element TypeRef model = %s, want %s", got, want)
+	}
+	if got, want := main.Fields[0].TypeRef.Model, semantic.QualifiedID("auth/model/login_form.yaml#login_factor_list"); got != want {
+		t.Fatalf("main field TypeRef model = %s, want %s", got, want)
+	}
+}
+
 func TestTaskFileHelperModelSameLocalIDAcrossFilesIsAllowed(t *testing.T) {
 	project, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{
 		taskFileWithHelpers("auth/task/login.yaml", "login", "request", "response"),

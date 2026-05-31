@@ -4,6 +4,7 @@
 nodes:
   - id: order_item
     type: model
+    main: true
     kind: struct
     fields:
       - name: id

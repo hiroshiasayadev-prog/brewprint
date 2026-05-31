@@ -7,5 +7,6 @@
 nodes:
   - id: cart_item_list
     type: model
+    main: true
     kind: list
     element: cart_item

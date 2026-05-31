@@ -5,6 +5,7 @@
 nodes:
   - id: cart
     type: model
+    main: true
     kind: struct
     fields:
       - name: id

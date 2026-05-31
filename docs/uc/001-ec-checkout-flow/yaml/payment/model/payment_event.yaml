@@ -5,6 +5,7 @@
 nodes:
   - id: payment_event
     type: model
+    main: true
     kind: struct
     fields:
       - name: event_id

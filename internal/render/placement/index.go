@@ -14,6 +14,42 @@ type DAGEntry struct {
 	Path    string
 }
 
+type ModelEntry struct {
+	GroupID string
+	ModelID string
+	Title   string
+	Path    string
+}
+
+func (r *Resolver) ModelEntries(project *semantic.Project) []ModelEntry {
+	if r == nil || project == nil {
+		return nil
+	}
+	entries := []ModelEntry{}
+	for _, model := range project.ModelsByQID {
+		if model.FilePrivate || !isModelFileID(model.FileID) {
+			continue
+		}
+		groupID, ok := r.GroupForFile(model.FileID)
+		if !ok || groupID == "" {
+			continue
+		}
+		entries = append(entries, ModelEntry{
+			GroupID: groupID,
+			ModelID: model.ID,
+			Title:   model.ID,
+			Path:    groupID + "/model-" + model.ID + ".md",
+		})
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].GroupID != entries[j].GroupID {
+			return entries[i].GroupID < entries[j].GroupID
+		}
+		return entries[i].ModelID < entries[j].ModelID
+	})
+	return entries
+}
+
 func (r *Resolver) DAGEntries(project *semantic.Project) []DAGEntry {
 	if r == nil || project == nil {
 		return nil
@@ -43,28 +79,36 @@ func (r *Resolver) MasterIndexMarkdown(projectName string, project *semantic.Pro
 	if projectName == "" {
 		projectName = "brewprint"
 	}
-	counts := map[string]int{}
+	modelCounts := map[string]int{}
+	for _, entry := range r.ModelEntries(project) {
+		modelCounts[entry.GroupID]++
+	}
+	dagCounts := map[string]int{}
 	for _, entry := range r.DAGEntries(project) {
-		counts[entry.GroupID]++
+		dagCounts[entry.GroupID]++
 	}
 
 	var b strings.Builder
 	b.WriteString("# " + projectName + " render index\n\n")
-	b.WriteString("| group | DAG | State | Sequence | Wireframe | ER | API |\n")
-	b.WriteString("|---|---:|---:|---:|---:|---|---|\n")
+	b.WriteString("| group | Model | DAG | State | Sequence | Wireframe | ER | API |\n")
+	b.WriteString("|---|---:|---:|---:|---:|---:|---|---|\n")
 	for _, group := range r.Groups {
 		label := group.Label
 		if label == "" {
 			label = group.ID
 		}
-		dagCount := "-"
-		if counts[group.ID] > 0 {
-			dagCount = intString(counts[group.ID])
+		modelCount := "-"
+		if modelCounts[group.ID] > 0 {
+			modelCount = intString(modelCounts[group.ID])
 		}
-		b.WriteString("| [" + label + "](" + group.ID + "/index.md) | " + dagCount + " | - | - | - | - | - |\n")
+		dagCount := "-"
+		if dagCounts[group.ID] > 0 {
+			dagCount = intString(dagCounts[group.ID])
+		}
+		b.WriteString("| [" + label + "](" + group.ID + "/index.md) | " + modelCount + " | " + dagCount + " | - | - | - | - | - |\n")
 	}
-	b.WriteString("| *(cross)* | - | - | - | - | [er](_cross/er.md) | [api](_cross/api.md) |\n")
-	b.WriteString("| *(preview)* | - | - | - | [wireframe preview](_preview/wireframe.html) | - | - |\n")
+	b.WriteString("| *(cross)* | - | - | - | - | - | [er](_cross/er.md) | [api](_cross/api.md) |\n")
+	b.WriteString("| *(preview)* | - | - | - | - | [wireframe preview](_preview/wireframe.html) | - | - |\n")
 	return b.String()
 }
 
@@ -73,6 +117,13 @@ func (r *Resolver) GroupIndexMarkdown(groupID string, project *semantic.Project)
 	b.WriteString("# " + groupID + " render index\n\n")
 	b.WriteString("| kind | title | path |\n")
 	b.WriteString("|---|---|---|\n")
+	for _, entry := range r.ModelEntries(project) {
+		if entry.GroupID != groupID {
+			continue
+		}
+		fileName := strings.TrimPrefix(entry.Path, groupID+"/")
+		b.WriteString("| Model | " + entry.Title + " | [" + fileName + "](" + fileName + ") |\n")
+	}
 	for _, entry := range r.DAGEntries(project) {
 		if entry.GroupID != groupID {
 			continue
@@ -93,4 +144,13 @@ func intString(n int) string {
 		n /= 10
 	}
 	return string(digits)
+}
+
+func isModelFileID(fileID semantic.FileID) bool {
+	for _, part := range strings.Split(fileID.String(), "/") {
+		if part == "model" {
+			return true
+		}
+	}
+	return false
 }

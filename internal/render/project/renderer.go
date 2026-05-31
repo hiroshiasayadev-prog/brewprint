@@ -11,6 +11,7 @@ import (
 	apirender "github.com/hiroshiasayadev-prog/brewprint/internal/render/api"
 	dagrender "github.com/hiroshiasayadev-prog/brewprint/internal/render/dag"
 	errender "github.com/hiroshiasayadev-prog/brewprint/internal/render/er"
+	modelrender "github.com/hiroshiasayadev-prog/brewprint/internal/render/model"
 	"github.com/hiroshiasayadev-prog/brewprint/internal/render/placement"
 	sequencerender "github.com/hiroshiasayadev-prog/brewprint/internal/render/sequence"
 	staterender "github.com/hiroshiasayadev-prog/brewprint/internal/render/state"
@@ -102,6 +103,18 @@ func unsafeCleanOutRoot(path string) bool {
 
 func renderFiles(raw *rawyaml.Project, semanticProject *semantic.Project, resolver *placement.Resolver) ([]File, error) {
 	var files []File
+	for _, model := range sortedRenderableModels(semanticProject) {
+		groupID, ok := resolver.GroupForFile(model.FileID)
+		if !ok || groupID == "" {
+			return nil, fmt.Errorf("no render group for model %s", model.QID)
+		}
+		content, err := modelrender.RenderModel(semanticProject, model)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, File{Path: groupID + "/model-" + model.ID + ".md", Content: content, Source: "model " + model.QID.String() + " (" + model.FileID.String() + ")"})
+	}
+
 	for _, task := range sortedMainTasks(semanticProject) {
 		path, err := resolver.DAGPath(task)
 		if err != nil {
@@ -191,21 +204,21 @@ func masterIndexMarkdown(name string, resolver *placement.Resolver, files []File
 	counts := countByGroupKind(files)
 	var b strings.Builder
 	b.WriteString("# " + name + " render index\n\n")
-	b.WriteString("| group | DAG | State | Sequence | Wireframe | ER | API |\n")
-	b.WriteString("|---|---:|---:|---:|---:|---|---|\n")
+	b.WriteString("| group | Model | DAG | State | Sequence | Wireframe | ER | API |\n")
+	b.WriteString("|---|---:|---:|---:|---:|---:|---|---|\n")
 	for _, group := range resolver.Groups {
 		label := group.Label
 		if label == "" {
 			label = group.ID
 		}
 		groupCounts := counts[group.ID]
-		b.WriteString("| [" + label + "](" + group.ID + "/index.md) | " + countText(groupCounts["DAG"]) + " | " + countText(groupCounts["State"]) + " | " + countText(groupCounts["Sequence"]) + " | " + countText(groupCounts["Wireframe"]) + " | - | - |\n")
+		b.WriteString("| [" + label + "](" + group.ID + "/index.md) | " + countText(groupCounts["Model"]) + " | " + countText(groupCounts["DAG"]) + " | " + countText(groupCounts["State"]) + " | " + countText(groupCounts["Sequence"]) + " | " + countText(groupCounts["Wireframe"]) + " | - | - |\n")
 	}
 	if hasPath(files, "_cross/er.md") || hasPath(files, "_cross/api.md") {
-		b.WriteString("| *(cross)* | - | - | - | - | " + linkOrDash(files, "_cross/er.md", "er") + " | " + linkOrDash(files, "_cross/api.md", "api") + " |\n")
+		b.WriteString("| *(cross)* | - | - | - | - | - | " + linkOrDash(files, "_cross/er.md", "er") + " | " + linkOrDash(files, "_cross/api.md", "api") + " |\n")
 	}
 	if hasPath(files, "_preview/wireframe.html") {
-		b.WriteString("| *(preview)* | - | - | - | [wireframe preview](_preview/wireframe.html) | - | - |\n")
+		b.WriteString("| *(preview)* | - | - | - | - | [wireframe preview](_preview/wireframe.html) | - | - |\n")
 	}
 	return b.String()
 }
@@ -229,6 +242,34 @@ func groupIndexMarkdown(group placement.Group, files []File) string {
 		b.WriteString("| " + kind + " | " + titleForFileName(fileName) + " | [" + fileName + "](" + fileName + ") |\n")
 	}
 	return b.String()
+}
+
+func sortedRenderableModels(project *semantic.Project) []*semantic.Model {
+	var models []*semantic.Model
+	if project != nil {
+		for _, model := range project.ModelsByQID {
+			if model.FilePrivate || !isModelFileID(model.FileID) {
+				continue
+			}
+			models = append(models, model)
+		}
+	}
+	sort.Slice(models, func(i, j int) bool {
+		if models[i].FileID != models[j].FileID {
+			return models[i].FileID < models[j].FileID
+		}
+		return models[i].ID < models[j].ID
+	})
+	return models
+}
+
+func isModelFileID(fileID semantic.FileID) bool {
+	for _, part := range strings.Split(fileID.String(), "/") {
+		if part == "model" {
+			return true
+		}
+	}
+	return false
 }
 
 func sortedMainTasks(project *semantic.Project) []*semantic.Task {
@@ -439,6 +480,8 @@ func filesForGroup(groupID string, files []File) []File {
 
 func kindForFileName(fileName string) string {
 	switch {
+	case strings.HasPrefix(fileName, "model-") && strings.HasSuffix(fileName, ".md"):
+		return "Model"
 	case strings.HasPrefix(fileName, "dag-") && strings.HasSuffix(fileName, ".md"):
 		return "DAG"
 	case strings.HasPrefix(fileName, "state-") && strings.HasSuffix(fileName, ".md"):
@@ -454,6 +497,8 @@ func kindForFileName(fileName string) string {
 
 func kindRank(kind string) int {
 	switch kind {
+	case "Model":
+		return 0
 	case "DAG":
 		return 1
 	case "State":
@@ -469,7 +514,7 @@ func kindRank(kind string) int {
 
 func titleForFileName(fileName string) string {
 	name := strings.TrimSuffix(strings.TrimSuffix(fileName, ".md"), ".html")
-	for _, prefix := range []string{"dag-", "state-", "seq-", "wireframe-"} {
+	for _, prefix := range []string{"model-", "dag-", "state-", "seq-", "wireframe-"} {
 		name = strings.TrimPrefix(name, prefix)
 	}
 	return name

@@ -1,7 +1,7 @@
 # TASK-DATA-003-03: Model-file render implementation and verification
 
 - **id**: TASK-DATA-003-03
-- **status**: todo
+- **status**: done
 - **date**: 2026-05-31
 - **work_item**: WORK-DATA-003
 - **source_requirement**: REQ-DATA-002
@@ -93,4 +93,63 @@ The exact command set may be adjusted by the implementation agent after locating
 
 ## Evidence
 
-Pending implementation.
+Implemented and verified on 2026-05-31.
+
+Implementation:
+
+- Added model-file Markdown rendering for public model files under `internal/render/model`.
+- Connected model renders to project render generation as `renders/{group-id}/model-{model-id}.md`.
+- Added model-file helper classification for `model/*.yaml` files that declare a `main: true` public model; same-file non-main models are file-private helpers.
+- Updated master index generation to include the `Model` column before `DAG`.
+- Updated group index ordering to `Model` -> `DAG` -> `State` -> `Sequence` -> `Wireframe`.
+- Kept tagged union rendering / validation, ADR-073 implementation, DAG TypeRef hints, MCP helper exposure, REQ-DATA-003 policy, UC-002 migration, and WORK-DATA-004 fixes out of this task.
+
+Fixture / golden:
+
+- Updated UC-001 model YAML files to declare their public model with `main: true`.
+- Added same-file private helper models to `docs/uc/001-ec-checkout-flow/yaml/auth/model/login_form.yaml` covering:
+  - `struct`
+  - `enum`
+  - `list`
+  - `dict`
+- Regenerated UC-001 render golden files with:
+
+```powershell
+go run ./cmd/brewprint render --yaml-root docs/uc/001-ec-checkout-flow/yaml --out docs/uc/001-ec-checkout-flow/renders --clean
+```
+
+Result:
+
+```text
+rendered 37 file(s)
+```
+
+Golden evidence includes:
+
+- `docs/uc/001-ec-checkout-flow/renders/auth/model-login_form.md`
+- `docs/uc/001-ec-checkout-flow/renders/auth/model-request_context.md`
+- `docs/uc/001-ec-checkout-flow/renders/commerce/model-cart_item_list.md`
+- `docs/uc/001-ec-checkout-flow/renders/index.md`
+- `docs/uc/001-ec-checkout-flow/renders/auth/index.md`
+- `docs/uc/001-ec-checkout-flow/renders/commerce/index.md`
+- `docs/uc/001-ec-checkout-flow/renders/catalog/index.md`
+
+Verification:
+
+```powershell
+go test ./internal/render/model ./internal/resolve
+go test ./internal/...
+go test ./cmd/...
+go test ./...
+git diff --check
+```
+
+Results:
+
+- `go test ./internal/render/model ./internal/resolve`: passed after golden generation.
+- `go test ./internal/...`: passed.
+- `go test ./cmd/...`: passed.
+- `go test ./...`: passed.
+- `git diff --check`: passed; output contained only existing CRLF conversion warnings from Git.
+- `validate_records(kind=task)`: passed.
+- `validate_records(kind=work_item)`: failed only on the known unrelated `WORK-DATA-004` invalid status `todo` error.

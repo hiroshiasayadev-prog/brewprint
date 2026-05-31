@@ -5,6 +5,7 @@
 nodes:
   - id: order
     type: model
+    main: true
     kind: struct
     fields:
       - name: id

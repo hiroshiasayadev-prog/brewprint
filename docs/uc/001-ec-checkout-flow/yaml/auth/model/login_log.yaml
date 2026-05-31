@@ -4,6 +4,7 @@
 nodes:
   - id: login_log
     type: model
+    main: true
     kind: struct
     fields:
       - name: id

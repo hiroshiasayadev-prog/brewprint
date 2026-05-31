@@ -2,6 +2,13 @@
 
 | kind | title | path |
 |---|---|---|
+| Model | address | [model-address.md](model-address.md) |
+| Model | cart | [model-cart.md](model-cart.md) |
+| Model | cart_item | [model-cart_item.md](model-cart_item.md) |
+| Model | cart_item_list | [model-cart_item_list.md](model-cart_item_list.md) |
+| Model | order | [model-order.md](model-order.md) |
+| Model | order_item | [model-order_item.md](model-order_item.md) |
+| Model | payment_event | [model-payment_event.md](model-payment_event.md) |
 | DAG | add_to_cart | [dag-add_to_cart.md](dag-add_to_cart.md) |
 | DAG | checkout | [dag-checkout.md](dag-checkout.md) |
 | DAG | process_order | [dag-process_order.md](dag-process_order.md) |

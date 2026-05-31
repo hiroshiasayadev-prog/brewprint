@@ -57,6 +57,16 @@ func isTaskFileID(fileID semantic.FileID) bool {
 	return false
 }
 
+func isModelFileID(fileID semantic.FileID) bool {
+	parts := strings.Split(fileID.String(), "/")
+	for _, part := range parts {
+		if part == "model" {
+			return true
+		}
+	}
+	return false
+}
+
 func actorQID(id string) semantic.QualifiedID {
 	return semantic.QualifiedID("actor." + id)
 }
