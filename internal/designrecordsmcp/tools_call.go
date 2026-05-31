@@ -80,6 +80,18 @@ func (s *Server) HandleToolsCall(params json.RawMessage) ToolsCallResult {
 			return toolBuildIndexErrorResult(buildErr)
 		}
 		return toolHandlerResult(designrecords.GetRecords(ctx, idx, req))
+	case "list_authoring_guides":
+		var req designrecords.ListAuthoringGuidesRequest
+		if err := decodeToolArguments(call.Arguments, &req); err != nil {
+			return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("invalid list_authoring_guides arguments: %v", err))
+		}
+		return toolHandlerResult(designrecords.ListAuthoringGuides(ctx, s.cfg, req))
+	case "get_authoring_guidance":
+		var req designrecords.GetAuthoringGuidanceRequest
+		if err := decodeToolArguments(call.Arguments, &req); err != nil {
+			return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("invalid get_authoring_guidance arguments: %v", err))
+		}
+		return toolHandlerResult(designrecords.GetAuthoringGuidance(ctx, s.cfg, req))
 	case "resolve_reference":
 		var req designrecords.ResolveReferenceRequest
 		if err := decodeToolArguments(call.Arguments, &req); err != nil {

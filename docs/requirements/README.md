@@ -1,5 +1,8 @@
 # Requirements
 
+> Authoring guide ID: `requirement-authoring`
+> Boundary guide ID: `artifact-boundary`
+
 `docs/requirements/` は、brewprint project で見つかった要求・不足・要望・spec gap 候補を捕捉する artifact layer である。
 
 Requirements は現行仕様、設計判断、内部設計、coverage、作業進捗、具体作業手順を所有しない。

@@ -1,5 +1,8 @@
 # Tasks
 
+> Authoring guide ID: `task-authoring`
+> Boundary guide ID: `artifact-boundary`
+
 `docs/tasks/` は、work item を前進させるための短期 concrete work、完了条件、個別 status、verification evidence を記録する artifact layer である。
 
 Task は requirement の正本、設計判断、現行仕様、work item 全体の到達点または task graph を所有しない。

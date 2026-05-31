@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -256,6 +258,62 @@ func TestToolsListWorkflowKindEnums(t *testing.T) {
 	}
 }
 
+func TestToolsListAuthoringGuidanceTools(t *testing.T) {
+	tools := Tools()
+	listTool := findToolForTest(tools, "list_authoring_guides")
+	if listTool == nil {
+		t.Fatal("missing list_authoring_guides")
+	}
+	if got := listTool.InputSchema["additionalProperties"]; got != false {
+		t.Fatalf("list_authoring_guides additionalProperties = %#v, want false", got)
+	}
+
+	getTool := findToolForTest(tools, "get_authoring_guidance")
+	if getTool == nil {
+		t.Fatal("missing get_authoring_guidance")
+	}
+	required, ok := getTool.InputSchema["required"].([]string)
+	if !ok || len(required) != 1 || required[0] != "id" {
+		t.Fatalf("get_authoring_guidance required = %#v", getTool.InputSchema["required"])
+	}
+}
+
+func TestToolsCallAuthoringGuidance(t *testing.T) {
+	root := t.TempDir()
+	writeToolsCallTestFile(t, root, "docs/guides/zeta.md", "# Zeta Guide\n\n## Abstract\n\nZeta summary.\n\n## Body\n\nZeta body.\n")
+	content := "# Alpha Guide\n\n## Abstract\n\nAlpha summary.\n\n## Body\n\nAlpha body.\n"
+	writeToolsCallTestFile(t, root, "docs/guides/alpha.md", content)
+
+	calls := 0
+	server := NewServerWithIndexBuilder(designrecords.Config{Root: root}, func(context.Context, designrecords.Config) (*designrecords.Index, error) {
+		calls++
+		return toolsCallTestIndex(), nil
+	})
+
+	list := handleLine(t, server, `{"jsonrpc":"2.0","id":501,"method":"tools/call","params":{"name":"list_authoring_guides","arguments":{}}}`)
+	listResult := assertToolCallResult(t, list, false)
+	var listResp designrecords.ListAuthoringGuidesResponse
+	unmarshalToolText(t, listResult.Content[0].Text, &listResp)
+	if len(listResp.Guides) != 2 || listResp.Guides[0].ID != "alpha" || listResp.Guides[1].ID != "zeta" {
+		t.Fatalf("list_authoring_guides response = %#v", listResp)
+	}
+	assertToolTextJSONKeys(t, listResult.Content[0].Text, []string{"guides"})
+	assertToolValueJSONKeys(t, listResp.Guides[0], []string{"abstract", "id", "title"})
+
+	get := handleLine(t, server, `{"jsonrpc":"2.0","id":502,"method":"tools/call","params":{"name":"get_authoring_guidance","arguments":{"id":"alpha"}}}`)
+	getResult := assertToolCallResult(t, get, false)
+	var getResp designrecords.GetAuthoringGuidanceResponse
+	unmarshalToolText(t, getResult.Content[0].Text, &getResp)
+	if getResp.ID != "alpha" || getResp.Title != "Alpha Guide" || getResp.Content != content {
+		t.Fatalf("get_authoring_guidance response = %#v", getResp)
+	}
+	assertToolValueJSONKeys(t, getResp, []string{"content", "id", "title"})
+
+	if calls != 2 {
+		t.Fatalf("BuildIndex calls = %d, want 2", calls)
+	}
+}
+
 func TestToolsCallToolErrors(t *testing.T) {
 	tests := []struct {
 		name string
@@ -285,6 +343,26 @@ func TestToolsCallToolErrors(t *testing.T) {
 		{
 			name: "get_records non-string id",
 			line: `{"jsonrpc":"2.0","id":213,"method":"tools/call","params":{"name":"get_records","arguments":{"ids":["ADR-001",7]}}}`,
+			code: designrecords.ErrorCodeInvalidRequest,
+		},
+		{
+			name: "get_authoring_guidance missing id",
+			line: `{"jsonrpc":"2.0","id":214,"method":"tools/call","params":{"name":"get_authoring_guidance","arguments":{}}}`,
+			code: designrecords.ErrorCodeInvalidRequest,
+		},
+		{
+			name: "get_authoring_guidance unknown id",
+			line: `{"jsonrpc":"2.0","id":215,"method":"tools/call","params":{"name":"get_authoring_guidance","arguments":{"id":"unknown-guide"}}}`,
+			code: designrecords.ErrorCodeGuideNotFound,
+		},
+		{
+			name: "get_authoring_guidance non-string id",
+			line: `{"jsonrpc":"2.0","id":216,"method":"tools/call","params":{"name":"get_authoring_guidance","arguments":{"id":7}}}`,
+			code: designrecords.ErrorCodeInvalidRequest,
+		},
+		{
+			name: "list_authoring_guides unknown argument",
+			line: `{"jsonrpc":"2.0","id":217,"method":"tools/call","params":{"name":"list_authoring_guides","arguments":{"extra":true}}}`,
 			code: designrecords.ErrorCodeInvalidRequest,
 		},
 		{
@@ -576,6 +654,49 @@ func assertListRecordsTextIDs(t *testing.T, text string, want []string) {
 	for i := range got {
 		if got[i] != want[i] {
 			t.Fatalf("record IDs = %#v, want %#v", got, want)
+		}
+	}
+}
+
+func writeToolsCallTestFile(t *testing.T, root, rel, content string) {
+	t.Helper()
+	path := filepath.Join(root, filepath.FromSlash(rel))
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+}
+
+func assertToolTextJSONKeys(t *testing.T, text string, want []string) {
+	t.Helper()
+	var got map[string]any
+	unmarshalToolText(t, text, &got)
+	assertMapKeys(t, got, want)
+}
+
+func assertToolValueJSONKeys(t *testing.T, value any, want []string) {
+	t.Helper()
+	data, err := json.Marshal(value)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(data, &got); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	assertMapKeys(t, got, want)
+}
+
+func assertMapKeys(t *testing.T, got map[string]any, want []string) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("JSON keys = %#v, want %#v", got, want)
+	}
+	for _, key := range want {
+		if _, ok := got[key]; !ok {
+			t.Fatalf("JSON missing key %q in %#v", key, got)
 		}
 	}
 }

@@ -54,6 +54,18 @@ func Tools() []Tool {
 			}, []string{"ids"}),
 		},
 		{
+			Name:        "list_authoring_guides",
+			Description: "List project authoring guides as guide ID, title, and abstract without exposing source paths.",
+			InputSchema: objectSchema(map[string]any{}, nil),
+		},
+		{
+			Name:        "get_authoring_guidance",
+			Description: "Get project authoring guidance Markdown by exact guide ID.",
+			InputSchema: objectSchema(map[string]any{
+				"id": map[string]any{"type": "string"},
+			}, []string{"id"}),
+		},
+		{
 			Name:        "resolve_reference",
 			Description: "Resolve one canonical semantic/artifact reference to a document, section, or record target.",
 			InputSchema: objectSchema(map[string]any{

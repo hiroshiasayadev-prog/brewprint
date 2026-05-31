@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/tools.md
 status: draft
-last_updated: 2026-05-27
+last_updated: 2026-05-31
 summary: >
   Design Records MCP MVP の read-only tool interface と責務境界を定義する。
 depends_on:
@@ -37,6 +37,8 @@ Design Records MCP MVP の P0 tool は以下である。
 | `get_records` | P0 | 明示された複数 record ID の detail representation をまとめて取得する |
 | `validate_records` | P0 | record metadata の基本整合性と canonical reference validation を検査する |
 | `resolve_reference` | P0 | canonical semantic/artifact reference を document / section / record へ解決する |
+| `list_authoring_guides` | P0 | project authoring guide catalog を guide ID ベースで返す |
+| `get_authoring_guidance` | P0 | guide ID から authoring guidance Markdown を取得する |
 
 P1 の任意補助 tool として以下を許容する。
 
@@ -113,6 +115,8 @@ Workflow artifact example:
 repository root は、Design Records MCP 起動時の current working directory、または起動引数で明示された root path とする。
 
 MVP では response 内で Markdown 本文を整形・要約・正規化しない。
+
+Authoring guidance tool response は design record response ではない。Guide source path は public response contract に含めず、guide ID から内部解決する。
 
 > 由来: ADR-077 §list_records の責務, ADR-077 §get_record の責務
 
@@ -418,6 +422,105 @@ Retrieval item fields:
 
 > 由来: ADR-090 §4〜§7
 
+## `list_authoring_guides`
+
+### Purpose
+
+`list_authoring_guides` は、project authoring guidance の catalog を返す read-only tool である。
+
+目的は、AI assistant が起票・更新対象に応じて必要な authoring guide を guide ID で発見できるようにすることである。
+
+この tool は Design Records record index を返さない。Guide は record kind ではなく、authoring guidance retrieval surface として扱う。
+
+### Request
+
+```json
+{}
+```
+
+request field は持たない。未知 field を許容する compatibility contract は定義しない。実装は未知 field を含む request を `invalid_request` tool error としてよい。
+
+### Response
+
+```json
+{
+  "guides": [
+    {
+      "id": "adr-authoring",
+      "title": "ADR Authoring Guide",
+      "abstract": "ADR を起票・レビュー・更新するときの実践ルールを定める。ADR は設計判断の履歴を所有し、現行仕様本文や作業 checklist を所有しない。"
+    }
+  ]
+}
+```
+
+`guides[]` fields:
+
+| field | required | meaning |
+|---|---:|---|
+| `id` | yes | guide ID。`docs/guides/<id>.md` の filename stem から導出する |
+| `title` | yes | guide file の first H1 text |
+| `abstract` | yes | guide file の `## Abstract` section content |
+
+Response MUST NOT expose guide source file path.
+
+`guides[]` の並び順は `id` の ASCII lexical order とする。
+
+## `get_authoring_guidance`
+
+### Purpose
+
+`get_authoring_guidance` は、guide ID から authoring guidance Markdown を取得する read-only tool である。
+
+この tool は Markdown guidance をそのまま返し、record metadata、record path、record headings、record lifecycle status を返さない。
+
+### Request
+
+```json
+{
+  "id": "adr-authoring"
+}
+```
+
+| field | required | type | meaning |
+|---|---:|---|---|
+| `id` | yes | string | 取得対象 guide ID |
+
+`id` は exact guide ID lookup key として扱う。前後 whitespace の trim、case normalization、physical path lookup、record ID resolution は行わない。
+
+### Response
+
+```json
+{
+  "id": "adr-authoring",
+  "title": "ADR Authoring Guide",
+  "content": "# ADR Authoring Guide\n\n## Abstract\n\n..."
+}
+```
+
+| field | required | meaning |
+|---|---:|---|
+| `id` | yes | request で指定された guide ID |
+| `title` | yes | guide file の first H1 text |
+| `content` | yes | guide file の Markdown content |
+
+`content` は元 Markdown をそのまま返す。整形・要約・正規化・truncate を行ってはならない。
+
+Response MUST NOT expose guide source file path.
+
+指定された guide ID が存在しない場合、tool は machine-readable な `guide_not_found` error を返す。
+
+例:
+
+```json
+{
+  "error": {
+    "code": "guide_not_found",
+    "message": "authoring guide unknown-guide was not found"
+  }
+}
+```
+
 ## `resolve_reference`
 
 ### Purpose
@@ -684,7 +787,8 @@ MVP tool error code は以下を最小とする。
 | code | meaning |
 |---|---|
 | `record_not_found` | `get_record` で指定された単一 record ID が存在しない。`get_records` では tool error ではなく item-level diagnostic として用いる |
-| `invalid_request` | request schema または field value が不正。例: `list_records` に未知の `kind` を指定した場合、または `get_records.ids` が欠落・空・非 array・非 string element を含む場合 |
+| `guide_not_found` | `get_authoring_guidance` で指定された guide ID が存在しない |
+| `invalid_request` | request schema または field value が不正。例: `list_records` に未知の `kind` を指定した場合、`get_records.ids` が欠落・空・非 array・非 string element を含む場合、または `get_authoring_guidance.id` が欠落・非 string の場合 |
 | `unsupported_kind` | tool が対象外の `kind` を指定された。例: `suggest_next_record` に `kind: spec` を指定した場合 |
 | `id_range_requires_decision_kind` | `id_range` が `decision` 以外の kind と併用された、または `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` range が指定された |
 

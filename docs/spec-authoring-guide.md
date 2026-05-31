@@ -1,5 +1,8 @@
 # Spec Authoring Guide
 
+> Authoring guide ID: `spec-authoring`
+> Boundary guide ID: `artifact-boundary`
+
 この文書は、brewprint の spec を作成・更新するときの実践ルールとフォーマットをまとめる。
 
 spec は現行仕様の唯一の正である。

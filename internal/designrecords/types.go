@@ -229,6 +229,7 @@ type ErrorCode string
 
 const (
 	ErrorCodeRecordNotFound              ErrorCode = "record_not_found"
+	ErrorCodeGuideNotFound               ErrorCode = "guide_not_found"
 	ErrorCodeInvalidRequest              ErrorCode = "invalid_request"
 	ErrorCodeUnsupportedKind             ErrorCode = "unsupported_kind"
 	ErrorCodeIDRangeRequiresDecisionKind ErrorCode = "id_range_requires_decision_kind"
@@ -376,4 +377,26 @@ type SuggestNextRecordResponse struct {
 	NextNumber    int        `json:"next_number"`
 	SuggestedPath string     `json:"suggested_path"`
 	ExistingMaxID string     `json:"existing_max_id,omitempty"`
+}
+
+type ListAuthoringGuidesRequest struct{}
+
+type AuthoringGuideSummary struct {
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	Abstract string `json:"abstract"`
+}
+
+type ListAuthoringGuidesResponse struct {
+	Guides []AuthoringGuideSummary `json:"guides"`
+}
+
+type GetAuthoringGuidanceRequest struct {
+	ID string `json:"id"`
+}
+
+type GetAuthoringGuidanceResponse struct {
+	ID      string `json:"id"`
+	Title   string `json:"title"`
+	Content string `json:"content"`
 }

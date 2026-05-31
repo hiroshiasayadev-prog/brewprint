@@ -81,12 +81,14 @@ func TestDiagnosticCategoryConstants(t *testing.T) {
 func TestErrorCodeConstants(t *testing.T) {
 	got := []ErrorCode{
 		ErrorCodeRecordNotFound,
+		ErrorCodeGuideNotFound,
 		ErrorCodeInvalidRequest,
 		ErrorCodeUnsupportedKind,
 		ErrorCodeIDRangeRequiresDecisionKind,
 	}
 	want := []string{
 		"record_not_found",
+		"guide_not_found",
 		"invalid_request",
 		"unsupported_kind",
 		"id_range_requires_decision_kind",
@@ -149,6 +151,7 @@ func TestToolErrorCodesAreNotDiagnosticCategories(t *testing.T) {
 	}
 	for _, code := range []ErrorCode{
 		ErrorCodeRecordNotFound,
+		ErrorCodeGuideNotFound,
 		ErrorCodeInvalidRequest,
 		ErrorCodeUnsupportedKind,
 		ErrorCodeIDRangeRequiresDecisionKind,

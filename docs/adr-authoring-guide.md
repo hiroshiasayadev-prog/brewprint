@@ -1,5 +1,8 @@
 # ADR Authoring Guide
 
+> Authoring guide ID: `adr-authoring`
+> Boundary guide ID: `artifact-boundary`
+
 この文書は、brewprint の ADR を起票・レビュー・更新するときの実践ルールとフォーマットをまとめる。
 
 ADR のフォーマット、metadata、Evidence の書き方はこの guide を正とする。

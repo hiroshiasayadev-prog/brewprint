@@ -1,10 +1,10 @@
 ---
 scope: docs/spec/design-records-mcp/schema.md
 status: draft
-last_updated: 2026-05-27
+last_updated: 2026-05-31
 summary: >
   Design Records MCP MVP が読む design record / workflow artifact metadata schema、
-  record model、H1 title 抽出、diagnostic category を定義する。
+  record model、authoring guidance source model、H1 title 抽出、diagnostic category を定義する。
 depends_on:
   - docs/adr/076-design-records-mcp.md
   - docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
@@ -47,6 +47,7 @@ MVP で読む source は以下である。
 | file path | record path / filename ID validation |
 | Markdown headings | `get_record` / `get_records` の found record response の headings |
 | Markdown body | `get_record(include_body=true)` / `get_records(include_body=true)` の found record raw body |
+| authoring guide Markdown | `docs/guides/*.md` から `list_authoring_guides` / `get_authoring_guidance` 用の guide ID / title / abstract / content を取得する |
 
 MVP では Markdown 本文の自然言語から依存関係や migration 状態を推定しない。
 
@@ -180,6 +181,38 @@ Task の認識 field:
 `source_refs` / `impact_refs` / `outputs` の workflow 外 reference rule は既存 canonical reference 方針に従い、本 schema は ADR-092 により新しい validation rule を追加しない。`work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on` は workflow relation field として下記 relation integrity validation の対象とする。
 
 > 由来: ADR-086 §4〜§7, ADR-087 §5〜§8, ADR-091 §6, ADR-092 §3〜§6
+
+## Authoring guidance source model
+
+Authoring guidance は Design Records record model とは別の read-only guidance source として扱う。
+
+Guide source directory:
+
+```text
+docs/guides/
+```
+
+Guide file discovery rule:
+
+```text
+docs/guides/*.md
+```
+
+Guide ID は filename stem とする。
+
+例:
+
+```text
+docs/guides/adr-authoring.md -> adr-authoring
+```
+
+Guide title は first H1 から抽出する。Guide abstract は `## Abstract` section の本文から抽出する。
+
+`list_authoring_guides` は `id` / `title` / `abstract` のみを返す。`get_authoring_guidance` は `id` / `title` / `content` を返す。
+
+Guide source file path は public response contract に含めない。Path は guide ID から内部解決する implementation detail である。
+
+Guide は record kind ではない。Design Records record ID、record status、record path、record headings、record diagnostics、canonical reference resolver target として扱わない。
 
 ## Field definitions
 

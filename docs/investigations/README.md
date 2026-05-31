@@ -1,5 +1,8 @@
 # Investigations
 
+> Authoring guide ID: `investigation-authoring`
+> Boundary guide ID: `artifact-boundary`
+
 `docs/investigations/` は、ADR-085 により導入された調査 artifact の置き場である。
 
 investigation は、複雑な変更における調査結果、根拠、影響範囲、未確定点、選択肢、後続 artifact 候補を保存する。

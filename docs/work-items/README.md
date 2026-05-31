@@ -1,5 +1,8 @@
 # Work items
 
+> Authoring guide ID: `work-item-authoring`
+> Boundary guide ID: `artifact-boundary`
+
 `docs/work-items/` は、accepted または追跡対象となった requirement を完了させるための到達点、作業フロー全体、横断進捗、影響範囲、task graph を記録する artifact layer である。従来 `milestone` と呼んでいた実行計画の役割は、新形式では work item が担う。
 
 Work item は、必要に応じて investigation、ADR 判断、spec 更新、internal design、YAML 更新、implementation、fixture、verification、close / evidence 同期の task を束ねる。Implementation 専用の artifact ではない。
