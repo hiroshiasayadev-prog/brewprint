@@ -15,6 +15,10 @@
 - **work_items**:
   - WORK-DATA-002
   - WORK-DATA-003
+  - WORK-DATA-005
+  - WORK-DATA-006
+  - WORK-DATA-008
+  - WORK-DATA-009
 
 ## Requirement
 
