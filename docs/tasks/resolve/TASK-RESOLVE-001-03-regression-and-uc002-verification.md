@@ -1,7 +1,7 @@
 # TASK-RESOLVE-001-03: regression tests と UC-002 validate / render verification を行う
 
 - **id**: TASK-RESOLVE-001-03
-- **status**: todo
+- **status**: done
 - **date**: 2026-05-31
 - **work_item**: WORK-RESOLVE-001
 - **source_requirement**: REQ-RESOLVE-001
@@ -46,4 +46,22 @@
 
 ## Evidence
 
-未実施。
+- Regression tests were added / updated as part of the `TASK-RESOLVE-001-02` implementation.
+- Regression coverage includes:
+  - cross-file same private sub task local ID is allowed;
+  - same-file duplicate private sub task local ID emits `duplicate_sub_node`;
+  - same-module duplicate main task emits `duplicate_node`;
+  - local flow step resolves same-file private sub task first;
+  - duplicate private sub task handling does not cascade into `unresolved_flow_task`;
+  - cross-file same private sub task local ID with same `returns.name` does not collide in asset ID / object key;
+  - public-shaped private alias is not registered in public lookup indexes;
+  - full QID transition action does not validate through a private alias;
+  - asset query paths do not first-hit the wrong file-private asset.
+- Verification reported by implementation handoff:
+  - `go test ./...` -> pass
+  - `go run ./cmd/brewprint validate --yaml-root docs\uc\002-brewprint-self-hosting\yaml` -> ok
+  - `go run ./cmd/brewprint render --yaml-root docs\uc\002-brewprint-self-hosting\yaml --out $env:TEMP\brewprint-uc002-render-review2 --clean` -> rendered 11 file(s)
+- UC-002 duplicate task QID / unresolved flow task issue is resolved.
+- UC-002 has no remaining diagnostics in the reported verification.
+- No remaining failure was reported for this requirement scope.
+- Close readiness: `WORK-RESOLVE-001` can proceed to close review after this task update, because TASK-RESOLVE-001-01 / 02 / 03 are now done.

@@ -1,7 +1,7 @@
 # REQ-RESOLVE-001: file-private sub node identity enforcement が必要
 
 - **id**: REQ-RESOLVE-001
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-05-31
 - **source_refs**:
   - ADR-058
@@ -63,3 +63,22 @@ MCP private object exposure の未反映・未確定部分は、必要に応じ�
 - 本 requirement は、具体的な task graph、実装順序、修正ファイル一覧、テストケース詳細、verification evidence を所有しない。
 - 後続 work item は、ADR-058 の spec 反映、resolver symbol table / index 修正、regression tests、UC-002 validate / render verification を分解して追跡する。
 - M14a legacy record と問題領域は重なるが、新形式 artifact として追跡する場合は本 requirement を起点にする。
+
+## Outcome
+
+`WORK-RESOLVE-001` により、本 requirement が捕捉した file-private sub node identity gap は解消された。
+
+- ADR-058 の判断は `docs/spec/nodes.md` / `docs/spec/naming.md` / `docs/spec/diagnostics.md` / `docs/spec/edges.md` に反映された。
+- main/public node の project-wide QualifiedID identity と file-private sub node の file-local identity が分離された。
+- `duplicate_node` は public node QualifiedID collision に限定され、同一 file 内 private sub node local ID duplicate は `duplicate_sub_node` として扱われる。
+- 別 file 間の同名 private sub node local ID は許容される。
+- bare node/source resolution は same-file private sub node / source first、then same-module main node fallback として整理された。
+- private sub task / join の return asset identity は internal file-local node identity を使い、cross-file asset collision を避ける。
+- private sub node の public-shaped alias は public lookup index に露出しない。
+- Regression tests and UC-002 verification were completed.
+  - `go test ./...` -> pass
+  - `go run ./cmd/brewprint validate --yaml-root docs\uc\002-brewprint-self-hosting\yaml` -> ok
+  - `go run ./cmd/brewprint render --yaml-root docs\uc\002-brewprint-self-hosting\yaml --out $env:TEMP\brewprint-uc002-render-review2 --clean` -> rendered 11 file(s)
+- UC-002 duplicate task QID / unresolved flow task issue is resolved, with no remaining diagnostics reported for UC-002.
+
+Scope exclusions were preserved: M15 / `v1.1.0-spec` was not reopened, UC-002 YAML was not renamed as a workaround, and MCP private object exposure / ObjectRef schema migration was not introduced.

@@ -1,7 +1,7 @@
 # WORK-RESOLVE-001: file-private sub node identity enforcement を実現する
 
 - **id**: WORK-RESOLVE-001
-- **status**: not_started
+- **status**: done
 - **date**: 2026-05-31
 - **source_requirement**: REQ-RESOLVE-001
 - **impact_refs**:
@@ -86,8 +86,27 @@ flowchart TD
 6. UC-002 validate / render の duplicate task QID / unresolved flow task issue が解消したことを verification evidence として記録できる。
 7. MCP private object exposure / ObjectRef schema migration が本 work item に混入していない。
 
+## Close outcome
+
+`WORK-RESOLVE-001` is done.
+
+- `TASK-RESOLVE-001-01` is done: ADR-058 file-private sub node scope was reflected into `docs/spec/nodes.md`, `docs/spec/naming.md`, `docs/spec/diagnostics.md`, and related `edges.md` cross-references.
+- `TASK-RESOLVE-001-02` is done: resolver / symbol table indexing was updated so public/main nodes use project-wide QualifiedID identity and file-private sub nodes use file-local internal identity.
+- `TASK-RESOLVE-001-03` is done: regression coverage and UC-002 validate / render verification were recorded.
+- `duplicate_node` is now scoped to public node QualifiedID collision; same-file private sub node local ID duplication uses `duplicate_sub_node`.
+- Cross-file same private sub node local ID is allowed.
+- Bare node/source resolution preserves same-file private sub node/source first, then same-module main node fallback.
+- Private sub task / join return asset identity uses the internal file-local node identity, avoiding cross-file asset collisions.
+- Public-shaped aliases for private sub nodes are not exposed through public lookup indexes.
+- Verification reported by implementation handoff:
+  - `go test ./...` -> pass
+  - `go run ./cmd/brewprint validate --yaml-root docs\uc\002-brewprint-self-hosting\yaml` -> ok
+  - `go run ./cmd/brewprint render --yaml-root docs\uc\002-brewprint-self-hosting\yaml --out $env:TEMP\brewprint-uc002-render-review2 --clean` -> rendered 11 file(s)
+- UC-002 duplicate task QID / unresolved flow task issue is resolved, with no remaining diagnostics reported for UC-002.
+- Scope exclusions were preserved: M15 / `v1.1.0-spec` was not reopened, UC-002 YAML was not renamed as a workaround, and MCP private object exposure / ObjectRef schema migration was not introduced.
+
 ## Notes
 
 Codex investigation により、UC-002 repeated IDs は各 file 内では1回ずつであり、別 file 間の private sub task ID 重複であることが確認された。
 
-現行 failure は `duplicate_node` 21件と `unresolved_flow_task` 21件であり、duplicate 後に `NodesByFile[fileID]` へ登録されないことが flow 解決不能へ連鎖している。
+現行 failure は `duplicate_node` 21件と `unresolved_flow_task` 21件であり、duplicate 後に `NodesByFile[fileID]` へ登録されないことが flow 解決不能へ連鎖していた。
