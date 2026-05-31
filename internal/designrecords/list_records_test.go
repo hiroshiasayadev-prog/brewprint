@@ -196,6 +196,70 @@ func TestListRecordsIDRangeFilter(t *testing.T) {
 	}
 }
 
+func TestListRecordsWorkflowIDRangeFilter(t *testing.T) {
+	idx := &Index{Records: []Record{
+		{ID: "REQ-DATA-001", NormalizedID: "REQ-DATA-001", Kind: RecordKindRequirement, Title: "Data req 1", Status: RecordStatusCaptured, Path: "docs/requirements/data/REQ-DATA-001-test.md", Requirement: &RequirementDetail{}},
+		{ID: "REQ-DATA-002", NormalizedID: "REQ-DATA-002", Kind: RecordKindRequirement, Title: "Data req 2", Status: RecordStatusCaptured, Path: "docs/requirements/data/REQ-DATA-002-test.md", Requirement: &RequirementDetail{}},
+		{ID: "REQ-MCP-001", NormalizedID: "REQ-MCP-001", Kind: RecordKindRequirement, Title: "MCP req 1", Status: RecordStatusCaptured, Path: "docs/requirements/mcp/REQ-MCP-001-test.md", Requirement: &RequirementDetail{}},
+		{ID: "WORK-DATA-001", NormalizedID: "WORK-DATA-001", Kind: RecordKindWorkItem, Title: "Data work 1", Status: RecordStatusNotStarted, Path: "docs/work-items/data/WORK-DATA-001-test.md", WorkItem: &WorkItemDetail{}},
+		{ID: "WORK-DATA-002", NormalizedID: "WORK-DATA-002", Kind: RecordKindWorkItem, Title: "Data work 2", Status: RecordStatusNotStarted, Path: "docs/work-items/data/WORK-DATA-002-test.md", WorkItem: &WorkItemDetail{}},
+		{ID: "WORK-DATA-003", NormalizedID: "WORK-DATA-003", Kind: RecordKindWorkItem, Title: "Data work 3", Status: RecordStatusNotStarted, Path: "docs/work-items/data/WORK-DATA-003-test.md", WorkItem: &WorkItemDetail{}},
+		{ID: "WORK-MCP-001", NormalizedID: "WORK-MCP-001", Kind: RecordKindWorkItem, Title: "MCP work 1", Status: RecordStatusNotStarted, Path: "docs/work-items/mcp/WORK-MCP-001-test.md", WorkItem: &WorkItemDetail{}},
+		{ID: "TASK-MCP-007-01", NormalizedID: "TASK-MCP-007-01", Kind: RecordKindTask, Title: "Task 1", Status: RecordStatusTodo, Path: "docs/tasks/mcp/TASK-MCP-007-01-test.md", Task: &TaskDetail{}},
+		{ID: "TASK-MCP-007-02", NormalizedID: "TASK-MCP-007-02", Kind: RecordKindTask, Title: "Task 2", Status: RecordStatusTodo, Path: "docs/tasks/mcp/TASK-MCP-007-02-test.md", Task: &TaskDetail{}},
+		{ID: "TASK-MCP-008-01", NormalizedID: "TASK-MCP-008-01", Kind: RecordKindTask, Title: "Task other work", Status: RecordStatusTodo, Path: "docs/tasks/mcp/TASK-MCP-008-01-test.md", Task: &TaskDetail{}},
+	}}
+
+	tests := []struct {
+		name string
+		req  ListRecordsRequest
+		want []string
+	}{
+		{
+			name: "requirement same domain range",
+			req:  ListRecordsRequest{Kind: RecordKindRequirement, IDRange: &IDRange{From: "REQ-DATA-001", To: "REQ-DATA-002"}},
+			want: []string{"REQ-DATA-001", "REQ-DATA-002"},
+		},
+		{
+			name: "work item same domain range",
+			req:  ListRecordsRequest{Kind: RecordKindWorkItem, IDRange: &IDRange{From: "WORK-DATA-002", To: "WORK-DATA-003"}},
+			want: []string{"WORK-DATA-002", "WORK-DATA-003"},
+		},
+		{
+			name: "task same work sequence range",
+			req:  ListRecordsRequest{Kind: RecordKindTask, IDRange: &IDRange{From: "TASK-MCP-007-01", To: "TASK-MCP-007-02"}},
+			want: []string{"TASK-MCP-007-01", "TASK-MCP-007-02"},
+		},
+		{
+			name: "omitted kind derives work item family",
+			req:  ListRecordsRequest{IDRange: &IDRange{From: "WORK-DATA-002", To: "WORK-DATA-003"}},
+			want: []string{"WORK-DATA-002", "WORK-DATA-003"},
+		},
+		{
+			name: "one sided workflow range scopes to endpoint domain",
+			req:  ListRecordsRequest{Kind: RecordKindWorkItem, IDRange: &IDRange{From: "WORK-DATA-002"}},
+			want: []string{"WORK-DATA-002", "WORK-DATA-003"},
+		},
+		{
+			name: "empty range with explicit workflow kind behaves as kind filter",
+			req:  ListRecordsRequest{Kind: RecordKindWorkItem, IDRange: &IDRange{}},
+			want: []string{"WORK-DATA-001", "WORK-DATA-002", "WORK-DATA-003", "WORK-MCP-001"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := ListRecords(context.Background(), idx, tt.req)
+			if err != nil {
+				t.Fatalf("ListRecords: %v", err)
+			}
+			if got := listedRecordIDs(resp.Records); !sameStrings(got, tt.want) {
+				t.Fatalf("record IDs = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestListRecordsRequestErrors(t *testing.T) {
 	idx := buildListRecordsTestIndex(t)
 	tests := []struct {
@@ -211,32 +275,47 @@ func TestListRecordsRequestErrors(t *testing.T) {
 		{
 			name: "kind spec with id range",
 			req:  ListRecordsRequest{Kind: RecordKindSpec, IDRange: &IDRange{From: "ADR-067"}},
-			code: ErrorCodeIDRangeRequiresDecisionKind,
+			code: ErrorCodeInvalidIDRange,
 		},
 		{
-			name: "kind requirement with id range",
+			name: "kind requirement with ADR id range",
 			req:  ListRecordsRequest{Kind: RecordKindRequirement, IDRange: &IDRange{From: "ADR-067"}},
-			code: ErrorCodeIDRangeRequiresDecisionKind,
+			code: ErrorCodeInvalidIDRange,
 		},
 		{
-			name: "kind work_item with id range",
+			name: "kind work_item with ADR id range",
 			req:  ListRecordsRequest{Kind: RecordKindWorkItem, IDRange: &IDRange{From: "ADR-067"}},
-			code: ErrorCodeIDRangeRequiresDecisionKind,
+			code: ErrorCodeInvalidIDRange,
 		},
 		{
-			name: "kind task with id range",
+			name: "kind task with ADR id range",
 			req:  ListRecordsRequest{Kind: RecordKindTask, IDRange: &IDRange{From: "ADR-067"}},
-			code: ErrorCodeIDRangeRequiresDecisionKind,
+			code: ErrorCodeInvalidIDRange,
 		},
 		{
 			name: "SPEC range endpoint",
 			req:  ListRecordsRequest{IDRange: &IDRange{From: "SPEC-design-records-mcp-schema"}},
-			code: ErrorCodeIDRangeRequiresDecisionKind,
+			code: ErrorCodeInvalidIDRange,
 		},
 		{
 			name: "malformed ADR range endpoint",
 			req:  ListRecordsRequest{IDRange: &IDRange{From: "ADR-x"}},
-			code: ErrorCodeIDRangeRequiresDecisionKind,
+			code: ErrorCodeInvalidIDRange,
+		},
+		{
+			name: "mixed workflow domains",
+			req:  ListRecordsRequest{IDRange: &IDRange{From: "WORK-DATA-001", To: "WORK-MCP-010"}},
+			code: ErrorCodeInvalidIDRange,
+		},
+		{
+			name: "mixed workflow families",
+			req:  ListRecordsRequest{IDRange: &IDRange{From: "REQ-MCP-001", To: "TASK-MCP-001-01"}},
+			code: ErrorCodeInvalidIDRange,
+		},
+		{
+			name: "mixed task work sequences",
+			req:  ListRecordsRequest{IDRange: &IDRange{From: "TASK-MCP-006-01", To: "TASK-MCP-007-05"}},
+			code: ErrorCodeInvalidIDRange,
 		},
 		{
 			name: "invalid order by",
@@ -370,7 +449,7 @@ func TestListRecordsRepositoryBootstrapQueries(t *testing.T) {
 		}
 	}
 
-	assertListRecordsErrorCode(t, idx, ListRecordsRequest{Kind: RecordKindSpec, IDRange: &IDRange{From: "ADR-067"}}, ErrorCodeIDRangeRequiresDecisionKind)
+	assertListRecordsErrorCode(t, idx, ListRecordsRequest{Kind: RecordKindSpec, IDRange: &IDRange{From: "ADR-067"}}, ErrorCodeInvalidIDRange)
 }
 
 func buildListRecordsTestIndex(t *testing.T) *Index {

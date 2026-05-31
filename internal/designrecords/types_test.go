@@ -84,6 +84,7 @@ func TestErrorCodeConstants(t *testing.T) {
 		ErrorCodeGuideNotFound,
 		ErrorCodeInvalidRequest,
 		ErrorCodeUnsupportedKind,
+		ErrorCodeInvalidIDRange,
 		ErrorCodeIDRangeRequiresDecisionKind,
 	}
 	want := []string{
@@ -91,6 +92,7 @@ func TestErrorCodeConstants(t *testing.T) {
 		"guide_not_found",
 		"invalid_request",
 		"unsupported_kind",
+		"invalid_id_range",
 		"id_range_requires_decision_kind",
 	}
 	if len(got) != len(want) {

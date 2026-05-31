@@ -825,6 +825,72 @@ func TestValidateRecordsIDRangeFilter(t *testing.T) {
 	}
 }
 
+func TestValidateRecordsWorkflowIDRangeFilter(t *testing.T) {
+	records := []Record{
+		{ID: "REQ-DATA-001", NormalizedID: "REQ-DATA-001", Kind: RecordKindRequirement, Title: "Req 1", Status: RecordStatusCaptured, Path: "docs/requirements/data/REQ-DATA-001-test.md", Requirement: &RequirementDetail{}},
+		{ID: "REQ-DATA-002", NormalizedID: "REQ-DATA-002", Kind: RecordKindRequirement, Title: "Req 2", Status: RecordStatusTodo, Path: "docs/requirements/data/REQ-DATA-002-test.md", Requirement: &RequirementDetail{}},
+		{ID: "REQ-MCP-001", NormalizedID: "REQ-MCP-001", Kind: RecordKindRequirement, Title: "Req other domain", Status: RecordStatusTodo, Path: "docs/requirements/mcp/REQ-MCP-001-test.md", Requirement: &RequirementDetail{}},
+		{ID: "WORK-DATA-001", NormalizedID: "WORK-DATA-001", Kind: RecordKindWorkItem, Title: "Work 1", Status: RecordStatusNotStarted, Path: "docs/work-items/data/WORK-DATA-001-test.md", WorkItem: &WorkItemDetail{}},
+		{ID: "WORK-DATA-002", NormalizedID: "WORK-DATA-002", Kind: RecordKindWorkItem, Title: "Work 2", Status: RecordStatusAccepted, Path: "docs/work-items/data/WORK-DATA-002-test.md", WorkItem: &WorkItemDetail{}},
+		{ID: "WORK-MCP-002", NormalizedID: "WORK-MCP-002", Kind: RecordKindWorkItem, Title: "Work other domain", Status: RecordStatusAccepted, Path: "docs/work-items/mcp/WORK-MCP-002-test.md", WorkItem: &WorkItemDetail{}},
+		{ID: "TASK-MCP-007-01", NormalizedID: "TASK-MCP-007-01", Kind: RecordKindTask, Title: "Task 1", Status: RecordStatusTodo, Path: "docs/tasks/mcp/TASK-MCP-007-01-test.md", Task: &TaskDetail{}},
+		{ID: "TASK-MCP-007-02", NormalizedID: "TASK-MCP-007-02", Kind: RecordKindTask, Title: "Task 2", Status: RecordStatusAccepted, Path: "docs/tasks/mcp/TASK-MCP-007-02-test.md", Task: &TaskDetail{}},
+		{ID: "TASK-MCP-008-01", NormalizedID: "TASK-MCP-008-01", Kind: RecordKindTask, Title: "Task other work", Status: RecordStatusAccepted, Path: "docs/tasks/mcp/TASK-MCP-008-01-test.md", Task: &TaskDetail{}},
+	}
+	idx := workflowTestIndex(records...)
+
+	tests := []struct {
+		name      string
+		req       ValidateRecordsRequest
+		wantIDs   []string
+		rejectIDs []string
+	}{
+		{
+			name:      "requirement same domain range",
+			req:       ValidateRecordsRequest{Kind: RecordKindRequirement, IDRange: &IDRange{From: "REQ-DATA-001", To: "REQ-DATA-002"}},
+			wantIDs:   []string{"REQ-DATA-002"},
+			rejectIDs: []string{"REQ-MCP-001", "WORK-DATA-002", "TASK-MCP-007-02"},
+		},
+		{
+			name:      "work item same domain range",
+			req:       ValidateRecordsRequest{Kind: RecordKindWorkItem, IDRange: &IDRange{From: "WORK-DATA-001", To: "WORK-DATA-002"}},
+			wantIDs:   []string{"WORK-DATA-002"},
+			rejectIDs: []string{"REQ-DATA-002", "WORK-MCP-002", "TASK-MCP-007-02"},
+		},
+		{
+			name:      "task same work sequence range",
+			req:       ValidateRecordsRequest{Kind: RecordKindTask, IDRange: &IDRange{From: "TASK-MCP-007-01", To: "TASK-MCP-007-02"}},
+			wantIDs:   []string{"TASK-MCP-007-02"},
+			rejectIDs: []string{"REQ-DATA-002", "WORK-DATA-002", "TASK-MCP-008-01"},
+		},
+		{
+			name:      "empty range with explicit workflow kind behaves as kind filter",
+			req:       ValidateRecordsRequest{Kind: RecordKindWorkItem, IDRange: &IDRange{}},
+			wantIDs:   []string{"WORK-DATA-002", "WORK-MCP-002"},
+			rejectIDs: []string{"REQ-DATA-002", "TASK-MCP-007-02"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := ValidateRecords(context.Background(), idx, tt.req)
+			if err != nil {
+				t.Fatalf("ValidateRecords: %v", err)
+			}
+			for _, id := range tt.wantIDs {
+				if !hasDiagnosticForRecord(resp.Diagnostics, DiagnosticInvalidStatusForKind, id) {
+					t.Fatalf("missing diagnostic for %s in %#v", id, resp.Diagnostics)
+				}
+			}
+			for _, id := range tt.rejectIDs {
+				if hasDiagnosticForRecord(resp.Diagnostics, DiagnosticInvalidStatusForKind, id) {
+					t.Fatalf("unexpected diagnostic for %s in %#v", id, resp.Diagnostics)
+				}
+			}
+		})
+	}
+}
+
 func TestValidateRecordsRequestErrors(t *testing.T) {
 	idx := &Index{}
 	tests := []struct {
@@ -840,22 +906,32 @@ func TestValidateRecordsRequestErrors(t *testing.T) {
 		{
 			name: "kind spec with id range",
 			req:  ValidateRecordsRequest{Kind: RecordKindSpec, IDRange: &IDRange{From: "ADR-001"}},
-			code: ErrorCodeIDRangeRequiresDecisionKind,
+			code: ErrorCodeInvalidIDRange,
 		},
 		{
-			name: "kind task with id range",
+			name: "kind task with ADR id range",
 			req:  ValidateRecordsRequest{Kind: RecordKindTask, IDRange: &IDRange{From: "ADR-001"}},
-			code: ErrorCodeIDRangeRequiresDecisionKind,
+			code: ErrorCodeInvalidIDRange,
 		},
 		{
 			name: "SPEC range endpoint",
 			req:  ValidateRecordsRequest{IDRange: &IDRange{From: "SPEC-design-records-mcp-schema"}},
-			code: ErrorCodeIDRangeRequiresDecisionKind,
+			code: ErrorCodeInvalidIDRange,
 		},
 		{
 			name: "malformed range endpoint",
 			req:  ValidateRecordsRequest{IDRange: &IDRange{From: "ADR-x"}},
-			code: ErrorCodeIDRangeRequiresDecisionKind,
+			code: ErrorCodeInvalidIDRange,
+		},
+		{
+			name: "mixed workflow domains",
+			req:  ValidateRecordsRequest{IDRange: &IDRange{From: "WORK-DATA-001", To: "WORK-MCP-010"}},
+			code: ErrorCodeInvalidIDRange,
+		},
+		{
+			name: "mixed task work sequences",
+			req:  ValidateRecordsRequest{IDRange: &IDRange{From: "TASK-MCP-006-01", To: "TASK-MCP-007-05"}},
+			code: ErrorCodeInvalidIDRange,
 		},
 	}
 	for _, tt := range tests {

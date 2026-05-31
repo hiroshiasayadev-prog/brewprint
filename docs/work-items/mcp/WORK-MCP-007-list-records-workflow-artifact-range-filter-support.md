@@ -1,7 +1,7 @@
 # WORK-MCP-007: list_records workflow artifact range filter support を判断・実現する
 
 - **id**: WORK-MCP-007
-- **status**: decision_pending
+- **status**: done
 - **date**: 2026-06-01
 - **source_requirement**: REQ-MCP-007
 - **impact_refs**:
@@ -75,9 +75,22 @@ flowchart TD
 
 ## Current blockers
 
-- `id_range` を workflow artifact ID に拡張するか、別 filter を追加するかが未判断である。
-- Task ID range の ordering unit を `TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>` 全体で扱うか、同一 work sequence 内に限定するかが未判断である。
+None.
 
 ## Progress summary
 
-- 2026-06-01: REQ-MCP-007 から起票。現行 spec では `list_records.id_range` は `ADR-NNN` decision record 専用であり、workflow artifact の range navigation は後続 refinement に委ねられている。
+- 2026-06-01: REQ-MCP-007 から起票。現行 spec では `list_records.id_range` は `ADR-NNN` decision record 専用であり、workflow artifact の range navigation は後続 refinement に委ねられていた。
+- 2026-06-01: `id_range` を workflow artifact ID family に拡張する contract を採用。`TASK-*` range は same domain + same work sequence に限定。
+- 2026-06-01: `docs/spec/design-records-mcp/tools.md`、implementation、tests を更新。
+- 2026-06-01: `go test ./internal/designrecords ./internal/designrecordsmcp` passed.
+- 2026-06-01: Runtime MCP verification passed for ADR compatibility, workflow valid ranges, invalid mixed ranges, and `validate_records` task range.
+
+## Close evidence
+
+- `TASK-MCP-007-01` through `TASK-MCP-007-05` are done.
+- `validate_records(kind: requirement, id_range: REQ-MCP-007..REQ-MCP-007)` returned `ok: true`.
+- `validate_records(kind: work_item, id_range: WORK-MCP-007..WORK-MCP-007)` returned `ok: true`.
+- `validate_records(kind: task, id_range: TASK-MCP-007-01..TASK-MCP-007-05)` returned `ok: true`.
+- `list_records(kind: work_item, id_range: WORK-MCP-007..WORK-MCP-007)` returned `WORK-MCP-007`.
+- `list_records(kind: task, id_range: TASK-MCP-007-01..TASK-MCP-007-05)` returned `TASK-MCP-007-01` through `TASK-MCP-007-05`.
+- Invalid mixed-domain / mixed-work-sequence / unsupported family ranges returned `invalid_id_range`.

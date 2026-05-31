@@ -1,7 +1,7 @@
 # REQ-MCP-007: list_records workflow artifact range filter support
 
 - **id**: REQ-MCP-007
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-01
 - **source_refs**:
   - SPEC-design-records-mcp-tools
@@ -56,3 +56,13 @@ A follow-up work item should decide and implement one of the following:
 - rename/split the current decision-only range contract and introduce a separate workflow artifact navigation filter.
 
 The final behavior should make workflow artifact range navigation possible without relying on filesystem listing.
+
+## Close evidence
+
+- Implemented by `WORK-MCP-007`.
+- `list_records.id_range` now supports `REQ-<DOMAIN>-NNN`, `WORK-<DOMAIN>-NNN`, and `TASK-<DOMAIN>-NNN-MM` in addition to `ADR-NNN`.
+- Workflow artifact ranges are same-family and same-domain; task ranges are additionally same-work-sequence.
+- `validate_records.id_range` uses the same range selection contract.
+- Mixed-domain, mixed-family, mixed-task-work-sequence, malformed, and unsupported family ranges return `invalid_id_range`.
+- `go test ./internal/designrecords ./internal/designrecordsmcp` passed on Windows PowerShell.
+- Runtime MCP verification passed for valid workflow ranges, invalid workflow ranges, `validate_records` task range, and ADR range compatibility.

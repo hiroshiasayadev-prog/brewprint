@@ -166,12 +166,26 @@ MVP request schema:
 `id_range` は両端を含む範囲とする。
 `from` または `to` の片方だけを指定してもよい。
 
-MVP の `id_range` は `ADR-NNN` 形式の `decision` record にのみ適用する。
-比較は `NNN` の数値比較とする。
-`kind` が省略され、かつ `id_range` が指定された場合は `kind: decision` と同等に扱う。
-`id_range` を指定する request では、`kind` は省略されているか `decision` でなければならない。
-`kind: spec` / `kind: investigation` / `kind: requirement` / `kind: work_item` / `kind: task` と `id_range` の併用、または `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` への range 指定は request error とする。
-Investigation と workflow artifact の domain-scoped ID に対する range / domain filter はこの版では扱わず、後続 spec refinement に委ねる。
+`id_range` は以下の ID family に適用できる。
+
+| family | effective `kind` | endpoint form | ordering |
+|---|---|---|---|
+| decision | `decision` | `ADR-NNN` | `NNN` の数値比較 |
+| requirement | `requirement` | `REQ-<DOMAIN>-NNN` | 同一 `<DOMAIN>` 内の `NNN` 数値比較 |
+| work item | `work_item` | `WORK-<DOMAIN>-NNN` | 同一 `<DOMAIN>` 内の `NNN` 数値比較 |
+| task | `task` | `TASK-<DOMAIN>-NNN-MM` | 同一 `<DOMAIN>` かつ同一 work sequence `NNN` 内の task sequence `MM` 数値比較 |
+
+`kind` が省略され、かつ `id_range` が指定された場合は、指定された endpoint family から effective `kind` を決める。
+`kind` が指定されている場合、endpoint family は指定 `kind` と一致しなければならない。
+
+Workflow artifact range は同一 family / 同一 domain の endpoint に限定する。
+Task range はさらに同一 work sequence に限定し、`TASK-MCP-006-01` .. `TASK-MCP-007-05` のような work item をまたぐ task range は request error とする。
+
+One-sided workflow range は、指定された endpoint の family / domain / work sequence scope 内で評価する。
+たとえば `kind: work_item` と `id_range.from: WORK-DATA-004` は `WORK-DATA-*` の sequence `004` 以上を対象にする。
+
+`SPEC-*` / `INV-*` range はこの版では扱わず、request error とする。
+Mixed family、mixed domain、mixed task work sequence、malformed endpoint、および指定 `kind` と endpoint family の不一致は request error とし、lexical ordering や広い listing へ silent fallback してはならない。
 
 ### Response
 
@@ -197,7 +211,7 @@ Investigation と workflow artifact の domain-scoped ID に対する range / do
 `records[]` の並び順は `order_by` / `order` に従う。
 
 `order_by: id` で mixed kind の record を返す場合は、canonical `id` の ASCII lexical order を用いる。同一 canonical `id` が複数 entry に存在する場合も並び順は path の ASCII lexical order で安定化し、`duplicate_id` diagnostic は別途返す。
-`decision` の `id_range` は従来どおり `ADR-NNN` の `NNN` を数値比較する。
+`id_range` 指定時の range membership は request section の ID family rule に従う。Response ordering は通常どおり `order_by` / `order` に従う。
 
 ## `get_record`
 
@@ -637,8 +651,9 @@ ADR-088 / ADR-092 により、`internal-design:` / `coverage:` / `COV-*`、seman
 
 request が空の場合、MVP index 対象の全 record を検証する。
 
-`id_range` の扱いは `list_records` と同じく、`ADR-NNN` 形式の `decision` record 専用とする。
-`kind: spec` / `kind: investigation` / `kind: requirement` / `kind: work_item` / `kind: task` と `id_range` の併用、または `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` への range 指定は request error とする。
+`id_range` の endpoint family、effective `kind`、one-sided range、unsupported range の扱いは `list_records` と同じとする。
+したがって `validate_records` でも `REQ-<DOMAIN>-NNN` / `WORK-<DOMAIN>-NNN` / `TASK-<DOMAIN>-NNN-MM` の safe workflow artifact range を指定できる。
+`SPEC-*` / `INV-*` range、mixed family、mixed domain、mixed task work sequence、malformed endpoint、および指定 `kind` と endpoint family の不一致は request error とする。
 
 ### Response
 
@@ -790,7 +805,8 @@ MVP tool error code は以下を最小とする。
 | `guide_not_found` | `get_authoring_guidance` で指定された guide ID が存在しない |
 | `invalid_request` | request schema または field value が不正。例: `list_records` に未知の `kind` を指定した場合、`get_records.ids` が欠落・空・非 array・非 string element を含む場合、または `get_authoring_guidance.id` が欠落・非 string の場合 |
 | `unsupported_kind` | tool が対象外の `kind` を指定された。例: `suggest_next_record` に `kind: spec` を指定した場合 |
-| `id_range_requires_decision_kind` | `id_range` が `decision` 以外の kind と併用された、または `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` range が指定された |
+| `invalid_id_range` | `id_range` endpoint が malformed、unsupported family、mixed family、mixed domain、mixed task work sequence、または指定 `kind` と endpoint family 不一致である |
+| `id_range_requires_decision_kind` | legacy error code。REQ-MCP-007 以前の decision-only `id_range` boundary を示す。新規 implementation では `invalid_id_range` を用いる |
 
 `get_record` では、存在しない単一 record ID を指定した場合、tool は machine-readable な error を返す。
 

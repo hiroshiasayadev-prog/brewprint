@@ -232,6 +232,7 @@ const (
 	ErrorCodeGuideNotFound               ErrorCode = "guide_not_found"
 	ErrorCodeInvalidRequest              ErrorCode = "invalid_request"
 	ErrorCodeUnsupportedKind             ErrorCode = "unsupported_kind"
+	ErrorCodeInvalidIDRange              ErrorCode = "invalid_id_range"
 	ErrorCodeIDRangeRequiresDecisionKind ErrorCode = "id_range_requires_decision_kind"
 )
 

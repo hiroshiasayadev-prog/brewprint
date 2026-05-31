@@ -12,7 +12,7 @@ type listRecordsScope struct {
 	hasKind  bool
 	status   RecordStatus
 	id       string
-	idRange  *numericIDRange
+	idRange  *recordIDRange
 	order    string
 	limit    int
 	hasLimit bool
@@ -226,14 +226,11 @@ func newListRecordsScope(req ListRecordsRequest) (listRecordsScope, error) {
 		scope.hasKind = true
 	}
 	if req.IDRange != nil {
-		if req.Kind != "" && req.Kind != RecordKindDecision {
-			return scope, newToolError(ErrorCodeIDRangeRequiresDecisionKind, "id_range requires kind decision")
-		}
-		parsed, err := parseDecisionIDRange(*req.IDRange)
+		parsed, err := parseRecordIDRange(*req.IDRange, req.Kind)
 		if err != nil {
 			return scope, err
 		}
-		scope.kind = RecordKindDecision
+		scope.kind = parsed.kind
 		scope.hasKind = true
 		scope.idRange = parsed
 	}
@@ -271,11 +268,7 @@ func (s listRecordsScope) selectRecord(record Record) bool {
 	if s.idRange == nil {
 		return true
 	}
-	if record.Kind != RecordKindDecision {
-		return false
-	}
-	num, ok := decisionRecordNumber(record.ID)
-	return ok && s.idRange.contains(num)
+	return s.idRange.containsRecord(record)
 }
 
 func sortRecordsByID(records []Record, order string) {

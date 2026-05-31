@@ -2,25 +2,15 @@ package designrecords
 
 import (
 	"fmt"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 )
 
-var adrIDPattern = regexp.MustCompile(`^ADR-(\d{3})$`)
-
 type validationScope struct {
 	kind    RecordKind
 	hasKind bool
-	idRange *numericIDRange
-}
-
-type numericIDRange struct {
-	from    int
-	hasFrom bool
-	to      int
-	hasTo   bool
+	idRange *recordIDRange
 }
 
 func newValidationScope(req ValidateRecordsRequest) (validationScope, error) {
@@ -35,51 +25,14 @@ func newValidationScope(req ValidateRecordsRequest) (validationScope, error) {
 	if req.IDRange == nil {
 		return scope, nil
 	}
-	if req.Kind != "" && req.Kind != RecordKindDecision {
-		return scope, newToolError(ErrorCodeIDRangeRequiresDecisionKind, "id_range requires kind decision")
-	}
-	parsed, err := parseDecisionIDRange(*req.IDRange)
+	parsed, err := parseRecordIDRange(*req.IDRange, req.Kind)
 	if err != nil {
 		return scope, err
 	}
-	scope.kind = RecordKindDecision
+	scope.kind = parsed.kind
 	scope.hasKind = true
 	scope.idRange = parsed
 	return scope, nil
-}
-
-func parseDecisionIDRange(idRange IDRange) (*numericIDRange, error) {
-	parsed := &numericIDRange{}
-	if strings.TrimSpace(idRange.From) != "" {
-		num, err := parseDecisionIDEndpoint(idRange.From)
-		if err != nil {
-			return nil, err
-		}
-		parsed.from = num
-		parsed.hasFrom = true
-	}
-	if strings.TrimSpace(idRange.To) != "" {
-		num, err := parseDecisionIDEndpoint(idRange.To)
-		if err != nil {
-			return nil, err
-		}
-		parsed.to = num
-		parsed.hasTo = true
-	}
-	return parsed, nil
-}
-
-func parseDecisionIDEndpoint(value string) (int, error) {
-	normalized := normalizeRecordID(value)
-	match := adrIDPattern.FindStringSubmatch(normalized)
-	if match == nil {
-		return 0, newToolError(ErrorCodeIDRangeRequiresDecisionKind, "id_range endpoints must use ADR-NNN decision IDs")
-	}
-	num, err := strconv.Atoi(match[1])
-	if err != nil {
-		return 0, newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("invalid id_range endpoint %q", value))
-	}
-	return num, nil
 }
 
 func generateValidationDiagnostics(idx *Index, scope validationScope) []Diagnostic {
@@ -552,11 +505,7 @@ func (s validationScope) selectRecord(record Record) bool {
 	if s.idRange == nil {
 		return true
 	}
-	if record.Kind != RecordKindDecision {
-		return false
-	}
-	num, ok := decisionRecordNumber(record.ID)
-	return ok && s.idRange.contains(num)
+	return s.idRange.containsRecord(record)
 }
 
 func (s validationScope) selectIssue(issue ParseIssue, recordsByPath map[string]Record, candidatesByPath map[string]RecordCandidate) bool {
@@ -576,8 +525,7 @@ func (s validationScope) selectIssue(issue ParseIssue, recordsByPath map[string]
 	if s.idRange == nil {
 		return true
 	}
-	num, ok := decisionRecordNumber(issue.RecordID)
-	return ok && s.idRange.contains(num)
+	return s.idRange.containsID(kind, issue.RecordID)
 }
 
 func (s validationScope) selectCandidate(candidate RecordCandidate) bool {
@@ -587,11 +535,7 @@ func (s validationScope) selectCandidate(candidate RecordCandidate) bool {
 	if s.idRange == nil {
 		return true
 	}
-	if candidate.Kind != RecordKindDecision {
-		return false
-	}
-	num, ok := decisionRecordNumber(candidate.ID)
-	return ok && s.idRange.contains(num)
+	return s.idRange.containsID(candidate.Kind, candidate.ID)
 }
 
 func (s validationScope) selectPathIssue(issue PathIssue, candidatesByPath map[string]RecordCandidate) bool {
@@ -608,30 +552,11 @@ func (s validationScope) selectPathIssue(issue PathIssue, candidatesByPath map[s
 	if s.idRange == nil {
 		return true
 	}
+	if s.idRange.kind != RecordKindDecision {
+		return false
+	}
 	num, ok := decisionFilenameNumber(issue.Path)
 	return ok && s.idRange.contains(num)
-}
-
-func (r numericIDRange) contains(num int) bool {
-	if r.hasFrom && num < r.from {
-		return false
-	}
-	if r.hasTo && num > r.to {
-		return false
-	}
-	return true
-}
-
-func decisionRecordNumber(id string) (int, bool) {
-	match := adrIDPattern.FindStringSubmatch(normalizeRecordID(id))
-	if match == nil {
-		return 0, false
-	}
-	num, err := strconv.Atoi(match[1])
-	if err != nil {
-		return 0, false
-	}
-	return num, true
 }
 
 func decisionFilenameNumber(path string) (int, bool) {

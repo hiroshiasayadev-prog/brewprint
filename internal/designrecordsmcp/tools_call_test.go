@@ -83,6 +83,18 @@ func TestToolsCallSuccess(t *testing.T) {
 			},
 		},
 		{
+			name:   "list_records workflow work item range",
+			line:   `{"jsonrpc":"2.0","id":153,"method":"tools/call","params":{"name":"list_records","arguments":{"kind":"work_item","id_range":{"from":"WORK-MCP-003","to":"WORK-MCP-003"}}}}`,
+			wantID: "153",
+			assertText: func(t *testing.T, text string) {
+				var resp designrecords.ListRecordsResponse
+				unmarshalToolText(t, text, &resp)
+				if len(resp.Records) != 1 || resp.Records[0].ID != "WORK-MCP-003" || resp.Records[0].WorkItem == nil {
+					t.Fatalf("work item range response = %#v", resp)
+				}
+			},
+		},
+		{
 			name:   "get_record workflow task",
 			line:   `{"jsonrpc":"2.0","id":152,"method":"tools/call","params":{"name":"get_record","arguments":{"id":"TASK-MCP-003-01"}}}`,
 			wantID: "152",
@@ -373,7 +385,7 @@ func TestToolsCallToolErrors(t *testing.T) {
 		{
 			name: "list_records spec kind with id range",
 			line: `{"jsonrpc":"2.0","id":23,"method":"tools/call","params":{"name":"list_records","arguments":{"kind":"spec","id_range":{"from":"ADR-001"}}}}`,
-			code: designrecords.ErrorCodeIDRangeRequiresDecisionKind,
+			code: designrecords.ErrorCodeInvalidIDRange,
 		},
 		{
 			name: "unknown tool name",
