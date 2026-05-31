@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/edges.md
 status: confirmed
-last_updated: 2026-05-05
+last_updated: 2026-05-31
 summary: >
   brewprintのエッジ記法の定義。
   ファイル内データフロー（flow:セクション）・状態遷移（transitions:セクション）・
@@ -18,6 +18,7 @@ depends_on:
   - docs/adr/020-cross-edge-management.md
   - docs/adr/023-control-flow-scope-and-branch-entry.md
   - docs/adr/040-control-flow-step-wiring.md
+  - docs/adr/058-subnode-file-private-scope-enforcement.md
   - docs/adr/060-flow-wiring-type-compatibility.md
   - docs/adr/061-foreach-returns-collected-asset.md
   - docs/adr/062-task-return-source.md
@@ -408,6 +409,8 @@ named list/dict model の正規化および TypeRef 構文は [type-ref.md](./ty
 
 flow wiring source は以下の5種として解決する。
 
+Bare node/source resolution follows [naming.md](./naming.md) §4: same-file file-private sub node / source first, then same-module main node fallback. Module-crossing references require public QualifiedID.
+
 1. node ID / QualifiedID
 2. `$params.<name>`
 3. `$item`
@@ -501,6 +504,8 @@ evaluation の時間軸は「source の出現位置」ではなく「task / flow
 `$item` は `returns.source` では使えない。`$item` は foreach iteration 内部の source であり、task 全体の return source ではない。foreach 全体の結果を返す場合は、`foreach.returns` で collect した source を `returns.source` に指定する。
 
 initialized source の TypeRef は `initializes[].model` を named model TypeRef として扱う（spec/nodes.md `init オブジェクト` 参照）。`initializes[].model` は v1.1 でも model-id 参照のままであり、inline `list<T>` / `dict<T>` は受け取らない。`returns.source` 経由で参照された場合に限り named model TypeRef として TypeRef compatibility 検証の対象になる。
+
+`returns.source` の bare node/source resolution follows [naming.md](./naming.md) §4: same-file file-private sub node / source first, then same-module main node fallback. Module-crossing node references require public QualifiedID.
 
 `returns.source` が node ID / `$params.<name>` / collected asset source / initialized source のいずれとしても解決できない場合は `unresolved_return_source` を出す。source は解決できたが task return source として使えない場合は `invalid_return_source` を出す。例: returns を持たない node、`$item`。initialized source は valid な return source 種別であり、`invalid_return_source` の対象にはならない。
 
@@ -634,7 +639,7 @@ State Diagramが扱うeventはそのFSM専用のものが多いため、stateと
 
 > 出典: ADR-003
 
-同モジュール内はID直書きで解決。モジュールを跨ぐ場合はフルパスを要求する。
+同モジュール内の main node はID直書きで解決できる。file 内 flow / wiring の bare node/source resolution は [naming.md](./naming.md) §4 に従い、same-file file-private sub node / source を優先し、該当がない場合に same-module main node へフォールバックする。モジュールを跨ぐ場合はフルパスを要求する。
 
 ```yaml
 # 同モジュール内（auth/task/login.yaml内での参照）

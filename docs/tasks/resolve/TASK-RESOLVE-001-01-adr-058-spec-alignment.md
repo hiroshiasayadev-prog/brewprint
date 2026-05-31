@@ -1,7 +1,7 @@
 # TASK-RESOLVE-001-01: ADR-058 の file-private sub node scope を spec に反映する
 
 - **id**: TASK-RESOLVE-001-01
-- **status**: todo
+- **status**: done
 - **date**: 2026-05-31
 - **work_item**: WORK-RESOLVE-001
 - **source_requirement**: REQ-RESOLVE-001
@@ -43,4 +43,11 @@ ADR-058 の accepted 判断を現行 spec に反映し、実装者が file-priva
 
 ## Evidence
 
-未実施。
+- `docs/spec/nodes.md` に、sub node が file-private local ID であり、同一 file 内でのみ一意、別 file 同名 sub node とは衝突しないことを明記した。
+- `docs/spec/naming.md` に、public QualifiedID は main node の identity であり、sub node は public QualifiedID を持たないことを明記した。
+- `docs/spec/naming.md` に、ADR-078 の `<semantic-anchor-id>#<local-id>` は MCP query layer 用 synthetic ID であり、YAML authoring の public QualifiedID ではないことを明記した。
+- `docs/spec/diagnostics.md` の `duplicate_node` を public node QualifiedID collision に限定し、同一 file 内 sub node local ID 重複用に `duplicate_sub_node` を追加した。
+- Codex review result: `OK with minor fixes`。MCP synthetic ID wording と `edges.md` stale bare node wording の補強指摘を反映した。
+- `docs/spec/naming.md` に、MCP schema / ObjectRef migration details は本 spec section 外であり、この resolver work では変更しないことを明記した。
+- `docs/spec/edges.md` に、bare node/source resolution は `naming.md` §4 に従い、same-file file-private sub node / source first、same-module main node fallback であることを cross-reference として追記した。
+- Design Records MCP validation: `validate_records(kind="spec")` returned `ok: true` before and after minor review fixes.

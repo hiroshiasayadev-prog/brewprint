@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/naming.md
 status: confirmed
-last_updated: 2026-04-30
+last_updated: 2026-05-31
 summary: >
   brewprint の名前空間とID解決ルールを定義する。
   モジュール=フォルダ階層、QualifiedID形式、同モジュール内ID直書き、sentinel方式パース、
@@ -13,6 +13,8 @@ depends_on:
   - docs/adr/027-module-nesting-and-name-resolution.md
   - docs/adr/031-actor-global-definition.md
   - docs/adr/033-fk-name-resolution.md
+  - docs/adr/058-subnode-file-private-scope-enforcement.md
+  - docs/adr/078-mcp-semantic-anchor-synthetic-id-policy.md
 ---
 
 # 名前解決仕様
@@ -46,7 +48,11 @@ yaml/
 
 - `<モジュールパス>`: 1段以上の任意の深さのドット区切りパス（例: `auth`, `commerce.cart`）
 - `<ノード種別>`: 後述の予約語（sentinel）
-- `<ID>`: モジュール内のノードID
+- `<ID>`: public node ID。メインノードのみが public QualifiedID の対象となる
+
+サブノードは file-private local ID を持つが、public QualifiedID は持たない。したがって、別 file の同名サブノード local ID とは衝突せず、外部 YAML から `<module>.<type>.<sub-node-id>` 形式で参照することもできない。
+
+MCP query layer が file-private / generated object を返す場合、ADR-078 の方針により `<semantic-anchor-id>#<local-id>` 形式の synthetic ID を使える。ただしこれは public QualifiedID ではなく、YAML authoring の外部参照形式でもない。MCP schema / ObjectRef migration details are outside this spec section and are not changed by this resolver work.
 
 例:
 
@@ -89,8 +95,10 @@ auth.oauth.task.login
 
 ## 4. 同モジュール内ID直書き
 
-同モジュール内のノード参照では QualifiedID のフルパスは要求しない。ID 直書きで解決される。
+同モジュール内のメインノード参照では QualifiedID のフルパスは要求しない。ID 直書きで解決される。
 モジュールを跨ぐ参照は QualifiedID（フルパス）必須。
+
+同一 file 内に書かれた `flow.step` / `reads` / `writes` 等の bare ID は、まず同一 file 内の file-private sub node / source を優先して解決する。該当がない場合のみ、同一 module のメインノードへフォールバックする。
 
 ```yaml
 # 同モジュール内（auth/dag.yaml内での参照）
@@ -279,5 +287,9 @@ moduleを跨ぐ参照で bare store ID を使うことはできない。bare sto
 | `cart.store.cart_session` | module跨ぎ store参照 | `cart.store.cart_session` |
 | `commerce.order.model.order.id` | module跨ぎ FK参照 | `commerce.order.model.order.id` |
 | `stripe` | actor参照 | `stripe` |
+| `validate_request` | `mcp/task/get_signature.yaml` 内の private sub task 参照 | file-local sub node identity。public QualifiedID へ正規化しない |
+| `mcp.task.get_signature#validate_request` | MCP query layer 上の private sub task synthetic ID | semantic anchor based synthetic ID。public QualifiedID ではない |
 
 この方針により、YAML authoringでは同一module内参照を簡潔に書ける一方、実装・MCP・diagnosticsでは一意な参照IDを扱える。
+
+ただし、すべての解決済みIDが public QualifiedID になるわけではない。file-private sub node は public QualifiedID を持たず、同一 file 内の local identity として扱う。MCP response 上で安定参照が必要な場合のみ、ADR-078 の `<semantic-anchor-id>#<local-id>` synthetic ID を使う。MCP schema / ObjectRef migration details are outside this spec section and are not changed by this resolver work.

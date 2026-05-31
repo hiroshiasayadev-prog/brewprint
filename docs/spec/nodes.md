@@ -28,6 +28,7 @@ depends_on:
   - docs/adr/034-internal-event-source.md
   - docs/adr/040-control-flow-step-wiring.md
   - docs/adr/042-wireframe-main-and-layout.md
+  - docs/adr/058-subnode-file-private-scope-enforcement.md
   - docs/adr/060-flow-wiring-type-compatibility.md
   - docs/adr/062-task-return-source.md
   - docs/adr/063-task-return-source-initialized-store.md
@@ -59,7 +60,11 @@ transitions:            # Applicationレイヤーの状態遷移（ADR-019）
   - from: ...
 ```
 
-サブノードは外部モジュールから参照不可。外部からアクセスできるのはメインノードのIDのみ（ADR-011）。
+サブノードは file-private であり、外部モジュールまたは別ファイルから参照不可。外部からアクセスできるのはメインノードのIDのみ（ADR-011, ADR-058）。
+
+メインノードの `id` は module / node type と組み合わせて public QualifiedID を構成し、project 全体の QualifiedID 一意性制約の対象となる。サブノードの `id` は同一 file 内の local ID であり、同一 file 内でのみ一意であればよい。別 file に存在する同名サブノードとは衝突しない。
+
+flow / reads / writes 等に書かれた bare ID は、まず同一 file 内のサブノードまたは file-private source を優先して解決し、該当がない場合のみ同一 module のメインノードへフォールバックする。サブノードは public QualifiedID を持たず、外部 YAML から QualifiedID で参照できる対象ではない。
 
 ---
 
@@ -69,7 +74,7 @@ transitions:            # Applicationレイヤーの状態遷移（ADR-019）
 
 | フィールド | 必須 | 型 | 内容 |
 |-----------|------|-----|------|
-| `id` | ✓ | string | モジュール内でユニークな識別子 |
+| `id` | ✓ | string | メインノードでは module / node type 内の public ID。サブノードでは同一 file 内で一意な local ID |
 | `type` | ✓ | enum | ノード種別（後述） |
 | `note` | 任意 | string | 人間向けdocstring兼LLMへのsemantic contract（ADR-008） |
 

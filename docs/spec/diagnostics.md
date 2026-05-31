@@ -9,6 +9,7 @@ depends_on:
   - docs/adr/047-go-semantic-model-query-layer-boundary.md
   - docs/adr/051-unsupported-yaml-file-warning.md
   - docs/adr/052-source-file-path-normalization.md
+  - docs/adr/058-subnode-file-private-scope-enforcement.md
   - docs/adr/060-flow-wiring-type-compatibility.md
   - docs/adr/061-foreach-returns-collected-asset.md
   - docs/adr/062-task-return-source.md
@@ -175,10 +176,15 @@ Sort key:
 
 | code | severity | description |
 |---|---|---|
-| `duplicate_node` | error | node qualified idが重複している |
+| `duplicate_node` | error | public node QualifiedID が project-wide に重複している |
 | `duplicate_main_node` | error | 1 file内にmain nodeが複数ある |
+| `duplicate_sub_node` | error | file-private sub node の local ID が同一 file 内で重複している |
 | `duplicate_actor` | error | actor idが重複している |
 | `duplicate_initialized_store` | error | initialized storeが同一file内で重複している |
+
+`duplicate_node` は public QualifiedID を持つ main node の衝突に限定する。file-private sub node は public QualifiedID を持たないため、別 file 間で同じ local ID を持っていても `duplicate_node` にはしない。
+
+同一 file 内で sub node local ID が重複している場合は `duplicate_sub_node` を出す。
 
 ### Flow validation
 
