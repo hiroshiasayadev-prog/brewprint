@@ -119,6 +119,8 @@ Task file 内で bare named model TypeRef が現れた場合、resolver は以�
 
 QualifiedID を使った named model TypeRef は public model のみを対象とし、task-file helper model には解決しない。
 
+同一 file 内の task-file helper model に解決できることは、その参照がすべての TypeRef use-site で valid であることを意味しない。task / branch / fork / join の `params[].model` から task-file private helper model を参照した場合、解決後に `invalid_private_model_reference` error とする。task / join の `returns.model` から同一 file 内の private helper model を参照することは valid とし、minimum scope では diagnostic を出さない。
+
 ```yaml
 nodes:
   - id: get_preview
@@ -277,7 +279,7 @@ map<user>
 
 TypeRef 構文は valid だが内部の named model が解決できない場合は、出現箇所に応じて既存の未解決 diagnostic を使う。`fields[].type` では `unresolved_field_type`、`params[].model` / `returns.model` / `model.element` / `model.value` では `unresolved_model` を使う。構文自体が壊れている場合、または TypeRef として扱えない container kind を指定した場合のみ `invalid_type_ref` を出す。
 
-Task-file helper model が参照元の名前解決 scope に存在しない場合、初期実装は上記の既存未解決 diagnostic を出してよい。より明確な `invalid_private_model_reference` diagnostic を追加するかどうかは TASK-DATA-002-03 の実装時に判断する。
+Task-file helper model が参照元の名前解決 scope に存在しない場合、上記の既存未解決 diagnostic を出してよい。TypeRef が同一 file 内の helper model に解決できたが、その use-site が `params[].model` である場合は未解決ではなく `invalid_private_model_reference` を出す。
 
 TypeRef の解決に失敗した場合、その TypeRef を使う flow wiring では `incompatible_wiring_type` を追加で発行しない。型互換性チェックは source TypeRef と target TypeRef の両方が正常に解決できた場合のみ行う。
 

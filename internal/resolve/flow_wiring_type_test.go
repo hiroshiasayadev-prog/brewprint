@@ -155,22 +155,30 @@ func flowWiringProject(sourceModel string, targetModel string, extraModels []raw
 		{ID: "config", Kind: "struct", Fields: []rawyaml.ModelField{{Name: "id", Type: "str"}}},
 	}
 	models = append(models, extraModels...)
-	return &rawyaml.Project{Files: []rawyaml.File{{
-		ID:   "shop/task/run.yaml",
-		Kind: rawyaml.FileKindNode,
-		NodeFile: &rawyaml.NodeFile{
-			Models: models,
-			Tasks: []rawyaml.Task{
-				{ID: "run", Main: true, Params: []rawyaml.Param{{Name: "input", Model: sourceModel}}},
-				{ID: "produce", Returns: &rawyaml.Return{Name: "input", Model: sourceModel}},
-				{ID: "consume", Params: []rawyaml.Param{{Name: "input", Model: targetModel}}, Returns: &rawyaml.Return{Name: "input", Model: targetModel}},
+	return &rawyaml.Project{Files: []rawyaml.File{
+		{
+			ID:   "shop/model/types.yaml",
+			Kind: rawyaml.FileKindNode,
+			NodeFile: &rawyaml.NodeFile{
+				Models: models,
 			},
-			Branches: []rawyaml.ControlNode{{ID: "route", Params: []rawyaml.Param{{Name: "input", Model: targetModel}}}},
-			Forks:    []rawyaml.ControlNode{{ID: "fan_out"}},
-			Joins:    []rawyaml.ControlNode{{ID: "aggregate", Params: []rawyaml.Param{{Name: "input", Model: sourceModel}}, Returns: &rawyaml.Return{Name: "input", Model: sourceModel}}},
-			Flow:     flow,
 		},
-	}}}
+		{
+			ID:   "shop/task/run.yaml",
+			Kind: rawyaml.FileKindNode,
+			NodeFile: &rawyaml.NodeFile{
+				Tasks: []rawyaml.Task{
+					{ID: "run", Main: true, Params: []rawyaml.Param{{Name: "input", Model: sourceModel}}},
+					{ID: "produce", Returns: &rawyaml.Return{Name: "input", Model: sourceModel}},
+					{ID: "consume", Params: []rawyaml.Param{{Name: "input", Model: targetModel}}, Returns: &rawyaml.Return{Name: "input", Model: targetModel}},
+				},
+				Branches: []rawyaml.ControlNode{{ID: "route", Params: []rawyaml.Param{{Name: "input", Model: targetModel}}}},
+				Forks:    []rawyaml.ControlNode{{ID: "fan_out"}},
+				Joins:    []rawyaml.ControlNode{{ID: "aggregate", Params: []rawyaml.Param{{Name: "input", Model: sourceModel}}, Returns: &rawyaml.Return{Name: "input", Model: sourceModel}}},
+				Flow:     flow,
+			},
+		},
+	}}
 }
 
 func assertNoDiagnosticCode(t *testing.T, diagnostics []semantic.Diagnostic, code string) {

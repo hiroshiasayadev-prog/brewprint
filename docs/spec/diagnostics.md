@@ -146,6 +146,7 @@ Sort key:
 | `invalid_model_kind` | error | model kindが許可値ではない |
 | `duplicate_model_field` | error | model field名が重複している |
 | `duplicate_model_id` | error | 同一 file 内の model id 重複、または同一 module 内の public model と file-private helper model の同名衝突 |
+| `invalid_private_model_reference` | error | task / branch / fork / join の `params[].model` が同一 task file 内の file-private helper model を参照している |
 | `duplicate_primary_key` | error | model内にprimary keyが複数ある |
 | `missing_required_field` | error | 必須fieldが欠落している |
 | `invalid_type_ref` | error | TypeRef構文が不正、TypeRef として扱えない container kind 等を指定している、または parser safety limit を超過している |
@@ -160,9 +161,11 @@ Sort key:
 
 `duplicate_model_id` は task-file helper minimum の model identity validation に使う。名前衝突 rule は [naming.md](./naming.md#41-task-file-helper-model-の名前衝突) §4.1、task-file helper model の基本 semantics は [nodes.md](./nodes.md#task-file-private-helper-model-semantics) を正とする。
 
-Task-file helper model が参照元の TypeRef scope に入らない場合、初期実装では、出現箇所に応じて既存の `unresolved_model` または `unresolved_field_type` を出してよい。専用 code が必要な場合は、TASK-DATA-002-03 で `invalid_private_model_reference` 等の追加可否を判断する。
+Task-file helper model が参照元の TypeRef scope に入らない場合、出現箇所に応じて既存の `unresolved_model` または `unresolved_field_type` を出してよい。
 
-> 由来: ADR-067 §6, ADR-070 §7〜§8
+`invalid_private_model_reference` は、同一 task file 内の file-private helper model として解決できた TypeRef が、public input contract である `params[].model` から参照された場合に出す。これは未解決参照ではないため、同じ参照に対して `unresolved_model` を重ねて出さない。対象は task / branch / fork / join の params とする。`returns.model` が同一 file 内の private helper model を参照することは valid とし、minimum scope では diagnostic を出さない。helper model identity が `duplicate_model_id` 等で既に不正な場合、`invalid_private_model_reference` は連鎖抑制してよい。
+
+> 由来: ADR-067 §6, ADR-070 §7〜§8, REQ-DATA-003 / TASK-DATA-004-01
 
 ### TypeRef lint / warning
 

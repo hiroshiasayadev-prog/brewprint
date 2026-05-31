@@ -41,7 +41,7 @@ func TestRenderDAGPrivateModelsSection(t *testing.T) {
 		},
 	}}})
 	for _, diagnostic := range diagnostics {
-		if diagnostic.Severity == semantic.SeverityError {
+		if diagnostic.Severity == semantic.SeverityError && diagnostic.Code != "invalid_private_model_reference" {
 			t.Fatalf("semantic diagnostic: %s: %s", diagnostic.FileID, diagnostic.Message)
 		}
 	}

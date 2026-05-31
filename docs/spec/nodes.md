@@ -148,7 +148,16 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 
 `returns.source` は task return wiring であり、`returns.name` / `returns.model` が表す外向き signature を満たす値を内部 flow または入力からどこで得るかを明示する。leaf task / note-only task / external boundary task では省略できる。`returns.source` を省略した場合、`returns.name` と flow source 名が一致していても暗黙接続は行わない。source 解決と型互換性の詳細は [edges.md](./edges.md) §1-8 を参照する。
 
-> 由来: ADR-062 §1〜§7, ADR-063 §1
+### Task-file private helper model signature exposure
+
+Task-file private helper model は同一 YAML file 内の TypeRef から解決できるが、task signature の contract direction により許可範囲が異なる。
+
+- task / branch / fork / join の `params[].model` は caller / parent flow が値を構築して渡す public input contract であるため、task-file private helper model を参照してはならない。参照した場合は `invalid_private_model_reference` error とする。
+- task / join の `returns.model` は task / join が生成する output contract であるため、同一 file 内の private helper model を参照してよい。minimum scope では diagnostic を出さない。
+
+この rule は validation policy であり、render policy ではない。DAG Markdown の `## Private models.used by` は direct TypeRef reference inventory であり、参照の妥当性を保証しない。
+
+> 由来: ADR-062 §1〜§7, ADR-063 §1, REQ-DATA-003 / TASK-DATA-004-01
 
 ### init オブジェクト（initializes内）
 

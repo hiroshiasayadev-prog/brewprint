@@ -1,6 +1,7 @@
 package resolve
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/hiroshiasayadev-prog/brewprint/internal/rawyaml"
@@ -17,9 +18,6 @@ func TestTaskFileHelperModelsResolveSameFileTypeRefs(t *testing.T) {
 	if task == nil {
 		t.Fatalf("auth.task.login not found")
 	}
-	if got, want := task.Params[0].Model, semantic.QualifiedID("auth/task/login.yaml#login_form"); got != want {
-		t.Fatalf("param model = %s, want %s", got, want)
-	}
 	if got, want := task.Returns.Model, semantic.QualifiedID("auth/task/login.yaml#login_token"); got != want {
 		t.Fatalf("return model = %s, want %s", got, want)
 	}
@@ -34,6 +32,88 @@ func TestTaskFileHelperModelsResolveSameFileTypeRefs(t *testing.T) {
 	if project.ModelsByQID["auth.model.login_form"] != nil {
 		t.Fatalf("task-file helper leaked as public model")
 	}
+}
+
+func TestTaskFilePrivateHelperParamModelIsRejected(t *testing.T) {
+	_, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{taskFileWithPrivateParamHelper("auth/task/login.yaml")}})
+
+	assertDiagnosticCode(t, diagnostics, diagnosticInvalidPrivateModelRef)
+	assertNoDiagnosticCode(t, diagnostics, diagnosticUnresolvedModel)
+
+	var found semantic.Diagnostic
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Code == diagnosticInvalidPrivateModelRef {
+			found = diagnostic
+			break
+		}
+	}
+	if found.FileID != "auth/task/login.yaml" {
+		t.Fatalf("invalid_private_model_reference file = %s, want auth/task/login.yaml", found.FileID)
+	}
+	if !strings.Contains(found.Message, "params[].model") || !strings.Contains(found.Message, "login_form") || !strings.Contains(found.Message, "auth/task/login.yaml#login_form") {
+		t.Fatalf("invalid_private_model_reference message does not identify params[].model and model id: %q", found.Message)
+	}
+}
+
+func TestTaskFilePrivateHelperParamModelIsRejectedForControlNodes(t *testing.T) {
+	_, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{{
+		ID:   "auth/task/login.yaml",
+		Kind: rawyaml.FileKindNode,
+		NodeFile: &rawyaml.NodeFile{
+			Tasks:    []rawyaml.Task{{ID: "login", Main: true}},
+			Branches: []rawyaml.ControlNode{{ID: "route", Params: []rawyaml.Param{{Name: "form", Model: "login_form"}}}},
+			Forks:    []rawyaml.ControlNode{{ID: "fan_out", Params: []rawyaml.Param{{Name: "form", Model: "login_form"}}}},
+			Joins:    []rawyaml.ControlNode{{ID: "aggregate", Params: []rawyaml.Param{{Name: "form", Model: "login_form"}}}},
+			Models: []rawyaml.Model{{
+				ID:     "login_form",
+				Kind:   "struct",
+				Fields: []rawyaml.ModelField{{Name: "username", Type: "str"}},
+			}},
+		},
+	}}})
+
+	if got := countDiagnosticCode(diagnostics, diagnosticInvalidPrivateModelRef); got != 3 {
+		t.Fatalf("invalid_private_model_reference count = %d, want 3: %#v", got, diagnostics)
+	}
+	assertNoDiagnosticCode(t, diagnostics, diagnosticUnresolvedModel)
+}
+
+func TestTaskFilePrivateHelperReturnModelIsAccepted(t *testing.T) {
+	_, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{{
+		ID:   "auth/task/login.yaml",
+		Kind: rawyaml.FileKindNode,
+		NodeFile: &rawyaml.NodeFile{
+			Tasks: []rawyaml.Task{{
+				ID:      "login",
+				Main:    true,
+				Returns: &rawyaml.Return{Name: "result", Model: "login_token"},
+			}},
+			Models: []rawyaml.Model{{
+				ID:     "login_token",
+				Kind:   "struct",
+				Fields: []rawyaml.ModelField{{Name: "token", Type: "str"}},
+			}},
+		},
+	}}})
+
+	if len(diagnostics) != 0 {
+		t.Fatalf("private helper returns.model diagnostics = %#v, want none", diagnostics)
+	}
+}
+
+func TestTaskFilePrivateHelperUnresolvedParamStillUsesUnresolvedModel(t *testing.T) {
+	_, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{{
+		ID:   "auth/task/login.yaml",
+		Kind: rawyaml.FileKindNode,
+		NodeFile: &rawyaml.NodeFile{Tasks: []rawyaml.Task{{
+			ID:     "login",
+			Main:   true,
+			Params: []rawyaml.Param{{Name: "form", Model: "missing_model"}},
+		}}},
+	}}})
+
+	assertDiagnosticCode(t, diagnostics, diagnosticUnresolvedModel)
+	assertNoDiagnosticCode(t, diagnostics, diagnosticInvalidPrivateModelRef)
 }
 
 func TestTaskFileHelperModelConflictsWithPublicModelID(t *testing.T) {
@@ -57,6 +137,7 @@ func TestTaskFileHelperModelDuplicateInSameFile(t *testing.T) {
 		},
 	}}})
 	assertDiagnosticCode(t, diagnostics, diagnosticDuplicateModelID)
+	assertNoDiagnosticCode(t, diagnostics, diagnosticInvalidPrivateModelRef)
 }
 
 func TestTaskFileHelperModelConflictsWithMainTaskLocalID(t *testing.T) {
@@ -64,7 +145,7 @@ func TestTaskFileHelperModelConflictsWithMainTaskLocalID(t *testing.T) {
 		ID:   "auth/task/login.yaml",
 		Kind: rawyaml.FileKindNode,
 		NodeFile: &rawyaml.NodeFile{
-			Tasks: []rawyaml.Task{{ID: "login", Main: true}},
+			Tasks: []rawyaml.Task{{ID: "login", Main: true, Params: []rawyaml.Param{{Name: "payload", Model: "login"}}}},
 			Models: []rawyaml.Model{{
 				ID:     "login",
 				Kind:   "struct",
@@ -75,6 +156,7 @@ func TestTaskFileHelperModelConflictsWithMainTaskLocalID(t *testing.T) {
 	assertDiagnosticCode(t, diagnostics, diagnosticDuplicateModelID)
 	assertNoDiagnosticCode(t, diagnostics, diagnosticUnresolvedModel)
 	assertNoDiagnosticCode(t, diagnostics, diagnosticUnresolvedFieldType)
+	assertNoDiagnosticCode(t, diagnostics, diagnosticInvalidPrivateModelRef)
 }
 
 func TestTaskFileHelperModelConflictsWithPrivateSubTaskLocalID(t *testing.T) {
@@ -215,7 +297,7 @@ func taskFileWithHelpers(fileID string, taskID string, paramModel string, return
 			Tasks: []rawyaml.Task{{
 				ID:      taskID,
 				Main:    true,
-				Params:  []rawyaml.Param{{Name: "form", Model: paramModel}},
+				Params:  []rawyaml.Param{{Name: "request_id", Model: "str"}},
 				Returns: &rawyaml.Return{Name: "result", Model: returnModel},
 			}},
 			Models: []rawyaml.Model{
@@ -235,6 +317,26 @@ func taskFileWithHelpers(fileID string, taskID string, paramModel string, return
 					Fields: []rawyaml.ModelField{{Name: "credentials", Type: "login_credentials"}},
 				},
 			},
+		},
+	}
+}
+
+func taskFileWithPrivateParamHelper(fileID string) rawyaml.File {
+	return rawyaml.File{
+		ID:   fileID,
+		Kind: rawyaml.FileKindNode,
+		NodeFile: &rawyaml.NodeFile{
+			Tasks: []rawyaml.Task{{
+				ID:      "login",
+				Main:    true,
+				Params:  []rawyaml.Param{{Name: "form", Model: "login_form"}},
+				Returns: &rawyaml.Return{Name: "result", Model: "str"},
+			}},
+			Models: []rawyaml.Model{{
+				ID:     "login_form",
+				Kind:   "struct",
+				Fields: []rawyaml.ModelField{{Name: "username", Type: "str"}},
+			}},
 		},
 	}
 }

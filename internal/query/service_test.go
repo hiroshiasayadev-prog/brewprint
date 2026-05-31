@@ -1002,12 +1002,11 @@ func TestTaskFilePrivateHelperModelsDoNotLeakAsPublicQueryTargets(t *testing.T) 
 			Tasks: []rawyaml.Task{{
 				ID:      "login",
 				Main:    true,
-				Params:  []rawyaml.Param{{Name: "form", Model: "login_form"}},
 				Returns: &rawyaml.Return{Name: "token", Model: "login_token"},
 			}},
 			Models: []rawyaml.Model{
 				{ID: "login_form", Kind: "struct", Fields: []rawyaml.ModelField{{Name: "username", Type: "str"}}},
-				{ID: "login_token", Kind: "struct", Fields: []rawyaml.ModelField{{Name: "access_token", Type: "str"}}},
+				{ID: "login_token", Kind: "struct", Fields: []rawyaml.ModelField{{Name: "access_token", Type: "str"}, {Name: "form", Type: "login_form"}}},
 			},
 		},
 	}}})
@@ -1021,8 +1020,8 @@ func TestTaskFilePrivateHelperModelsDoNotLeakAsPublicQueryTargets(t *testing.T) 
 		t.Fatalf("GetSignature task: %v", err)
 	}
 	params := signature.Signature["params"].([]ParamSignature)
-	if len(params) != 1 || params[0].Model != "login_form" || strings.Contains(params[0].Model, "#") {
-		t.Fatalf("private helper param model leaked synthetic id: %#v", params)
+	if len(params) != 0 {
+		t.Fatalf("params = %#v, want none", params)
 	}
 	ret := signature.Signature["returns"].(*ReturnSignature)
 	if ret.Model != "login_token" || strings.Contains(ret.Model, "#") || ret.Asset.Model != "login_token" || strings.Contains(ret.Asset.Model, "#") {

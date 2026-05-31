@@ -25,6 +25,7 @@ const (
 	diagnosticInvalidEnumModel          = "invalid_enum_model"
 	diagnosticDuplicateEnumValue        = "duplicate_enum_value"
 	diagnosticDuplicateModelID          = "duplicate_model_id"
+	diagnosticInvalidPrivateModelRef    = "invalid_private_model_reference"
 	diagnosticDuplicateNode             = "duplicate_node"
 	diagnosticDuplicateSubNode          = "duplicate_sub_node"
 	diagnosticDuplicateMainNode         = "duplicate_main_node"
@@ -336,9 +337,58 @@ func validateParams(project *semantic.Project, symbols *symbolTable, fileID sema
 		if param.ModelName == "" {
 			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticMissingRequiredField, fileID, fmt.Sprintf("%s model is required: %s", context, param.Name))
 		} else {
-			validateTypeRef(project, symbols, fileID, module, param.ModelName, context+" param "+param.Name, diagnosticUnresolvedModel, fmt.Sprintf("unresolved %s model: %s", context, param.ModelName))
+			if validateTypeRef(project, symbols, fileID, module, param.ModelName, context+" param "+param.Name, diagnosticUnresolvedModel, fmt.Sprintf("unresolved %s model: %s", context, param.ModelName)) {
+				validateParamPrivateModelReference(project, symbols, fileID, context, param)
+			}
 		}
 	}
+}
+
+func validateParamPrivateModelReference(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, context string, param semantic.Param) {
+	model := firstTaskFilePrivateModelReference(project, fileID, param.TypeRef)
+	if model == nil || privateModelIdentityInvalid(symbols, fileID, model.ID) {
+		return
+	}
+	paramName := param.Name
+	if paramName == "" {
+		paramName = "<unnamed>"
+	}
+	symbols.addDiagnosticCode(
+		semantic.SeverityError,
+		diagnosticInvalidPrivateModelRef,
+		fileID,
+		fmt.Sprintf("invalid private model reference at %s param %s params[].model: %s resolves to private model %s", context, paramName, param.ModelName, model.QID),
+	)
+}
+
+func firstTaskFilePrivateModelReference(project *semantic.Project, fileID semantic.FileID, ref *semantic.TypeRef) *semantic.Model {
+	if ref == nil {
+		return nil
+	}
+	switch ref.Kind {
+	case semantic.TypeRefNamedModel:
+		model := privateModelByQID(project, ref.Model)
+		if model != nil && model.FileID == fileID && isTaskFileID(model.FileID) {
+			return model
+		}
+	case semantic.TypeRefList:
+		return firstTaskFilePrivateModelReference(project, fileID, ref.Elem)
+	case semantic.TypeRefDict:
+		return firstTaskFilePrivateModelReference(project, fileID, ref.Value)
+	}
+	return nil
+}
+
+func privateModelIdentityInvalid(symbols *symbolTable, fileID semantic.FileID, id string) bool {
+	if id == "" {
+		return false
+	}
+	for _, diagnostic := range symbols.diags {
+		if diagnostic.Code == diagnosticDuplicateModelID && diagnostic.FileID == fileID && strings.HasSuffix(diagnostic.Message, ": "+id) {
+			return true
+		}
+	}
+	return false
 }
 
 func validateReturn(project *semantic.Project, symbols *symbolTable, fileID semantic.FileID, owner string, context string, ret *semantic.Return) {

@@ -191,18 +191,26 @@ func foreachReturnsProjectWithTasks(applyReturnModel string, targetModel string,
 			tasks = append(tasks, extra)
 		}
 	}
-	return &rawyaml.Project{Files: []rawyaml.File{{
-		ID:   "shop/task/run.yaml",
-		Kind: rawyaml.FileKindNode,
-		NodeFile: &rawyaml.NodeFile{
-			Models:   models,
-			Tasks:    tasks,
-			Branches: []rawyaml.ControlNode{{ID: "route", Params: []rawyaml.Param{{Name: "items", Model: targetModel}}}},
-			Forks:    []rawyaml.ControlNode{{ID: "fan_out"}},
-			Joins:    []rawyaml.ControlNode{{ID: "aggregate", Returns: &rawyaml.Return{Name: "joined", Model: "order"}}},
-			Flow:     flow,
+	return &rawyaml.Project{Files: []rawyaml.File{
+		{
+			ID:   "shop/model/types.yaml",
+			Kind: rawyaml.FileKindNode,
+			NodeFile: &rawyaml.NodeFile{
+				Models: models,
+			},
 		},
-	}}}
+		{
+			ID:   "shop/task/run.yaml",
+			Kind: rawyaml.FileKindNode,
+			NodeFile: &rawyaml.NodeFile{
+				Tasks:    tasks,
+				Branches: []rawyaml.ControlNode{{ID: "route", Params: []rawyaml.Param{{Name: "items", Model: targetModel}}}},
+				Forks:    []rawyaml.ControlNode{{ID: "fan_out"}},
+				Joins:    []rawyaml.ControlNode{{ID: "aggregate", Returns: &rawyaml.Return{Name: "joined", Model: "order"}}},
+				Flow:     flow,
+			},
+		},
+	}}
 }
 
 func assertDiagnosticCodeCount(t *testing.T, diagnostics []semantic.Diagnostic, code string, want int) {
