@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/views/dag.md
 status: confirmed
-last_updated: 2026-05-06
+last_updated: 2026-05-31
 summary: >
   DAG（Directed Acyclic Graph）のrenderルール定義。
   Processingレイヤーのノード・エッジをMermaid flowchartとして出力する際の
@@ -24,6 +24,7 @@ depends_on:
   - docs/adr/064-returns-source-dag-render.md
   - docs/adr/065-asset-immutability-and-edge-role-contrast.md
   - docs/adr/066-dag-classdef-wcag-fix.md
+  - docs/adr/071-file-private-helper-model-render-exposure.md
 ---
 
 # DAG renderルール
@@ -56,6 +57,12 @@ flowchart TD
 
 ### {task_id}
 ...
+
+## Private models
+
+| model | kind | used by | shape | note |
+|---|---|---|---|---|
+| {helper_model_id} | struct | {task_id}.returns | field: type | note |
 ```
 
 - H1 = メインノードの `id`
@@ -63,6 +70,7 @@ flowchart TD
 - 説明文 = メインノードの `note`。`note` がない場合は省略
 - Mermaid記法: `flowchart TD`（上から下）
 - **Tasks詳細セクション** = Mermaid図の後に続く。task / fork / join / branch のsignature・reads/writes・noteを一覧する
+- **Private models詳細セクション** = 対象 task file に file-private helper model が存在する場合のみ、`## Tasks` の後に続けて出力する。存在しない場合は section 自体を省略する
 
 ### Tasks詳細セクションのフォーマット
 
@@ -110,6 +118,50 @@ flowchart TD
 
 > 由来: ADR-064 §1〜§3
 
+### Private models詳細セクションのフォーマット
+
+Task-file helper model の基本 semantics は [nodes.md](../nodes.md#task-file-private-helper-model-semantics) が定義する。DAG Markdown は、この helper model を Mermaid flowchart 本体には描画せず、Mermaid 図と `## Tasks` の後に `## Private models` table として表示する。
+
+```markdown
+## Private models
+
+| model | kind | used by | shape | note |
+|---|---|---|---|---|
+| preview_response | struct | get_preview.returns | items: list<preview_item> | response schema |
+| preview_item | struct | preview_response.items | title: str<br/>url: str | item entry |
+```
+
+| column | 内容 |
+|---|---|
+| `model` | helper model id |
+| `kind` | `struct` / `list` / `dict` / `enum` |
+| `used by` | 当該 helper model を直接参照している箇所。複数ある場合は `<br/>` 区切り |
+| `shape` | kind に応じた depth 1 の schema 概要 |
+| `note` | helper model の `note`。ない場合は `—` |
+
+`used by` は depth 1 の直接参照だけを列挙する。表記は `<parent_id>.<location>` とし、location は参照元の種類に応じて以下を使う。
+
+| 参照元 | location |
+|---|---|
+| struct field | field name |
+| task / branch / fork / join param | `param:<name>` |
+| returns | `returns` |
+| list model element | `element` |
+| dict model value | `value` |
+
+`shape` は kind に応じて以下の通り表示する。
+
+| kind | shape |
+|---|---|
+| `struct` | field を `name: type` 形式で `<br/>` 区切りで列挙する。field note は含めない |
+| `list` | `list<element_type>` |
+| `dict` | `dict<value_type>`。key は常に `str` |
+| `enum` | values を `<br/>` 区切りで列挙する |
+
+Nested helper model は型名参照に留め、さらに深い schema 展開は行わない。Public model の deep schema 展開、model-file helper model render、model catalog render は DAG Markdown の責務外であり、WORK-DATA-003 または後続 scope で扱う。
+
+> 由来: ADR-071 §1〜§5
+
 ---
 
 ## ノードのrender
@@ -145,6 +197,8 @@ task_id[task_id]
 ```
 
 形状: 矩形（Mermaid `[label]`）
+
+Task-file helper model は processing flow node ではないため、task / asset / store / branch / fork / join として Mermaid DAG 本体に描画しない。Helper model の render exposure は `## Private models` detail section に限定する。DAG の asset node label に TypeRef を表示するかどうかは ADR-074 / WORK-DATA-003 以降の範囲であり、本仕様更新では扱わない。
 
 ### asset
 
@@ -903,4 +957,3 @@ flowchart TD
 ```
 
 > 由来: ADR-064, ADR-066
-

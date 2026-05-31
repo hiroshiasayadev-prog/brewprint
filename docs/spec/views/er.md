@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/views/er.md
 status: confirmed
-last_updated: 2026-05-05
+last_updated: 2026-05-31
 summary: >
   ER図のrenderルール。
   store.kind=dbとmodelの参照を辿ってMermaid erDiagramを生成する際の
@@ -14,6 +14,7 @@ depends_on:
   - docs/adr/039-er-diagram-composed-view.md
   - docs/adr/014-initializes-field.md
   - docs/adr/065-asset-immutability-and-edge-role-contrast.md
+  - docs/adr/070-model-visibility-file-private-helper-model.md
 ---
 
 # ER図 renderルール
@@ -31,6 +32,8 @@ ER図に登場するノードは以下の2種のみ。
 `model.kind: list` / `dict` はエンティティとしてER図に登場しない（structのフィールド型として出現するのみ）。
 
 `initializes[]` で宣言された initialized store もER図に登場しない。`kind` を持たないため `store.kind: db` の条件を満たさず、また task 内の file-private な runtime instance であって永続データ構造ではないため（ADR-014, ADR-065）。
+
+Task-file helper model の基本 semantics は [nodes.md](../nodes.md#task-file-private-helper-model-semantics) が定義する。ER図は `store.kind: db` の `store.of` から辿る public model を対象とするため、task-file helper model はER図に登場しない。
 
 ---
 

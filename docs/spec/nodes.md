@@ -34,6 +34,8 @@ depends_on:
   - docs/adr/063-task-return-source-initialized-store.md
   - docs/adr/065-asset-immutability-and-edge-role-contrast.md
   - docs/adr/067-enum-model.md
+  - docs/adr/070-model-visibility-file-private-helper-model.md
+  - docs/adr/071-file-private-helper-model-render-exposure.md
 ---
 
 # ノード定義仕様
@@ -66,6 +68,10 @@ transitions:            # Applicationレイヤーの状態遷移（ADR-019）
 
 flow / reads / writes 等に書かれた bare ID は、まず同一 file 内のサブノードまたは file-private source を優先して解決し、該当がない場合のみ同一 module のメインノードへフォールバックする。サブノードは public QualifiedID を持たず、外部 YAML から QualifiedID で参照できる対象ではない。
 
+Task-file helper minimum では、task file 内に `type: model` の file-private helper model を定義できる。詳細な semantics は [model](#model) §Task-file private helper model semantics を参照する。
+
+Model file 内 helper model、model file render、model catalog、tagged union、DAG TypeRef hint、MCP helper exposure schema はこの minimum の対象外とする。
+
 ---
 
 ## 共通フィールド
@@ -82,7 +88,7 @@ flow / reads / writes 等に書かれた bare ID は、まず同一 file 内の�
 
 ## task
 
-> 出典: ADR-009, ADR-010, ADR-011, ADR-014, ADR-017, ADR-020
+> 出典: ADR-009, ADR-010, ADR-011, ADR-014, ADR-017, ADR-020, ADR-070, ADR-071
 
 Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に `asset` ノードを暗黙的に生成する。
 
@@ -121,6 +127,7 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 | `method` | endpoint時必須 | enum | HTTP method（GET/POST/PUT/DELETE/PATCH） | ADR-005 |
 | `path` | 任意 | string | endpointのleaf path（例: `login`）。省略時は `task.id` をleaf nameとして使う。`/` を含む複数セグメント不可（single segment限定）。full pathはAPI Table viewの `http_root_path` とmodule階層から構成する | ADR-005, ADR-028 |
 | `initializes` | 任意 | list\<init\> | このファイル内で使うstoreの初期宣言（main nodeのみ）| ADR-014 |
+| task-file helper model | 任意 | `type: model` node | 同一 task file 内の private schema 定義。詳細は [model](#model) §Task-file private helper model semantics | ADR-070, ADR-071 |
 
 ### param オブジェクト
 
@@ -167,7 +174,26 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 
 > 出典: ADR-007（superseded・内容はADR-010に継承）, ADR-008, ADR-010, ADR-021, ADR-060, ADR-067
 
-Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` サブディレクトリに1ファイル=1定義で置く。
+Dataレイヤー。型定義に徹する。DAGには登場しない。
+
+Public model は `model/` サブディレクトリに置く module-level schema 定義である。Task-file helper minimum では、task file 内に `main: true` を持たない `type: model` node を file-private helper model として置ける。task-file helper model は、同一 YAML file 内の `params[].model` / `returns.model` / helper model の `fields[].type` / `element` / `value` から bare TypeRef で参照するための task-local schema であり、public model file ではない。
+
+### Task-file private helper model semantics
+
+Task-file helper model の visibility / identity / reference scope は以下の通り。
+
+| property | rule |
+|---|---|
+| visibility | file-private。YAML field として `visibility:` は導入しない |
+| public identity | public QualifiedID を持たない |
+| local identity | defining task file 内の local model id |
+| reference scope | 同一 YAML file 内の TypeRef からのみ bare id で参照できる |
+| external reference | 外部 file / module から参照不可。QualifiedID で参照する構文もない |
+| render role | DAG Mermaid 本体には描画しない。task-file render の `## Private models` に表示されうる |
+
+同一 task file 内の helper model id は、他の file-private local node id と同じく同一 file 内で一意でなければならない。さらに、task-file helper model は同一 module 内の public model と同じ id を持ってはならない。これにより bare TypeRef の読み手が public model と file-private helper model を文脈依存で取り違えることを防ぐ。
+
+Model file 内 helper model、model file render、model catalog、および UC-002 model response helper-shape migration は WORK-DATA-003 の範囲であり、この task-file helper minimum では定義しない。
 
 ```yaml
 # struct
@@ -262,6 +288,8 @@ Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` �
 | `note` | 任意 | string | 人間向けdocstring兼LLM semantic contract | ADR-008, ADR-021 |
 
 `type` の機械的validationは TypeRef の構文チェック、および primitive予約語 or 定義済みmodel IDの存在チェックを行う。inline `list<T>` / `dict<T>` は要素・値の TypeRef を再帰的に検証する。TypeRef 構文自体が不正な場合は `invalid_type_ref`、構文はvalidだが named model が未解決の場合は `unresolved_field_type` を出す。
+
+Task-file helper model の `fields[].type` / `element` / `value` も TypeRef として解決する。同一 file 内の helper model を bare TypeRef で参照できるが、外部 file から helper model を参照することはできない。詳細な解決順序は [type-ref.md](./type-ref.md) §4 を参照する。
 
 **`fk` フィールドの意味**
 

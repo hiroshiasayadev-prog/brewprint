@@ -1,7 +1,7 @@
 # TASK-DATA-002-02: Task-file helper minimum spec alignment
 
 - **id**: TASK-DATA-002-02
-- **status**: todo
+- **status**: done
 - **date**: 2026-05-31
 - **work_item**: WORK-DATA-002
 - **source_requirement**: REQ-DATA-002
@@ -90,3 +90,22 @@ Initial evidence:
 - ADR-071 defines task-file helper model render exposure.
 - ADR-072 catalog is opt-in and excluded from Option A.
 - ADR-075 remains proposed and is owned by WORK-DATA-003.
+
+Completion evidence:
+
+- Updated `docs/spec/nodes.md` to define task-file helper model placement, file-private visibility, local identity, same-file reference scope, external QualifiedID prohibition, DAG non-node behavior, and same-module public/helper model name collision.
+- Updated `docs/spec/naming.md` to reference the canonical node semantics and define public model / file-private helper model collision rules.
+- Updated `docs/spec/type-ref.md` to reference the canonical node semantics, define same-file helper model bare TypeRef resolution before same-module public model fallback, and state that QualifiedID TypeRefs only target public models.
+- Updated `docs/spec/views/dag.md` to reference the canonical node semantics, define the task-file render `## Private models` section, and keep helper models out of the Mermaid DAG body.
+- Updated `docs/spec/views/er.md` to state that task-file helper models do not appear in ER renders.
+- Updated `docs/spec/diagnostics.md` to add `duplicate_model_id` for helper/public model collision and to leave any dedicated external-helper-reference diagnostic decision to TASK-DATA-002-03; the existing unresolved TypeRef diagnostics remain acceptable for the minimum.
+- Deferred ADR-072 model/schema catalog, ADR-075 model file render, model-file helper render exposure, and UC-002 helper-shape migration to WORK-DATA-003.
+- No implementation, renderer code, UC-002 YAML, fixture, or golden output was changed.
+
+## Implementation-entry Notes for TASK-DATA-002-03
+
+- Parser / resolver should accept `type: model` helper nodes in task files as file-private local schema definitions.
+- Same-file TypeRef resolution should search task-file helper models before same-module public models, while validation rejects public/helper same-name collisions within the module.
+- QualifiedID TypeRefs should not resolve to task-file helper models.
+- DAG renderer should render helper models only in Markdown `## Private models` and should not add them to Mermaid DAG nodes.
+- Validation should implement `duplicate_model_id`; a dedicated invalid external helper reference diagnostic is optional and should be decided during implementation if existing `unresolved_model` / `unresolved_field_type` messages are too ambiguous.

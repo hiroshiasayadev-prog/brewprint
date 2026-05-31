@@ -14,6 +14,7 @@ depends_on:
   - docs/adr/031-actor-global-definition.md
   - docs/adr/033-fk-name-resolution.md
   - docs/adr/058-subnode-file-private-scope-enforcement.md
+  - docs/adr/070-model-visibility-file-private-helper-model.md
   - docs/adr/078-mcp-semantic-anchor-synthetic-id-policy.md
 ---
 
@@ -51,6 +52,8 @@ yaml/
 - `<ID>`: public node ID。メインノードのみが public QualifiedID の対象となる
 
 サブノードは file-private local ID を持つが、public QualifiedID は持たない。したがって、別 file の同名サブノード local ID とは衝突せず、外部 YAML から `<module>.<type>.<sub-node-id>` 形式で参照することもできない。
+
+Task-file helper model の基本 semantics は [nodes.md](./nodes.md#task-file-private-helper-model-semantics) が定義する。本仕様では、`<module>.model.<id>` QualifiedID が public model のみを対象とすることを定義する。
 
 MCP query layer が file-private / generated object を返す場合、ADR-078 の方針により `<semantic-anchor-id>#<local-id>` 形式の synthetic ID を使える。ただしこれは public QualifiedID ではなく、YAML authoring の外部参照形式でもない。MCP schema / ObjectRef migration details are outside this spec section and are not changed by this resolver work.
 
@@ -100,6 +103,8 @@ auth.oauth.task.login
 
 同一 file 内に書かれた `flow.step` / `reads` / `writes` 等の bare ID は、まず同一 file 内の file-private sub node / source を優先して解決する。該当がない場合のみ、同一 module のメインノードへフォールバックする。
 
+TypeRef における bare model name の解決は [type-ref.md](./type-ref.md) §4 が所有する。本仕様では、task-file helper model と public model の名前衝突 rule だけを定義する。
+
 ```yaml
 # 同モジュール内（auth/dag.yaml内での参照）
 flow:
@@ -113,6 +118,23 @@ edges:
 ```
 
 > 由来: ADR-003 §決定, ADR-027 §フルパス必須（同モジュール内ID直書きは継承）
+
+### 4.1 task-file helper model の名前衝突
+
+Task-file helper model の visibility / identity / reference scope は [nodes.md](./nodes.md#task-file-private-helper-model-semantics) を正とする。本節では、TypeRef の可読性を守るための名前衝突 rule を定義する。
+
+| case | result |
+|---|---|
+| 同一 file 内で helper model 同士が同じ id を持つ | invalid |
+| 同一 file 内で main node / private sub node / helper model の local id が衝突する | invalid |
+| 同一 module 内の public model と task-file helper model が同じ id を持つ | invalid |
+| 同一 module 内の別 file にある task-file helper model 同士が同じ id を持つ | valid |
+| 別 module の public model と task-file helper model が同じ id を持つ | valid |
+| 別 module の task-file helper model 同士が同じ id を持つ | valid |
+
+外部から再利用する必要が出た helper shape は public model へ昇格させる。
+
+> 由来: ADR-070 §7〜§8
 
 ## 5. actor の global namespace
 

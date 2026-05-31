@@ -11,6 +11,7 @@ depends_on:
   - docs/adr/060-flow-wiring-type-compatibility.md
   - docs/adr/067-enum-model.md
   - docs/adr/069-type-ref-container-complexity-lint.md
+  - docs/adr/070-model-visibility-file-private-helper-model.md
 ---
 
 # TypeRef仕様
@@ -106,6 +107,44 @@ nodes:
 
 primitive でも inline container でもない TypeRef は named model 参照として扱う。enum model も named model TypeRef として参照する。
 
+Task-file helper model の基本 semantics は [nodes.md](./nodes.md#task-file-private-helper-model-semantics) が定義する。本節では、TypeRef resolver における解決順序だけを定義する。
+
+Task file 内で bare named model TypeRef が現れた場合、resolver は以下の順で解決する。
+
+1. primitive 予約語に一致する場合は primitive TypeRef として扱う。
+2. `list<T>` / `dict<T>` は inline container TypeRef として内側の `T` を再帰的に解決する。
+3. named model の bare name は、同一 YAML file 内の file-private helper model を先に探す。
+4. 該当 helper model がない場合、同一 module 内の public model を探す。
+5. それでも解決できない場合、出現箇所に応じて未解決 diagnostic を出す。
+
+QualifiedID を使った named model TypeRef は public model のみを対象とし、task-file helper model には解決しない。
+
+```yaml
+nodes:
+  - id: get_preview
+    type: task
+    main: true
+    returns:
+      name: preview
+      model: preview_response
+
+  - id: preview_response
+    type: model
+    kind: struct
+    fields:
+      - name: items
+        type: list<preview_item>
+
+  - id: preview_item
+    type: model
+    kind: struct
+    fields:
+      - name: title
+        type: str
+```
+
+この例では、`returns.model: preview_response` と `fields[].type: list<preview_item>` は同一 file 内の helper model に解決する。
+
 ```yaml
 params:
   - name: user
@@ -120,7 +159,9 @@ list/dict 以外の named model は nominal に比較する。`user` と `custom
 
 外部shapeとの変換が必要な場合は、adapter / normalize task を明示して別の asset を生成する。
 
-> 由来: ADR-060 §2, §3
+Public model と task-file helper model の同名衝突 rule は [naming.md](./naming.md) §4.1 が所有する。正常な YAML では同一 module 内の public model が同一 file 内の helper model に shadow される状態は作れない。
+
+> 由来: ADR-060 §2, §3; ADR-070 §6〜§8
 
 ---
 
@@ -235,6 +276,8 @@ map<user>
 `map<user>` のように `list` / `dict` 以外の container kind を使った場合も、TypeRef として扱えないため `invalid_type_ref` とする。
 
 TypeRef 構文は valid だが内部の named model が解決できない場合は、出現箇所に応じて既存の未解決 diagnostic を使う。`fields[].type` では `unresolved_field_type`、`params[].model` / `returns.model` / `model.element` / `model.value` では `unresolved_model` を使う。構文自体が壊れている場合、または TypeRef として扱えない container kind を指定した場合のみ `invalid_type_ref` を出す。
+
+Task-file helper model が参照元の名前解決 scope に存在しない場合、初期実装は上記の既存未解決 diagnostic を出してよい。より明確な `invalid_private_model_reference` diagnostic を追加するかどうかは TASK-DATA-002-03 の実装時に判断する。
 
 TypeRef の解決に失敗した場合、その TypeRef を使う flow wiring では `incompatible_wiring_type` を追加で発行しない。型互換性チェックは source TypeRef と target TypeRef の両方が正常に解決できた場合のみ行う。
 

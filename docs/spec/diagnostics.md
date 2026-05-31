@@ -16,6 +16,7 @@ depends_on:
   - docs/adr/063-task-return-source-initialized-store.md
   - docs/adr/067-enum-model.md
   - docs/adr/069-type-ref-container-complexity-lint.md
+  - docs/adr/070-model-visibility-file-private-helper-model.md
 ---
 
 # Diagnostics仕様
@@ -144,6 +145,7 @@ Sort key:
 | `invalid_store_kind` | error | store kindが許可値ではない |
 | `invalid_model_kind` | error | model kindが許可値ではない |
 | `duplicate_model_field` | error | model field名が重複している |
+| `duplicate_model_id` | error | 同一 file 内の model id 重複、または同一 module 内の public model と file-private helper model の同名衝突 |
 | `duplicate_primary_key` | error | model内にprimary keyが複数ある |
 | `missing_required_field` | error | 必須fieldが欠落している |
 | `invalid_type_ref` | error | TypeRef構文が不正、TypeRef として扱えない container kind 等を指定している、または parser safety limit を超過している |
@@ -156,7 +158,11 @@ Sort key:
 
 `invalid_enum_value` は v1.1 minimum では追加しない。現時点の brewprint YAML は主に schema / model 定義であり、enum-typed field に対する runtime literal 値を保持しないためである。
 
-> 由来: ADR-067 §6
+`duplicate_model_id` は task-file helper minimum の model identity validation に使う。名前衝突 rule は [naming.md](./naming.md#41-task-file-helper-model-の名前衝突) §4.1、task-file helper model の基本 semantics は [nodes.md](./nodes.md#task-file-private-helper-model-semantics) を正とする。
+
+Task-file helper model が参照元の TypeRef scope に入らない場合、初期実装では、出現箇所に応じて既存の `unresolved_model` または `unresolved_field_type` を出してよい。専用 code が必要な場合は、TASK-DATA-002-03 で `invalid_private_model_reference` 等の追加可否を判断する。
+
+> 由来: ADR-067 §6, ADR-070 §7〜§8
 
 ### TypeRef lint / warning
 
