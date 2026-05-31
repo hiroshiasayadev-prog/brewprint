@@ -1,7 +1,7 @@
 # WORK-DATA-003: Resolve model-file helper render boundary
 
 - **id**: WORK-DATA-003
-- **status**: implementation_pending
+- **status**: done
 - **date**: 2026-05-31
 - **source_requirement**: REQ-DATA-002
 - **impact_refs**:
@@ -81,16 +81,14 @@ flowchart TD
 
 This work item can be marked `done` when model-file helper render exposure is decided, reflected in the relevant spec and renderer behavior, verified with fixture / golden evidence, and UC-002 model response helper candidates are classified without pulling in tagged union, DAG TypeRef hint, MCP identity, M15 reopen scope, or actual UC-002 migration.
 
-## Close-readiness Evidence
+## Close Evidence
 
-TASK-DATA-003-04 provides the final UC-002 candidate-classification input for this work item.
-
-Close-readiness judgment:
-
+- TASK-DATA-003-01 is done: ADR-075 dependency and split review completed.
+- TASK-DATA-003-02 is done: model-file render minimum spec alignment completed.
+- TASK-DATA-003-03 is done: model-file render implementation, fixture / golden update, and verification completed.
+- TASK-DATA-003-04 is done: UC-002 model response helper candidates classified.
 - Model-file helper render exposure has been decided, specified, implemented, and verified by the DATA-003 task chain.
 - UC-002 response helper-shape candidates are classified into model-file helper migration candidates, REQ-DATA-003 / WORK-DATA-004 wait candidates, and unchanged candidates.
-- Actual UC-002 YAML migration remains delegated to WORK-DATA-004 or later follow-up work.
-- Tagged union, DAG TypeRef hint, MCP helper exposure / identity, M15 reopening, WORK-DATA-002 reopening, and remaining UC-002 notes-retreat debt remain outside this work item.
+- Actual UC-002 YAML migration is delegated to WORK-DATA-004 or later follow-up work.
+- Tagged union rendering, DAG TypeRef hint, MCP identity, M15 reopen scope, WORK-DATA-002 reopening, and actual UC-002 migration were not pulled into this work item.
 - No UC-002 YAML or render output change is required to close WORK-DATA-003.
-
-Therefore WORK-DATA-003 is close-ready after TASK-DATA-003-04, provided close means completion of the model-file render boundary and candidate classification rather than execution of the deferred UC-002 migration.
