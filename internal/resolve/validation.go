@@ -24,6 +24,7 @@ const (
 	diagnosticOpaqueTypeRef             = "opaque_type_ref"
 	diagnosticInvalidEnumModel          = "invalid_enum_model"
 	diagnosticDuplicateEnumValue        = "duplicate_enum_value"
+	diagnosticDuplicateModelID          = "duplicate_model_id"
 	diagnosticDuplicateNode             = "duplicate_node"
 	diagnosticDuplicateSubNode          = "duplicate_sub_node"
 	diagnosticDuplicateMainNode         = "duplicate_main_node"
@@ -88,6 +89,7 @@ var validHTTPMethods = map[string]struct{}{
 
 func validateProject(project *semantic.Project, symbols *symbolTable) {
 	validateRequiredNodeIDs(project, symbols)
+	validateModelIDCollisions(project, symbols)
 	validateModelDefinitions(project, symbols)
 	validateStoreDefinitions(project, symbols)
 	validateTaskDefinitions(project, symbols)
@@ -106,8 +108,33 @@ func validateRequiredNodeIDs(project *semantic.Project, symbols *symbolTable) {
 	}
 }
 
+func validateModelIDCollisions(project *semantic.Project, symbols *symbolTable) {
+	for fileID, byName := range project.PrivateModelsByFile {
+		module := moduleForFileID(fileID)
+		for id := range byName {
+			publicQID := resolveModelQID(module, id)
+			if project.ModelsByQID[publicQID] != nil {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateModelID, fileID, "private model id conflicts with public model in same module: "+id)
+			}
+			for _, node := range project.NodesByFile[fileID] {
+				if node.GetID() != id {
+					continue
+				}
+				if _, ok := node.(*semantic.Model); ok {
+					continue
+				}
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateModelID, fileID, "private model id conflicts with node local id in same file: "+id)
+				break
+			}
+		}
+	}
+}
+
 func validateModelDefinitions(project *semantic.Project, symbols *symbolTable) {
-	for _, model := range project.ModelsByQID {
+	for _, model := range allModels(project) {
+		if isTaskFileID(model.FileID) && model.Main {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticSemanticValidation, model.FileID, "task file model must not be main: "+model.ID)
+		}
 		if isPrimitive(model.ID) {
 			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidModelID, model.FileID, "model id uses primitive reserved word: "+model.ID)
 		}
@@ -335,6 +362,7 @@ func validateTypeRef(project *semantic.Project, symbols *symbolTable, fileID sem
 	if typeRefHasOpaqueAnyContainer(ref) {
 		symbols.addDiagnosticCode(semantic.SeverityWarning, diagnosticOpaqueTypeRef, fileID, fmt.Sprintf("opaque container TypeRef %q at %s; consider introducing a named model for the shape", raw, position))
 	}
+	resolveScopedTypeRef(project, fileID, ref)
 	if !typeRefModelsExist(project, ref) {
 		symbols.addDiagnosticCode(semantic.SeverityError, unresolvedCode, fileID, unresolvedMessage)
 		return false
@@ -357,8 +385,7 @@ func modelExists(project *semantic.Project, qid semantic.QualifiedID) bool {
 	if qid == "" {
 		return false
 	}
-	_, ok := project.ModelsByQID[qid]
-	return ok
+	return modelByQID(project, qid) != nil
 }
 
 func fieldExists(project *semantic.Project, module string, raw string) bool {
@@ -366,7 +393,7 @@ func fieldExists(project *semantic.Project, module string, raw string) bool {
 	if modelQID == "" || fieldName == "" {
 		return false
 	}
-	model := project.ModelsByQID[modelQID]
+	model := modelByQID(project, modelQID)
 	if model == nil {
 		return false
 	}
@@ -685,7 +712,7 @@ func typeRefResolved(project *semantic.Project, ref *semantic.TypeRef) bool {
 	case semantic.TypeRefPrimitive:
 		return true
 	case semantic.TypeRefNamedModel:
-		model := project.ModelsByQID[ref.Model]
+		model := modelByQID(project, ref.Model)
 		if model == nil {
 			return false
 		}

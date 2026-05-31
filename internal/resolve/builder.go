@@ -36,7 +36,7 @@ func Build(raw *rawyaml.Project) (*semantic.Project, []semantic.Diagnostic) {
 		module := moduleForFileID(fileID)
 
 		for _, model := range file.NodeFile.Models {
-			symbols.addNode(buildModel(fileID, module, model))
+			symbols.addNode(buildModel(fileID, module, model, isTaskFileID(fileID) && !model.Main))
 		}
 		for _, store := range file.NodeFile.Stores {
 			symbols.addNode(buildStore(fileID, module, store))
@@ -64,6 +64,7 @@ func Build(raw *rawyaml.Project) (*semantic.Project, []semantic.Diagnostic) {
 		}
 	}
 
+	resolveScopedTypeRefs(project)
 	buildInitializedStores(project, symbols)
 	resolveTaskStoreAccess(project, symbols)
 	buildFlows(raw, project, symbols)
@@ -229,21 +230,28 @@ func buildParams(module string, raw []rawyaml.Param) []semantic.Param {
 	return params
 }
 
-func buildModel(fileID semantic.FileID, module string, raw rawyaml.Model) *semantic.Model {
+func buildModel(fileID semantic.FileID, module string, raw rawyaml.Model, filePrivate bool) *semantic.Model {
+	qid := qidFor(module, "model", raw.ID)
+	if filePrivate {
+		qid = privateNodeQID(fileID, raw.ID)
+	}
 	model := &semantic.Model{
 		BaseNode: semantic.BaseNode{
-			QID:    qidFor(module, "model", raw.ID),
+			QID:    qid,
 			FileID: fileID,
 			ID:     raw.ID,
 			Kind:   semantic.NodeKindModel,
+			Main:   raw.Main,
 			Note:   raw.Note,
 		},
-		Kind:       raw.Kind,
-		Element:    raw.Element,
-		ElementRef: mustBuildTypeRef(module, raw.Element),
-		Value:      raw.Value,
-		ValueRef:   mustBuildTypeRef(module, raw.Value),
-		Values:     append([]string(nil), raw.Values...),
+		FilePrivate: filePrivate,
+		LocalName:   raw.ID,
+		Kind:        raw.Kind,
+		Element:     raw.Element,
+		ElementRef:  mustBuildTypeRef(module, raw.Element),
+		Value:       raw.Value,
+		ValueRef:    mustBuildTypeRef(module, raw.Value),
+		Values:      append([]string(nil), raw.Values...),
 	}
 	for _, field := range raw.Fields {
 		model.Fields = append(model.Fields, semantic.ModelField{

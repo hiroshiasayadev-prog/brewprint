@@ -56,6 +56,9 @@ func (s *Service) fileMembers(fileID semantic.FileID, kind string) map[string]an
 func (s *Service) fileNodeRefs(fileID semantic.FileID) []ObjectRef {
 	out := make([]ObjectRef, 0, len(s.project.NodesByFile[fileID]))
 	for _, node := range s.project.NodesByFile[fileID] {
+		if model, ok := node.(*semantic.Model); ok && model.FilePrivate {
+			continue
+		}
 		out = append(out, listObjectRef(objectRef(node)))
 	}
 	return out
@@ -75,6 +78,9 @@ func (s *Service) fileMainNode(fileID semantic.FileID) ObjectRef {
 func (s *Service) fileNodesByKind(fileID semantic.FileID, kind semantic.NodeKind) []ObjectRef {
 	var out []ObjectRef
 	for _, node := range s.project.NodesByFile[fileID] {
+		if model, ok := node.(*semantic.Model); ok && model.FilePrivate {
+			continue
+		}
 		if node.GetKind() == kind {
 			out = append(out, listObjectRef(objectRef(node)))
 		}

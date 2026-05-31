@@ -47,6 +47,16 @@ func privateNodeQID(fileID semantic.FileID, id string) semantic.QualifiedID {
 	return semantic.QualifiedID(semantic.PrivateNodeID(fileID, id))
 }
 
+func isTaskFileID(fileID semantic.FileID) bool {
+	parts := strings.Split(fileID.String(), "/")
+	for _, part := range parts {
+		if part == "task" {
+			return true
+		}
+	}
+	return false
+}
+
 func actorQID(id string) semantic.QualifiedID {
 	return semantic.QualifiedID("actor." + id)
 }

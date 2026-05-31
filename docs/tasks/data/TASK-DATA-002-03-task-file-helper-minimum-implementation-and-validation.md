@@ -1,7 +1,7 @@
 # TASK-DATA-002-03: Task-file helper minimum implementation and validation
 
 - **id**: TASK-DATA-002-03
-- **status**: todo
+- **status**: done
 - **date**: 2026-05-31
 - **work_item**: WORK-DATA-002
 - **source_requirement**: REQ-DATA-002
@@ -79,3 +79,34 @@ Initial evidence:
 - ADR-070 defines file-private helper model semantics.
 - ADR-071 defines task-file helper model render exposure.
 - WORK-DATA-003 owns model-file helper render and UC-002 model response migration.
+
+Completion evidence:
+
+- Added task-file private helper model indexing through `PrivateModelsByFile`; task-file helper models use file-local internal identity and are not registered as public `ModelsByQID`.
+- Added same-file scoped TypeRef resolution for task / control params, returns, and helper model `fields[].type` / `element` / `value`, with same-file helper model lookup before public model fallback.
+- Added `duplicate_model_id` diagnostics for same-file helper model duplicate IDs and same-module public/helper model ID collisions.
+- Kept QualifiedID TypeRefs public-only; external references to task-file helper models remain unresolved.
+- Added DAG Markdown `## Private models` rendering for both simple and flow DAG render paths; helper models remain out of the Mermaid body.
+- Kept ER render behavior public/store-driven; task-file helper models do not appear in ER output.
+- Added focused tests:
+  - `internal/resolve/helper_model_test.go`
+  - `internal/render/dag/private_models_test.go`
+  - `internal/render/er/private_models_test.go`
+  - `internal/query/service_test.go`
+- Updated existing tests that used task-file model fixtures as public model fixtures so public model assumptions now live in `model/` files instead of task files.
+- Review correction:
+  - Added `duplicate_model_id` validation for task-file helper model IDs that collide with same-file main / private sub node local IDs.
+  - Rejected `main: true` on task-file `type: model` nodes with `semantic_validation` instead of silently treating them as private helpers.
+  - Kept private helper models out of public query reference targets and displayed raw/local TypeRef names in public task / asset signatures.
+  - Kept private helper models out of `list_objects` and file inspect node listings; MCP private helper exposure schema remains deferred.
+- Verification:
+  - `gofmt -w ...`: completed for modified Go files.
+  - `go test ./internal/resolve ./internal/render/dag ./internal/render/er ./internal/query ./internal/mcp`: pass.
+  - `go test ./...`: pass.
+  - `validate_records(kind="task")`: pass.
+  - `validate_records(kind="work_item")`: pass.
+  - `git diff --check`: pass.
+- Scope guard:
+  - No UC-002 YAML migration was performed.
+  - `docs/uc/003-task-file-helper-model/` remains excluded from this commit candidate.
+  - ADR-072 model/schema catalog, ADR-075 model file render, ADR-073 tagged union, ADR-074 DAG TypeRef hint, ADR-078 MCP identity / helper exposure, and M15 / `v1.1.0-spec` reopening remain outside this task.

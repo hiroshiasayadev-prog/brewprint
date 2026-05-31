@@ -30,8 +30,10 @@ func TestPrivateSubTaskSameLocalIDAcrossFilesOK(t *testing.T) {
 func TestPrivateSubTaskReturnAssetIdentityUsesInternalQID(t *testing.T) {
 	checkoutFile := privateReturningSubTaskFile("shop/task/checkout.yaml", "checkout", "helper")
 	refundFile := privateReturningSubTaskFile("shop/task/refund.yaml", "refund", "helper")
+	checkoutFile.NodeFile.Models = nil
 	refundFile.NodeFile.Models = nil
 	project, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{
+		typeRefStructModelFile("shop/model/receipt.yaml", "receipt"),
 		checkoutFile,
 		refundFile,
 	}})

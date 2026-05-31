@@ -553,6 +553,7 @@ func (r *flowRenderer) writeDetails() {
 			writeControlDetail(&r.b, node.ID, node.Note, node.Params, node.Returns)
 		}
 	}
+	writePrivateModelsSection(&r.b, r.project, r.main.FileID)
 }
 
 func (r *flowRenderer) line(format string, args ...any) {

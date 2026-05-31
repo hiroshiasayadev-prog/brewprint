@@ -208,16 +208,29 @@ func returnSourceProject(tasks []rawyaml.Task, flow []rawyaml.FlowEntry, extraMo
 		{ID: "cart_item", Kind: "struct", Fields: []rawyaml.ModelField{{Name: "id", Type: "str"}}},
 	}
 	models = append(models, extraModels...)
-	return &rawyaml.Project{Files: []rawyaml.File{{
+	files := publicModelFiles("shop", models)
+	files = append(files, rawyaml.File{
 		ID:   "shop/task/run.yaml",
 		Kind: rawyaml.FileKindNode,
 		NodeFile: &rawyaml.NodeFile{
-			Models:   models,
 			Tasks:    tasks,
 			Branches: []rawyaml.ControlNode{{ID: "route", Params: []rawyaml.Param{{Name: "input", Model: "user"}}}},
 			Forks:    []rawyaml.ControlNode{{ID: "fan_out"}},
 			Joins:    []rawyaml.ControlNode{{ID: "aggregate", Params: []rawyaml.Param{{Name: "left_result", Model: "user"}}, Returns: &rawyaml.Return{Name: "joined", Model: "user"}}},
 			Flow:     flow,
 		},
-	}}}
+	})
+	return &rawyaml.Project{Files: files}
+}
+
+func publicModelFiles(module string, models []rawyaml.Model) []rawyaml.File {
+	files := make([]rawyaml.File, 0, len(models))
+	for _, model := range models {
+		files = append(files, rawyaml.File{
+			ID:       module + "/model/" + model.ID + ".yaml",
+			Kind:     rawyaml.FileKindNode,
+			NodeFile: &rawyaml.NodeFile{Models: []rawyaml.Model{model}},
+		})
+	}
+	return files
 }

@@ -2,13 +2,15 @@ package semantic
 
 type Model struct {
 	BaseNode
-	Kind       string
-	Fields     []ModelField
-	Element    string
-	ElementRef *TypeRef
-	Value      string
-	ValueRef   *TypeRef
-	Values     []string
+	FilePrivate bool
+	LocalName   string
+	Kind        string
+	Fields      []ModelField
+	Element     string
+	ElementRef  *TypeRef
+	Value       string
+	ValueRef    *TypeRef
+	Values      []string
 }
 
 type ModelField struct {

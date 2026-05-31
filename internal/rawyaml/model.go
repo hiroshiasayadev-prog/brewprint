@@ -3,6 +3,7 @@ package rawyaml
 type Model struct {
 	ID      string       `yaml:"id"`
 	Type    string       `yaml:"type"`
+	Main    bool         `yaml:"main"`
 	Kind    string       `yaml:"kind"`
 	Fields  []ModelField `yaml:"fields"`
 	Element string       `yaml:"element"`

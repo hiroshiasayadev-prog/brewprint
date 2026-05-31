@@ -1,7 +1,7 @@
 # WORK-DATA-002: Implement task-file helper model minimum
 
 - **id**: WORK-DATA-002
-- **status**: design_spec_pending
+- **status**: done
 - **date**: 2026-05-31
 - **source_requirement**: REQ-DATA-002
 - **impact_refs**:
@@ -61,7 +61,7 @@ This work item owns only the ADR-070 / ADR-071 path needed for task files: file-
 | decision | ADR-070 / ADR-071 accepted | Use as the implementation basis for task-file helper models |
 | deferred decisions | ADR-072 accepted; ADR-075 proposed | Send catalog, model-file render, and UC-002 model response migration to `WORK-DATA-003` or later |
 | spec | task-file helper model rules require alignment | `TASK-DATA-002-02` owns spec alignment |
-| implementation / validation | not yet implemented for this follow-up | `TASK-DATA-002-03` owns implementation, renderer exposure, and verification |
+| implementation / validation | implemented and verified for task-file helper minimum | `TASK-DATA-002-03` completed implementation, renderer exposure, and verification |
 | UC-002 YAML | helper-shape notes remain | No UC-002 model response YAML migration in this work item |
 
 ## Task Flow
@@ -89,3 +89,31 @@ flowchart TD
 This work item can be marked `done` when the Option A task-file helper model minimum is reflected in the relevant specs, implementation, validation behavior, DAG Markdown render output, and verification evidence.
 
 Completion does not require ADR-072 catalog work, ADR-075 model-file render work, model-file helper migration, UC-002 model response YAML migration, ADR-073 tagged union work, ADR-074 DAG TypeRef hint work, ADR-078 MCP identity work, or any M15 / `v1.1.0-spec` reopening.
+
+## Close Outcome
+
+WORK-DATA-002 is closed as `done` for the Option A task-file helper model minimum.
+
+Closed scope:
+
+- TASK-DATA-002-01 selected and recorded the Option A boundary.
+- TASK-DATA-002-02 aligned the relevant specs for task-file helper placement, visibility, same-file TypeRef resolution, diagnostics, DAG Markdown `## Private models`, and ER exclusion.
+- TASK-DATA-002-03 implemented and verified task-file helper model parsing / indexing, same-file helper TypeRef resolution, external QualifiedID rejection by unresolved public lookup, `duplicate_model_id` diagnostics, DAG Markdown private model table rendering, and ER exclusion.
+- TASK-DATA-002-03 post-review corrections tightened helper model local identity collisions, rejected task-file `model main: true`, and kept private helper synthetic IDs out of public query reference targets.
+
+Verification evidence:
+
+- `gofmt -w ...`: completed for modified Go files.
+- `go test ./internal/resolve ./internal/render/dag ./internal/render/er ./internal/query ./internal/mcp`: pass.
+- `go test ./...`: pass.
+- `validate_records(kind="task")`: pass.
+- `validate_records(kind="work_item")`: pass.
+- `git diff --check`: pass.
+
+Deferred scope remains owned by WORK-DATA-003 or later:
+
+- ADR-072 model / schema catalog follow-up.
+- ADR-075 model-file render resolution.
+- Model-file helper render exposure.
+- UC-002 model response helper-shape migration.
+- ADR-073 tagged union, ADR-074 DAG TypeRef hint, ADR-078 MCP helper exposure / semantic identity, and M15 / `v1.1.0-spec` reopening.

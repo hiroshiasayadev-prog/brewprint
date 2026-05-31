@@ -406,7 +406,7 @@ func assetObjectRef(asset *semantic.Asset) ObjectRef {
 	}
 }
 
-func assetRef(asset *semantic.Asset) *AssetRef {
+func (s *Service) assetRef(asset *semantic.Asset) *AssetRef {
 	if asset == nil {
 		return nil
 	}
@@ -415,24 +415,62 @@ func assetRef(asset *semantic.Asset) *AssetRef {
 		ID:        semantic.AssetID(asset.ProducedBy, asset.Name),
 		Name:      asset.Name,
 		Producer:  asset.ProducedBy.String(),
-		Model:     asset.Model.String(),
+		Model:     s.modelDisplay(asset.Model, asset.ModelName),
 		ScopeFile: asset.FileID.String(),
 	}
 }
 
-func paramSignatures(params []semantic.Param) []ParamSignature {
+func (s *Service) paramSignatures(params []semantic.Param) []ParamSignature {
 	out := make([]ParamSignature, 0, len(params))
 	for _, param := range params {
-		out = append(out, ParamSignature{Name: param.Name, Model: param.Model.String(), Doc: param.Note})
+		out = append(out, ParamSignature{Name: param.Name, Model: s.modelDisplay(param.Model, param.ModelName), Doc: param.Note})
 	}
 	return out
 }
 
-func returnSignature(ret *semantic.Return) *ReturnSignature {
+func (s *Service) returnSignature(ret *semantic.Return) *ReturnSignature {
 	if ret == nil {
 		return nil
 	}
-	return &ReturnSignature{Name: ret.Name, Model: ret.Model.String(), Asset: assetRef(ret.Asset)}
+	return &ReturnSignature{Name: ret.Name, Model: s.modelDisplay(ret.Model, ret.ModelName), Asset: s.assetRef(ret.Asset)}
+}
+
+func (s *Service) modelDisplay(qid semantic.QualifiedID, raw string) string {
+	if s != nil && s.project != nil && s.isPrivateModelQID(qid) {
+		if raw != "" {
+			return raw
+		}
+		return shortQualifiedName(qid.String())
+	}
+	if qid != "" {
+		return qid.String()
+	}
+	return raw
+}
+
+func (s *Service) isPrivateModelQID(qid semantic.QualifiedID) bool {
+	if s == nil || s.project == nil || qid == "" {
+		return false
+	}
+	if s.project.ModelsByQID[qid] != nil {
+		return false
+	}
+	for _, byName := range s.project.PrivateModelsByFile {
+		for _, model := range byName {
+			if model.QID == qid {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func shortQualifiedName(id string) string {
+	parts := strings.Split(id, ".")
+	if len(parts) == 0 {
+		return id
+	}
+	return parts[len(parts)-1]
 }
 
 func storeIDs(refs []semantic.StoreRef) []string {

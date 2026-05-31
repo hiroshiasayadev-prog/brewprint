@@ -99,7 +99,7 @@ func (e *unsupportedDetailError) Error() string {
 func (s *Service) taskMembers(task *semantic.Task) map[string]any {
 	members := map[string]any{}
 	if task.Returns != nil && task.Returns.Asset != nil {
-		members["assets"] = []AssetRef{*assetRef(task.Returns.Asset)}
+		members["assets"] = []AssetRef{*s.assetRef(task.Returns.Asset)}
 	}
 
 	subTasks := make([]map[string]any, 0)
@@ -299,7 +299,7 @@ func (s *Service) inspectAsset(req InspectRequest) (InspectResponse, error) {
 	}
 	return InspectResponse{
 		Object:      assetObjectRef(asset),
-		Signature:   signatureForAsset(asset),
+		Signature:   s.signatureForAsset(asset),
 		Source:      sourceMap(asset.FileID),
 		References:  refs.References,
 		Diagnostics: []semantic.Diagnostic{},

@@ -301,6 +301,9 @@ func nodeEndpoint(node semantic.Node) semantic.ReferenceEndpoint {
 }
 
 func isPrivateSubNode(node semantic.Node) bool {
+	if model, ok := node.(*semantic.Model); ok {
+		return model.FilePrivate
+	}
 	if node == nil || node.IsMain() {
 		return false
 	}
@@ -493,7 +496,7 @@ func modelFieldTargetEndpoint(model semantic.QualifiedID, fieldName string) sema
 
 func modelOrPrimitiveKey(project *semantic.Project, qid semantic.QualifiedID, raw string) semantic.ObjectKey {
 	if qid != "" {
-		if _, ok := project.ModelsByQID[qid]; ok {
+		if project.ModelsByQID[qid] != nil {
 			return semantic.NodeObjectKey(qid)
 		}
 	}

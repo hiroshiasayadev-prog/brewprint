@@ -1,0 +1,196 @@
+package resolve
+
+import (
+	"testing"
+
+	"github.com/hiroshiasayadev-prog/brewprint/internal/rawyaml"
+	"github.com/hiroshiasayadev-prog/brewprint/internal/semantic"
+)
+
+func TestTaskFileHelperModelsResolveSameFileTypeRefs(t *testing.T) {
+	project, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{taskFileWithHelpers("auth/task/login.yaml", "login", "login_form", "login_token")}})
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v, want none", diagnostics)
+	}
+
+	task := project.TasksByQID["auth.task.login"]
+	if task == nil {
+		t.Fatalf("auth.task.login not found")
+	}
+	if got, want := task.Params[0].Model, semantic.QualifiedID("auth/task/login.yaml#login_form"); got != want {
+		t.Fatalf("param model = %s, want %s", got, want)
+	}
+	if got, want := task.Returns.Model, semantic.QualifiedID("auth/task/login.yaml#login_token"); got != want {
+		t.Fatalf("return model = %s, want %s", got, want)
+	}
+
+	token := project.PrivateModelsByFile["auth/task/login.yaml"]["login_token"]
+	if token == nil || len(token.Fields) != 1 {
+		t.Fatalf("login_token helper not built: %#v", token)
+	}
+	if got, want := token.Fields[0].TypeRef.Model, semantic.QualifiedID("auth/task/login.yaml#login_credentials"); got != want {
+		t.Fatalf("helper field TypeRef model = %s, want %s", got, want)
+	}
+	if project.ModelsByQID["auth.model.login_form"] != nil {
+		t.Fatalf("task-file helper leaked as public model")
+	}
+}
+
+func TestTaskFileHelperModelConflictsWithPublicModelID(t *testing.T) {
+	_, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{
+		typeRefStructModelFile("auth/model/login_form.yaml", "login_form"),
+		taskFileWithHelpers("auth/task/login.yaml", "login", "login_form", "login_token"),
+	}})
+	assertDiagnosticCode(t, diagnostics, diagnosticDuplicateModelID)
+}
+
+func TestTaskFileHelperModelDuplicateInSameFile(t *testing.T) {
+	_, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{{
+		ID:   "auth/task/login.yaml",
+		Kind: rawyaml.FileKindNode,
+		NodeFile: &rawyaml.NodeFile{
+			Tasks: []rawyaml.Task{{ID: "login", Main: true, Params: []rawyaml.Param{{Name: "form", Model: "login_form"}}}},
+			Models: []rawyaml.Model{
+				{ID: "login_form", Kind: "struct", Fields: []rawyaml.ModelField{{Name: "username", Type: "str"}}},
+				{ID: "login_form", Kind: "struct", Fields: []rawyaml.ModelField{{Name: "email", Type: "str"}}},
+			},
+		},
+	}}})
+	assertDiagnosticCode(t, diagnostics, diagnosticDuplicateModelID)
+}
+
+func TestTaskFileHelperModelConflictsWithMainTaskLocalID(t *testing.T) {
+	_, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{{
+		ID:   "auth/task/login.yaml",
+		Kind: rawyaml.FileKindNode,
+		NodeFile: &rawyaml.NodeFile{
+			Tasks: []rawyaml.Task{{ID: "login", Main: true}},
+			Models: []rawyaml.Model{{
+				ID:     "login",
+				Kind:   "struct",
+				Fields: []rawyaml.ModelField{{Name: "username", Type: "str"}},
+			}},
+		},
+	}}})
+	assertDiagnosticCode(t, diagnostics, diagnosticDuplicateModelID)
+	assertNoDiagnosticCode(t, diagnostics, diagnosticUnresolvedModel)
+	assertNoDiagnosticCode(t, diagnostics, diagnosticUnresolvedFieldType)
+}
+
+func TestTaskFileHelperModelConflictsWithPrivateSubTaskLocalID(t *testing.T) {
+	_, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{{
+		ID:   "auth/task/login.yaml",
+		Kind: rawyaml.FileKindNode,
+		NodeFile: &rawyaml.NodeFile{
+			Tasks: []rawyaml.Task{{ID: "login", Main: true}, {ID: "normalize"}},
+			Models: []rawyaml.Model{{
+				ID:     "normalize",
+				Kind:   "struct",
+				Fields: []rawyaml.ModelField{{Name: "username", Type: "str"}},
+			}},
+		},
+	}}})
+	assertDiagnosticCode(t, diagnostics, diagnosticDuplicateModelID)
+	assertNoDiagnosticCode(t, diagnostics, diagnosticUnresolvedModel)
+	assertNoDiagnosticCode(t, diagnostics, diagnosticUnresolvedFieldType)
+}
+
+func TestTaskFileModelMainTrueIsInvalidAndNotPrivateHelper(t *testing.T) {
+	project, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{{
+		ID:   "auth/task/login.yaml",
+		Kind: rawyaml.FileKindNode,
+		NodeFile: &rawyaml.NodeFile{Models: []rawyaml.Model{{
+			ID:     "login_form",
+			Main:   true,
+			Kind:   "struct",
+			Fields: []rawyaml.ModelField{{Name: "username", Type: "str"}},
+		}}},
+	}}})
+	assertDiagnosticCode(t, diagnostics, diagnosticSemanticValidation)
+	if project.PrivateModelsByFile["auth/task/login.yaml"]["login_form"] != nil {
+		t.Fatalf("task-file main model was registered as private helper")
+	}
+}
+
+func TestPublicModelFileMainModelRemainsValid(t *testing.T) {
+	project, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{{
+		ID:   "auth/model/login_form.yaml",
+		Kind: rawyaml.FileKindNode,
+		NodeFile: &rawyaml.NodeFile{Models: []rawyaml.Model{{
+			ID:     "login_form",
+			Main:   true,
+			Kind:   "struct",
+			Fields: []rawyaml.ModelField{{Name: "username", Type: "str"}},
+		}}},
+	}}})
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v, want none", diagnostics)
+	}
+	if project.ModelsByQID["auth.model.login_form"] == nil {
+		t.Fatalf("public model main node missing from ModelsByQID")
+	}
+}
+
+func TestTaskFileHelperModelSameLocalIDAcrossFilesIsAllowed(t *testing.T) {
+	project, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{
+		taskFileWithHelpers("auth/task/login.yaml", "login", "request", "response"),
+		taskFileWithHelpers("auth/task/register.yaml", "register", "request", "response"),
+	}})
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v, want none", diagnostics)
+	}
+	if project.PrivateModelsByFile["auth/task/login.yaml"]["request"] == nil {
+		t.Fatalf("login request helper not found")
+	}
+	if project.PrivateModelsByFile["auth/task/register.yaml"]["request"] == nil {
+		t.Fatalf("register request helper not found")
+	}
+}
+
+func TestQualifiedTypeRefCannotReferenceTaskFileHelperModel(t *testing.T) {
+	_, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{
+		taskFileWithHelpers("auth/task/login.yaml", "login", "login_form", "login_token"),
+		{
+			ID:   "auth/task/register.yaml",
+			Kind: rawyaml.FileKindNode,
+			NodeFile: &rawyaml.NodeFile{Tasks: []rawyaml.Task{{
+				ID:     "register",
+				Main:   true,
+				Params: []rawyaml.Param{{Name: "form", Model: "auth.model.login_form"}},
+			}}},
+		},
+	}})
+	assertDiagnosticCode(t, diagnostics, diagnosticUnresolvedModel)
+}
+
+func taskFileWithHelpers(fileID string, taskID string, paramModel string, returnModel string) rawyaml.File {
+	return rawyaml.File{
+		ID:   fileID,
+		Kind: rawyaml.FileKindNode,
+		NodeFile: &rawyaml.NodeFile{
+			Tasks: []rawyaml.Task{{
+				ID:      taskID,
+				Main:    true,
+				Params:  []rawyaml.Param{{Name: "form", Model: paramModel}},
+				Returns: &rawyaml.Return{Name: "result", Model: returnModel},
+			}},
+			Models: []rawyaml.Model{
+				{
+					ID:     paramModel,
+					Kind:   "struct",
+					Fields: []rawyaml.ModelField{{Name: "username", Type: "str"}},
+				},
+				{
+					ID:     "login_credentials",
+					Kind:   "struct",
+					Fields: []rawyaml.ModelField{{Name: "password", Type: "str"}},
+				},
+				{
+					ID:     returnModel,
+					Kind:   "struct",
+					Fields: []rawyaml.ModelField{{Name: "credentials", Type: "login_credentials"}},
+				},
+			},
+		},
+	}
+}

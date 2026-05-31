@@ -934,8 +934,17 @@ func TestQueryServiceUC001(t *testing.T) {
 func TestPrivateSubNodeAssetIdentityBoundaryQueries(t *testing.T) {
 	checkoutFile := privateReturningHelperQueryFile("shop/task/checkout.yaml", "checkout")
 	refundFile := privateReturningHelperQueryFile("shop/task/refund.yaml", "refund")
+	checkoutFile.NodeFile.Models = nil
 	refundFile.NodeFile.Models = nil
-	project, diagnostics := resolve.Build(&rawyaml.Project{Files: []rawyaml.File{checkoutFile, refundFile}})
+	project, diagnostics := resolve.Build(&rawyaml.Project{Files: []rawyaml.File{{
+		ID:   "shop/model/receipt.yaml",
+		Kind: rawyaml.FileKindNode,
+		NodeFile: &rawyaml.NodeFile{Models: []rawyaml.Model{{
+			ID:     "receipt",
+			Kind:   "struct",
+			Fields: []rawyaml.ModelField{{Name: "id", Type: "str"}},
+		}}},
+	}, checkoutFile, refundFile}})
 	if len(diagnostics) != 0 {
 		t.Fatalf("diagnostics = %#v, want none", diagnostics)
 	}
@@ -982,6 +991,65 @@ func TestPrivateSubNodeAssetIdentityBoundaryQueries(t *testing.T) {
 	}
 	if refundSource.Object.ID != refundAssetID || refundSource.Source.File != "shop/task/refund.yaml" {
 		t.Fatalf("refund asset source = %#v", refundSource)
+	}
+}
+
+func TestTaskFilePrivateHelperModelsDoNotLeakAsPublicQueryTargets(t *testing.T) {
+	project, diagnostics := resolve.Build(&rawyaml.Project{Files: []rawyaml.File{{
+		ID:   "auth/task/login.yaml",
+		Kind: rawyaml.FileKindNode,
+		NodeFile: &rawyaml.NodeFile{
+			Tasks: []rawyaml.Task{{
+				ID:      "login",
+				Main:    true,
+				Params:  []rawyaml.Param{{Name: "form", Model: "login_form"}},
+				Returns: &rawyaml.Return{Name: "token", Model: "login_token"},
+			}},
+			Models: []rawyaml.Model{
+				{ID: "login_form", Kind: "struct", Fields: []rawyaml.ModelField{{Name: "username", Type: "str"}}},
+				{ID: "login_token", Kind: "struct", Fields: []rawyaml.ModelField{{Name: "access_token", Type: "str"}}},
+			},
+		},
+	}}})
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v, want none", diagnostics)
+	}
+	service := NewService(project)
+
+	signature, err := service.GetSignature(GetSignatureRequest{Selector: Selector{ID: "auth.task.login"}})
+	if err != nil {
+		t.Fatalf("GetSignature task: %v", err)
+	}
+	params := signature.Signature["params"].([]ParamSignature)
+	if len(params) != 1 || params[0].Model != "login_form" || strings.Contains(params[0].Model, "#") {
+		t.Fatalf("private helper param model leaked synthetic id: %#v", params)
+	}
+	ret := signature.Signature["returns"].(*ReturnSignature)
+	if ret.Model != "login_token" || strings.Contains(ret.Model, "#") || ret.Asset.Model != "login_token" || strings.Contains(ret.Asset.Model, "#") {
+		t.Fatalf("private helper return model leaked synthetic id: %#v", ret)
+	}
+
+	refs, err := service.GetReferences(GetReferencesRequest{Selector: Selector{ID: "auth.task.login"}, Direction: "out"})
+	if err != nil {
+		t.Fatalf("GetReferences task: %v", err)
+	}
+	for _, ref := range refs.References {
+		if ref.Kind != "param_model" && ref.Kind != "return_model" {
+			continue
+		}
+		if strings.Contains(ref.To.ID, "#") || strings.Contains(ref.To.QualifiedID, "#") || ref.To.Kind == "model" {
+			t.Fatalf("private helper reference leaked as public model target: %#v", ref)
+		}
+	}
+
+	listed, err := service.ListObjects(ListObjectsRequest{Object: "node", Kind: "model"})
+	if err != nil {
+		t.Fatalf("ListObjects models: %v", err)
+	}
+	for _, object := range listed.Objects {
+		if object.ID == "auth/task/login.yaml#login_form" || object.ID == "auth/task/login.yaml#login_token" || object.Label == "login_form" || object.Label == "login_token" {
+			t.Fatalf("private helper model leaked into list_objects: %#v", listed.Objects)
+		}
 	}
 }
 

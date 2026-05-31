@@ -49,7 +49,7 @@ func (s *Service) GetSignature(req GetSignatureRequest) (GetSignatureResponse, e
 		}
 		return GetSignatureResponse{
 			Object:      assetObjectRef(asset),
-			Signature:   signatureForAsset(asset),
+			Signature:   s.signatureForAsset(asset),
 			Diagnostics: []semantic.Diagnostic{},
 		}, nil
 	}
@@ -127,14 +127,14 @@ func signatureForField(field semantic.ModelField) Signature {
 	return sig
 }
 
-func signatureForAsset(asset *semantic.Asset) Signature {
+func (s *Service) signatureForAsset(asset *semantic.Asset) Signature {
 	if asset == nil {
 		return Signature{}
 	}
 	return Signature{
 		"name":       asset.Name,
 		"producer":   asset.ProducedBy.String(),
-		"model":      asset.Model.String(),
+		"model":      s.modelDisplay(asset.Model, asset.ModelName),
 		"scope_file": asset.FileID.String(),
 	}
 }
@@ -144,11 +144,11 @@ func (s *Service) signatureForNode(node semantic.Node) (Signature, string, error
 	case *semantic.Task:
 		sig := Signature{
 			"main":   n.Main,
-			"params": paramSignatures(n.Params),
+			"params": s.paramSignatures(n.Params),
 			"reads":  storeIDs(n.Reads),
 			"writes": storeIDs(n.Writes),
 		}
-		if ret := returnSignature(n.Returns); ret != nil {
+		if ret := s.returnSignature(n.Returns); ret != nil {
 			sig["returns"] = ret
 		}
 		if n.Endpoint {
@@ -184,12 +184,12 @@ func (s *Service) signatureForNode(node semantic.Node) (Signature, string, error
 		}
 		return sig, n.Note, nil
 	case *semantic.Branch:
-		return Signature{"params": paramSignatures(n.Params)}, n.Note, nil
+		return Signature{"params": s.paramSignatures(n.Params)}, n.Note, nil
 	case *semantic.Fork:
-		return Signature{"params": paramSignatures(n.Params)}, n.Note, nil
+		return Signature{"params": s.paramSignatures(n.Params)}, n.Note, nil
 	case *semantic.Join:
-		sig := Signature{"params": paramSignatures(n.Params)}
-		if ret := returnSignature(n.Returns); ret != nil {
+		sig := Signature{"params": s.paramSignatures(n.Params)}
+		if ret := s.returnSignature(n.Returns); ret != nil {
 			sig["returns"] = ret
 		}
 		return sig, n.Note, nil

@@ -133,6 +133,7 @@ func RenderTask(project *semantic.Project, task *semantic.Task) (string, error) 
 	b.WriteString("```\n\n")
 
 	writeTasksDetail(&b, task)
+	writePrivateModelsSection(&b, project, task.FileID)
 	return b.String(), nil
 }
 

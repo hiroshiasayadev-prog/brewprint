@@ -22,6 +22,19 @@ func (s *symbolTable) addDiagnosticCode(severity semantic.Severity, code string,
 func (s *symbolTable) addNode(node semantic.Node) {
 	qid := node.GetQID()
 	fileID := node.GetFileID()
+	if model, ok := node.(*semantic.Model); ok && model.FilePrivate {
+		if s.project.PrivateModelsByFile[fileID] == nil {
+			s.project.PrivateModelsByFile[fileID] = map[string]*semantic.Model{}
+		}
+		if _, exists := s.project.PrivateModelsByFile[fileID][model.ID]; exists {
+			s.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateModelID, fileID, "duplicate private model local id: "+model.ID)
+		} else {
+			s.project.PrivateModelsByFile[fileID][model.ID] = model
+			s.project.NodesByID[qid] = node
+		}
+		s.project.NodesByFile[fileID] = append(s.project.NodesByFile[fileID], node)
+		return
+	}
 	if isFilePrivateSubNode(node) {
 		if hasFilePrivateSubNodeID(s.project.NodesByFile[fileID], node.GetID()) {
 			s.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateSubNode, fileID, "duplicate sub node local id: "+node.GetID())

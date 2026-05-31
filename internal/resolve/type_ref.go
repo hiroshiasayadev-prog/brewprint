@@ -191,7 +191,7 @@ func normalizeContainerTypeRef(project *semantic.Project, ref *semantic.TypeRef)
 	if project == nil || ref == nil || ref.Kind != semantic.TypeRefNamedModel {
 		return ref
 	}
-	model := project.ModelsByQID[ref.Model]
+	model := modelByQID(project, ref.Model)
 	if model == nil {
 		return ref
 	}
@@ -219,6 +219,147 @@ func normalizeContainerTypeRef(project *semantic.Project, ref *semantic.TypeRef)
 	default:
 		return ref
 	}
+}
+
+func resolveScopedTypeRefs(project *semantic.Project) {
+	if project == nil {
+		return
+	}
+	seenTasks := map[*semantic.Task]struct{}{}
+	for _, task := range project.TasksByQID {
+		if _, ok := seenTasks[task]; ok {
+			continue
+		}
+		seenTasks[task] = struct{}{}
+		resolveScopedParams(project, task.FileID, task.Params)
+		if task.Returns != nil {
+			resolveScopedReturn(project, task.FileID, task.Returns)
+		}
+	}
+	seenBranches := map[*semantic.Branch]struct{}{}
+	for _, branch := range project.BranchesByQID {
+		if _, ok := seenBranches[branch]; ok {
+			continue
+		}
+		seenBranches[branch] = struct{}{}
+		resolveScopedParams(project, branch.FileID, branch.Params)
+	}
+	seenForks := map[*semantic.Fork]struct{}{}
+	for _, fork := range project.ForksByQID {
+		if _, ok := seenForks[fork]; ok {
+			continue
+		}
+		seenForks[fork] = struct{}{}
+		resolveScopedParams(project, fork.FileID, fork.Params)
+	}
+	seenJoins := map[*semantic.Join]struct{}{}
+	for _, join := range project.JoinsByQID {
+		if _, ok := seenJoins[join]; ok {
+			continue
+		}
+		seenJoins[join] = struct{}{}
+		resolveScopedParams(project, join.FileID, join.Params)
+		if join.Returns != nil {
+			resolveScopedReturn(project, join.FileID, join.Returns)
+		}
+	}
+	for _, model := range allModels(project) {
+		resolveScopedTypeRef(project, model.FileID, model.ElementRef)
+		resolveScopedTypeRef(project, model.FileID, model.ValueRef)
+		for i := range model.Fields {
+			resolveScopedTypeRef(project, model.FileID, model.Fields[i].TypeRef)
+		}
+	}
+}
+
+func resolveScopedParams(project *semantic.Project, fileID semantic.FileID, params []semantic.Param) {
+	for i := range params {
+		resolveScopedTypeRef(project, fileID, params[i].TypeRef)
+		if params[i].TypeRef != nil && params[i].TypeRef.Kind == semantic.TypeRefNamedModel {
+			params[i].Model = params[i].TypeRef.Model
+		}
+	}
+}
+
+func resolveScopedReturn(project *semantic.Project, fileID semantic.FileID, ret *semantic.Return) {
+	resolveScopedTypeRef(project, fileID, ret.TypeRef)
+	if ret.TypeRef != nil && ret.TypeRef.Kind == semantic.TypeRefNamedModel {
+		ret.Model = ret.TypeRef.Model
+		if ret.Asset != nil {
+			ret.Asset.Model = ret.TypeRef.Model
+		}
+	}
+}
+
+func resolveScopedTypeRef(project *semantic.Project, fileID semantic.FileID, ref *semantic.TypeRef) {
+	if ref == nil {
+		return
+	}
+	switch ref.Kind {
+	case semantic.TypeRefNamedModel:
+		if isBareTypeRefName(ref.Name) {
+			if model := privateModelByLocalID(project, fileID, ref.Name); model != nil {
+				ref.Model = model.QID
+				return
+			}
+		}
+		ref.Model = resolveTypeRefModelQID(moduleForFileID(fileID), ref.Name)
+	case semantic.TypeRefList:
+		resolveScopedTypeRef(project, fileID, ref.Elem)
+	case semantic.TypeRefDict:
+		resolveScopedTypeRef(project, fileID, ref.Value)
+	}
+}
+
+func isBareTypeRefName(name string) bool {
+	return name != "" && !strings.Contains(name, ".")
+}
+
+func modelByQID(project *semantic.Project, qid semantic.QualifiedID) *semantic.Model {
+	if project == nil || qid == "" {
+		return nil
+	}
+	if model := project.ModelsByQID[qid]; model != nil {
+		return model
+	}
+	return privateModelByQID(project, qid)
+}
+
+func privateModelByQID(project *semantic.Project, qid semantic.QualifiedID) *semantic.Model {
+	if project == nil || qid == "" {
+		return nil
+	}
+	for _, byName := range project.PrivateModelsByFile {
+		for _, model := range byName {
+			if model.QID == qid {
+				return model
+			}
+		}
+	}
+	return nil
+}
+
+func privateModelByLocalID(project *semantic.Project, fileID semantic.FileID, id string) *semantic.Model {
+	if project == nil || id == "" {
+		return nil
+	}
+	return project.PrivateModelsByFile[fileID][id]
+}
+
+func allModels(project *semantic.Project) []*semantic.Model {
+	if project == nil {
+		return nil
+	}
+	models := make([]*semantic.Model, 0, len(project.ModelsByQID))
+	for _, model := range project.ModelsByQID {
+		models = append(models, model)
+	}
+	for _, byName := range project.PrivateModelsByFile {
+		for _, model := range byName {
+			models = append(models, model)
+		}
+	}
+	return models
 }
 
 func typeRefsCompatible(project *semantic.Project, source *semantic.TypeRef, target *semantic.TypeRef) bool {
