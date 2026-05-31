@@ -1,7 +1,7 @@
-# WORK-DATA-002: Define and implement helper model / model render follow-up boundary
+# WORK-DATA-002: Implement task-file helper model minimum
 
 - **id**: WORK-DATA-002
-- **status**: not_started
+- **status**: design_spec_pending
 - **date**: 2026-05-31
 - **source_requirement**: REQ-DATA-002
 - **impact_refs**:
@@ -9,28 +9,38 @@
   - INV-DATA-002
   - REQ-DATA-001
   - WORK-DATA-001
+  - WORK-DATA-003
   - ADR-070
   - ADR-071
-  - ADR-072
-  - ADR-075
 - **tasks**:
+  - TASK-DATA-002-01
+  - TASK-DATA-002-02
+  - TASK-DATA-002-03
 
 ## Goal
 
-Turn the M15 deferred helper model / model render chain into a bounded execution flow that can decide and implement the next useful capability without reopening M15.
+Implement the first executable helper-model capability as the Option A task-file helper model minimum without reopening M15 / `v1.1.0-spec`.
+
+This work item owns only the ADR-070 / ADR-071 path needed for task files: file-private helper models, same-file TypeRef resolution, validation for the task-file minimum, and DAG Markdown render exposure through `## Private models`.
 
 ## Boundary
 
 ### Included
 
-- Review the accepted / proposed ADR chain:
-  - ADR-070 file-private helper model
-  - ADR-071 task-file helper model render exposure
-  - ADR-072 model / schema catalog view
-  - ADR-075 model file render
-- Decide the first implementation boundary for helper model and model render follow-up.
-- Identify UC-002 MCP contract shapes that are candidates for helper model migration.
-- Track required spec, implementation, renderer, UC-002 YAML, fixture, and verification work.
+- Apply ADR-070 file-private helper model semantics to task files only.
+- Apply ADR-071 task-file helper model render exposure in DAG Markdown.
+- Align the relevant specs for task-file helper model placement, visibility, same-file TypeRef resolution, diagnostics, and render format.
+- Implement and validate task-file helper model parsing / resolution / diagnostics.
+- Implement and verify DAG Markdown `## Private models` exposure for task files containing helper models.
+- Keep helper models out of Mermaid DAG flow nodes.
+
+### Deferred to WORK-DATA-003 or Later
+
+- ADR-072 model / schema catalog follow-up.
+- ADR-075 model file render acceptance, revision, or split.
+- Model-file helper model migration and model-file helper render exposure.
+- UC-002 model response helper-shape migration, including `get_source_response.snippet`, `get_reference_tree_response.nodes`, and `get_reference_tree_response.edges`.
+- MCP helper model exposure schema.
 
 ### Excluded
 
@@ -38,43 +48,44 @@ Turn the M15 deferred helper model / model render chain into a bounded execution
 - ADR-074 DAG asset TypeRef hint.
 - ADR-078 / ADR-079 / ADR-080 MCP / state identity work.
 - M15 / `v1.1.0-spec` reopening.
+- REQ-DATA-001 / WORK-DATA-001 edits.
 - Treating all UC-002 notes retreat debt as one required migration.
 
 ## Impact Scope
 
 | layer | current state | handling in this work item |
 |---|---|---|
-| source requirement | `REQ-DATA-002` captured | This work item owns the helper/model-render follow-up flow |
+| source requirement | `REQ-DATA-002` captured | This work item owns only the task-file helper model minimum |
 | investigation evidence | `INV-DATA-001` / `INV-DATA-002` concluded | Use as boundary evidence, not as task status |
 | previous data work | `WORK-DATA-001` done | Preserve the M15 F1 close boundary |
-| decision | ADR-070 / 071 / 072 accepted; ADR-075 proposed | Decide executable implementation boundary before implementation |
-| spec | helper model and render surfaces may require spec updates | Future tasks own spec changes |
-| implementation / render | not yet implemented for this follow-up | Future tasks own implementation and render verification |
-| UC-002 YAML | helper-shape notes remain | Migrate only selected shapes after boundary decision |
+| decision | ADR-070 / ADR-071 accepted | Use as the implementation basis for task-file helper models |
+| deferred decisions | ADR-072 accepted; ADR-075 proposed | Send catalog, model-file render, and UC-002 model response migration to `WORK-DATA-003` or later |
+| spec | task-file helper model rules require alignment | `TASK-DATA-002-02` owns spec alignment |
+| implementation / validation | not yet implemented for this follow-up | `TASK-DATA-002-03` owns implementation, renderer exposure, and verification |
+| UC-002 YAML | helper-shape notes remain | No UC-002 model response YAML migration in this work item |
 
-## Task flow
+## Task Flow
 
 ```mermaid
 flowchart TD
-  T1["TASK-DATA-002-01: Helper/model-render boundary review and first capability decision"]
-  T2["TASK-DATA-002-02: Spec alignment for selected helper model / render scope"]
-  T3["TASK-DATA-002-03: Implementation and validation for selected helper model scope"]
-  T4["TASK-DATA-002-04: Render exposure implementation and golden / fixture verification"]
-  T5["TASK-DATA-002-05: UC-002 helper-shape migration and close evidence"]
-  T1 --> T2 --> T3 --> T4 --> T5
+  T1["TASK-DATA-002-01: Option A boundary review and handoff"]
+  T2["TASK-DATA-002-02: Task-file helper minimum spec alignment"]
+  T3["TASK-DATA-002-03: Task-file helper minimum implementation and validation"]
+  T1 --> T2 --> T3
 ```
 
-## Task Candidates
+## Tasks
 
-- `TASK-DATA-002-01`: Helper/model-render boundary review and first capability decision.
-- `TASK-DATA-002-02`: Spec alignment for selected helper model / render scope.
-- `TASK-DATA-002-03`: Implementation and validation for selected helper model scope.
-- `TASK-DATA-002-04`: Render exposure implementation and golden / fixture verification.
-- `TASK-DATA-002-05`: UC-002 helper-shape migration and close evidence.
+- `TASK-DATA-002-01`: Complete. Select Option A and record deferred model-file / catalog / UC-002 migration scope.
+- `TASK-DATA-002-02`: Align specs for task-file helper model placement, visibility, TypeRef resolution, diagnostics, and DAG Markdown render format.
+- `TASK-DATA-002-03`: Implement and verify task-file helper parsing / validation / TypeRef resolution and DAG Markdown `## Private models` render exposure.
 
-Task artifacts are intentionally not created in this migration step. Therefore these candidate IDs are shown only in the body and are not listed in the metadata `tasks` field.
+## Follow-up Work
+
+`WORK-DATA-003` owns the model-file side of the helper-model chain. It receives ADR-072 catalog follow-up, ADR-075 model file render resolution, model-file helper render exposure, and UC-002 model response helper-shape migration candidates.
 
 ## Completion Condition
 
-This work item can be marked `done` when the selected helper model / model render follow-up is reflected in the relevant specs, implementation, render outputs, UC-002 migration, and verification evidence, while tagged union, DAG TypeRef hint, MCP identity, and M15 reopen scope remain excluded.
+This work item can be marked `done` when the Option A task-file helper model minimum is reflected in the relevant specs, implementation, validation behavior, DAG Markdown render output, and verification evidence.
 
+Completion does not require ADR-072 catalog work, ADR-075 model-file render work, model-file helper migration, UC-002 model response YAML migration, ADR-073 tagged union work, ADR-074 DAG TypeRef hint work, ADR-078 MCP identity work, or any M15 / `v1.1.0-spec` reopening.
