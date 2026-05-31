@@ -1,19 +1,22 @@
 # WORK-DATA-008: Resolve UC-002 duplicate task QID and unresolved flow task issue
 
 - **id**: WORK-DATA-008
-- **status**: not_started
+- **status**: done
 - **date**: 2026-06-01
 - **source_requirement**: REQ-DATA-002
 - **impact_refs**:
   - REQ-DATA-002
   - WORK-DATA-001
+  - WORK-RESOLVE-001
+  - ADR-058
   - TASK-DATA-005-01
   - TASK-DATA-005-02
 - **tasks**:
+  - TASK-DATA-008-01
 
 ## Goal
 
-Resolve the pre-existing UC-002 duplicate task QID / unresolved flow task issue that blocks clean UC-002 validation / render verification.
+Resolve the pre-existing UC-002 duplicate task QID / unresolved flow task issue that was recorded as a blocker during M15 close triage.
 
 This work item is a targeted diagnostic / fixture blocker follow-up, not a new DATA expressiveness feature.
 
@@ -23,8 +26,8 @@ This work item is a targeted diagnostic / fixture blocker follow-up, not a new D
 
 - Reproduce and locate the UC-002 duplicate task QID / unresolved flow task issue.
 - Decide whether the root cause is YAML identity, validation behavior, resolver behavior, fixture drift, or diagnostic cascade.
-- Apply the minimal fix needed to restore clear UC-002 validation / render behavior.
-- Add regression evidence for the fixed behavior.
+- Apply the minimal fix needed to restore clear UC-002 validation / render behavior, if still needed.
+- Add regression evidence for the fixed behavior or already-resolved state.
 
 ### Excluded
 
@@ -37,27 +40,85 @@ This work item is a targeted diagnostic / fixture blocker follow-up, not a new D
 
 ## Impact Scope
 
-| layer | current state | handling in this work item |
+| layer | captured state | close handling in this work item |
 |---|---|---|
-| source requirement | REQ-DATA-002 captured | Owns DATA follow-up umbrella for this blocker |
+| source requirement | REQ-DATA-002 captured | Kept as the DATA follow-up umbrella for the stale blocker record |
 | M15 close | WORK-DATA-001 done | Treat issue as pre-existing and outside M15 close |
-| UC-002 validation / render | blocked by duplicate task QID / unresolved flow task issue | Restore clean baseline for later successor work |
+| UC-002 validation / render | previously recorded as blocked by duplicate task QID / unresolved flow task issue | Current HEAD validates and renders cleanly; blocker was already resolved by WORK-RESOLVE-001 / ADR-058-aligned resolver behavior |
 
 ## Task Flow
 
-No task artifacts are created at initial capture time.
-
-Expected later split:
+The work item closed with a single reproduction / localization task.
 
 ```mermaid
 flowchart TD
-  T1["Reproduce and localize issue"]
-  T2["Decide YAML vs resolver / validation fix"]
-  T3["Implement minimal correction"]
-  T4["Verify UC-002 baseline"]
-  T1 --> T2 --> T3 --> T4
+  T1["TASK-DATA-008-01: Reproduce and localize issue"]
 ```
+
+No later `TASK-DATA-008-02` correction task is needed. The reproduction evidence showed this was a stale follow-up: the historical issue reproduced at `fe12ef6`, but current HEAD already resolves it.
 
 ## Completion Condition
 
-This work item can be marked `done` when the duplicate task QID / unresolved flow task issue is localized, corrected, regression-covered, and verified without pulling in unrelated DATA expressiveness or notes retreat cleanup work.
+This work item can be marked `done` when the duplicate task QID / unresolved flow task issue is localized, corrected or proven already resolved, regression-covered or verified by current validation / tests, and closed without pulling in unrelated DATA expressiveness or notes retreat cleanup work.
+
+## Close Evidence
+
+Closed on 2026-06-01.
+
+### Result
+
+`TASK-DATA-008-01` confirmed that the UC-002 duplicate task QID / unresolved flow task issue does not reproduce on current HEAD / working tree.
+
+Current verification passed:
+
+- `go run ./cmd/brewprint validate --yaml-root docs\uc\002-brewprint-self-hosting\yaml`
+- `go run ./cmd/brewprint validate --yaml-root docs\uc\002-brewprint-self-hosting\yaml --format json`
+- `go run ./cmd/brewprint render --yaml-root docs\uc\002-brewprint-self-hosting\yaml --out $env:TEMP\brewprint-uc002-data008-render --clean`
+- `go test ./cmd/brewprint ./internal/resolve ./internal/render/placement ./internal/render/dag`
+- `go test ./...`
+
+All current commands passed. UC-002 JSON validation returned no diagnostics, and temp render produced 40 files.
+
+### Historical reproduction
+
+The issue reproduced from clean snapshot `fe12ef6` with:
+
+```text
+go run ./cmd/brewprint validate --yaml-root docs\uc\002-brewprint-self-hosting\yaml
+```
+
+Historical diagnostics reported duplicate public QIDs such as:
+
+```text
+mcp.task.build_response
+mcp.task.query_service
+mcp.task.validate_request
+```
+
+and cascaded into unresolved same-file flow steps:
+
+```text
+build_response
+query_service
+validate_request
+```
+
+The historical run ended with `42 error(s), 0 warning(s)`.
+
+### Root cause
+
+Primary classification: resolver behavior problem.
+
+Secondary classification: diagnostic cascade.
+
+The UC-002 YAML was valid. ADR-058 and the current specs allow file-private subnodes to share local IDs across files. The historical failure happened because non-main sub tasks were registered as public `module.kind.id` QIDs, so repeated helper IDs across task files collided. Once `symbols.addNode` emitted `duplicate_node` and skipped same-file registration, bare `flow.step` resolution cascaded into `unresolved_flow_task`.
+
+Current resolver behavior fixes the issue by using file-private internal IDs such as `mcp/task/get_signature.yaml#validate_request`, excluding private subnodes from public `NodesByQID`, and resolving bare flow IDs through same-file private nodes first.
+
+### Close decision
+
+No DATA correction task is needed.
+
+`WORK-DATA-008` is closed as a stale M15 follow-up that was already resolved by `WORK-RESOLVE-001` / ADR-058-aligned resolver changes before this DATA follow-up was executed.
+
+No YAML, resolver, renderer, validator, fixture, golden, MCP public contract, ADR-073, ADR-074, ADR-078, ADR-079, ADR-080, helper model / model-file render redesign, broad UC-002 notes retreat cleanup, or M15 reopening work is part of this close.
