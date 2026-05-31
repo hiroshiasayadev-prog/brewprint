@@ -1,9 +1,9 @@
 # Milestone 14a: subnode scope + return primitive 実装修正
 
-- **status**: open
+- **status**: closed
 - **scope**: internal/resolve / spec / tests
 - **source**: M14 Phase A中に発覚した実装バグ。ADR-058 / ADR-059 で決定
-- **last_updated**: 2026-05-02
+- **last_updated**: 2026-05-31
 
 ---
 
@@ -160,6 +160,20 @@ M14aでは以下を行わない。
     ```
 
 ---
+
+## Close outcome
+
+M14a is closed as a legacy milestone-shaped record.
+
+- B1: サブノードの file-private scope bug は `REQ-RESOLVE-001` / `WORK-RESOLVE-001` / `TASK-RESOLVE-001-01..03` に移行して解消した。
+  - ADR-058 の spec alignment は `docs/spec/nodes.md` / `docs/spec/naming.md` / `docs/spec/diagnostics.md` / `docs/spec/edges.md` に反映済み。
+  - resolver / symbol table は public/main node と file-private sub node の identity を分離済み。
+  - UC-002 validate / render は duplicate task QID / unresolved flow task issue なしで通過したと記録済み。
+- B2: task / join return primitive support は後続 v1.1 系 TypeRef / return handling に回収済み。
+  - `docs/spec/nodes.md` の `returns.model` は TypeRef として primitive / named model / inline container を許容する現行仕様になっている。
+  - M15 / `v1.1.0-spec` は `REQ-DATA-001` / `WORK-DATA-001` により close 済み。
+- `v1.0.1-spec` tag は historical M14a plan として残るが、現在は `v1.1.0-spec` が発行済みのため、この legacy close の blocker とはしない。
+- M14 self-hosting 本体は closed ではなく paused のまま残る。再開時は新形式 `REQ-*` / `WORK-*` / `TASK-*` に分解して扱う。
 
 ## ADR-058 / ADR-059 との対応
 

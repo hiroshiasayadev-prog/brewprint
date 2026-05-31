@@ -1,9 +1,9 @@
 # Milestone 14: brewprint self-hosting
 
-- **status**: open
+- **status**: paused
 - **scope**: UC-002 / spec / docs
 - **source**: ADR-057でv1.0.0-spec凍結後の次段階。`docs/TASKS.md` 検討中セクションから昇格
-- **last_updated**: 2026-05-02
+- **last_updated**: 2026-05-31
 
 ---
 
