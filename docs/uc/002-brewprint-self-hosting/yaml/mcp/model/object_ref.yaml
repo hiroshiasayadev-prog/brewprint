@@ -7,8 +7,8 @@ nodes:
     kind: struct
     fields:
       - name: object
-        type: str
-        note: "enum値集合: node / view / transition / asset / field / file / primitive"
+        type: mcp_object_type
+        note: "node / view / transition / asset / field / file / primitive"
       - name: kind
         type: str
         note: "object種別。nodeならtask/model/store等。値集合はobjectごとに異なるためnoteで扱う"

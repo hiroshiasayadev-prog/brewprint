@@ -44,8 +44,14 @@ func RenderTask(project *semantic.Project, task *semantic.Task) (string, error) 
 	b.WriteString("```mermaid\n")
 	b.WriteString("flowchart TD\n")
 	writeBoundary(&b, "params", paramNames(task))
-	writeBoundary(&b, "returns", returnNames(task))
-	if len(task.Params) > 0 || task.Returns != nil {
+	if len(task.Initializes) > 0 {
+		fmt.Fprintf(&b, "  subgraph initializes\n")
+		for _, init := range task.Initializes {
+			fmt.Fprintf(&b, "    %s[(%s)]\n", init.Name, init.Name)
+		}
+		fmt.Fprintf(&b, "  end\n")
+	}
+	if len(task.Params) > 0 || len(task.Initializes) > 0 {
 		b.WriteString("\n")
 	}
 
@@ -74,13 +80,32 @@ func RenderTask(project *semantic.Project, task *semantic.Task) (string, error) 
 
 	if task.Returns != nil {
 		b.WriteString("\n")
-		fmt.Fprintf(&b, "  %s --> %s\n", task.ID, task.Returns.Name)
+		fmt.Fprintf(&b, "  %s --> %s([%s])\n", task.ID, task.Returns.Name, task.Returns.Name)
+		if task.Returns.Source != "" {
+			source := task.Returns.Source
+			if task.Returns.SourceRef.Kind == semantic.FlowSourceParam {
+				source = task.Returns.SourceRef.ParamName
+			}
+			if task.Returns.SourceRef.Kind == semantic.FlowSourceInitialized {
+				source = task.Returns.SourceRef.Raw
+			}
+			if task.Returns.SourceRef.Kind == semantic.FlowSourceNode && task.Returns.SourceRef.AssetName != "" {
+				source = task.Returns.SourceRef.AssetName
+			}
+			fmt.Fprintf(&b, "  %s -- \"returns as %s\" --> _end\n", source, task.Returns.Name)
+		}
 	}
 	fmt.Fprintf(&b, "  %s ==> _end([End])\n\n", task.ID)
 
 	b.WriteString("  classDef taskNode     fill:#4A90D9,stroke:#2C5F8A,color:#fff\n")
 	if len(storeClassNames) > 0 {
 		b.WriteString("  classDef storeNode    fill:#E8A838,stroke:#B07820,color:#fff\n")
+	}
+	if len(task.Initializes) > 0 {
+		b.WriteString("  classDef initStoreNode fill:#F0C674,stroke:#B07820,color:#000\n")
+	}
+	if task.Returns != nil {
+		b.WriteString("  classDef assetNode    fill:#5BA55B,stroke:#3A6B3A,color:#fff\n")
 	}
 	b.WriteString("  classDef terminalNode fill:#2C2C2C,stroke:#000,color:#fff\n")
 	if len(task.Params) > 0 || task.Returns != nil {
@@ -90,8 +115,18 @@ func RenderTask(project *semantic.Project, task *semantic.Task) (string, error) 
 	if len(storeClassNames) > 0 {
 		fmt.Fprintf(&b, "  class %s storeNode\n", strings.Join(storeClassNames, ","))
 	}
+	if len(task.Initializes) > 0 {
+		var initNames []string
+		for _, init := range task.Initializes {
+			initNames = append(initNames, init.Name)
+		}
+		fmt.Fprintf(&b, "  class %s initStoreNode\n", strings.Join(initNames, ","))
+	}
+	if task.Returns != nil {
+		fmt.Fprintf(&b, "  class %s assetNode\n", task.Returns.Name)
+	}
 	b.WriteString("  class _start,_end terminalNode\n")
-	boundaryNames := append(paramNames(task), returnNames(task)...)
+	boundaryNames := paramNames(task)
 	if len(boundaryNames) > 0 {
 		fmt.Fprintf(&b, "  class %s boundaryNode\n", strings.Join(boundaryNames, ","))
 	}
@@ -129,10 +164,7 @@ func writeTasksDetail(b *strings.Builder, task *semantic.Task) {
 		b.WriteString("\n")
 	}
 	if task.Returns != nil {
-		b.WriteString("#### Returns\n\n")
-		b.WriteString("| name | model |\n")
-		b.WriteString("|---|---|\n")
-		fmt.Fprintf(b, "| %s | %s |\n\n", task.Returns.Name, task.Returns.ModelName)
+		writeReturnsSection(b, task.Returns)
 	}
 	accessRows := storeAccessRows(task)
 	if len(accessRows) > 0 {
@@ -151,13 +183,6 @@ func paramNames(task *semantic.Task) []string {
 		out = append(out, param.Name)
 	}
 	return out
-}
-
-func returnNames(task *semantic.Task) []string {
-	if task.Returns == nil {
-		return nil
-	}
-	return []string{task.Returns.Name}
 }
 
 func storeNames(task *semantic.Task) []string {

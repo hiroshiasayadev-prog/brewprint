@@ -39,3 +39,4 @@ ECサイトAPI一覧
 | task id | method | path | params | returns |
 |---|---|---|---|---|
 | process_payment | POST | /api/stripe | payment.model.payment_event | - |
+

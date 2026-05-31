@@ -26,9 +26,8 @@ func TestForeachReturnsAnyCollectedSourceOK(t *testing.T) {
 		{Foreach: "validate_item", Over: "$params.items", Params: map[string]string{"item": "$item"}, Returns: "validated_items"},
 		{Step: "summarize", Params: map[string]string{"items": "validated_items"}},
 	}, nil))
-	if len(diagnostics) != 0 {
-		t.Fatalf("diagnostics = %#v, want none", diagnostics)
-	}
+	assertNoErrorDiagnostics(t, diagnostics)
+	assertDiagnostic(t, diagnostics, diagnosticOpaqueTypeRef, semantic.SeverityWarning)
 	collected := project.FlowCollectedSourcesByFile["shop/task/run.yaml"]["validated_items"]
 	if collected == nil || collected.TypeRef == nil || collected.TypeRef.String() != "list<any>" {
 		t.Fatalf("collected TypeRef = %#v, want list<any>", collected)
@@ -210,5 +209,14 @@ func assertDiagnosticCodeCount(t *testing.T, diagnostics []semantic.Diagnostic, 
 	t.Helper()
 	if got := countDiagnosticCode(diagnostics, code); got != want {
 		t.Fatalf("diagnostic code %s count = %d, want %d: %#v", code, got, want, diagnostics)
+	}
+}
+
+func assertNoErrorDiagnostics(t *testing.T, diagnostics []semantic.Diagnostic) {
+	t.Helper()
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Severity == semantic.SeverityError {
+			t.Fatalf("got error diagnostic: %#v in %#v", diagnostic, diagnostics)
+		}
 	}
 }

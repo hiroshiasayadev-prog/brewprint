@@ -40,3 +40,4 @@ stateDiagram-v2
 | event | source | actor | note |
 |---|---|---|---|
 | inventory_changed | er | — | catalog.store.inventory_db（商品在庫DB）の変化を監視するER起点event（ADR-018）。クロスモジュールstore参照のためフルパス記法（ADR-027）。payloadは省略（どのレコードが変化したかは watches 側の監視機構で解決される前提）。 |
+

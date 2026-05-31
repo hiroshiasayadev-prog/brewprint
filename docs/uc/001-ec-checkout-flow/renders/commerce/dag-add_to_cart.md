@@ -15,9 +15,6 @@ flowchart TD
     item_id([item_id])
     qty([qty])
   end
-  subgraph returns
-    updated_cart([updated_cart])
-  end
 
   _start([Start]) ==> add_to_cart[add_to_cart]
   cart_id --> add_to_cart
@@ -27,17 +24,19 @@ flowchart TD
   catalog.store.item_collection[(catalog.store.item_collection)] -- "read" --> add_to_cart
   add_to_cart -- "write" --> cart_session[(cart_session)]
 
-  add_to_cart --> updated_cart
+  add_to_cart --> updated_cart([updated_cart])
   add_to_cart ==> _end([End])
 
   classDef taskNode     fill:#4A90D9,stroke:#2C5F8A,color:#fff
   classDef storeNode    fill:#E8A838,stroke:#B07820,color:#fff
+  classDef assetNode    fill:#5BA55B,stroke:#3A6B3A,color:#fff
   classDef terminalNode fill:#2C2C2C,stroke:#000,color:#fff
   classDef boundaryNode fill:#2D7D9A,stroke:#1A5068,color:#fff
   class add_to_cart taskNode
   class catalog.store.item_collection,cart_session storeNode
+  class updated_cart assetNode
   class _start,_end terminalNode
-  class cart_id,item_id,qty,updated_cart boundaryNode
+  class cart_id,item_id,qty boundaryNode
 ```
 
 ## Tasks
@@ -54,9 +53,9 @@ flowchart TD
 
 #### Returns
 
-| name | model |
-|---|---|
-| updated_cart | cart |
+| name | model | source |
+|---|---|---|
+| updated_cart | cart | — |
 
 #### Store access
 

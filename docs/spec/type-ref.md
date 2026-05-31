@@ -1,13 +1,16 @@
 ---
 scope: docs/spec/type-ref.md
 status: confirmed
-last_updated: 2026-05-03
+last_updated: 2026-05-31
 summary: >
   brewprint v1.1 TypeRef構文と型互換性の基礎定義。
-  primitive / named model / inline list / inline dict、および named list/dict model の正規化を定義する。
+  primitive / named model / inline list / inline dict、named list/dict model の正規化、
+  enum model compatibility、および container TypeRef safety / warning 境界を定義する。
 depends_on:
   - docs/adr/021-model-field-structure.md
   - docs/adr/060-flow-wiring-type-compatibility.md
+  - docs/adr/067-enum-model.md
+  - docs/adr/069-type-ref-container-complexity-lint.md
 ---
 
 # TypeRef仕様
@@ -101,7 +104,7 @@ nodes:
 
 ## 4. named model TypeRef
 
-primitive でも inline container でもない TypeRef は named model 参照として扱う。
+primitive でも inline container でもない TypeRef は named model 参照として扱う。enum model も named model TypeRef として参照する。
 
 ```yaml
 params:
@@ -113,7 +116,7 @@ returns:
   model: commerce.order
 ```
 
-list/dict 以外の named model は nominal に比較する。`user` と `customer` が同じ fields を持っていても、型互換とはみなさない。
+list/dict 以外の named model は nominal に比較する。`user` と `customer` が同じ fields を持っていても、型互換とはみなさない。enum model も同じく nominal に比較し、underlying JSON 表現が string であっても `str` とは暗黙互換にしない。
 
 外部shapeとの変換が必要な場合は、adapter / normalize task を明示して別の asset を生成する。
 
@@ -147,9 +150,26 @@ list<dict<user>>
 dict<list<diagnostic>>
 ```
 
-ただし深い入れ子は推奨しない。深さ制限または lint 方針は M15 Phase C で扱う。
+nested `list<T>` / `dict<T>` は構文上 valid のまま維持する。通常の nested TypeRef は validation error にしない。
 
-> 由来: ADR-060 §1
+ただし parser / implementation safety のため、container nesting depth が 16 を超える TypeRef は `invalid_type_ref` error とする。container nesting depth は `list<T>` / `dict<T>` の入れ子数で数え、primitive / named model は depth 0 とする。
+
+| TypeRef | depth |
+|---|---:|
+| `diagnostic` | 0 |
+| `list<diagnostic>` | 1 |
+| `dict<list<diagnostic>>` | 2 |
+| `list<dict<list<any>>>` | 3 |
+
+v1.1 では anonymous inline struct TypeRef は導入しない。以下のような構文は TypeRef として扱わない。
+
+```txt
+list<{ id: str, severity: str }>
+```
+
+`dict<T>` は value 型だけでは key semantics を表現できないため、field 名 / model 名 / `note` のいずれかで key の意味を明示することを推奨する。
+
+> 由来: ADR-060 §1, ADR-069 §1〜§6, §10
 
 ---
 
@@ -218,4 +238,61 @@ TypeRef 構文は valid だが内部の named model が解決できない場合�
 
 TypeRef の解決に失敗した場合、その TypeRef を使う flow wiring では `incompatible_wiring_type` を追加で発行しない。型互換性チェックは source TypeRef と target TypeRef の両方が正常に解決できた場合のみ行う。
 
-> 由来: ADR-060 §6, §7, M15 Phase A task
+Parser safety limit を超えた TypeRef も `invalid_type_ref` とする。この limit は可読性 lint ではなく、parser / implementation safety のための hard error である。
+
+> 由来: ADR-060 §6, §7, M15 Phase A task, ADR-069 §2, §10
+
+---
+
+## 8. enum model TypeRef compatibility
+
+enum model は、既存 TypeRef の named model 参照として扱う。TypeRef に inline enum variant は存在しない。
+
+```yaml
+nodes:
+  - id: diagnostic
+    type: model
+    kind: struct
+    fields:
+      - name: severity
+        type: mcp_diagnostic_severity
+```
+
+enum model の型互換性は nominal である。
+
+```txt
+mcp_diagnostic_severity -> mcp_diagnostic_severity  OK
+mcp_diagnostic_severity -> str                      NG
+str -> mcp_diagnostic_severity                      NG
+mcp_diagnostic_severity -> impact_severity          NG
+any -> mcp_diagnostic_severity                      OK
+mcp_diagnostic_severity -> any                      OK
+```
+
+`enum` と `str` の暗黙互換は導入しない。`any` は ADR-060 の既存ルール通り、source / target のどちらに現れても互換とする。
+
+> 由来: ADR-067 §3〜§5
+
+---
+
+## 9. opaque container TypeRef warning
+
+container TypeRef の内部に `any` が含まれ、shape の意味が named model に回収されていない場合、`opaque_type_ref` warning diagnostic の対象とする。
+
+対象例:
+
+```txt
+list<any>
+dict<any>
+list<dict<any>>
+dict<list<any>>
+list<dict<list<any>>>
+```
+
+`opaque_type_ref` は validation 成功扱いの warning であり、message では必要に応じて named model への切り出しを促す。
+
+`opaque_type_ref` は container TypeRef 内の `any` を対象とする debt visibility baseline であり、bare `any` field や `any + note` の主要 response shape 全体を warning 化または解消するものではない。
+
+`unclear_dict_key` / `deep_type_ref` は将来 lint 候補であり、v1.1 minimum の diagnostic としては追加しない。
+
+> 由来: ADR-069 §4〜§10

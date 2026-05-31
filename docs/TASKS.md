@@ -47,7 +47,7 @@ ADR-091 により、新規の実行計画と到達点は work item が所有し�
 | M13: MCP analyze_impact implementation | closed | [tasks/m13-mcp-analyze-impact-implementation.md](tasks/m13-mcp-analyze-impact-implementation.md) | ADR-056; hybrid v1 close; `docs/impl/go-m13-summary.md` |
 | M14: brewprint self-hosting | paused | [tasks/m14-self-hosting.md](tasks/m14-self-hosting.md) | UC-002 / v1.0.0-spec実用検証 + editor/viewer要件抽出。M15完了まで一時停止 |
 | M14a: subnode file-private scope fix | open | [tasks/m14a-subnode-scope-fix.md](tasks/m14a-subnode-scope-fix.md) | ADR-058 / ADR-059。M14 Phase Aで発覚したv1.0系実装バグ修正 |
-| M15: data layer expressiveness (v1.1) | open | [tasks/m15-data-layer-expressiveness.md](tasks/m15-data-layer-expressiveness.md) | ADR-060 (TypeRef + flow wiring type compatibility)。Phase A/B/C構成。完了時点で v1.1.0-spec タグ発行 |
+| M15: data layer expressiveness (v1.1) | closed | [tasks/m15-data-layer-expressiveness.md](tasks/m15-data-layer-expressiveness.md) | REQ-DATA-001 / WORK-DATA-001 により minimum-expressiveness release として close。v1.1.0-spec は commit 後 tag ready |
 | M16: Design Records MCP MVP | closed | [tasks/m16-design-records-mcp-mvp.md](tasks/m16-design-records-mcp-mvp.md) | ADR-076 / ADR-077。ADR/spec record index + read-only MCP MVP |
 | M17: Design Records MCP stdio transport | closed | [tasks/m17-design-records-mcp-stdio-transport.md](tasks/m17-design-records-mcp-stdio-transport.md) | M16 handlers を stdio MCP server として公開 |
 | M18: semantic traceability foundation | closed | [tasks/m18-semantic-traceability-foundation.md](tasks/m18-semantic-traceability-foundation.md) | ADR-081〜088。ADR-088 により MVP を canonical reference resolution foundation に縮小し、spec / policy / handoff 同期と最終独立レビュー完了。MCP実装追従は M19 へ分離 |

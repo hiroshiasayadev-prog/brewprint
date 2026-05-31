@@ -2,6 +2,38 @@
 # docs/spec/mcp/schema.md §1.1 に対応。
 
 nodes:
+  - id: mcp_object_type
+    type: model
+    kind: enum
+    values:
+      - node
+      - view
+      - transition
+      - asset
+      - field
+      - file
+      - primitive
+    note: "MCP ObjectRef / selector で使う object category。"
+
+  - id: mcp_diagnostic_severity
+    type: model
+    kind: enum
+    values:
+      - error
+      - warning
+      - info
+      - hint
+    note: "MCP Diagnostic severity。"
+
+  - id: reference_tree_direction
+    type: model
+    kind: enum
+    values:
+      - out
+      - in
+      - both
+    note: "get_reference_tree traversal direction。"
+
   - id: object_selector
     type: model
     kind: struct
@@ -10,8 +42,8 @@ nodes:
         type: str
         note: "対象object ID。QualifiedID / actor global ID / synthetic IDを許容。任意"
       - name: object
-        type: str
-        note: "node / view / transition / asset / field / file / primitive。任意enum"
+        type: mcp_object_type
+        note: "任意。node / view / transition / asset / field / file / primitive。"
       - name: kind
         type: str
         note: "期待kind。指定時は解決結果との一致を検証する。任意"

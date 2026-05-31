@@ -11,9 +11,6 @@ flowchart TD
     cart_id([cart_id])
     shipping_address([shipping_address])
   end
-  subgraph returns
-    pending_order([pending_order])
-  end
 
   _start([Start]) ==> build_order[build_order]
   cart_id --> build_order
@@ -49,11 +46,11 @@ flowchart TD
   classDef terminalNode fill:#2C2C2C,stroke:#000,color:#fff
   classDef boundaryNode fill:#2D7D9A,stroke:#1A5068,color:#fff
   class build_order,reserve_inventory,notify_payment_gateway taskNode
-  class draft_order,reserved,notified assetNode
+  class draft_order,reserved,notified,pending_order assetNode
   class cart_session,user_db,order_db,inventory_db storeNode
   class parallel_processing,finalize_checkout forkNode
   class _start,_end terminalNode
-  class cart_id,shipping_address,pending_order boundaryNode
+  class cart_id,shipping_address boundaryNode
 ```
 
 ## Tasks
@@ -69,9 +66,9 @@ flowchart TD
 
 #### Returns
 
-| name | model |
-|---|---|
-| pending_order | order |
+| name | model | source |
+|---|---|---|
+| pending_order | order | — |
 
 ### build_order
 
@@ -87,9 +84,9 @@ draft order（status: pending）を order_db に新規作成して返す。
 
 #### Returns
 
-| name | model |
-|---|---|
-| draft_order | order |
+| name | model | source |
+|---|---|---|
+| draft_order | order | — |
 
 #### Store access
 
@@ -113,9 +110,9 @@ catalog.store.inventory_db の stock を減算して在庫確保。
 
 #### Returns
 
-| name | model |
-|---|---|
-| reserved | order |
+| name | model | source |
+|---|---|---|
+| reserved | order | — |
 
 #### Store access
 
@@ -137,9 +134,9 @@ Stripe API に決済要求を送信（外部HTTP呼び出し）。
 
 #### Returns
 
-| name | model |
-|---|---|
-| notified | order |
+| name | model | source |
+|---|---|---|
+| notified | order | — |
 
 ### parallel_processing
 
@@ -165,6 +162,7 @@ Stripe API に決済要求を送信（外部HTTP呼び出し）。
 
 #### Returns
 
-| name | model |
-|---|---|
-| pending_order | order |
+| name | model | source |
+|---|---|---|
+| pending_order | order | — |
+

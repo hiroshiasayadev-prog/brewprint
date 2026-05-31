@@ -6,8 +6,8 @@ nodes:
     kind: struct
     fields:
       - name: severity
-        type: str
-        note: "enum値集合: error / warning / info / hint"
+        type: mcp_diagnostic_severity
+        note: "error / warning / info / hint"
       - name: code
         type: str
         note: "machine-readable diagnostic code"

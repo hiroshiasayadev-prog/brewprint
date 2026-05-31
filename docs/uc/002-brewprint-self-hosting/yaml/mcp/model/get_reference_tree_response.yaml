@@ -10,7 +10,7 @@ nodes:
         type: object_ref
         note: "必須。traversal root ObjectRef。"
       - name: direction
-        type: str
+        type: reference_tree_direction
         note: "必須。実際に使ったdirection。out / in / both。"
       - name: depth
         type: int

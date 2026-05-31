@@ -23,6 +23,7 @@ type flowRenderer struct {
 	taskClasses   []string
 	assetClasses  []string
 	storeClasses  []string
+	initClasses   []string
 	branchClasses []string
 	forkClasses   []string
 	classSeen     map[string]map[string]bool
@@ -52,8 +53,8 @@ func (r *flowRenderer) render() string {
 	r.b.WriteString("```mermaid\n")
 	r.b.WriteString("flowchart TD\n")
 	writeBoundary(&r.b, "params", paramNames(r.main))
-	writeBoundary(&r.b, "returns", returnNames(r.main))
-	if len(r.main.Params) > 0 || r.main.Returns != nil {
+	r.writeInitializesBoundary()
+	if len(r.main.Params) > 0 || len(r.main.Initializes) > 0 {
 		r.blank()
 	}
 
@@ -72,7 +73,10 @@ func (r *flowRenderer) render() string {
 			r.blank()
 		}
 	}
-	if len(flows) > 0 {
+	if r.main.Returns != nil && r.main.Returns.Source != "" {
+		r.writeReturnSourceLine(r.main.Returns)
+	}
+	if len(flows) > 0 || (r.main.Returns != nil && r.main.Returns.Source != "") {
 		r.blank()
 	}
 
@@ -157,7 +161,7 @@ func (r *flowRenderer) renderForeach(flow semantic.ForeachFlow) string {
 	}
 	if flow.Returns != "" {
 		r.blank()
-		r.line("%s --> %s", task.ID, flow.Returns)
+		r.line("%s --> %s", task.ID, r.assetRef(flow.Returns))
 	}
 	r.line("%s ==> _end([End])", task.ID)
 	return task.ID
@@ -222,7 +226,7 @@ func (r *flowRenderer) renderFork(flow semantic.ForkFlow) string {
 	}
 	if join != nil && join.Returns != nil {
 		r.blank()
-		r.line("%s --> %s", join.ID, join.Returns.Name)
+		r.line("%s --> %s", join.ID, r.assetRef(join.Returns.Name))
 		r.line("%s ==> _end([End])", join.ID)
 		return join.ID
 	}
@@ -289,10 +293,6 @@ func (r *flowRenderer) writeTaskReturn(task *semantic.Task) {
 	if task.Returns == nil {
 		return
 	}
-	if r.main.Returns != nil && task.Returns.Name == r.main.Returns.Name {
-		r.line("%s --> %s", task.ID, task.Returns.Name)
-		return
-	}
 	r.line("%s --> %s", task.ID, r.assetRef(task.Returns.Name))
 }
 
@@ -316,6 +316,8 @@ func (r *flowRenderer) sourceNodeID(source semantic.FlowSource) string {
 	switch source.Kind {
 	case semantic.FlowSourceParam:
 		return source.ParamName
+	case semantic.FlowSourceInitialized:
+		return r.initStoreID(source.Raw)
 	case semantic.FlowSourceNode:
 		if source.AssetName != "" {
 			return r.assetID(source.AssetName)
@@ -396,13 +398,13 @@ func (r *flowRenderer) assetRef(name string) string {
 }
 
 func (r *flowRenderer) storeRef(ref semantic.StoreRef) string {
+	if ref.FilePrivate {
+		return r.initStoreRef(ref.Name)
+	}
 	id := shortNodeID(ref.Name)
 	label := ref.Name
 	if store := r.project.StoresByQID[ref.Store]; store != nil {
 		id = store.ID
-	}
-	if ref.FilePrivate {
-		id = shortNodeID(ref.Name)
 	}
 	r.addClass("store", id)
 	if r.defined[id] {
@@ -410,6 +412,42 @@ func (r *flowRenderer) storeRef(ref semantic.StoreRef) string {
 	}
 	r.defined[id] = true
 	return fmt.Sprintf("%s[(%s)]", id, label)
+}
+
+func (r *flowRenderer) initStoreID(name string) string {
+	return shortNodeID(name)
+}
+
+func (r *flowRenderer) initStoreRef(name string) string {
+	id := r.initStoreID(name)
+	r.addClass("init", id)
+	if r.defined[id] {
+		return id
+	}
+	r.defined[id] = true
+	return fmt.Sprintf("%s[(%s)]", id, name)
+}
+
+func (r *flowRenderer) writeInitializesBoundary() {
+	if len(r.main.Initializes) == 0 {
+		return
+	}
+	r.line("subgraph initializes")
+	for _, init := range r.main.Initializes {
+		r.line("  %s", r.initStoreRef(init.Name))
+	}
+	r.line("end")
+}
+
+func (r *flowRenderer) writeReturnSourceLine(ret *semantic.Return) {
+	source := r.sourceNodeID(ret.SourceRef)
+	if source == "" {
+		source = ret.Source
+	}
+	if source == "" {
+		return
+	}
+	r.line("%s -- \"returns as %s\" --> _end", source, ret.Name)
 }
 
 func shortNodeID(id string) string {
@@ -438,6 +476,8 @@ func (r *flowRenderer) addClass(kind, id string) {
 		r.assetClasses = append(r.assetClasses, id)
 	case "store":
 		r.storeClasses = append(r.storeClasses, id)
+	case "init":
+		r.initClasses = append(r.initClasses, id)
 	case "branch":
 		r.branchClasses = append(r.branchClasses, id)
 	case "fork":
@@ -461,6 +501,9 @@ func (r *flowRenderer) writeClassDefs() {
 	if len(r.storeClasses) > 0 {
 		r.line("classDef storeNode    fill:#E8A838,stroke:#B07820,color:#fff")
 	}
+	if len(r.initClasses) > 0 {
+		r.line("classDef initStoreNode fill:#F0C674,stroke:#B07820,color:#000")
+	}
 	if len(r.branchClasses) > 0 {
 		r.line("classDef branchNode   fill:#9B6BBD,stroke:#6B3D8F,color:#fff")
 	}
@@ -480,6 +523,9 @@ func (r *flowRenderer) writeClassDefs() {
 	if len(r.storeClasses) > 0 {
 		r.line("class %s storeNode", strings.Join(r.storeClasses, ","))
 	}
+	if len(r.initClasses) > 0 {
+		r.line("class %s initStoreNode", strings.Join(r.initClasses, ","))
+	}
 	if len(r.branchClasses) > 0 {
 		r.line("class %s branchNode", strings.Join(r.branchClasses, ","))
 	}
@@ -487,7 +533,7 @@ func (r *flowRenderer) writeClassDefs() {
 		r.line("class %s forkNode", strings.Join(r.forkClasses, ","))
 	}
 	r.line("class _start,_end terminalNode")
-	boundaryNames := append(paramNames(r.main), returnNames(r.main)...)
+	boundaryNames := paramNames(r.main)
 	if len(boundaryNames) > 0 {
 		r.line("class %s boundaryNode", strings.Join(boundaryNames, ","))
 	}
@@ -583,7 +629,11 @@ func writeParamsSection(b *strings.Builder, params []semantic.Param) {
 
 func writeReturnsSection(b *strings.Builder, ret *semantic.Return) {
 	b.WriteString("#### Returns\n\n")
-	b.WriteString("| name | model |\n")
-	b.WriteString("|---|---|\n")
-	fmt.Fprintf(b, "| %s | %s |\n\n", ret.Name, ret.ModelName)
+	b.WriteString("| name | model | source |\n")
+	b.WriteString("|---|---|---|\n")
+	source := ret.Source
+	if source == "" {
+		source = "—"
+	}
+	fmt.Fprintf(b, "| %s | %s | %s |\n\n", ret.Name, ret.ModelName, source)
 }

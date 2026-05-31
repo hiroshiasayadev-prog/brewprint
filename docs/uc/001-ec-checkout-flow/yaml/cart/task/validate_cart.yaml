@@ -24,6 +24,7 @@ nodes:
     returns:
       name: validated_items
       model: cart_item_list
+      source: validated_items
     note: |
       カート内アイテムを 1 件ずつ validate_item で検証し、
       検証通過したアイテムのリストを返す。

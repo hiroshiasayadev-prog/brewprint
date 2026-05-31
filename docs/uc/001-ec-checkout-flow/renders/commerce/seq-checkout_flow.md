@@ -21,3 +21,4 @@ sequenceDiagram
 | 2 | order.task.checkout | build_order | auth.store.user_db | reads |
 | 2 | order.task.checkout | reserve_inventory | catalog.store.inventory_db | reads |
 | 2 | order.task.checkout | reserve_inventory | catalog.store.inventory_db | writes |
+

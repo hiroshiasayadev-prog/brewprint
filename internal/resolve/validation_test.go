@@ -66,6 +66,96 @@ func TestBuildValidationDiagnostics(t *testing.T) {
 	assertDiagnosticCode(t, diagnostics, diagnosticInvalidEndpoint)
 }
 
+func TestBuildEnumModelDiagnostics(t *testing.T) {
+	_, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{
+		{
+			ID:   "shop/model/status.yaml",
+			Kind: rawyaml.FileKindNode,
+			NodeFile: &rawyaml.NodeFile{Models: []rawyaml.Model{
+				{ID: "missing_values", Kind: "enum"},
+				{ID: "empty_value", Kind: "enum", Values: []string{"active", ""}},
+				{ID: "duplicate_value", Kind: "enum", Values: []string{"active", "active"}},
+				{
+					ID:      "wrong_shape",
+					Kind:    "enum",
+					Values:  []string{"active"},
+					Fields:  []rawyaml.ModelField{{Name: "id", Type: "str"}},
+					Element: "str",
+					Value:   "str",
+				},
+			}},
+		},
+	}})
+
+	assertDiagnosticCode(t, diagnostics, diagnosticInvalidEnumModel)
+	assertDiagnosticCode(t, diagnostics, diagnosticDuplicateEnumValue)
+}
+
+func TestBuildValidEnumModel(t *testing.T) {
+	project, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{
+		{
+			ID:   "shop/model/status.yaml",
+			Kind: rawyaml.FileKindNode,
+			NodeFile: &rawyaml.NodeFile{Models: []rawyaml.Model{{
+				ID:     "status",
+				Kind:   "enum",
+				Values: []string{"active", "inactive"},
+			}}},
+		},
+		{
+			ID:   "shop/model/user.yaml",
+			Kind: rawyaml.FileKindNode,
+			NodeFile: &rawyaml.NodeFile{Models: []rawyaml.Model{{
+				ID:   "user",
+				Kind: "struct",
+				Fields: []rawyaml.ModelField{{
+					Name: "status",
+					Type: "status",
+				}},
+			}}},
+		},
+	}})
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v, want none", diagnostics)
+	}
+	model := project.ModelsByQID["shop.model.status"]
+	if model == nil || model.Kind != "enum" || len(model.Values) != 2 || model.Values[0] != "active" {
+		t.Fatalf("enum model not built as expected: %#v", model)
+	}
+}
+
+func TestEnumTypeRefsUseNominalCompatibility(t *testing.T) {
+	project, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{
+		{
+			ID:   "shop/model/status.yaml",
+			Kind: rawyaml.FileKindNode,
+			NodeFile: &rawyaml.NodeFile{Models: []rawyaml.Model{
+				{ID: "status", Kind: "enum", Values: []string{"active", "inactive"}},
+				{ID: "severity", Kind: "enum", Values: []string{"info", "warning"}},
+			}},
+		},
+	}})
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v, want none", diagnostics)
+	}
+	status := mustParseTypeRefForTest(t, "status")
+	severity := mustParseTypeRefForTest(t, "severity")
+	str := mustParseTypeRefForTest(t, "str")
+	any := mustParseTypeRefForTest(t, "any")
+	if !typeRefsCompatible(project, status, mustParseTypeRefForTest(t, "status")) {
+		t.Fatalf("same enum type should be compatible")
+	}
+	if typeRefsCompatible(project, status, severity) {
+		t.Fatalf("different enum models should not be compatible")
+	}
+	if typeRefsCompatible(project, status, str) || typeRefsCompatible(project, str, status) {
+		t.Fatalf("enum and str should not be implicitly compatible")
+	}
+	if !typeRefsCompatible(project, any, status) || !typeRefsCompatible(project, status, any) {
+		t.Fatalf("any should remain compatible with enum")
+	}
+}
+
 func TestBuildMissingRequiredFieldDiagnostics(t *testing.T) {
 	_, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{
 		{

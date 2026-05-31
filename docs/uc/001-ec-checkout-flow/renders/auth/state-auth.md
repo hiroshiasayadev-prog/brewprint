@@ -31,3 +31,4 @@ stateDiagram-v2
 | login_submitted | ui | — | ログインフォームのsubmit操作。認証APIを起動する |
 | login_succeeded | internal | — | auth.task.login 成功時にFSM runtimeが発火。返却された token を運ぶ（ADR-034） |
 | login_failed | internal | — | auth.task.login 失敗時にFSM runtimeが発火（ADR-034） |
+

@@ -7,6 +7,7 @@ type Model struct {
 	Fields  []ModelField `yaml:"fields"`
 	Element string       `yaml:"element"`
 	Value   string       `yaml:"value"`
+	Values  []string     `yaml:"values"`
 	Note    string       `yaml:"note"`
 }
 

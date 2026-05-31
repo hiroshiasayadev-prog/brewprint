@@ -1,9 +1,9 @@
 # Milestone 15: data layer expressiveness (v1.1)
 
-- **status**: open
+- **status**: closed
 - **scope**: internal/semantic / internal/resolve / spec / docs/adr / tests
-- **source**: ADR-060 (TypeRef + flow wiring type compatibility) / ADR-061 (foreach.returns collected asset) / ADR-062 (task return source) / ADR-063 (initialized source の wiring source 化) / ADR-064 (returns.source の DAG render ルール, proposed) を起点とする v1.1 系の表現力拡張
-- **last_updated**: 2026-05-09
+- **source**: ADR-060 (TypeRef + flow wiring type compatibility) / ADR-061 (foreach.returns collected asset) / ADR-062 (task return source) / ADR-063 (initialized source の wiring source 化) / ADR-064 (returns.source の DAG render ルール) / ADR-067 (enum model) / ADR-069 (TypeRef container complexity lint) を起点とする v1.1 系の minimum-expressiveness release
+- **last_updated**: 2026-05-31
 
 ---
 
@@ -538,7 +538,42 @@ UC-002 self-hosting で必要になる data layer 表現力を ADR ベースで�
 
 ---
 
+## Close note
+
+M15 is closed as a historical legacy M-series record.
+
+Actual close boundary is defined by `REQ-DATA-001` / `WORK-DATA-001`, not by the stale phase checkboxes in this legacy document.
+
+Closed scope:
+
+- Phase A〜B3: ADR-060〜ADR-063 baseline implementation / tests / evidence confirmed.
+- Phase B4: ADR-064 accepted DAG render behavior implemented, UC-001 current renders regenerated, and regression verified.
+- ADR-069 minimum: parser safety limit, anonymous inline struct non-adoption, and `opaque_type_ref` warning reflected in spec / implementation / tests.
+- ADR-067 enum minimum: `mcp_object_type`, `mcp_diagnostic_severity`, `reference_tree_direction` introduced as enum models, and exactly the initial 5 UC-002 fields migrated to named enum TypeRef.
+
+Verification evidence:
+
+- `go run ./cmd/brewprint render --yaml-root docs\uc\001-ec-checkout-flow\yaml --out docs\uc\001-ec-checkout-flow\renders --clean`: `rendered 23 file(s)`.
+- `go test ./internal/render/dag`: passed.
+- `go test ./internal/render/project`: passed.
+- `go test ./cmd/brewprint`: passed.
+- `go test ./internal/resolve`: passed during ADR-067 / ADR-069 verification.
+- `go test ./...`: passed.
+
+Deferred outside this M15 close:
+
+- ADR-070 / ADR-071 / ADR-072 / ADR-075 helper model / model render series.
+- ADR-073 tagged union.
+- ADR-074 DAG asset TypeRef hint.
+- ADR-078〜080 MCP semantic identity / state machine identity.
+- UC-002 duplicate task QID / unresolved flow task issue.
+- Remaining UC-002 notes retreat debt.
+
+`v1.1.0-spec` is ready to tag after commit. Tag issuance is a separate git operation and was not performed by this documentation update.
+
 ## Evidence
 
 - commit: 01e7127
 - impl commit: e7b8292
+- close work item: WORK-DATA-001
+- close task: TASK-DATA-001-05

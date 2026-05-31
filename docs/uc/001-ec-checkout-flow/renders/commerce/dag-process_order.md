@@ -65,9 +65,9 @@ order_id から order を引き当て、含まれる order_item の在庫を inv
 
 #### Returns
 
-| name | model |
-|---|---|
-| order | order |
+| name | model | source |
+|---|---|---|
+| order | order | — |
 
 #### Store access
 
@@ -120,3 +120,4 @@ order に紐づく全 order_item について inventory_db.stock >= order_item.q
 | access | store |
 |---|---|
 | write | order_db |
+

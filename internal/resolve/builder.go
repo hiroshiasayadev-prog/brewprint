@@ -227,6 +227,7 @@ func buildModel(fileID semantic.FileID, module string, raw rawyaml.Model) *seman
 		ElementRef: mustBuildTypeRef(module, raw.Element),
 		Value:      raw.Value,
 		ValueRef:   mustBuildTypeRef(module, raw.Value),
+		Values:     append([]string(nil), raw.Values...),
 	}
 	for _, field := range raw.Fields {
 		model.Fields = append(model.Fields, semantic.ModelField{

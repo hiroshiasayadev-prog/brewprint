@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/nodes.md
 status: confirmed
-last_updated: 2026-05-05
+last_updated: 2026-05-31
 summary: >
   brewprintの全ノード種別のフィールド定義。
   各フィールドの必須/任意・型・意味・出典ADRを記載する。
@@ -32,6 +32,7 @@ depends_on:
   - docs/adr/062-task-return-source.md
   - docs/adr/063-task-return-source-initialized-store.md
   - docs/adr/065-asset-immutability-and-edge-role-contrast.md
+  - docs/adr/067-enum-model.md
 ---
 
 # ノード定義仕様
@@ -159,7 +160,7 @@ Processingレイヤー。処理の単位。`returns` 宣言によってDAG上に
 
 ## model
 
-> 出典: ADR-007（superseded・内容はADR-010に継承）, ADR-008, ADR-010, ADR-021, ADR-060
+> 出典: ADR-007（superseded・内容はADR-010に継承）, ADR-008, ADR-010, ADR-021, ADR-060, ADR-067
 
 Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` サブディレクトリに1ファイル=1定義で置く。
 
@@ -198,7 +199,18 @@ Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` �
   type: model
   kind: dict
   value: config             # TypeRef。keyは常にstr
+
+# enum
+- id: mcp_diagnostic_severity
+  type: model
+  kind: enum
+  values:
+    - error
+    - warning
+    - info
+    - hint
 ```
+
 
 ### primitive予約語
 
@@ -218,13 +230,20 @@ Dataレイヤー。型定義に徹する。DAGには登場しない。`model/` �
 
 | フィールド | 必須 | 型 | 内容 | 出典 |
 |-----------|------|-----|------|------|
-| `kind` | ✓ | enum | `struct` / `list` / `dict` | ADR-007→ADR-010, ADR-021 |
+| `kind` | ✓ | enum | `struct` / `list` / `dict` / `enum` | ADR-007→ADR-010, ADR-021, ADR-067 |
 | `fields` | struct時必須 | list\<field\> | フィールド定義（structのみ） | ADR-008 |
 | `element` | list時必須 | TypeRef | 要素の型 | ADR-021, ADR-060 |
 | `value` | dict時必須 | TypeRef | 値の型。keyは常に `str` | ADR-021, ADR-060 |
+| `values` | enum時必須 | list\<string\> | enum の許容値集合。non-empty、空文字不可、同一 enum model 内で重複不可 | ADR-067 |
 
 `kind: scalar` は廃止。primitive literalを直接使う（ADR-021）。  
 `kind: dict` のkeyは常に `str`。`key` フィールドは存在しない（ADR-021）。
+
+`kind: enum` は string-valued finite vocabulary を表す model kind である。enum model は `values` を必須とし、`fields` / `element` / `value` を持たない。使用側は既存 TypeRef の named model 参照として enum model ID を指定する。inline enum TypeRef は存在しない。
+
+`values` の順序は表示・schema 生成時の順序として保持してよいが、型互換性の意味には使わない。値ごとの `note` / `label` / `deprecated` 等の metadata は v1.1 では導入しない。
+
+> 由来: ADR-067 §1〜§5
 
 ### field オブジェクト（struct内）
 

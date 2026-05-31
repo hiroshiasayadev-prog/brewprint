@@ -1,6 +1,6 @@
 # 067: enum model 導入
 
-- **status**: proposed
+- **status**: accepted
 - **date**: 2026-05-09
 
 > このADRは起票時点での決定を記録したスナップショットである。
@@ -156,18 +156,25 @@ enum は名前を持つ model として定義する。
 
 ### 7. UC-002 の移行対象は public contract の共通 enum から始める
 
-ADR-067 acceptance 後、UC-002 の `str + note` enum 候補を段階的に enum model へ移行する。
-初期移行対象は以下とする。
+M15 / `v1.1.0-spec` で実行する UC-002 の初期移行対象は、public contract の共通 enum のうち以下に限定する。
 
-| enum model | values | 主な置換対象 |
+| enum model | values | 置換対象 field |
 |---|---|---|
 | `mcp_object_type` | `node` / `view` / `transition` / `asset` / `field` / `file` / `primitive` | `object_selector.object`, `object_ref.object` |
 | `mcp_diagnostic_severity` | `error` / `warning` / `info` / `hint` | `diagnostic.severity` |
 | `reference_tree_direction` | `out` / `in` / `both` | `get_reference_tree_request.direction`, `get_reference_tree_response.direction` |
 
-`analyze_impact_response.impacts` 内の `impact.severity` / `fixability` は、現状 `impacts: any` の note 内に閉じている。
-これらを enum 化するには、先に `impact_entry` model を切り、`impacts: list<impact_entry>` へ移行する必要がある。
-そのため、`impact_severity` / `impact_fixability` の導入と `impact_entry` model 化は ADR-067 acceptance 後の UC-002 migration task として扱う。
+この 3 enum model の定義追加と 5 field の named enum model TypeRef への切替は、未解決 model または移行漏れを成果物として残さないため、同一実行単位として扱う。
+
+以下は enum model capability により将来表現しうる候補であるが、M15 / `v1.1.0-spec` の初期移行対象には含めない。
+
+- `get_references.direction`
+- `reference.direction`
+- object-dependent `kind`
+- `impact_severity`
+- `impact_fixability`
+
+特に `analyze_impact_response.impacts` 内の `impact.severity` / `fixability` は、現状 `impacts: any` の note 内に閉じており、型付けには helper shape / payload 表現の別判断を要する。これらを本ADRの acceptance または M15 close の blocker として扱わない。
 
 ## 理由
 
@@ -316,16 +323,16 @@ fields:
 ### 既存 UC への影響
 
 - UC-001 には影響しない想定
-- UC-002 の MCP public contract model で、`str + note` の enum 候補を段階的に enum model へ移行する
-- `diagnostic.severity` / `object_ref.object` / `get_reference_tree.direction` は初期移行対象
-- `analyze_impact_response.impacts` は `impact_entry` model 化が必要なため、後続 migration task として扱う
+- UC-002 の MCP public contract model では、M15 初期移行として `mcp_object_type` / `mcp_diagnostic_severity` / `reference_tree_direction` の 3 enum model と対応する 5 field を atomic に移行する
+- その他の enum 候補および helper shape を要する payload の型付けは、M15 初期移行対象へ自動追加しない
 
-### M15 への影響
+### M15 / `v1.1.0-spec` への影響
 
-M15 Phase C では、本ADRを受けて enum model の spec / implementation / UC-002 migration を扱う。
+`REQ-DATA-001` / `WORK-DATA-001` が採用した minimum-expressiveness release boundary に従い、M15 は本ADRの enum model capability と §7 の初期 3 enum model / 5 field migration を含む。
 
-ただし、具体的な作業項目、fixture migration の順序、`analyze_impact_response.impacts` の `impact_entry` model 化などは ADR 本文では管理しない。
-これらは `docs/tasks/m15-data-layer-expressiveness.md` および UC-002 側の task file で追跡する。
+一方で、helper model、tagged union、DAG TypeRef hint、MCP / state identity、notes retreat の完全解消、および §7 で除外した追加 enum 候補は、本ADRの acceptance または M15 close の blocker としない。
+
+spec / implementation / UC-002 fixture migration の具体作業、atomic migration の検証、および完了 evidence は `WORK-DATA-001` 配下の短期 task、特に `TASK-DATA-001-04` で追跡する。`docs/tasks/m15-data-layer-expressiveness.md` は legacy M15 record として close 時の historical evidence 同期対象に留める。
 
 ### 他設計への影響
 
@@ -338,5 +345,6 @@ M15 Phase C では、本ADRを受けて enum model の spec / implementation / U
 ## Evidence
 
 - commit: 693e3c0
+- acceptance boundary: `REQ-DATA-001` / `WORK-DATA-001` が採用した F1 boundary に従い、M15 初期移行を 3 enum model / 5 field の atomic migration に限定して accepted とした（2026-05-29）
 - impl commit: tbd
 - 参考: JSON Schema enum, OpenAPI string enum, nominal typing 方針（ADR-060）

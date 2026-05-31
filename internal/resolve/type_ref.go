@@ -28,6 +28,8 @@ func parseTypeRef(raw string, module string) (*semantic.TypeRef, error) {
 	return ref, nil
 }
 
+const maxTypeRefContainerNestingDepth = 16
+
 type typeRefParser struct {
 	raw    string
 	module string
@@ -39,7 +41,7 @@ func (p *typeRefParser) parse() (*semantic.TypeRef, error) {
 	if p.eof() {
 		return nil, p.err("empty TypeRef")
 	}
-	ref, err := p.parseRef()
+	ref, err := p.parseRef(0)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +52,7 @@ func (p *typeRefParser) parse() (*semantic.TypeRef, error) {
 	return ref, nil
 }
 
-func (p *typeRefParser) parseRef() (*semantic.TypeRef, error) {
+func (p *typeRefParser) parseRef(containerDepth int) (*semantic.TypeRef, error) {
 	p.skipSpaces()
 	start := p.pos
 	ident := p.readIdent()
@@ -65,7 +67,10 @@ func (p *typeRefParser) parseRef() (*semantic.TypeRef, error) {
 		if ident != "list" && ident != "dict" {
 			return nil, p.errAt(start, "unsupported container kind: "+ident)
 		}
-		typeArg, err := p.parseRef()
+		if containerDepth+1 > maxTypeRefContainerNestingDepth {
+			return nil, p.errAt(start, fmt.Sprintf("container nesting depth exceeds limit %d", maxTypeRefContainerNestingDepth))
+		}
+		typeArg, err := p.parseRef(containerDepth + 1)
 		if err != nil {
 			return nil, err
 		}
@@ -244,4 +249,35 @@ func typeRefsCompatible(project *semantic.Project, source *semantic.TypeRef, tar
 
 func typeRefIsAny(ref *semantic.TypeRef) bool {
 	return ref != nil && ref.Kind == semantic.TypeRefPrimitive && ref.Name == "any"
+}
+
+func typeRefHasOpaqueAnyContainer(ref *semantic.TypeRef) bool {
+	if ref == nil {
+		return false
+	}
+	switch ref.Kind {
+	case semantic.TypeRefList:
+		return typeRefContainsAny(ref.Elem)
+	case semantic.TypeRefDict:
+		return typeRefContainsAny(ref.Value)
+	default:
+		return false
+	}
+}
+
+func typeRefContainsAny(ref *semantic.TypeRef) bool {
+	if ref == nil {
+		return false
+	}
+	if typeRefIsAny(ref) {
+		return true
+	}
+	switch ref.Kind {
+	case semantic.TypeRefList:
+		return typeRefContainsAny(ref.Elem)
+	case semantic.TypeRefDict:
+		return typeRefContainsAny(ref.Value)
+	default:
+		return false
+	}
 }

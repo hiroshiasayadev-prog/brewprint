@@ -8,6 +8,7 @@ type Model struct {
 	ElementRef *TypeRef
 	Value      string
 	ValueRef   *TypeRef
+	Values     []string
 }
 
 type ModelField struct {

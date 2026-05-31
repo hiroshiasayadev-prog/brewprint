@@ -1,6 +1,7 @@
 package resolve
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/hiroshiasayadev-prog/brewprint/internal/rawyaml"
@@ -121,7 +122,8 @@ func TestBuildSetsSemanticTypeRefs(t *testing.T) {
 }
 
 func TestInvalidTypeRefDiagnostics(t *testing.T) {
-	cases := []string{"list<", "dict<>", "map<user>"}
+	tooDeep := strings.Repeat("list<", maxTypeRefContainerNestingDepth+1) + "user" + strings.Repeat(">", maxTypeRefContainerNestingDepth+1)
+	cases := []string{"list<", "dict<>", "map<user>", tooDeep}
 	for _, raw := range cases {
 		t.Run(raw, func(t *testing.T) {
 			_, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{typeRefModelFile("shop/model/user.yaml", raw)}})
@@ -130,6 +132,43 @@ func TestInvalidTypeRefDiagnostics(t *testing.T) {
 				t.Fatalf("got unresolved_field_type with invalid_type_ref: %#v", diagnostics)
 			}
 		})
+	}
+}
+
+func TestOpaqueContainerTypeRefWarnsButBuilds(t *testing.T) {
+	project, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{
+		typeRefStructModelFile("shop/model/user.yaml", "user"),
+		{
+			ID:   "shop/task/run.yaml",
+			Kind: rawyaml.FileKindNode,
+			NodeFile: &rawyaml.NodeFile{Tasks: []rawyaml.Task{{
+				ID:      "run",
+				Returns: &rawyaml.Return{Name: "payload", Model: "list<dict<any>>"},
+			}}},
+		},
+	}})
+	if project == nil {
+		t.Fatalf("project is nil")
+	}
+	assertDiagnostic(t, diagnostics, diagnosticOpaqueTypeRef, semantic.SeverityWarning)
+	if countDiagnosticCode(diagnostics, diagnosticInvalidTypeRef) != 0 {
+		t.Fatalf("got invalid_type_ref for opaque but syntactically valid TypeRef: %#v", diagnostics)
+	}
+}
+
+func TestBareAnyDoesNotWarnAsOpaqueContainer(t *testing.T) {
+	_, diagnostics := Build(&rawyaml.Project{Files: []rawyaml.File{
+		{
+			ID:   "shop/task/run.yaml",
+			Kind: rawyaml.FileKindNode,
+			NodeFile: &rawyaml.NodeFile{Tasks: []rawyaml.Task{{
+				ID:      "run",
+				Returns: &rawyaml.Return{Name: "payload", Model: "any"},
+			}}},
+		},
+	}})
+	if countDiagnosticCode(diagnostics, diagnosticOpaqueTypeRef) != 0 {
+		t.Fatalf("bare any should not emit opaque_type_ref: %#v", diagnostics)
 	}
 }
 

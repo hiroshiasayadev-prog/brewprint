@@ -21,6 +21,9 @@ const (
 	diagnosticDuplicatePrimaryKey       = "duplicate_primary_key"
 	diagnosticMissingRequiredField      = "missing_required_field"
 	diagnosticInvalidTypeRef            = "invalid_type_ref"
+	diagnosticOpaqueTypeRef             = "opaque_type_ref"
+	diagnosticInvalidEnumModel          = "invalid_enum_model"
+	diagnosticDuplicateEnumValue        = "duplicate_enum_value"
 	diagnosticDuplicateNode             = "duplicate_node"
 	diagnosticDuplicateMainNode         = "duplicate_main_node"
 	diagnosticDuplicateActor            = "duplicate_actor"
@@ -71,6 +74,7 @@ var validModelKinds = map[string]struct{}{
 	"struct": {},
 	"list":   {},
 	"dict":   {},
+	"enum":   {},
 }
 
 var validHTTPMethods = map[string]struct{}{
@@ -126,6 +130,9 @@ func validateModelDefinitions(project *semantic.Project, symbols *symbolTable) {
 				validateTypeRef(project, symbols, model.FileID, module, model.Value, "model.value "+model.QID.String(), diagnosticUnresolvedModel, "unresolved model value: "+model.Value)
 			}
 		}
+		if model.Kind == "enum" {
+			validateEnumModel(symbols, model)
+		}
 		for _, field := range model.Fields {
 			fieldLabel := field.Name
 			if fieldLabel == "" {
@@ -155,6 +162,28 @@ func validateModelDefinitions(project *semantic.Project, symbols *symbolTable) {
 		if pkCount > 1 {
 			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicatePrimaryKey, model.FileID, "model has multiple primary keys: "+model.QID.String())
 		}
+	}
+}
+
+func validateEnumModel(symbols *symbolTable, model *semantic.Model) {
+	if len(model.Fields) > 0 || model.Element != "" || model.Value != "" {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidEnumModel, model.FileID, "enum model must not define fields, element, or value: "+model.QID.String())
+	}
+	if len(model.Values) == 0 {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidEnumModel, model.FileID, "enum model values are required and must be non-empty: "+model.QID.String())
+		return
+	}
+	seen := map[string]struct{}{}
+	for _, value := range model.Values {
+		if value == "" {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidEnumModel, model.FileID, "enum model values must not contain empty string: "+model.QID.String())
+			continue
+		}
+		if _, exists := seen[value]; exists {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateEnumValue, model.FileID, "duplicate enum value: "+model.QID.String()+"."+value)
+			continue
+		}
+		seen[value] = struct{}{}
 	}
 }
 
@@ -279,6 +308,9 @@ func validateTypeRef(project *semantic.Project, symbols *symbolTable, fileID sem
 	if err != nil {
 		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidTypeRef, fileID, fmt.Sprintf("invalid TypeRef %q at %s: %v", raw, position, err))
 		return false
+	}
+	if typeRefHasOpaqueAnyContainer(ref) {
+		symbols.addDiagnosticCode(semantic.SeverityWarning, diagnosticOpaqueTypeRef, fileID, fmt.Sprintf("opaque container TypeRef %q at %s; consider introducing a named model for the shape", raw, position))
 	}
 	if !typeRefModelsExist(project, ref) {
 		symbols.addDiagnosticCode(semantic.SeverityError, unresolvedCode, fileID, unresolvedMessage)
