@@ -4,11 +4,12 @@
 nodes:
   - id: list_objects_response
     type: model
+    main: true
     kind: struct
     fields:
       - name: objects
-        type: any
-        note: "ObjectRef相当の一覧。module等のlist_objects固有summary fieldを含みうるため、専用list modelを作らずanyで暫定表現する。"
+        type: list<list_objects_object>
+        note: "ObjectRef相当の一覧。module等のlist_objects固有summary fieldを含みうる。"
       - name: diagnostics
         type: diagnostic_list
         note: "Diagnostic list。tool実行は成立したが注意すべき情報。"
@@ -16,4 +17,36 @@ nodes:
       MCP tool `list_objects` のresponse model。
       docs/spec/mcp/tools/list-objects.md §3 のOutputに対応する。
       `objects[]` は object / kind / id / qualified_id / label / module / file / source 等を持つ。
-      v1 modelでは配列要素のtool固有拡張shapeを厳密表現しないため any + note で保持する。
+      ObjectRef identity semanticsの詳細化はADR-078以降のscope。
+
+  - id: list_objects_object
+    type: model
+    kind: struct
+    fields:
+      - name: object
+        type: mcp_object_type
+        note: "必須。node / view / transition / asset / field / file / primitive。"
+      - name: kind
+        type: str
+        note: "任意。task / model / api_table / transition / field 等。値集合はobjectごとに異なるためnoteで扱う。"
+      - name: id
+        type: str
+        note: "必須。object ID。QualifiedIDまたはsynthetic ID。"
+      - name: qualified_id
+        type: str
+        note: "任意。QualifiedIDを持つobjectのみ。"
+      - name: label
+        type: str
+        note: "任意。人間向け短縮表示名。"
+      - name: module
+        type: str
+        note: "任意。module path。"
+      - name: file
+        type: str
+        note: "任意。定義元FileID。"
+      - name: source
+        type: source_location
+        note: "任意。定義元source。"
+    note: |
+      `list_objects_response.objects[]` のresponse-local helper model。
+      ObjectRef相当のidentity semantics整理はADR-078以降のscopeであり、このmigrationでは既存fieldをsame-file helperへ移す。

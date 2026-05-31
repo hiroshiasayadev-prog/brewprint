@@ -4,11 +4,12 @@
 nodes:
   - id: list_endpoints_response
     type: model
+    main: true
     kind: struct
     fields:
       - name: tables
-        type: any
-        note: "必須。API Tableごとのendpoint一覧。各tableは id / http_root_path / sections を持つ。専用list modelを作らずanyで暫定表現する。"
+        type: list<list_endpoints_table>
+        note: "必須。API Tableごとのendpoint一覧。各tableは id / http_root_path / sections を持つ。"
       - name: diagnostics
         type: diagnostic_list
         note: "必須。Diagnostic list。"
@@ -18,4 +19,61 @@ nodes:
       `tables[]` は API Table view単位の集約結果で、sections[] / endpoints[] を含むnested list objectである。
       endpoint objectは method / path / leaf_path / task を必須とし、params / returns / source を任意で持つ。
       route合成はADR-028の規則に従い、task(endpoint=true)の単純列挙ではない。
-      nested list構造とendpoint objectのoptional fieldをv1 modelで厳密表現できないため any + note で保持する。
+      endpoint objectのoptional fieldはnoteで保持する。
+
+  - id: list_endpoints_table
+    type: model
+    kind: struct
+    fields:
+      - name: id
+        type: str
+        note: "必須。API Table view ID。"
+      - name: http_root_path
+        type: str
+        note: "必須。API Table viewのroot path。"
+      - name: sections
+        type: list<list_endpoints_section>
+        note: "必須。API Table sectionごとのendpoint一覧。"
+    note: "`list_endpoints_response.tables[]` のresponse-local helper model。"
+
+  - id: list_endpoints_section
+    type: model
+    kind: struct
+    fields:
+      - name: module
+        type: str
+        note: "必須。section起点module。"
+      - name: include_submodules
+        type: bool
+        note: "必須。submoduleを含めるか。"
+      - name: endpoints
+        type: list<list_endpoints_endpoint>
+        note: "必須。section内で収集されたendpoint一覧。"
+    note: "`list_endpoints_table.sections[]` のresponse-local helper model。"
+
+  - id: list_endpoints_endpoint
+    type: model
+    kind: struct
+    fields:
+      - name: method
+        type: str
+        note: "必須。HTTP method。"
+      - name: path
+        type: str
+        note: "必須。API Table viewにより合成されたfull path。"
+      - name: leaf_path
+        type: str
+        note: "必須。task側のleaf path。省略時はtask.id由来。"
+      - name: task
+        type: str
+        note: "必須。endpoint task QualifiedID。"
+      - name: params
+        type: str
+        note: "任意。request model QualifiedID。optional semanticsはnoteで保持する。"
+      - name: returns
+        type: str
+        note: "任意。response model QualifiedID。optional semanticsはnoteで保持する。"
+      - name: source
+        type: source_location
+        note: "任意。endpoint taskのSourceLocation。optional semanticsはnoteで保持する。"
+    note: "`list_endpoints_section.endpoints[]` のresponse-local helper model。"

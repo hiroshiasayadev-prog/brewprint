@@ -4,6 +4,7 @@
 nodes:
   - id: get_source_response
     type: model
+    main: true
     kind: struct
     fields:
       - name: object
@@ -13,8 +14,8 @@ nodes:
         type: source_location
         note: "必須。対応するSourceLocation。line / columnが取得できない場合はfileのみでもよい。"
       - name: snippet
-        type: any
-        note: "必須。language: yaml と text を持つobject。専用modelを作らずanyで暫定表現する。"
+        type: get_source_snippet
+        note: "必須。language: yaml と text を持つobject。language literal制約はnoteで保持する。"
       - name: fallback
         type: str
         note: "任意。fallbackした場合はfile。enum制約はnoteで保持する。"
@@ -24,5 +25,17 @@ nodes:
     note: |
       MCP tool `get_source` のresponse model。
       docs/spec/mcp/tools/get-source.md §3 のOutputに対応する。
-      `snippet` は `{ language: "yaml", text: "..." }` を持つが、tool固有の小さなobjectのため any + note で保持する。
+      `snippet` は `{ language: "yaml", text: "..." }` を持つ。language literal制約はnoteで保持する。
       Raw YAML ASTではなく、ResolvedProject上のsemantic objectに紐づくsource補助情報として扱う。
+
+  - id: get_source_snippet
+    type: model
+    kind: struct
+    fields:
+      - name: language
+        type: str
+        note: "必須。literal `yaml`。literal / enum制約はこのmigrationでは導入しない。"
+      - name: text
+        type: str
+        note: "必須。semantic objectに対応するYAML snippet text。"
+    note: "`get_source_response.snippet` のresponse-local helper model。"

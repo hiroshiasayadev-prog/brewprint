@@ -4,6 +4,7 @@
 nodes:
   - id: analyze_impact_response
     type: model
+    main: true
     kind: struct
     fields:
       - name: target
@@ -16,10 +17,10 @@ nodes:
         type: any
         note: "必須。by_severity / by_fixability / by_kind の件数集計object。dict shapeを厳密表現しないためany。"
       - name: impacts
-        type: any
-        note: "必須。impact entry配列。各entryは id / kind / severity / fixability / object / reason / via / source / recommended_action / suggested_fixes を持つ。専用list modelを作らずanyで暫定表現する。"
+        type: list<analyze_impact_impact>
+        note: "必須。impact entry配列。各entryは id / kind / severity / fixability / object / reason / via / source / recommended_action / suggested_fixes を持つ。"
       - name: coverage
-        type: any
+        type: analyze_impact_coverage
         note: "必須。analyzed / not_analyzed / note を持つcoverage object。語彙制約はnoteで保持する。"
       - name: assumptions
         type: any
@@ -40,3 +41,58 @@ nodes:
       `impact.fixability` は mechanical / suggested / manual_review / unknown。
       `coverage.analyzed` / `coverage.not_analyzed` はv1標準語彙を持つが、brewprint v1 modelではenum listを厳密表現できないためany + noteで保持する。
       `suggested_fixes[]` はfix kind依存payloadを持つためany内に含める。
+
+  - id: analyze_impact_impact
+    type: model
+    kind: struct
+    fields:
+      - name: id
+        type: str
+        note: "必須。response内uniqueなimpact id。"
+      - name: kind
+        type: str
+        note: "必須。impactのsemantic kind。値集合は実装裁量のためnoteで保持する。"
+      - name: severity
+        type: str
+        note: "必須。breaking / warning / info。enum化は別scope。"
+      - name: fixability
+        type: str
+        note: "必須。mechanical / suggested / manual_review / unknown。enum化は別scope。"
+      - name: object
+        type: object_ref
+        note: "必須。影響を受けるObjectRef。render output等のidentity拡張はMCP identity follow-upで扱う。"
+      - name: reason
+        type: str
+        note: "必須。なぜ影響するかの自然言語説明。"
+      - name: via
+        type: string_list
+        note: "必須。rootから到達したreference kindの経路。"
+      - name: source
+        type: source_location
+        note: "必須。影響箇所のSourceLocation。line / column欠落を許容する。"
+      - name: recommended_action
+        type: str
+        note: "必須。人間向け推奨アクション。"
+      - name: suggested_fixes
+        type: any
+        note: "任意。fix kind依存payloadを持つSuggestedFix配列。tagged union / discriminator表現はADR-073以降のscope。"
+    note: |
+      `analyze_impact_response.impacts[]` のresponse-local helper model。
+      severity / fixability の値集合と suggested_fixes のkind依存payloadは、このmigrationではnoteに保持する。
+
+  - id: analyze_impact_coverage
+    type: model
+    kind: struct
+    fields:
+      - name: analyzed
+        type: string_list
+        note: "必須。分析したcoverage語彙。標準語彙制約はnoteで保持する。"
+      - name: not_analyzed
+        type: string_list
+        note: "必須。分析していないcoverage語彙。標準語彙制約はnoteで保持する。"
+      - name: note
+        type: str
+        note: "任意。LLM向け補足説明。"
+    note: |
+      `analyze_impact_response.coverage` のresponse-local helper model。
+      coverage vocabularyのenum化はこのmigrationでは行わない。

@@ -2,6 +2,35 @@
 
 | kind | title | path |
 |---|---|---|
+| Model | analyze_impact_request | [model-analyze_impact_request.md](model-analyze_impact_request.md) |
+| Model | analyze_impact_response | [model-analyze_impact_response.md](model-analyze_impact_response.md) |
+| Model | diagnostic | [model-diagnostic.md](model-diagnostic.md) |
+| Model | diagnostic_list | [model-diagnostic_list.md](model-diagnostic_list.md) |
+| Model | get_reference_tree_request | [model-get_reference_tree_request.md](model-get_reference_tree_request.md) |
+| Model | get_reference_tree_response | [model-get_reference_tree_response.md](model-get_reference_tree_response.md) |
+| Model | get_references_request | [model-get_references_request.md](model-get_references_request.md) |
+| Model | get_references_response | [model-get_references_response.md](model-get_references_response.md) |
+| Model | get_signature_request | [model-get_signature_request.md](model-get_signature_request.md) |
+| Model | get_signature_response | [model-get_signature_response.md](model-get_signature_response.md) |
+| Model | get_source_request | [model-get_source_request.md](model-get_source_request.md) |
+| Model | get_source_response | [model-get_source_response.md](model-get_source_response.md) |
+| Model | inspect_request | [model-inspect_request.md](model-inspect_request.md) |
+| Model | inspect_response | [model-inspect_response.md](model-inspect_response.md) |
+| Model | list_endpoints_request | [model-list_endpoints_request.md](model-list_endpoints_request.md) |
+| Model | list_endpoints_response | [model-list_endpoints_response.md](model-list_endpoints_response.md) |
+| Model | list_objects_request | [model-list_objects_request.md](model-list_objects_request.md) |
+| Model | list_objects_response | [model-list_objects_response.md](model-list_objects_response.md) |
+| Model | mcp_diagnostic_severity | [model-mcp_diagnostic_severity.md](model-mcp_diagnostic_severity.md) |
+| Model | mcp_error | [model-mcp_error.md](model-mcp_error.md) |
+| Model | mcp_object_type | [model-mcp_object_type.md](model-mcp_object_type.md) |
+| Model | object_ref | [model-object_ref.md](model-object_ref.md) |
+| Model | object_selector | [model-object_selector.md](model-object_selector.md) |
+| Model | reference | [model-reference.md](model-reference.md) |
+| Model | reference_list | [model-reference_list.md](model-reference_list.md) |
+| Model | reference_tree_direction | [model-reference_tree_direction.md](model-reference_tree_direction.md) |
+| Model | resolved_project | [model-resolved_project.md](model-resolved_project.md) |
+| Model | source_location | [model-source_location.md](model-source_location.md) |
+| Model | string_list | [model-string_list.md](model-string_list.md) |
 | DAG | analyze_impact | [dag-analyze_impact.md](dag-analyze_impact.md) |
 | DAG | get_reference_tree | [dag-get_reference_tree.md](dag-get_reference_tree.md) |
 | DAG | get_references | [dag-get_references.md](dag-get_references.md) |

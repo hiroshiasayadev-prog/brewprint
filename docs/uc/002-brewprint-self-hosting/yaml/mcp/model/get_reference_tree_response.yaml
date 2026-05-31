@@ -4,6 +4,7 @@
 nodes:
   - id: get_reference_tree_response
     type: model
+    main: true
     kind: struct
     fields:
       - name: root
@@ -16,11 +17,11 @@ nodes:
         type: int
         note: "必須。実際に使ったmax traversal depth。"
       - name: nodes
-        type: any
-        note: "必須。到達object entry配列。各entryは object:ObjectRef / depth:int / via:string[] を持つ。専用list modelを作らずanyで暫定表現する。"
+        type: list<get_reference_tree_node>
+        note: "必須。到達object entry配列。各entryは object:ObjectRef / depth:int / via:string[] を持つ。"
       - name: edges
-        type: any
-        note: "必須。traversalで辿ったReference entry配列。Referenceにdepth:intを加えたshape。reference_listではdepth拡張を表せないためanyで暫定表現する。"
+        type: list<get_reference_tree_edge>
+        note: "必須。traversalで辿ったReference entry配列。Referenceにdepth:intを加えたshape。継承 / extensionは使わずsame-file helperで表す。"
       - name: truncated
         type: bool
         note: "必須。max_nodes / max_edges により打ち切ったか。"
@@ -34,4 +35,48 @@ nodes:
       MCP tool `get_reference_tree` のresponse model。
       docs/spec/mcp/tools/get-reference-tree.md §3 のOutput、§4 Node entry、§5 Edge entry、§6 Traversal semanticsに対応する。
       tool名はtreeだが返却形式は nodes[] / edges[] からなるbounded reference graph。
-      `nodes` / `edges` / `truncated_reasons` は配列要素shapeの拡張やstring list制約をv1 modelで厳密表現できないため any + note で保持する。
+      `truncated_reasons` はstring list制約をv1 modelで厳密表現できないため any + note で保持する。
+
+  - id: get_reference_tree_node
+    type: model
+    kind: struct
+    fields:
+      - name: object
+        type: object_ref
+        note: "必須。到達したObjectRef。"
+      - name: depth
+        type: int
+        note: "必須。rootからの最短到達hop数。"
+      - name: via
+        type: string_list
+        note: "必須。rootから最初に到達したBFS経路のReference.kind列。"
+    note: "`get_reference_tree_response.nodes[]` のresponse-local helper model。"
+
+  - id: get_reference_tree_edge
+    type: model
+    kind: struct
+    fields:
+      - name: kind
+        type: str
+        note: "必須。Reference kind。値集合はreference modelのnoteに従う。"
+      - name: direction
+        type: str
+        note: "必須。out / in。query対象から見た方向。"
+      - name: from
+        type: object_ref
+        note: "必須。参照元object。"
+      - name: to
+        type: object_ref
+        note: "必須。参照先object。"
+      - name: source
+        type: source_location
+        note: "任意。このreferenceの定義元。"
+      - name: doc
+        type: str
+        note: "任意。reference補足。"
+      - name: depth
+        type: int
+        note: "必須。そのedgeを発見したtraversal hop。"
+    note: |
+      `get_reference_tree_response.edges[]` のresponse-local helper model。
+      v1 modelには継承 / extensionがないため、`reference`にdepthを足したshapeを明示的に再掲する。
