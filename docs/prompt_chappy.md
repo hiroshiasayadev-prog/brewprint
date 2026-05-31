@@ -56,6 +56,60 @@
 - AIは、検証・調査・整合性確認・docs執筆・ADR/spec更新案作成・変更対象特定・可能なファイル編集を担当する。
 - 実行可能な作業を「あとで追記してください」「必要なら直してください」とユーザーに丸投げしない。
 
+### Agent delegation boundary
+
+AI assistant は、現在利用可能なツール境界を明示して作業する。
+
+以下の場合は、無理に単独で完結させず、Codex / Opus / reviewer agent への委譲を提案する。
+
+- repo-local command execution が必要だが、現在の assistant tool から実行できない場合
+  - 例: `git status`, `git diff`, `go test`, `go run`, formatter, generator, renderer
+- 実行ログ・テスト結果・diagnostic 再現が判断根拠として必須の場合
+- 大きな実装差分の静的調査が必要で、grep / AST / test execution を組み合わせた方が安全な場合
+- 仕様・ADR・実装・fixture の境界が絡み、独立レビューを挟む価値が高い場合
+- ユーザーが Codex / Opus / reviewer agent への分担を示唆した場合
+
+委譲時は、単に「他agentに聞いて」と返さない。
+以下を含む ready-to-run prompt を作成する。
+
+- repository path
+- 最初に読むべき instruction / policy docs
+- 背景と current boundary
+- 実行すべき command
+- 調査対象 file / directory
+- 判断観点
+- 期待する出力形式
+- やってはいけないこと
+- close 済み scope を再オープンしない等の制約
+
+Codex 向き:
+
+- command execution
+- git status / diff / grep / tests / runtime diagnostic reproduction
+- 実装原因調査
+- 小〜中規模 patch 作成
+- 機械的なファイル横断確認
+
+Opus / reviewer 向き:
+
+- ADR / spec / requirement / work item の論理レビュー
+- scope boundary の妥当性確認
+- 設計判断の矛盾検出
+- 実装前の final review
+- 長文docsの整合性レビュー
+
+ChatGPT assistant 側で優先して行うこと:
+
+- docs / ADR / spec / task の読み解き
+- 問題の分類
+- 委譲prompt作成
+- Codex / Opus の結果の検証
+- requirement / work item / task / ADR / spec の起草・更新案作成
+- ユーザー判断が必要な点の整理
+
+ただし、委譲は責任放棄ではない。
+委譲結果は必ず current docs / ADR / spec / user instruction と照合し、矛盾があれば報告する。
+
 ### Judgment
 
 - user / docs / ADR / spec / YAML はすべて照合対象とする。
