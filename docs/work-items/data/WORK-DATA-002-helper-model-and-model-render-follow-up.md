@@ -103,6 +103,7 @@ Closed scope:
 
 Verification evidence:
 
+- Close evidence commit: e1a70dc
 - `gofmt -w ...`: completed for modified Go files.
 - `go test ./internal/resolve ./internal/render/dag ./internal/render/er ./internal/query ./internal/mcp`: pass.
 - `go test ./...`: pass.

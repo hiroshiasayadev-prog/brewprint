@@ -93,6 +93,7 @@ Completion evidence:
   - `internal/render/dag/private_models_test.go`
   - `internal/render/er/private_models_test.go`
   - `internal/query/service_test.go`
+- Implementation evidence commit: e1a70dc
 - Updated existing tests that used task-file model fixtures as public model fixtures so public model assumptions now live in `model/` files instead of task files.
 - Review correction:
   - Added `duplicate_model_id` validation for task-file helper model IDs that collide with same-file main / private sub node local IDs.
