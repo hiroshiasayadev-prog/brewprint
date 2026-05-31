@@ -193,7 +193,7 @@ Task-file helper model の visibility / identity / reference scope は以下の�
 
 同一 task file 内の helper model id は、他の file-private local node id と同じく同一 file 内で一意でなければならない。さらに、task-file helper model は同一 module 内の public model と同じ id を持ってはならない。これにより bare TypeRef の読み手が public model と file-private helper model を文脈依存で取り違えることを防ぐ。
 
-Model file 内 helper model、model file render、model catalog、および UC-002 model response helper-shape migration は WORK-DATA-003 の範囲であり、この task-file helper minimum では定義しない。
+Model file 内 helper model と model file render は `docs/spec/views/model-file.md` が所有する。Model catalog および UC-002 model response helper-shape migration は、この task-file helper minimum では定義しない。
 
 ```yaml
 # struct

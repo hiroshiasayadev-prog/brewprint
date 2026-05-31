@@ -1,11 +1,12 @@
 ---
 scope: docs/spec/project-layout.md
 status: confirmed
-last_updated: 2026-04-30
+last_updated: 2026-05-31
 summary: >
   brewprint プロジェクトのディレクトリ構造を定義する。
   yaml/ / renders/ / render_index.yaml の配置、render_index.yaml のスキーマ、
   renders/ の出力構造、render output filename、index生成仕様、衝突時の扱いを含む。
+  Model file render output placement を含む。
 depends_on:
   - docs/adr/043-project-root-layout-and-render-output.md
   - docs/adr/045-render-index-schema.md
@@ -50,6 +51,7 @@ renders/
   index.md                  ← masterインデックス（全groupへのリンクテーブル）
   {group-id}/
     index.md                ← groupインデックス（group内の全render一覧テーブル）
+    model-{model-id}.md
     dag-{task-id}.md
     state-{fsm-id}.md
     seq-{scenario-id}.md
@@ -67,6 +69,7 @@ renders/
 
 各 group ディレクトリ直下に以下の render が配置される（存在するもののみ）:
 
+- `model-{model-id}.md` — model file render
 - `dag-{task-id}.md` — task の DAG render
 - `state-{fsm-id}.md` — FSM の state diagram render
 - `seq-{scenario-id}.md` — sequence diagram シナリオ render
@@ -79,6 +82,9 @@ v1では、nested module の module path は出力ファイル名に含めない
 ```text
 yaml/payment/webhooks/task/process_payment.yaml
 → renders/commerce/dag-process_payment.md
+
+yaml/payment/model/payment_request.yaml
+→ renders/commerce/model-payment_request.md
 ```
 
 同一 group 内で複数の render output が同一 relative path に解決される場合、renderer / placement validation は error として停止する。silent overwrite は禁止する。
@@ -169,12 +175,12 @@ groups:
 ```markdown
 # {project-name} render index
 
-| group | DAG | State | Sequence | Wireframe | ER | API |
-|---|---|---|---|---|---|---|
-| [認証](auth/index.md) | 1 | 1 | - | 2 | - | - |
-| [商取引](commerce/index.md) | 3 | 1 | 2 | 2 | - | - |
-| *(cross)* | - | - | - | - | [er](_cross/er.md) | [api](_cross/api.md) |
-| *(preview)* | - | - | - | [wireframe preview](_preview/wireframe.html) | - | - |
+| group | Model | DAG | State | Sequence | Wireframe | ER | API |
+|---|---|---|---|---|---|---|---|
+| [認証](auth/index.md) | 1 | 1 | 1 | - | 2 | - | - |
+| [商取引](commerce/index.md) | 2 | 3 | 1 | 2 | 2 | - | - |
+| *(cross)* | - | - | - | - | - | [er](_cross/er.md) | [api](_cross/api.md) |
+| *(preview)* | - | - | - | - | [wireframe preview](_preview/wireframe.html) | - | - |
 ```
 
 master index title の `{project-name}` は project directory 名から生成する。
@@ -202,7 +208,7 @@ master index の group 列の表示ルール:
 - cross 行: 固定で `*(cross)*`
 - preview 行: 固定で `*(preview)*`
 
-通常 group 行の `DAG` / `State` / `Sequence` / `Wireframe` 列には、その group に属する render file 数を表示する。0件の場合は `-` を表示する。
+通常 group 行の `Model` / `DAG` / `State` / `Sequence` / `Wireframe` 列には、その group に属する render file 数を表示する。0件の場合は `-` を表示する。
 通常 group 行の `ER` / `API` 列は `-` とする。
 
 master `index.md` は通常 group へのリンクのみ。個別 render への直リンクは group `index.md` が提供する。`_cross/` と `_preview/` は特殊 render ディレクトリのため、master `index.md` から `*(cross)*` / `*(preview)*` 行として直接リンクしてよい。
@@ -216,6 +222,7 @@ master `index.md` は通常 group へのリンクのみ。個別 render への�
 
 | kind | title | path |
 |---|---|---|
+| Model | payment_request | [model-payment_request.md](model-payment_request.md) |
 | DAG | process_order | [dag-process_order.md](dag-process_order.md) |
 | State | order | [state-order.md](state-order.md) |
 | Sequence | checkout_flow | [seq-checkout_flow.md](seq-checkout_flow.md) |
@@ -226,20 +233,21 @@ master `index.md` は通常 group へのリンクのみ。個別 render への�
 
 row の並び順は以下とする。
 
-1. kind 順: `DAG` → `State` → `Sequence` → `Wireframe`
+1. kind 順: `Model` → `DAG` → `State` → `Sequence` → `Wireframe`
 2. 同一 kind 内では render output path の昇順
 
 各列の意味:
 
 | column | 説明 |
 |---|---|
-| `kind` | render 種別。`DAG` / `State` / `Sequence` / `Wireframe` |
+| `kind` | render 種別。`Model` / `DAG` / `State` / `Sequence` / `Wireframe` |
 | `title` | output filename から prefix と拡張子を除去した表示名 |
 | `path` | group index から見た相対リンク |
 
 `title` は以下の prefix と拡張子を取り除いて生成する。
 
 ```text
+model-payment_request.md                → payment_request
 dag-process_order.md                    → process_order
 state-order.md                          → order
 seq-checkout_flow.md                    → checkout_flow

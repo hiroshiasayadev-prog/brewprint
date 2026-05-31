@@ -1,7 +1,7 @@
 # WORK-DATA-003: Resolve model-file helper render boundary
 
 - **id**: WORK-DATA-003
-- **status**: decision_pending
+- **status**: implementation_pending
 - **date**: 2026-05-31
 - **source_requirement**: REQ-DATA-002
 - **impact_refs**:
@@ -11,6 +11,8 @@
   - ADR-073
   - ADR-075
 - **tasks**:
+  - TASK-DATA-003-01
+  - TASK-DATA-003-02
 
 ## Goal
 
@@ -71,7 +73,7 @@ flowchart TD
 - `TASK-DATA-003-03`: Model-file render implementation and verification.
 - `TASK-DATA-003-04`: UC-002 model response helper migration.
 
-Task artifacts are intentionally not created in this step. Candidate IDs are shown only in the body and are not listed in the metadata `tasks` field.
+`TASK-DATA-003-01` and `TASK-DATA-003-02` are created task artifacts and are listed in metadata `tasks`. `TASK-DATA-003-03` and `TASK-DATA-003-04` remain body-only candidates until their task artifacts are created.
 
 ## Completion Condition
 
