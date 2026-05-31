@@ -346,5 +346,6 @@ spec / implementation / UC-002 fixture migration の具体作業、atomic migrat
 
 - commit: 693e3c0
 - acceptance boundary: `REQ-DATA-001` / `WORK-DATA-001` が採用した F1 boundary に従い、M15 初期移行を 3 enum model / 5 field の atomic migration に限定して accepted とした（2026-05-29）
-- impl commit: tbd
+- impl commit: 5ae7769
+- close commit: 5ae7769
 - 参考: JSON Schema enum, OpenAPI string enum, nominal typing 方針（ADR-060）

@@ -414,6 +414,7 @@ ADR-074 は DAG readability 改善であり、model file render とは別論点�
 
 ## Evidence
 
-- commit: tbd
+- commit: 5ae7769
 - impl commit: tbd
+- close boundary: M15 / `v1.1.0-spec` では follow-up scope として deferred。実装は含めない。
 - 参考: ADR-070 model visibility、ADR-071 task file helper model render exposure、ADR-072 model catalog view、docs/spec/project-layout.md の group render 方針

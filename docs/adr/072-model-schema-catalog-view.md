@@ -1,6 +1,6 @@
 # 072: model / schema catalog view
 
-- **status**: proposed
+- **status**: accepted
 - **date**: 2026-05-11
 
 > このADRは起票時点での決定を記録したスナップショットである。
@@ -69,10 +69,14 @@ include:
   file_private_models: true
   enums: true
   list_dict_models: true
+  tagged_union_models: true
 ```
 
 `model_catalog` は、人間向け Markdown render を主目的とする view である。
 MCP query の `list_objects` とは異なり、module / contract 単位で model 群を読ませるための curated view として扱う。
+
+ユースケース別の分割は `include` flag では扱わない。
+ユースケース単位で catalog を分けたい場合は、UC ディレクトリ、view YAML、または `modules` scope を分ける。
 
 ### 3. view schema を定義する
 
@@ -101,6 +105,7 @@ include:
   file_private_models: false
   enums: true
   list_dict_models: true
+  tagged_union_models: true
 ```
 
 `include` は visibility 軸と kind 軸を組み合わせた filter として扱う。
@@ -111,9 +116,10 @@ include:
 | `public_models` | visibility = public かつ kind = struct の model |
 | `enums` | visibility = public かつ kind = enum の model |
 | `list_dict_models` | visibility = public かつ kind = list / dict の model |
+| `tagged_union_models` | visibility = public かつ kind = tagged_union の model |
 | `file_private_models` | visibility = file-private の helper model 全 kind |
 
-visibility = file-private の enum / list / dict は、`file_private_models: true` のとき表示対象に含まれる。
+visibility = file-private の enum / list / dict / tagged_union は、`file_private_models: true` のとき表示対象に含まれる。
 `file_private_models: false` の場合、private helper model は kind に関係なく catalog には出さない。
 
 file-private helper model は default では非表示とする。
@@ -150,6 +156,12 @@ MCP公開contract model一覧
 |---|---|---|---|---|---|---|
 | diagnostic_list | list | mcp | list<diagnostic> | — | response.diagnostics | Diagnostic list |
 
+## Tagged unions
+
+| model | module | discriminator | variants | used by | note |
+|---|---|---|---|---|---|
+| analyze_impact_change | mcp | kind | rename<br/>remove<br/>change_type | analyze_impact_request.change | change payload |
+
 ## Private helper models
 
 | file | model | kind | used by | shape | note |
@@ -165,7 +177,7 @@ MCP公開contract model一覧
 model catalog は schema 一覧であり、ER 図の代替ではない。
 
 ER 図は DB entity / FK relation を描く view である。
-model catalog は、DB に紐づかない contract model、request / response model、enum、list / dict、helper model を含めて一覧する view である。
+model catalog は、DB に紐づかない contract model、request / response model、enum、list / dict、tagged union、helper model を含めて一覧する view である。
 
 したがって、ER 図に出る model も model catalog に出てよいが、表示目的は異なる。
 
@@ -291,7 +303,9 @@ output placement は `render_index.yaml`、group / `_cross` 配置、nested modu
 - `docs/spec/views/model-catalog.md`
   - `as: model_catalog` の schema を定義する
   - modules / include の schema を定義する
+  - `tagged_union_models` include flag を定義する
   - Markdown output の section / table / sort order / truncation を定義する
+  - public tagged union model を `## Tagged unions` section に出すことを定義する
   - public model と file-private helper model の出力ルールを定義する
 
 - `docs/spec/file-types.md`
@@ -307,6 +321,9 @@ output placement は `render_index.yaml`、group / `_cross` 配置、nested modu
 
 renderer は `as: model_catalog` view を読み、対象 modules から model node を収集して Markdown を生成する責務を持つ。
 
+renderer は `include.tagged_union_models` が true の場合、public tagged union model を `## Tagged unions` section に出力する。
+file-private tagged union model は、他の private helper model と同じく `include.file_private_models: true` のとき `## Private helper models` に出力する。
+
 初期実装の優先範囲、fixture 追加、golden 更新、truncation 閾値の詳細は task file / UC task file で追跡する。
 
 ### UC-002 への影響
@@ -318,8 +335,9 @@ UC-002 self-hosting では、MCP contract model 群を俯瞰する model catalog
 - MCP request / response model
 - ObjectRef / Reference / Diagnostic などの共通 schema
 - enum model
+- tagged union model
 - response model 内部の file-private helper model
-- `any + note` から named helper model へ移行した箇所
+- `any + note` から named helper model / tagged union model へ移行した箇所
 
 具体的な view YAML 追加、fixture migration、golden 更新は task file / UC task file で追跡する。
 
@@ -338,6 +356,7 @@ model file 内 helper model の file-local な自動 render exposure は、本AD
 
 ## Evidence
 
-- commit: tbd
+- commit: 5ae7769
 - impl commit: tbd
+- close boundary: M15 / `v1.1.0-spec` では follow-up scope として deferred。実装は含めない。
 - 参考: ADR-069 anonymous inline struct 不採用、ADR-070 model visibility、ADR-071 task file helper model render exposure、UC-002 MCP contract model 群

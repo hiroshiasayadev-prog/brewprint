@@ -341,6 +341,7 @@ helper model の詳細展開は本ADRの対象ではない。
 
 ## Evidence
 
-- commit: tbd
+- commit: 5ae7769
 - impl commit: tbd
+- close boundary: M15 / `v1.1.0-spec` では follow-up scope として deferred。実装は含めない。
 - 参考: ADR-060 TypeRef、ADR-064 DAG returns.source render、ADR-071 task file helper model render exposure、ADR-075 model file render

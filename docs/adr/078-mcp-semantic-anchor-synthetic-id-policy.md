@@ -108,11 +108,12 @@ ObjectRef では以下の分離を基本とする。
 `file` / `source.file` は、定義元の確認、diagnostic、source snippet 取得、source-oriented query、debug / migration に使う。
 一方、通常の MCP query / reference / traversal では `id` を semantic anchor based にする。
 
-### 4. `selector.id` を canonical selector とする
+### 4. primary selector は `selector.id` のみを canonical path とする
 
-MCP query の canonical selector は `selector.id` とする。
+MCP tool の primary selector は `selector.id` のみを canonical path とする。
 
-private / generated object を直接 query する場合も、主導線は semantic anchor based synthetic ID を `selector.id` に指定する形とする。
+MCP response の `ObjectRef.id` は、後続 tool の `selector.id` としてそのまま利用できる stable canonical ID でなければならない。
+LLM / MCP client / UI は、ObjectRef から受け取った `id` をそのまま次の query に渡せることを期待できる。
 
 ```json
 {
@@ -121,6 +122,15 @@ private / generated object を直接 query する場合も、主導線は semant
   }
 }
 ```
+
+private / generated object を直接 query する場合も、主導線は semantic anchor based synthetic ID を `selector.id` に指定する形とする。
+
+primary selector では `selector.object` を要求しない。
+object kind は resolver が canonical ID から解決し、response の `ObjectRef.object` / `ObjectRef.kind` として返す。
+
+`selector.object` は primary selector から除外する。
+object kind assertion が必要な場合は、debug / validation 用 selector として別枠で扱うか、後続 spec で明示する。
+ただし、それは primary query path ではない。
 
 `selector.file + local_id` は source-oriented compatibility selector として残す。
 これは、source-driven inspect、debug、migration、または `inspect(file)` からの follow-up query のために許容する補助経路である。
@@ -136,6 +146,19 @@ private / generated object を直接 query する場合も、主導線は semant
 
 `selector.file + local_id` は canonical form ではない。
 MCP response 内で object を返す場合は、可能な限り canonical `id` を返す。
+
+field も primary selector では canonical field ID で問い合わせる方向に寄せる。
+
+```json
+{
+  "selector": {
+    "id": "order.model.order.id"
+  }
+}
+```
+
+親 model ID + `local_id` による field selector は compatibility / source-oriented selector として扱い、primary selector にはしない。
+private helper model field の canonical ID 形式は後続ADRまたは spec task で扱う。
 
 ### 5. ObjectRef に `anchor` と `visibility` を追加する方向で確定する
 
@@ -275,6 +298,7 @@ order/state.yaml#processing:payment_webhook_received[payload.status == 'succeede
 - state file / state machine の semantic anchor policy
 - file-private helper model の具体的な MCP response schema
 - field of private helper model の ID 形式
+- parent object ID + `local_id` 型 selector の compatibility scope
 - private sub task が生成した asset の producer ID 形式
 - scenario step の selector / ID policy
 - transition / field / scenario step の `visibility` 値の最終分類
@@ -311,14 +335,22 @@ mcp.model.get_reference_tree_response#reference_tree_node
 
 これは file path based ID よりも MCP query layer の語彙として自然である。
 
-### なぜ canonical selector と compatibility selector を分けるか
+### なぜ primary selector を `selector.id` のみにするか
+
+MCP response の `ObjectRef.id` をそのまま後続 tool の `selector.id` に渡せることは、LLM / MCP client / UI にとって最も単純で誤りにくい query path である。
+
+primary selector に `selector.object` を含めると、利用者は各 query のたびに object kind を判断して埋める必要がある。
+これは、実装側の解決都合を LLM / UI 側へ押し付けることになり、余計な推論負荷と誤指定の原因になる。
+
+そのため、canonical object ID が `selector.id` に指定された場合、resolver は `selector.object` なしで対象 object を解決できなければならない。
+object kind は resolver が canonical ID から解決し、response の `ObjectRef.object` / `ObjectRef.kind` として返す。
 
 現行 implementation / tests では、private sub node の lookup に `selector.file + local_id` と file path based synthetic ID が使われている。
 これを即座に削ると、既存 MCP clients / tests / debug workflow を壊す可能性がある。
 
-一方で、MCP public contract の主導線を file path based selector にすると、semantic query layer としての抽象化が弱くなる。
+一方で、MCP public contract の主導線を file path based selector や parent + local_id selector にすると、semantic query layer としての抽象化が弱くなる。
 
-そのため、`selector.id` を canonical selector とし、`selector.file + local_id` は source-oriented compatibility selector として残す。
+そのため、`selector.id` を唯一の primary selector とし、`selector.file + local_id` や parent + `local_id` 型 selector は source-oriented compatibility selector として残す。
 これにより、semantic ID policy へ移行しつつ、source-driven query の実用性も維持できる。
 
 ### なぜ `anchor` / `visibility` が必要か
@@ -400,8 +432,11 @@ ADR-058 の本文はスナップショットとして残す。
 
 - `docs/spec/mcp/schema.md`
   - Object selector の `id` / `file` / `local_id` の責務整理
-  - `selector.id` を canonical selector として定義
-  - `selector.file + local_id` を source-oriented compatibility selector として定義
+  - primary selector は `selector.id` のみを canonical path とすることを定義
+  - MCP response の `ObjectRef.id` は後続 tool の `selector.id` としてそのまま利用できる stable canonical ID であることを定義
+  - primary selector では `selector.object` を要求しないことを定義
+  - `selector.file + local_id` および parent object ID + `local_id` 型 selector を source-oriented compatibility selector として定義
+  - field も primary selector では canonical field ID で問い合わせる方向に整理する
   - Synthetic ID を semantic anchor based に再定義
   - ObjectRef に `anchor` / `visibility` metadata を追加し、`visibility` を全 ObjectRef 必須、`anchor` を file-private / generated object で必須、public object では省略、`qualified_id` を public object のみに返すことを定義する
   - transition / field / scenario step の `visibility` 値は、本ADRでは確定せず後続ADRまたは spec task で扱うことを明記する
@@ -531,6 +566,7 @@ transition ID の最終形は、本ADRの acceptance 条件には含めない。
 
 ## Evidence
 
-- commit: tbd
+- commit: 5ae7769
 - impl commit: tbd
+- close boundary: M15 / `v1.1.0-spec` では follow-up scope として deferred。実装は含めない。
 - 参考: ADR-047 MCP query layer boundary、ADR-048 ResolvedProject index、ADR-049 MCP reference vocabulary、ADR-054 design conversation coverage、ADR-058 private sub node scope、ADR-070 file-private helper model、Codex review of ADR-078

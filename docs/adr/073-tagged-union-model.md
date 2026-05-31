@@ -561,6 +561,7 @@ M15 Phase C では、本ADRを受けて tagged union model の spec / implementa
 
 ## Evidence
 
-- commit: tbd
+- commit: 5ae7769
 - impl commit: tbd
+- close boundary: M15 / `v1.1.0-spec` では follow-up scope として deferred。実装は含めない。
 - 参考: UC-002 MCP公開contract YAML における `analyze_impact.change` の `any + note` 暫定表現、JSON Schema / OpenAPI discriminator、TypeScript discriminated union

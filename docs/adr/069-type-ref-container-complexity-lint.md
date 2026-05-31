@@ -393,6 +393,7 @@ anonymous inline struct TypeRef へは移行しない。
 
 ## Evidence
 
-- commit: tbd
-- impl commit: tbd
+- commit: 5ae7769
+- impl commit: 5ae7769
+- close commit: 5ae7769
 - 参考: UC-002 MCP公開contract YAML における nested schema / `any` 暫定表現

@@ -390,6 +390,7 @@ accepted に進める前に、以下を確認する。
 
 ## Evidence
 
-- commit: tbd
+- commit: 5ae7769
 - impl commit: tbd
+- close boundary: M15 / `v1.1.0-spec` では follow-up scope として deferred。実装は含めない。
 - 参考: ADR-035 FSM guard分岐とtransition識別、ADR-048 transition index、ADR-078 semantic anchor synthetic ID policy
