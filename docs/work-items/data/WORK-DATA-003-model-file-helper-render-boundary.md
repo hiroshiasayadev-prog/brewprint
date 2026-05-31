@@ -80,3 +80,17 @@ flowchart TD
 ## Completion Condition
 
 This work item can be marked `done` when model-file helper render exposure is decided, reflected in the relevant spec and renderer behavior, verified with fixture / golden evidence, and UC-002 model response helper candidates are classified without pulling in tagged union, DAG TypeRef hint, MCP identity, M15 reopen scope, or actual UC-002 migration.
+
+## Close-readiness Evidence
+
+TASK-DATA-003-04 provides the final UC-002 candidate-classification input for this work item.
+
+Close-readiness judgment:
+
+- Model-file helper render exposure has been decided, specified, implemented, and verified by the DATA-003 task chain.
+- UC-002 response helper-shape candidates are classified into model-file helper migration candidates, REQ-DATA-003 / WORK-DATA-004 wait candidates, and unchanged candidates.
+- Actual UC-002 YAML migration remains delegated to WORK-DATA-004 or later follow-up work.
+- Tagged union, DAG TypeRef hint, MCP helper exposure / identity, M15 reopening, WORK-DATA-002 reopening, and remaining UC-002 notes-retreat debt remain outside this work item.
+- No UC-002 YAML or render output change is required to close WORK-DATA-003.
+
+Therefore WORK-DATA-003 is close-ready after TASK-DATA-003-04, provided close means completion of the model-file render boundary and candidate classification rather than execution of the deferred UC-002 migration.
