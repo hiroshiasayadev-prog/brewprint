@@ -103,14 +103,14 @@ func assertLoginResolved(t *testing.T, project *semantic.Project) {
 
 func assertM2Resolved(t *testing.T, project *semantic.Project) {
 	t.Helper()
-	if _, ok := project.BranchesByQID[semantic.QualifiedID("order.branch.route_by_inventory")]; !ok {
-		t.Fatalf("order.branch.route_by_inventory not found")
+	if _, ok := project.BranchesByQID[semantic.QualifiedID("order/task/process_order.yaml#route_by_inventory")]; !ok {
+		t.Fatalf("order/task/process_order.yaml#route_by_inventory not found")
 	}
-	if _, ok := project.ForksByQID[semantic.QualifiedID("order.fork.parallel_processing")]; !ok {
-		t.Fatalf("order.fork.parallel_processing not found")
+	if _, ok := project.ForksByQID[semantic.QualifiedID("order/task/checkout.yaml#parallel_processing")]; !ok {
+		t.Fatalf("order/task/checkout.yaml#parallel_processing not found")
 	}
-	if _, ok := project.JoinsByQID[semantic.QualifiedID("order.join.finalize_checkout")]; !ok {
-		t.Fatalf("order.join.finalize_checkout not found")
+	if _, ok := project.JoinsByQID[semantic.QualifiedID("order/task/checkout.yaml#finalize_checkout")]; !ok {
+		t.Fatalf("order/task/checkout.yaml#finalize_checkout not found")
 	}
 	validateFlow := project.FlowByFile[semantic.FileID("cart/task/validate_cart.yaml")]
 	if len(validateFlow) != 1 || validateFlow[0].Kind != semantic.FlowKindForeach {

@@ -238,9 +238,14 @@ func resolveNodeQID(project *semantic.Project, fileID semantic.FileID, kind sema
 		return ""
 	}
 	for _, node := range project.NodesByFile[fileID] {
-		if node.GetKind() == kind && node.GetID() == ref {
+		if isFilePrivateSubNode(node) && node.GetKind() == kind && node.GetID() == ref {
 			return node.GetQID()
 		}
+	}
+	module := moduleForFileID(fileID)
+	qid := qidFor(module, string(kind), ref)
+	if node := project.NodesByQID[qid]; node != nil && node.GetKind() == kind {
+		return qid
 	}
 	return ""
 }
@@ -256,8 +261,25 @@ func resolveAnyNodeQID(project *semantic.Project, fileID semantic.FileID, ref st
 		}
 	}
 	for _, node := range project.NodesByFile[fileID] {
-		if node.GetID() == ref {
+		if isFilePrivateSubNode(node) && node.GetID() == ref {
 			return node.GetQID()
+		}
+	}
+	module := moduleForFileID(fileID)
+	for _, kind := range []semantic.NodeKind{
+		semantic.NodeKindTask,
+		semantic.NodeKindJoin,
+		semantic.NodeKindBranch,
+		semantic.NodeKindFork,
+		semantic.NodeKindState,
+		semantic.NodeKindEvent,
+		semantic.NodeKindStore,
+		semantic.NodeKindModel,
+		semantic.NodeKindActor,
+	} {
+		qid := qidFor(module, string(kind), ref)
+		if _, ok := project.NodesByQID[qid]; ok {
+			return qid
 		}
 	}
 	return ""

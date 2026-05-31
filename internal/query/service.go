@@ -295,6 +295,16 @@ func (s *Service) assetByProducerAndName(producer semantic.QualifiedID, name str
 	if join := s.project.JoinsByQID[producer]; join != nil && join.Returns != nil && join.Returns.Asset != nil && join.Returns.Asset.Name == name {
 		return join.Returns.Asset
 	}
+	for _, task := range s.project.TasksByQID {
+		if task.Returns != nil && task.Returns.Asset != nil && task.Returns.Asset.ProducedBy == producer && task.Returns.Asset.Name == name {
+			return task.Returns.Asset
+		}
+	}
+	for _, join := range s.project.JoinsByQID {
+		if join.Returns != nil && join.Returns.Asset != nil && join.Returns.Asset.ProducedBy == producer && join.Returns.Asset.Name == name {
+			return join.Returns.Asset
+		}
+	}
 	return nil
 }
 

@@ -322,7 +322,7 @@ func (r *flowRenderer) sourceNodeID(source semantic.FlowSource) string {
 		if source.AssetName != "" {
 			return r.assetID(source.AssetName)
 		}
-		if node := r.project.NodesByQID[source.Node]; node != nil {
+		if node := r.project.NodesByID[source.Node]; node != nil {
 			return node.GetID()
 		}
 	}
@@ -374,7 +374,7 @@ func (r *flowRenderer) forkRef(qid semantic.QualifiedID) string {
 }
 
 func (r *flowRenderer) nodeID(qid semantic.QualifiedID) string {
-	if node := r.project.NodesByQID[qid]; node != nil {
+	if node := r.project.NodesByID[qid]; node != nil {
 		return node.GetID()
 	}
 	return shortNodeID(qid.String())
@@ -542,7 +542,7 @@ func (r *flowRenderer) writeClassDefs() {
 func (r *flowRenderer) writeDetails() {
 	r.b.WriteString("## Tasks\n\n")
 	for _, qid := range r.detailQIDs {
-		switch node := r.project.NodesByQID[qid].(type) {
+		switch node := r.project.NodesByID[qid].(type) {
 		case *semantic.Task:
 			writeTaskDetail(&r.b, node, node.QID == r.main.QID)
 		case *semantic.Branch:

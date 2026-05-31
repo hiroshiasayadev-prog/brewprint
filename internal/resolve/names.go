@@ -43,6 +43,10 @@ func qidFor(module, kind, id string) semantic.QualifiedID {
 	return semantic.QualifiedID(module + "." + kind + "." + id)
 }
 
+func privateNodeQID(fileID semantic.FileID, id string) semantic.QualifiedID {
+	return semantic.QualifiedID(semantic.PrivateNodeID(fileID, id))
+}
+
 func actorQID(id string) semantic.QualifiedID {
 	return semantic.QualifiedID("actor." + id)
 }

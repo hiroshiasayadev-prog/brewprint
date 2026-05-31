@@ -1,7 +1,7 @@
 # TASK-RESOLVE-001-02: resolver symbol table / index を public node と file-private sub node で分離する
 
 - **id**: TASK-RESOLVE-001-02
-- **status**: todo
+- **status**: done
 - **date**: 2026-05-31
 - **work_item**: WORK-RESOLVE-001
 - **source_requirement**: REQ-RESOLVE-001
@@ -44,4 +44,48 @@ resolver の symbol table / index を修正し、main/public node は project-wi
 
 ## Evidence
 
-未実施。
+- Implementation updated resolver / symbol table indexing so `NodesByQID` is limited to public/main nodes.
+- File-private sub nodes are resolved by internal file-local identity (`<file>#<local>`), and registered for file-local lookup without project-wide public QID uniqueness.
+- Cross-file private sub nodes with the same local ID are allowed.
+- Same-file private sub node local ID duplication is reported as `duplicate_sub_node`.
+- Bare ID resolution now preserves the required order: same-file private sub node/source first, then same-module main node fallback.
+- Initial implementation review returned `Needs revision before commit` due to two identity-boundary issues:
+  - private sub task / join return asset `ProducedBy` still used public-shaped QID, causing possible asset identity collision;
+  - public-shaped private aliases were visible through `NodesByID` / kind indexes and could be misused as public selectors.
+- Follow-up fix changed private sub task / join return asset `ProducedBy` to the node internal QID (`<file>#<local>`), so `AssetID` / `AssetObjectKey` do not collide across files with same private local ID and same return name.
+- Follow-up fix stopped registering private sub node public-shaped aliases in `NodesByID` / `TasksByQID` / `BranchesByQID` / `ForksByQID` / `JoinsByQID`; public selector paths now use public-only lookup and do not return private nodes via public-looking QID aliases.
+- Regression tests were added / updated for:
+  - cross-file same private sub task local ID allowed;
+  - same-file duplicate private sub task local ID emits `duplicate_sub_node`;
+  - same-module duplicate main task emits `duplicate_node`;
+  - local flow step resolves same-file private sub task first;
+  - duplicate private sub task handling does not cascade into `unresolved_flow_task`;
+  - cross-file same private sub task local ID with same `returns.name` does not collide in asset ID / object key;
+  - public-shaped private alias is not registered in public lookup indexes;
+  - full QID transition action does not validate through a private alias;
+  - asset query paths do not first-hit the wrong file-private asset.
+- Changed files reported by implementation handoff:
+  - `internal/semantic/project.go`
+  - `internal/resolve/builder.go`
+  - `internal/resolve/symbols.go`
+  - `internal/resolve/flow.go`
+  - `internal/resolve/names.go`
+  - `internal/resolve/references.go`
+  - `internal/resolve/validation.go`
+  - `internal/resolve/return_source_test.go`
+  - `internal/resolve/type_ref_test.go`
+  - `internal/resolve/subnode_scope_test.go`
+  - `internal/query/service.go`
+  - `internal/query/source.go`
+  - `internal/query/service_test.go`
+  - `internal/mcp/server_test.go`
+  - `internal/render/dag/flow_renderer.go`
+  - `internal/render/dag/renderer_test.go`
+- Verification reported by implementation handoff:
+  - `go test ./...` -> pass
+  - `go run ./cmd/brewprint validate --yaml-root docs\uc\002-brewprint-self-hosting\yaml` -> ok
+  - `go run ./cmd/brewprint render --yaml-root docs\uc\002-brewprint-self-hosting\yaml --out $env:TEMP\brewprint-uc002-render-review2 --clean` -> rendered 11 file(s)
+- Scope constraints preserved:
+  - M15 / `v1.1.0-spec` was not reopened.
+  - MCP private object exposure / ObjectRef schema migration was not implemented.
+  - spec files were not changed in this implementation task.

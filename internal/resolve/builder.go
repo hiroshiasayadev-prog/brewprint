@@ -77,7 +77,11 @@ func Build(raw *rawyaml.Project) (*semantic.Project, []semantic.Diagnostic) {
 }
 
 func buildTask(fileID semantic.FileID, module string, raw rawyaml.Task) *semantic.Task {
-	qid := qidFor(module, "task", raw.ID)
+	publicQID := qidFor(module, "task", raw.ID)
+	qid := publicQID
+	if !raw.Main {
+		qid = privateNodeQID(fileID, raw.ID)
+	}
 	task := &semantic.Task{
 		BaseNode: semantic.BaseNode{
 			QID:    qid,
@@ -137,9 +141,13 @@ func buildTask(fileID semantic.FileID, module string, raw rawyaml.Task) *semanti
 }
 
 func buildBranch(fileID semantic.FileID, module string, raw rawyaml.ControlNode) *semantic.Branch {
+	qid := qidFor(module, "branch", raw.ID)
+	if !raw.Main {
+		qid = privateNodeQID(fileID, raw.ID)
+	}
 	branch := &semantic.Branch{
 		BaseNode: semantic.BaseNode{
-			QID:    qidFor(module, "branch", raw.ID),
+			QID:    qid,
 			FileID: fileID,
 			ID:     raw.ID,
 			Kind:   semantic.NodeKindBranch,
@@ -152,9 +160,13 @@ func buildBranch(fileID semantic.FileID, module string, raw rawyaml.ControlNode)
 }
 
 func buildFork(fileID semantic.FileID, module string, raw rawyaml.ControlNode) *semantic.Fork {
+	qid := qidFor(module, "fork", raw.ID)
+	if !raw.Main {
+		qid = privateNodeQID(fileID, raw.ID)
+	}
 	fork := &semantic.Fork{
 		BaseNode: semantic.BaseNode{
-			QID:    qidFor(module, "fork", raw.ID),
+			QID:    qid,
 			FileID: fileID,
 			ID:     raw.ID,
 			Kind:   semantic.NodeKindFork,
@@ -167,7 +179,11 @@ func buildFork(fileID semantic.FileID, module string, raw rawyaml.ControlNode) *
 }
 
 func buildJoin(fileID semantic.FileID, module string, raw rawyaml.ControlNode) *semantic.Join {
-	qid := qidFor(module, "join", raw.ID)
+	publicQID := qidFor(module, "join", raw.ID)
+	qid := publicQID
+	if !raw.Main {
+		qid = privateNodeQID(fileID, raw.ID)
+	}
 	join := &semantic.Join{
 		BaseNode: semantic.BaseNode{
 			QID:    qid,
@@ -371,7 +387,12 @@ func buildEvent(fileID semantic.FileID, module string, raw rawyaml.Event) *seman
 }
 
 func buildInitializedStores(project *semantic.Project, symbols *symbolTable) {
+	seen := map[*semantic.Task]struct{}{}
 	for _, task := range project.TasksByQID {
+		if _, ok := seen[task]; ok {
+			continue
+		}
+		seen[task] = struct{}{}
 		for i := range task.Initializes {
 			init := &task.Initializes[i]
 			store := &semantic.Store{
@@ -402,7 +423,12 @@ func buildInitializedStores(project *semantic.Project, symbols *symbolTable) {
 }
 
 func resolveTaskStoreAccess(project *semantic.Project, symbols *symbolTable) {
+	seen := map[*semantic.Task]struct{}{}
 	for _, task := range project.TasksByQID {
+		if _, ok := seen[task]; ok {
+			continue
+		}
+		seen[task] = struct{}{}
 		module := moduleForFileID(task.FileID)
 		for i := range task.Reads {
 			ref := resolveStoreRef(project, task.FileID, module, task.Reads[i].Name)

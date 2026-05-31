@@ -25,6 +25,7 @@ const (
 	diagnosticInvalidEnumModel          = "invalid_enum_model"
 	diagnosticDuplicateEnumValue        = "duplicate_enum_value"
 	diagnosticDuplicateNode             = "duplicate_node"
+	diagnosticDuplicateSubNode          = "duplicate_sub_node"
 	diagnosticDuplicateMainNode         = "duplicate_main_node"
 	diagnosticDuplicateActor            = "duplicate_actor"
 	diagnosticDuplicateInitializedStore = "duplicate_initialized_store"
@@ -96,9 +97,11 @@ func validateProject(project *semantic.Project, symbols *symbolTable) {
 }
 
 func validateRequiredNodeIDs(project *semantic.Project, symbols *symbolTable) {
-	for _, node := range project.NodesByQID {
-		if node.GetID() == "" {
-			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticMissingRequiredField, node.GetFileID(), "node id is required: "+string(node.GetKind()))
+	for _, nodes := range project.NodesByFile {
+		for _, node := range nodes {
+			if node.GetID() == "" {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticMissingRequiredField, node.GetFileID(), "node id is required: "+string(node.GetKind()))
+			}
 		}
 	}
 }
@@ -210,7 +213,12 @@ func validateStore(project *semantic.Project, symbols *symbolTable, store *seman
 }
 
 func validateTaskDefinitions(project *semantic.Project, symbols *symbolTable) {
+	seen := map[*semantic.Task]struct{}{}
 	for _, task := range project.TasksByQID {
+		if _, ok := seen[task]; ok {
+			continue
+		}
+		seen[task] = struct{}{}
 		validateParams(project, symbols, task.FileID, "task params", task.Params)
 		if task.Returns != nil {
 			validateReturn(project, symbols, task.FileID, task.QID.String(), "task return", task.Returns)
@@ -250,13 +258,28 @@ func validateTaskDefinitions(project *semantic.Project, symbols *symbolTable) {
 }
 
 func validateControlDefinitions(project *semantic.Project, symbols *symbolTable) {
+	seenBranches := map[*semantic.Branch]struct{}{}
 	for _, branch := range project.BranchesByQID {
+		if _, ok := seenBranches[branch]; ok {
+			continue
+		}
+		seenBranches[branch] = struct{}{}
 		validateParams(project, symbols, branch.FileID, "branch params", branch.Params)
 	}
+	seenForks := map[*semantic.Fork]struct{}{}
 	for _, fork := range project.ForksByQID {
+		if _, ok := seenForks[fork]; ok {
+			continue
+		}
+		seenForks[fork] = struct{}{}
 		validateParams(project, symbols, fork.FileID, "fork params", fork.Params)
 	}
+	seenJoins := map[*semantic.Join]struct{}{}
 	for _, join := range project.JoinsByQID {
+		if _, ok := seenJoins[join]; ok {
+			continue
+		}
+		seenJoins[join] = struct{}{}
 		validateParams(project, symbols, join.FileID, "join params", join.Params)
 		if join.Returns != nil {
 			validateReturn(project, symbols, join.FileID, join.QID.String(), "join return", join.Returns)
@@ -516,7 +539,7 @@ func resolveWiringSourceTypeRef(project *semantic.Project, symbols *symbolTable,
 			}
 			return join.Returns.TypeRef, true
 		}
-		if project.NodesByQID[source.Node] != nil {
+		if project.NodesByID[source.Node] != nil {
 			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidWiringSource, fileID, "invalid wiring source at "+position+": node is not a task or join: "+source.Raw)
 			return nil, false
 		}
@@ -637,7 +660,7 @@ func resolveReturnSource(project *semantic.Project, symbols *symbolTable, fileID
 			source.TypeRef = join.Returns.TypeRef
 			return source, join.Returns.TypeRef, true
 		}
-		if project.NodesByQID[qid] != nil {
+		if project.NodesByID[qid] != nil {
 			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidReturnSource, fileID, "invalid return source at "+position+": node is not a task or join: "+raw)
 			return source, nil, false
 		}

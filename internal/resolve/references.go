@@ -7,7 +7,12 @@ import (
 )
 
 func buildReferences(project *semantic.Project) {
+	seenTasks := map[*semantic.Task]struct{}{}
 	for _, task := range project.TasksByQID {
+		if _, ok := seenTasks[task]; ok {
+			continue
+		}
+		seenTasks[task] = struct{}{}
 		for _, param := range task.Params {
 			addReference(project, semantic.Reference{
 				Kind:      semantic.ReferenceKindParamModel,
@@ -59,7 +64,12 @@ func buildReferences(project *semantic.Project) {
 		}
 	}
 
+	seenBranches := map[*semantic.Branch]struct{}{}
 	for _, branch := range project.BranchesByQID {
+		if _, ok := seenBranches[branch]; ok {
+			continue
+		}
+		seenBranches[branch] = struct{}{}
 		for _, param := range branch.Params {
 			addReference(project, semantic.Reference{
 				Kind:      semantic.ReferenceKindParamModel,
@@ -71,7 +81,12 @@ func buildReferences(project *semantic.Project) {
 		}
 	}
 
+	seenJoins := map[*semantic.Join]struct{}{}
 	for _, join := range project.JoinsByQID {
+		if _, ok := seenJoins[join]; ok {
+			continue
+		}
+		seenJoins[join] = struct{}{}
 		for _, param := range join.Params {
 			addReference(project, semantic.Reference{
 				Kind:      semantic.ReferenceKindParamModel,
@@ -422,7 +437,7 @@ func addAssetConsumerReference(project *semantic.Project, consumerID semantic.Qu
 		return
 	}
 	asset := assetByProducerAndName(project, source.Node, source.AssetName)
-	consumer := project.NodesByQID[consumerID]
+	consumer := project.NodesByID[consumerID]
 	if asset == nil || consumer == nil {
 		return
 	}
@@ -441,6 +456,16 @@ func assetByProducerAndName(project *semantic.Project, producer semantic.Qualifi
 	}
 	if join := project.JoinsByQID[producer]; join != nil && join.Returns != nil && join.Returns.Asset != nil && join.Returns.Asset.Name == name {
 		return join.Returns.Asset
+	}
+	for _, task := range project.TasksByQID {
+		if task.Returns != nil && task.Returns.Asset != nil && task.Returns.Asset.ProducedBy == producer && task.Returns.Asset.Name == name {
+			return task.Returns.Asset
+		}
+	}
+	for _, join := range project.JoinsByQID {
+		if join.Returns != nil && join.Returns.Asset != nil && join.Returns.Asset.ProducedBy == producer && join.Returns.Asset.Name == name {
+			return join.Returns.Asset
+		}
 	}
 	return nil
 }

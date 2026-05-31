@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hiroshiasayadev-prog/brewprint/internal/rawyaml"
 	"github.com/hiroshiasayadev-prog/brewprint/internal/resolve"
 	"github.com/hiroshiasayadev-prog/brewprint/internal/semantic"
 	"github.com/hiroshiasayadev-prog/brewprint/internal/source"
@@ -108,7 +109,7 @@ func TestQueryServiceUC001(t *testing.T) {
 			t.Fatalf("user_db signature = %#v", store.Signature)
 		}
 
-		join, err := service.GetSignature(GetSignatureRequest{Selector: Selector{ID: "order.join.finalize_checkout"}})
+		join, err := service.GetSignature(GetSignatureRequest{Selector: Selector{Object: "node", Kind: "join", File: "order/task/checkout.yaml", LocalID: "finalize_checkout"}})
 		if err != nil {
 			t.Fatalf("GetSignature join: %v", err)
 		}
@@ -432,8 +433,8 @@ func TestQueryServiceUC001(t *testing.T) {
 		}
 
 		flowRename, err := service.AnalyzeImpact(AnalyzeImpactRequest{
-			Selector: Selector{ID: "order.task.build_order"},
-			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeRename, NewID: "order.task.create_order"},
+			Selector: Selector{Object: "node", ID: "order/task/checkout.yaml#build_order"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeRename, NewID: "order/task/checkout.yaml#create_order"},
 		})
 		if err != nil {
 			t.Fatalf("AnalyzeImpact task rename flow: %v", err)
@@ -686,7 +687,7 @@ func TestQueryServiceUC001(t *testing.T) {
 			t.Fatalf("private sub task object = %#v", buildOrder.Object)
 		}
 		ret := buildOrder.Signature["returns"].(*ReturnSignature)
-		if ret.Name != "draft_order" || ret.Asset == nil || ret.Asset.ID != "order.task.build_order#draft_order" {
+		if ret.Name != "draft_order" || ret.Asset == nil || ret.Asset.ID != "order/task/checkout.yaml#build_order#draft_order" {
 			t.Fatalf("private sub task returns = %#v", ret)
 		}
 
@@ -698,12 +699,12 @@ func TestQueryServiceUC001(t *testing.T) {
 			t.Fatalf("private fork object = %#v", fork.Object)
 		}
 
-		assetSelector := Selector{Object: "asset", ID: "order.task.build_order#draft_order"}
+		assetSelector := Selector{Object: "asset", ID: "order/task/checkout.yaml#build_order#draft_order"}
 		asset, err := service.GetSignature(GetSignatureRequest{Selector: assetSelector})
 		if err != nil {
 			t.Fatalf("GetSignature asset: %v", err)
 		}
-		if asset.Object.ID != "order.task.build_order#draft_order" || asset.Object.Object != "asset" || asset.Signature["producer"] != "order.task.build_order" || asset.Signature["model"] != "order.model.order" || asset.Signature["scope_file"] != "order/task/checkout.yaml" {
+		if asset.Object.ID != "order/task/checkout.yaml#build_order#draft_order" || asset.Object.Object != "asset" || asset.Signature["producer"] != "order/task/checkout.yaml#build_order" || asset.Signature["model"] != "order.model.order" || asset.Signature["scope_file"] != "order/task/checkout.yaml" {
 			t.Fatalf("asset signature = object %#v signature %#v", asset.Object, asset.Signature)
 		}
 
@@ -711,14 +712,14 @@ func TestQueryServiceUC001(t *testing.T) {
 		if err != nil {
 			t.Fatalf("GetReferences asset consumers: %v", err)
 		}
-		assertHasReference(t, assetRefs.References, "consumes_asset", "out", "order.task.build_order#draft_order", "order/task/checkout.yaml#reserve_inventory")
-		assertHasReference(t, assetRefs.References, "consumes_asset", "out", "order.task.build_order#draft_order", "order/task/checkout.yaml#notify_payment_gateway")
+		assertHasReference(t, assetRefs.References, "consumes_asset", "out", "order/task/checkout.yaml#build_order#draft_order", "order/task/checkout.yaml#reserve_inventory")
+		assertHasReference(t, assetRefs.References, "consumes_asset", "out", "order/task/checkout.yaml#build_order#draft_order", "order/task/checkout.yaml#notify_payment_gateway")
 
 		buildOrderRefs, err := service.GetReferences(GetReferencesRequest{Selector: buildOrderSelector, Direction: "out", Kinds: []string{"produces_asset"}})
 		if err != nil {
 			t.Fatalf("GetReferences private sub task: %v", err)
 		}
-		assertHasReference(t, buildOrderRefs.References, "produces_asset", "out", "order/task/checkout.yaml#build_order", "order.task.build_order#draft_order")
+		assertHasReference(t, buildOrderRefs.References, "produces_asset", "out", "order/task/checkout.yaml#build_order", "order/task/checkout.yaml#build_order#draft_order")
 
 		inspected, err := service.Inspect(InspectRequest{Selector: buildOrderSelector})
 		if err != nil {
@@ -930,6 +931,60 @@ func TestQueryServiceUC001(t *testing.T) {
 	})
 }
 
+func TestPrivateSubNodeAssetIdentityBoundaryQueries(t *testing.T) {
+	checkoutFile := privateReturningHelperQueryFile("shop/task/checkout.yaml", "checkout")
+	refundFile := privateReturningHelperQueryFile("shop/task/refund.yaml", "refund")
+	refundFile.NodeFile.Models = nil
+	project, diagnostics := resolve.Build(&rawyaml.Project{Files: []rawyaml.File{checkoutFile, refundFile}})
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v, want none", diagnostics)
+	}
+	service := NewService(project)
+
+	if _, err := service.GetSignature(GetSignatureRequest{Selector: Selector{ID: "shop.task.helper"}}); err == nil {
+		t.Fatalf("public-shaped private sub task selector unexpectedly resolved")
+	}
+	if _, err := service.GetSignature(GetSignatureRequest{Selector: Selector{Object: "asset", ID: "shop.task.helper#result"}}); err == nil {
+		t.Fatalf("public-shaped private asset selector unexpectedly resolved")
+	}
+
+	checkoutAssetID := "shop/task/checkout.yaml#helper#result"
+	refundAssetID := "shop/task/refund.yaml#helper#result"
+	checkoutAsset, err := service.GetSignature(GetSignatureRequest{Selector: Selector{Object: "asset", ID: checkoutAssetID}})
+	if err != nil {
+		t.Fatalf("GetSignature checkout asset: %v", err)
+	}
+	if checkoutAsset.Object.ID != checkoutAssetID || checkoutAsset.Signature["producer"] != "shop/task/checkout.yaml#helper" {
+		t.Fatalf("checkout asset signature = object %#v signature %#v", checkoutAsset.Object, checkoutAsset.Signature)
+	}
+	refundAsset, err := service.GetSignature(GetSignatureRequest{Selector: Selector{Object: "asset", ID: refundAssetID}})
+	if err != nil {
+		t.Fatalf("GetSignature refund asset: %v", err)
+	}
+	if refundAsset.Object.ID != refundAssetID || refundAsset.Signature["producer"] != "shop/task/refund.yaml#helper" {
+		t.Fatalf("refund asset signature = object %#v signature %#v", refundAsset.Object, refundAsset.Signature)
+	}
+
+	checkoutRefs, err := service.GetReferences(GetReferencesRequest{Selector: Selector{Object: "asset", ID: checkoutAssetID}, Direction: "out", Kinds: []string{"consumes_asset"}})
+	if err != nil {
+		t.Fatalf("GetReferences checkout asset: %v", err)
+	}
+	assertHasReference(t, checkoutRefs.References, "consumes_asset", "out", checkoutAssetID, "shop/task/checkout.yaml#consume")
+	for _, ref := range checkoutRefs.References {
+		if ref.To.ID == "shop/task/refund.yaml#consume" {
+			t.Fatalf("checkout asset references leaked to refund consumer: %#v", checkoutRefs.References)
+		}
+	}
+
+	refundSource, err := service.GetSource(GetSourceRequest{Selector: Selector{Object: "asset", ID: refundAssetID}})
+	if err != nil {
+		t.Fatalf("GetSource refund asset: %v", err)
+	}
+	if refundSource.Object.ID != refundAssetID || refundSource.Source.File != "shop/task/refund.yaml" {
+		t.Fatalf("refund asset source = %#v", refundSource)
+	}
+}
+
 func TestResolvedTransitionIndexesUC001(t *testing.T) {
 	project := loadUC001Project(t)
 
@@ -968,6 +1023,52 @@ func TestResolvedTransitionIndexesUC001(t *testing.T) {
 func newUC001Service(t *testing.T) *Service {
 	t.Helper()
 	return NewService(loadUC001Project(t))
+}
+
+func privateReturningHelperQueryFile(fileID string, mainID string) rawyaml.File {
+	return rawyaml.File{
+		ID:      fileID,
+		Kind:    rawyaml.FileKindNode,
+		Content: privateReturningHelperQueryContent(mainID),
+		NodeFile: &rawyaml.NodeFile{
+			Models: []rawyaml.Model{{
+				ID:     "receipt",
+				Kind:   "struct",
+				Fields: []rawyaml.ModelField{{Name: "id", Type: "str"}},
+			}},
+			Tasks: []rawyaml.Task{
+				{ID: mainID, Main: true},
+				{ID: "helper", Returns: &rawyaml.Return{Name: "result", Model: "receipt"}},
+				{ID: "consume", Params: []rawyaml.Param{{Name: "input", Model: "receipt"}}},
+			},
+			Flow: []rawyaml.FlowEntry{
+				{Step: "helper"},
+				{Step: "consume", Params: map[string]string{"input": "helper"}},
+			},
+		},
+	}
+}
+
+func privateReturningHelperQueryContent(mainID string) string {
+	return "nodes:\n" +
+		"  - id: " + mainID + "\n" +
+		"    type: task\n" +
+		"    main: true\n" +
+		"  - id: helper\n" +
+		"    type: task\n" +
+		"    returns:\n" +
+		"      name: result\n" +
+		"      model: receipt\n" +
+		"  - id: consume\n" +
+		"    type: task\n" +
+		"    params:\n" +
+		"      - name: input\n" +
+		"        model: receipt\n" +
+		"flow:\n" +
+		"  - step: helper\n" +
+		"  - step: consume\n" +
+		"    params:\n" +
+		"      input: helper\n"
 }
 
 func loadUC001Project(t *testing.T) *semantic.Project {

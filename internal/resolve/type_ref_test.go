@@ -92,7 +92,8 @@ func TestBuildSetsSemanticTypeRefs(t *testing.T) {
 			ID:   "shop/task/run.yaml",
 			Kind: rawyaml.FileKindNode,
 			NodeFile: &rawyaml.NodeFile{Tasks: []rawyaml.Task{{
-				ID: "run",
+				ID:   "run",
+				Main: true,
 				Params: []rawyaml.Param{
 					{Name: "users", Model: "list<user>"},
 					{Name: "configs", Model: "dict<config>"},
@@ -204,6 +205,7 @@ func TestReturnPrimitiveTypeRefIsValid(t *testing.T) {
 			Kind: rawyaml.FileKindNode,
 			NodeFile: &rawyaml.NodeFile{Tasks: []rawyaml.Task{{
 				ID:      "run",
+				Main:    true,
 				Returns: &rawyaml.Return{Name: "message", Model: "str"},
 			}}},
 		},

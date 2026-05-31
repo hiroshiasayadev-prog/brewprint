@@ -77,17 +77,17 @@ func TestServerCallTool(t *testing.T) {
 	})
 
 	t.Run("get_signature_m11_asset", func(t *testing.T) {
-		envelope := call(t, server, "get_signature", `{"selector":{"object":"asset","id":"order.task.build_order#draft_order"}}`)
+		envelope := call(t, server, "get_signature", `{"selector":{"object":"asset","id":"order/task/checkout.yaml#build_order#draft_order"}}`)
 		if envelope.Error != nil {
 			t.Fatalf("get_signature asset error: %#v", envelope.Error)
 		}
 		result := resultMap(t, envelope)
 		object := result["object"].(map[string]any)
-		if object["object"] != "asset" || object["id"] != "order.task.build_order#draft_order" {
+		if object["object"] != "asset" || object["id"] != "order/task/checkout.yaml#build_order#draft_order" {
 			t.Fatalf("asset object = %#v", object)
 		}
 		signature := result["signature"].(map[string]any)
-		if signature["producer"] != "order.task.build_order" || signature["model"] != "order.model.order" || signature["scope_file"] != "order/task/checkout.yaml" {
+		if signature["producer"] != "order/task/checkout.yaml#build_order" || signature["model"] != "order.model.order" || signature["scope_file"] != "order/task/checkout.yaml" {
 			t.Fatalf("asset signature = %#v", signature)
 		}
 	})
@@ -158,13 +158,13 @@ func TestServerCallTool(t *testing.T) {
 	})
 
 	t.Run("get_references_m11_asset", func(t *testing.T) {
-		envelope := call(t, server, "get_references", `{"selector":{"object":"asset","id":"order.task.build_order#draft_order"},"direction":"out","kinds":["consumes_asset"]}`)
+		envelope := call(t, server, "get_references", `{"selector":{"object":"asset","id":"order/task/checkout.yaml#build_order#draft_order"},"direction":"out","kinds":["consumes_asset"]}`)
 		if envelope.Error != nil {
 			t.Fatalf("get_references asset error: %#v", envelope.Error)
 		}
 		result := resultMap(t, envelope)
 		object := result["object"].(map[string]any)
-		if object["object"] != "asset" || object["id"] != "order.task.build_order#draft_order" {
+		if object["object"] != "asset" || object["id"] != "order/task/checkout.yaml#build_order#draft_order" {
 			t.Fatalf("asset references object = %#v", object)
 		}
 		refs := result["references"].([]any)

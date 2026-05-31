@@ -19,8 +19,8 @@ func TestTaskReturnSourceSemanticSourcePreserved(t *testing.T) {
 	if run == nil || run.Returns == nil || run.Returns.Source != "produce" {
 		t.Fatalf("semantic return source = %#v, want produce", run)
 	}
-	if run.Returns.SourceRef.Kind != semantic.FlowSourceNode || run.Returns.SourceRef.Node != "shop.task.produce" {
-		t.Fatalf("semantic return SourceRef = %#v, want produce node", run.Returns.SourceRef)
+	if run.Returns.SourceRef.Kind != semantic.FlowSourceNode || run.Returns.SourceRef.Node != "shop/task/run.yaml#produce" {
+		t.Fatalf("semantic return SourceRef = %#v, want same-file private produce node", run.Returns.SourceRef)
 	}
 }
 

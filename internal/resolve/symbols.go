@@ -22,12 +22,25 @@ func (s *symbolTable) addDiagnosticCode(severity semantic.Severity, code string,
 func (s *symbolTable) addNode(node semantic.Node) {
 	qid := node.GetQID()
 	fileID := node.GetFileID()
+	if isFilePrivateSubNode(node) {
+		if hasFilePrivateSubNodeID(s.project.NodesByFile[fileID], node.GetID()) {
+			s.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateSubNode, fileID, "duplicate sub node local id: "+node.GetID())
+		}
+		s.project.NodesByFile[fileID] = append(s.project.NodesByFile[fileID], node)
+		if _, exists := s.project.NodesByID[qid]; !exists {
+			s.project.NodesByID[qid] = node
+			s.addNodeByKindID(node, qid)
+		}
+		return
+	}
+
 	if _, exists := s.project.NodesByQID[qid]; exists {
 		s.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateNode, fileID, "duplicate node qid: "+qid.String())
 		return
 	}
 
 	s.project.NodesByQID[qid] = node
+	s.project.NodesByID[qid] = node
 	s.project.NodesByFile[fileID] = append(s.project.NodesByFile[fileID], node)
 	if node.IsMain() {
 		if _, exists := s.project.MainNodeByFile[fileID]; exists {
@@ -37,6 +50,32 @@ func (s *symbolTable) addNode(node semantic.Node) {
 		}
 	}
 
+	s.addNodeByKindID(node, qid)
+}
+
+func isFilePrivateSubNode(node semantic.Node) bool {
+	if node == nil || node.IsMain() {
+		return false
+	}
+	switch node.GetKind() {
+	case semantic.NodeKindTask, semantic.NodeKindBranch, semantic.NodeKindFork, semantic.NodeKindJoin:
+		return true
+	default:
+		return false
+	}
+}
+
+func hasFilePrivateSubNodeID(nodes []semantic.Node, id string) bool {
+	for _, node := range nodes {
+		if isFilePrivateSubNode(node) && node.GetID() == id {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *symbolTable) addNodeByKindID(node semantic.Node, qid semantic.QualifiedID) {
+	fileID := node.GetFileID()
 	switch n := node.(type) {
 	case *semantic.Task:
 		s.project.TasksByQID[qid] = n

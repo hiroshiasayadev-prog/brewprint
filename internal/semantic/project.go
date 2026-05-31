@@ -18,6 +18,7 @@ type Project struct {
 	RenderGroups    []RenderGroup
 
 	NodesByQID     map[QualifiedID]Node
+	NodesByID      map[QualifiedID]Node
 	NodesByFile    map[FileID][]Node
 	MainNodeByFile map[FileID]QualifiedID
 
@@ -57,6 +58,7 @@ func NewProject() *Project {
 	return &Project{
 		SourceFilesByID:              map[FileID]SourceFile{},
 		NodesByQID:                   map[QualifiedID]Node{},
+		NodesByID:                    map[QualifiedID]Node{},
 		NodesByFile:                  map[FileID][]Node{},
 		MainNodeByFile:               map[FileID]QualifiedID{},
 		TasksByQID:                   map[QualifiedID]*Task{},

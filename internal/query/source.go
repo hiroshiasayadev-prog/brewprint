@@ -149,7 +149,23 @@ func (s *Service) findAssetSource(asset *semantic.Asset) sourceBlock {
 	if asset == nil {
 		return sourceBlock{}
 	}
-	node := s.project.NodesByQID[asset.ProducedBy]
+	node := s.project.NodesByID[asset.ProducedBy]
+	if node == nil {
+		for _, candidate := range s.project.TasksByQID {
+			if candidate.Returns != nil && candidate.Returns.Asset == asset {
+				node = candidate
+				break
+			}
+		}
+	}
+	if node == nil {
+		for _, candidate := range s.project.JoinsByQID {
+			if candidate.Returns != nil && candidate.Returns.Asset == asset {
+				node = candidate
+				break
+			}
+		}
+	}
 	if node == nil {
 		return sourceBlock{}
 	}
