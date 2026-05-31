@@ -1,0 +1,46 @@
+# TASK-RESOLVE-001-01: ADR-058 の file-private sub node scope を spec に反映する
+
+- **id**: TASK-RESOLVE-001-01
+- **status**: todo
+- **date**: 2026-05-31
+- **work_item**: WORK-RESOLVE-001
+- **source_requirement**: REQ-RESOLVE-001
+- **estimate**: 0.5d
+- **depends_on**:
+- **outputs**:
+  - `docs/spec/nodes.md` の sub node file-private scope 明確化
+  - `docs/spec/naming.md` の public QualifiedID / file-private local ID 境界明確化
+  - `docs/spec/diagnostics.md` の duplicate_node 対象明確化
+
+## Goal
+
+ADR-058 の accepted 判断を現行 spec に反映し、実装者が file-private sub node を project-wide public QualifiedID uniqueness の対象と誤読しない状態にする。
+
+## Work
+
+- `ADR-058` の以下の判断を spec に反映する。
+  - sub node は project-wide QualifiedID 一意性制約の対象外
+  - sub node ID は同一 file 内で一意
+  - 別 file にある同名 sub node local ID は衝突しない
+  - sub node は external YAML / public MCP selector 向けの public QualifiedID を持たない
+  - flow / reads / writes 等の bare ID は同一 file の sub node を優先して解決する
+- `docs/spec/nodes.md` の file structure / common field 周辺を更新する。
+- `docs/spec/naming.md` の main node / sub node identity 境界を更新する。
+- `docs/spec/diagnostics.md` の `duplicate_node` 説明を main/public node collision と file-local duplicate の扱いに整理する。
+- ADR-078 の MCP synthetic ID 方針と混同しないよう、public QualifiedID と MCP query layer synthetic ID の違いを必要最小限で明示する。
+
+## Done condition
+
+- ADR-058 §4 の spec update intent が、対象 spec に反映されている。
+- public QualifiedID、file-private local ID、MCP synthetic ID の責務が混同されていない。
+- 後続 task が spec gap を理由に resolver 修正を保留しなくてよい状態になっている。
+
+## Verification
+
+- `docs/spec/nodes.md` / `docs/spec/naming.md` / `docs/spec/diagnostics.md` を読み戻す。
+- ADR-058 と矛盾しないことを確認する。
+- ADR-078 の `<semantic-anchor-id>#<local-id>` 方針を、public QualifiedID として誤記していないことを確認する。
+
+## Evidence
+
+未実施。
