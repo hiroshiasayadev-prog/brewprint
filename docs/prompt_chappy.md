@@ -24,6 +24,23 @@
 - 根拠が足りない場合は全文を読む。
 - docsに根拠がない場合のみ、不明としてユーザーに確認する。
 
+### Design Records first rule
+
+- ユーザーが `ADR-*`, `REQ-*`, `WORK-*`, `TASK-*`, `INV-*`, `SPEC-*` などの design record / workflow artifact ID を指定した場合、まず Design Records MCP を使う。
+- ADR / spec / investigation / requirement / work item / task の検索・取得・検証・参照解決は、原則として `list_records`, `get_record`, `get_records`, `resolve_reference`, `validate_records` を入口にする。
+- indexed design record を確認する目的で、最初に filesystem の directory traversal を行わない。
+- filesystem は、Design Records MCP で対象 record を取得した後、raw file inspection、source path confirmation、または implementation / fixture / YAML / render output など非 record ファイルを確認する場合に使う。
+- Design Records MCP が利用可能か不明な場合は、先に tool discovery を行う。
+
+### Design Records authoring transaction rule
+
+- Design Records MCP の authoring transaction tools が利用可能なら、REQ / WORK / TASK / ADR の起票・更新、および既存 SPEC の metadata / section 更新ではまず authoring transaction tools の利用を検討する。
+- 直接 filesystem edit に戻る前に、対象 kind / operation が authoring transaction MVP の対応範囲か確認する。
+- propose 系 tool の返す diff / note / diagnostics を確認してから accept する。
+- proposal creation は repository files を書き換えない。実書き込みは accept 系 tool の結果で `written` / `files_written` / diagnostics を確認する。
+- `SPEC-new` / spec skeleton create は MVP 外なので、必要なら REQ-MCP-010 系の placement discovery follow-up として扱う。
+- authoring transaction tool が未対応・失敗・曖昧な場合だけ、理由を明記して filesystem edit に fallback する。
+
 ### File operations
 
 - **sandbox環境の利用は禁止。**

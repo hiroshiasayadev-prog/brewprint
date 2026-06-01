@@ -1,6 +1,6 @@
 # 073: tagged union model 導入
 
-- **status**: proposed
+- **status**: accepted
 - **date**: 2026-05-11
 
 > このADRは起票時点での決定を記録したスナップショットである。
@@ -8,7 +8,7 @@
 
 ## 背景
 
-M15 Phase C では、UC-002 self-hosting で見つかった data layer 表現力不足を整理している。
+WORK-DATA-010 では、UC-002 self-hosting で見つかった data layer 表現力不足のうち、tagged union / discriminator payload support を独立した successor work として扱う。
 
 UC-002 Phase A の MCP公開contract YAML では、JSON / MCP contract 上は object の種別によって payload shape が変わる構造を、現状 `any` + `note` で表現している。
 
@@ -49,15 +49,14 @@ ADR-067 では enum model を proposed として起票し、閉じた値集合�
 しかし enum は「値集合」だけを表す。
 `analyze_impact.change` の問題は、値集合に加えて「tag value と payload shape の対応」を表す必要がある点であり、enum だけでは解けない。
 
-したがって、本ADRでは `model.kind: tagged_union` を追加し、discriminator field が明示された object variant を v1.1 の model として表現する案を検討する。
+したがって、本ADRでは `model.kind: tagged_union` を追加し、discriminator field が明示された object variant を model として表現する。
 
-本ADRは proposed 段階では、acceptance 条件付きの採用案として扱う。
-`## 決定` は採用した場合の仕様案を断定形で記録するが、accepted に進める前に `## Acceptance 前の確認事項` を満たす必要がある。
+本ADRは、REQ-DATA-004 / WORK-DATA-010 の successor work として tagged union model の最小 contract を accepted とする。
 
 ### 判断根拠としての UC-002 実例の扱い
 
 本ADRで参照する UC-002 の YAML は、ADR起票時点の self-hosting 実例である。
-これらの YAML は今後の M15 Phase C 実装・spec反映・UC-002 migration によって更新されうるため、本文中の具体的な field 名や `any` の配置は恒久仕様ではない。
+これらの YAML は今後の WORK-DATA-010 実装・spec反映・UC-002 migration によって更新されうるため、本文中の具体的な field 名や `any` の配置は恒久仕様ではない。
 
 本ADRが判断根拠として扱うのは、個々の YAML shape そのものではなく、UC-002 において以下の性質を持つ payload が現れたという事実である。
 
@@ -68,13 +67,13 @@ ADR-067 では enum model を proposed として起票し、閉じた値集合�
 - TypeRef variant を増やさず named model として表現できる
 
 したがって、本文中の UC-002 例は実装固定の仕様例ではなく、tagged union model 導入判断の evidence として扱う。
-具体的な fixture migration の範囲や順序は M15 / UC-002 の task file で管理する。
+具体的な fixture migration の範囲や順序は WORK-DATA-010 または後続 UC-002 task file で管理する。
 
 ## 決定
 
 ### 1. `model.kind: tagged_union` を追加する
 
-brewprint v1.1 の model kind に `tagged_union` を追加する。
+brewprint の model kind に `tagged_union` を追加する。
 
 ```yaml
 nodes:
@@ -115,10 +114,10 @@ discriminator: kind
 
 - non-empty string である
 - object 内の top-level field name を表す
-- dot path は v1.1 では許可しない
+- dot path は WORK-DATA-010 minimum では許可しない
 - external discriminator は扱わない
 
-以下のような nested path / external path は v1.1 では扱わない。
+以下のような nested path / external path は WORK-DATA-010 minimum では扱わない。
 
 ```yaml
 discriminator: object.kind   # non-goal
@@ -184,7 +183,7 @@ variants:
 
 `variants[].fields[]` は、struct model の `fields[]` と同じ field object を基礎にする。
 
-ただし v1.1 の tagged union payload では、以下の最小サブセットのみを許可する。
+ただし WORK-DATA-010 minimum の tagged union payload では、以下の最小サブセットのみを許可する。
 
 | field | 必須 | 内容 |
 |---|---:|---|
@@ -192,7 +191,7 @@ variants:
 | `type` | ✓ | TypeRef |
 | `note` | 任意 | field の補足説明 |
 
-`pk` / `fk` / `unique` は v1.1 の tagged union payload では扱わない。
+`pk` / `fk` / `unique` は WORK-DATA-010 minimum の tagged union payload では扱わない。
 これらは ER / struct model 向けの意味が強く、variant payload に持ち込むと責務が混ざるためである。
 
 variant field の `type` は通常の TypeRef として扱う。
@@ -258,7 +257,7 @@ structural typing は ADR-060 の方針どおり導入しない。
 
 本ADRで導入するのは、同一 object 内の discriminator field が明示された tagged union のみである。
 
-以下は v1.1 では扱わない。
+以下は WORK-DATA-010 minimum では扱わない。
 
 - untagged union
 - general `oneOf` / `anyOf`
@@ -300,7 +299,7 @@ tagged union model は schema generation の入力となる。
 
 本ADRで定義する validation は、tagged union model 定義そのものの検証である。
 
-以下は runtime payload validation または将来の schema generation policy の範囲であり、v1.1 初期導入では扱わない。
+以下は runtime payload validation または将来の schema generation policy の範囲であり、WORK-DATA-010 minimum では扱わない。
 
 - 実際の MCP request / response JSON payload を tagged union model に照合する runtime validation
 - 実際の JSON payload に discriminator field が存在するかの実行時検査
@@ -329,18 +328,18 @@ brewprint model はその public contract を machine-readable に近づける�
 variant field の TypeRef 検証には既存の `invalid_type_ref` / `unresolved_field_type` を使う。
 variant field 名の重複には既存の `duplicate_model_field` を流用してよい。
 
-## Acceptance 前の確認事項
+## Acceptance review result
 
-本ADRは proposed として起票する。
-accepted に進める前に、以下を確認する。
+TASK-DATA-010-01 reviewed this ADR and classified it as `revise-before-acceptance`.
 
-1. 実装コストが `analyze_impact.change` の `any + note` 解消に見合うか
-2. raw YAML / semantic model / validator / MCP schema 出力への影響が M15 Phase C の範囲に収まるか
-3. ADR-067 enum model と並行して導入しても TypeRef / model validation が過度に複雑化しないか
-4. UC-002 で最初に migration する対象を `analyze_impact_change` に限定するか
-5. `suggested_fixes[]` など buried payload へ広げる時期を M15 内に含めるか、後続 task に送るか
+The core tagged union contract is accepted under REQ-DATA-004 / WORK-DATA-010, with the following boundaries:
 
-上記の確認により、実装コストに見合わないと判断した場合、本ADRは rejected 相当の扱いにして `any + note` 継続を選んでよい。
+- This ADR owns schema-level tagged union model expressiveness.
+- Runtime MCP request / response payload validation remains out of scope.
+- Untagged union / general oneOf / scalar union / external discriminator remain out of scope.
+- DAG asset TypeRef hint, MCP identity, UC-002 duplicate task QID repair, and broad notes-retreat cleanup remain outside this ADR.
+- Tagged union render support is not assumed to be already implemented by the WORK-DATA-003 model-file render minimum.
+- WORK-DATA-010 owns the follow-up spec / implementation / fixture sequence.
 
 ## 理由
 
@@ -522,33 +521,37 @@ variants:
 
 ### UC-002 への影響
 
-- 初期 migration 対象は `analyze_impact_change` とする
+- WORK-DATA-010 の初期 fixture / migration candidate は `analyze_impact_change` とする
 - `analyze_impact_request.change` は `any` から `analyze_impact_change` へ移行候補になる
 - `analyze_impact_response.change` は input change を返すため同じ `analyze_impact_change` へ移行候補になる
-- `suggested_fixes[]` は fix kind 依存 payload を持つ可能性があるが、現状 `impacts: any` の内部に埋もれているため、初期 migration には含めない
-- `get_signature_response.signature` / `inspect_response.signature` / `inspect_response.members` は external discriminator / kind別 payload であり、本ADRの初期 migration 対象には含めない
+- `suggested_fixes[]` は fix kind 依存 payload を持つ可能性があるが、現状 `impacts: any` の内部に埋もれているため、初期 migration candidate には含めない
+- `get_signature_response.signature` / `inspect_response.signature` / `inspect_response.members` は broader kind-specific payload candidate として残すが、external discriminator / envelope correlation を含むため本ADRの初期 migration candidate には含めない
 - `diagnostic.related` は untagged union / oneOf 領域であり、本ADRの対象には含めない
 
 ### render / catalog への影響
 
 tagged union は新しい model kind であるため、model を表示する render / catalog 仕様にも反映が必要である。
 
-- model file render は `tagged_union` の discriminator / variants を表示できる必要がある
-- model catalog は `tagged_union` を model kind として一覧・filter・shape表示できる必要がある
-  - ADR-072 の `include` filter には `tagged_union_models` を追加する
-  - public tagged union model は `## Tagged unions` section に出す
-  - file-private tagged union model は `file_private_models: true` のとき `## Private helper models` に出す
-- DAG asset node TypeRef hint は tagged union model を他の named model と同じく model local id として表示する
+The existing WORK-DATA-003 model-file render minimum is already implemented for `struct` / `enum` / `list` / `dict` and same-file private helper models.
 
-model file render の詳細な表示規則は ADR-075 で扱う。
-model catalog の具体的な kind 表示・shape表示は ADR-072 および spec 反映時に扱う。
+Tagged union discriminator / variants rendering is not covered by that minimum. It remains a follow-up under WORK-DATA-010 or a later render-specific task.
 
-### M15 への影響
+- model file render follow-up should display `tagged_union` discriminator / variants when tagged union render support is implemented
+- model catalog is expected to list / filter / summarize `tagged_union` as a model kind
+  - ADR-072 already includes `tagged_union_models` as an include filter
+  - public tagged union model can appear in a `## Tagged unions` section
+  - file-private tagged union model can appear under private helper model display when private helpers are included
+- DAG asset node TypeRef hint remains outside this ADR and is owned by ADR-074 / REQ-DATA-005-style successor work
 
-M15 Phase C では、本ADRを受けて tagged union model の spec / implementation / UC-002 migration を扱うかどうかを判断する。
+Model catalog concrete kind display / shape display is handled by ADR-072 and later spec / implementation work.
 
-ただし、本ADRは proposed であり、acceptance 前に実装コスト見合いを確認する。
-実装コストが大きすぎる場合、M15 では `any + note` 継続を選び、tagged union は後続 milestone に送ってよい。
+### Successor work boundary
+
+This ADR is accepted under REQ-DATA-004 / WORK-DATA-010.
+
+It does not reopen M15, WORK-DATA-001, WORK-DATA-002, WORK-DATA-003, or WORK-DATA-004.
+
+WORK-DATA-010 owns the follow-up sequence for spec alignment, implementation, fixtures, verification, and close.
 
 ### 他設計への影響
 
@@ -561,7 +564,10 @@ M15 Phase C では、本ADRを受けて tagged union model の spec / implementa
 
 ## Evidence
 
-- commit: 5ae7769
-- impl commit: tbd
-- close boundary: M15 / `v1.1.0-spec` では follow-up scope として deferred。実装は含めない。
+- original proposal commit: 5ae7769
+- acceptance review: TASK-DATA-010-01
+- successor requirement: REQ-DATA-004
+- successor work item: WORK-DATA-010
+- implementation commit: tbd
+- close boundary: accepted as WORK-DATA-010 successor scope; implementation is not included in this ADR update.
 - 参考: UC-002 MCP公開contract YAML における `analyze_impact.change` の `any + note` 暫定表現、JSON Schema / OpenAPI discriminator、TypeScript discriminated union

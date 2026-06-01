@@ -58,6 +58,15 @@ Artifact-specific な書式・起票手順・責務境界はここに再掲し�
 
 Guide source path は public contract ではない。Guide ID を public reference として扱う。
 
+### Authoring transaction preference
+
+Design Records MCP が authoring transaction tools を提供する対象では、design record / workflow artifact の作成・更新は authoring transaction tools を優先する。
+
+- proposal flow を使い、accept 前に diff / diagnostics / note を確認できる状態にする。
+- filesystem path editing は、authoring transaction tools が未対応の対象、失敗した対象、または明示的に path-level 編集が必要な場合の fallback とする。
+- fallback する場合は、理由と対象範囲を明示する。
+- `SPEC-new` / spec skeleton creation は REQ-MCP-008 MVP 外であり、spec placement discovery は REQ-MCP-010 の後続対象とする。
+
 | 対象 | guide ID |
 |---|---|
 | spec | `spec-authoring` |

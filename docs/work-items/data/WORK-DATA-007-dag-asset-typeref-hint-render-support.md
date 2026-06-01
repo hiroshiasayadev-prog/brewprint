@@ -10,6 +10,7 @@
   - WORK-DATA-001
   - TASK-DATA-005-02
 - **tasks**:
+  - TASK-DATA-007-01
 
 ## Goal
 
@@ -44,13 +45,15 @@ Implement DAG asset TypeRef hint render support as a focused DATA render / view 
 
 ## Task Flow
 
-No task artifacts are created at initial capture time.
+Initial task artifacts:
+
+- TASK-DATA-007-01
 
 Expected later split:
 
 ```mermaid
 flowchart TD
-  T1["ADR-074 acceptance / split review"]
+  T1["TASK-DATA-007-01 ADR-074 acceptance / split review"]
   T2["DAG view spec alignment"]
   T3["Renderer and fixture update"]
   T4["Verification and close"]

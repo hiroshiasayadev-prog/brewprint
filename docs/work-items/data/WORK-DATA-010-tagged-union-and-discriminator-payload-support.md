@@ -11,6 +11,8 @@
   - TASK-DATA-003-04
   - TASK-DATA-005-02
 - **tasks**:
+  - TASK-DATA-010-01
+  - TASK-DATA-010-02
 
 ## Goal
 
@@ -45,13 +47,16 @@ Implement tagged union and discriminator payload support as a dedicated DATA exp
 
 ## Task Flow
 
-No task artifacts are created at initial capture time.
+Initial task artifacts:
+
+- TASK-DATA-010-01
+- TASK-DATA-010-02
 
 Expected later split:
 
 ```mermaid
 flowchart TD
-  T1["ADR-073 acceptance / split review"]
+  T1["TASK-DATA-010-01 ADR-073 acceptance / split review"]
   T2["Spec and diagnostics alignment"]
   T3["Implementation and fixtures"]
   T4["Verification and close"]
