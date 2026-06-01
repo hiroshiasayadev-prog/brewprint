@@ -59,7 +59,7 @@ ADR-091 により、新規の実行計画と到達点は work item が所有し�
 
 - 既存 `docs/tasks/m*.md` の archive 化は未実施であり、別 migration work で扱う。
 - Open / paused な M14 は、再開時に `WORK-*` / short `TASK-*` へ明示的に移行する。
-- 新規 task authoring guidance は `docs/tasks/README.md`、work item authoring guidance は `docs/work-items/README.md` を参照する。
+- 新規 task authoring guidance は guide ID `task-authoring`、work item authoring guidance は guide ID `work-item-authoring` を Design Records MCP 経由で参照する。
 - 新形式に `milestone` field、milestone artifact、または milestone relation は導入しない。
 
 ## 検討中

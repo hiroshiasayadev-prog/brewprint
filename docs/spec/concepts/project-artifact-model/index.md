@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/project-artifact-model/index.md
 status: draft
-last_updated: 2026-05-27
+last_updated: 2026-06-02
 summary: >
   brewprint project に存在する design / operation artifact の責務境界、
   artifact 間の意味関係、および traceability / MCP の位置付けを定義する。
@@ -43,7 +43,7 @@ sections:
 - artifact layer の種類と責務境界
 - artifact 間の意味関係と source of truth boundary
 - design flow / change flow / traceability flow の全体像
-- traceability spec、Design Records MCP spec、各 authoring README の位置付け
+- traceability spec、Design Records MCP spec、authoring guide ID / directory entrypoint の位置付け
 
 この concept が所有しないもの:
 
@@ -53,7 +53,7 @@ sections:
 - 各 artifact の authoring template、file naming、lifecycle 運用手順の詳細
 - legacy M-series record の migration 状態、implementation follow-up
 
-詳細 contract と authoring guidance は、本 document が示す ownership boundary に従って leaf spec / README / task が所有する。
+詳細 contract と authoring guidance は、本 document が示す ownership boundary に従って leaf spec / authoring guide ID / task が所有する。
 
 ## Artifact classes
 
@@ -227,16 +227,18 @@ MVP における traceability の範囲:
 | 現行 design specification | `docs/spec/**` | spec-first policy に従う |
 | semantic ref / canonical reference / resolve / validation model | `docs/spec/concepts/traceability/**` | canonical reference foundation の leaf spec |
 | Design Records MCP record / tool contract | `docs/spec/design-records-mcp/**` | implementation follow-up は M19 |
-| ADR の書き方 | `docs/adr-authoring-guide.md` | authoring guidance |
-| investigation の format / lifecycle / authoring guidance | `docs/investigations/README.md` | ADR-086 が委譲した現在の運用 owner |
-| requirements / work-items / tasks / internal-design の authoring guidance | 各 directory の `README.md` | template / local operation |
+| ADR の書き方 | guide ID `adr-authoring` | Design Records MCP authoring guidance |
+| artifact responsibility / boundary 判断 | guide ID `artifact-boundary` | Design Records MCP authoring guidance |
+| investigation の format / lifecycle / authoring guidance | guide ID `investigation-authoring` | Design Records MCP authoring guidance |
+| requirements / work-items / tasks の authoring guidance | guide IDs `requirement-authoring` / `work-item-authoring` / `task-authoring` | Design Records MCP authoring guidance |
+| internal-design の authoring guidance | phase 1 guide なし | 必要な場合は関連 README / task / spec を読む |
 | external relation / assurance artifact | MVP owner / directory なし | completeness / evidence / sign-off 等の導入 trigger が確認された場合に、配置と責務を含めて新設判断 |
 | 判断理由 | `docs/adr/**` | historical decision snapshot |
 | task の具体作業・個別 status / evidence | `docs/tasks/**` | 短期作業単位。仕様の正本ではない |
 | legacy M-series record とその migration | `docs/TASKS.md` / migration work item | 既存 `docs/tasks/m*.md` は移行まで legacy milestone-shaped work record として扱い、新しい artifact layer とはしない |
 | implementation follow-up | `docs/impl/**` | 仕様の正本ではない |
 
-ADR-086 により、investigation の format / lifecycle の実務 owner は現時点では `docs/investigations/README.md` とされている。本 concept はその委譲を現行 boundary として記録し、format schema を複製しない。将来、全 artifact format を spec 配下へ集約する判断を行う場合は、この ownership boundary 自体を refinement 対象とする。
+Authoring guidance canonicalization 後は、investigation の format / lifecycle authoring guidance は guide ID `investigation-authoring` が扱う。本 concept は authoring format schema を複製しない。将来、全 artifact format を spec 配下へ集約する判断を行う場合は、この ownership boundary 自体を refinement 対象とする。
 
 ## Detail specifications and authoring guides
 

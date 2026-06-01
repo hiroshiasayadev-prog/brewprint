@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/concepts/traceability/metadata-schema.md
 status: draft
-last_updated: 2026-05-27
+last_updated: 2026-06-02
 summary: >
   canonical reference resolution foundation のための spec front matter と
   investigation reference metadata boundary を定義する。
@@ -144,7 +144,7 @@ MVP は上記 field の参照先存在確認と、declared relation の以下の
 
 ## Investigation reference metadata
 
-Investigation metadata の field 構成、required / optional 区分、status、lifecycle、authoring format は ADR-086 と [`docs/investigations/README.md`](../../../investigations/README.md) が所有する。
+Investigation metadata の field 構成、required / optional 区分、status、lifecycle、authoring format は guide ID `investigation-authoring` が authoring guidance として扱う。
 
 この spec が所有するのは、ADR-087 / ADR-088 に基づく canonical reference rule である。
 
