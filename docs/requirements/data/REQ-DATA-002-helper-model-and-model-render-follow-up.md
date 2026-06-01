@@ -19,6 +19,8 @@
   - WORK-DATA-006
   - WORK-DATA-008
   - WORK-DATA-009
+  - WORK-DATA-011
+  - WORK-DATA-012
 
 ## Requirement
 
@@ -48,4 +50,3 @@ UC-002 still contains MCP contract response and helper shapes that are represent
 ## Boundary
 
 This requirement captures the deferred helper-model and model-render chain. It does not decide the exact implementation sequence, spec wording, or UC-002 migration set. Those are owned by the linked work item and future tasks.
-
