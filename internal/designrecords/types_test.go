@@ -34,6 +34,9 @@ func TestDiagnosticCategoryConstants(t *testing.T) {
 		DiagnosticInvalidWorkflowRelationTarget,
 		DiagnosticWorkflowRelationMismatch,
 		DiagnosticWorkflowSourceReqMismatch,
+		DiagnosticMissingRequiredMetadata,
+		DiagnosticEmptyRequiredMetadata,
+		DiagnosticInvalidMetadataValue,
 		DiagnosticRecordNotFound,
 		DiagnosticDuplicateRequestedIDIgnored,
 	}
@@ -65,6 +68,9 @@ func TestDiagnosticCategoryConstants(t *testing.T) {
 		"invalid_workflow_relation_target",
 		"workflow_relation_mismatch",
 		"workflow_source_requirement_mismatch",
+		"missing_required_metadata",
+		"empty_required_metadata",
+		"invalid_metadata_value",
 		"record_not_found",
 		"duplicate_requested_id_ignored",
 	}
@@ -149,6 +155,9 @@ func TestToolErrorCodesAreNotDiagnosticCategories(t *testing.T) {
 		string(DiagnosticInvalidWorkflowRelationTarget): true,
 		string(DiagnosticWorkflowRelationMismatch):      true,
 		string(DiagnosticWorkflowSourceReqMismatch):     true,
+		string(DiagnosticMissingRequiredMetadata):       true,
+		string(DiagnosticEmptyRequiredMetadata):         true,
+		string(DiagnosticInvalidMetadataValue):          true,
 		string(DiagnosticDuplicateRequestedIDIgnored):   true,
 	}
 	for _, code := range []ErrorCode{

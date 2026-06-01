@@ -1,5 +1,7 @@
 package designrecords
 
+import "encoding/json"
+
 type RecordKind string
 
 const (
@@ -62,6 +64,7 @@ type Record struct {
 	Body          *string              `json:"body,omitempty"`
 	RawBody       string               `json:"-"`
 	NormalizedID  string               `json:"-"`
+	WorkflowMeta  *WorkflowMetadata    `json:"-"`
 }
 
 type DecisionDetail struct {
@@ -107,6 +110,16 @@ type TaskDetail struct {
 	Estimate          string   `json:"estimate"`
 	DependsOn         []string `json:"depends_on"`
 	Outputs           []string `json:"outputs"`
+}
+
+type WorkflowMetadata struct {
+	Fields map[string]WorkflowMetadataField
+}
+
+type WorkflowMetadataField struct {
+	Present    bool
+	Value      string
+	EmptyItems []string
 }
 
 type SemanticTargetType string
@@ -199,6 +212,9 @@ const (
 	DiagnosticInvalidWorkflowRelationTarget DiagnosticCategory = "invalid_workflow_relation_target"
 	DiagnosticWorkflowRelationMismatch      DiagnosticCategory = "workflow_relation_mismatch"
 	DiagnosticWorkflowSourceReqMismatch     DiagnosticCategory = "workflow_source_requirement_mismatch"
+	DiagnosticMissingRequiredMetadata       DiagnosticCategory = "missing_required_metadata"
+	DiagnosticEmptyRequiredMetadata         DiagnosticCategory = "empty_required_metadata"
+	DiagnosticInvalidMetadataValue          DiagnosticCategory = "invalid_metadata_value"
 	DiagnosticRecordNotFound                DiagnosticCategory = "record_not_found"
 	DiagnosticDuplicateRequestedIDIgnored   DiagnosticCategory = "duplicate_requested_id_ignored"
 )
@@ -223,6 +239,42 @@ type Diagnostic struct {
 	RequestedID      string             `json:"requested_id,omitempty"`
 	FirstIndex       *int               `json:"first_index,omitempty"`
 	DuplicateIndexes []int              `json:"duplicate_indexes,omitempty"`
+	ValuePresent     bool               `json:"-"`
+}
+
+func (d Diagnostic) MarshalJSON() ([]byte, error) {
+	type diagnosticJSON struct {
+		Category         DiagnosticCategory `json:"category"`
+		Severity         DiagnosticSeverity `json:"severity"`
+		RecordID         string             `json:"record_id,omitempty"`
+		Path             string             `json:"path,omitempty"`
+		Message          string             `json:"message"`
+		TargetID         string             `json:"target_id,omitempty"`
+		Field            string             `json:"field,omitempty"`
+		Value            *string            `json:"value,omitempty"`
+		RefStatus        string             `json:"ref_status,omitempty"`
+		RequestedID      string             `json:"requested_id,omitempty"`
+		FirstIndex       *int               `json:"first_index,omitempty"`
+		DuplicateIndexes []int              `json:"duplicate_indexes,omitempty"`
+	}
+	var value *string
+	if d.Value != "" || d.ValuePresent {
+		value = &d.Value
+	}
+	return json.Marshal(diagnosticJSON{
+		Category:         d.Category,
+		Severity:         d.Severity,
+		RecordID:         d.RecordID,
+		Path:             d.Path,
+		Message:          d.Message,
+		TargetID:         d.TargetID,
+		Field:            d.Field,
+		Value:            value,
+		RefStatus:        d.RefStatus,
+		RequestedID:      d.RequestedID,
+		FirstIndex:       d.FirstIndex,
+		DuplicateIndexes: d.DuplicateIndexes,
+	})
 }
 
 type ErrorCode string

@@ -1,9 +1,10 @@
 ---
 scope: docs/spec/design-records-mcp/tools.md
 status: draft
-last_updated: 2026-05-31
+last_updated: 2026-06-02
 summary: >
-  Design Records MCP MVP の read-only tool interface と責務境界を定義する。
+  Design Records MCP の read/navigation/guidance tool interface と
+  authoring transaction tool interface の責務境界を定義する。
 depends_on:
   - docs/adr/076-design-records-mcp.md
   - docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
@@ -11,6 +12,7 @@ depends_on:
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
   - docs/adr/090-design-records-mcp-batch-retrieval-tool-boundary.md
   - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
+  - docs/adr/093-design-records-mcp-authoring-transaction-model.md
 design_record:
   id: SPEC-design-records-mcp-tools
   kind: spec
@@ -22,13 +24,14 @@ design_record:
     - ADR-088
     - ADR-090
     - ADR-092
+    - ADR-093
 ---
 
 # Design Records MCP tools
 
 ## Tool set
 
-Design Records MCP MVP の P0 tool は以下である。
+Design Records MCP の P0 read / navigation / guidance tool は以下である。
 
 | tool | priority | purpose |
 |---|---|---|
@@ -46,10 +49,21 @@ P1 の任意補助 tool として以下を許容する。
 |---|---|---|
 | `suggest_next_record` | P1 | 次の ADR ID と推奨 path を提案する |
 
-MVP tool は read-only である。
-ファイル作成・更新・Evidence 書き換え・commit 操作は行わない。
+Authoring transaction MVP の write tool は proposal-first で別 surface として定義する。
+Proposal creation は repository file を変更しない。
+Repository file を変更できる authoring operation は `accept_proposed_write` のみである。
 
-> 由来: ADR-077 §P0: MVP必須tool, ADR-077 §P1: MVPに含めてもよい補助tool, ADR-090 §決定
+Authoring transaction MVP tool は以下である。
+
+| tool | priority | purpose |
+|---|---|---|
+| `propose_record_create` | P0 | artifact-oriented create proposal を作成し、diff と validation result を返す |
+| `propose_record_update` | P0 | metadata block または named section の replacement proposal を作成し、diff と validation result を返す |
+| `get_proposed_write` | P0 | proposal ID から retained proposal detail を取得する |
+| `accept_proposed_write` | P0 | proposal ID の diff を accept し、repository file への write を試みる |
+| `discard_proposed_write` | P0 | proposal ID を破棄し、以後 accept できない状態にする |
+
+> 由来: ADR-077 §P0: MVP必須tool, ADR-077 §P1: MVPに含めてもよい補助tool, ADR-090 §決定, ADR-093 §決定
 
 ## Common response conventions
 
@@ -697,6 +711,9 @@ MVP diagnostic category は `schema.md` の定義に従う。
 - `filename_id_mismatch`
 - `invalid_h1_title`
 - `invalid_workflow_id`
+- `missing_required_metadata`
+- `empty_required_metadata`
+- `invalid_metadata_value`
 - `invalid_status_for_kind`
 - `spec_status_mismatch`
 - `missing_depends_on_target`
@@ -708,6 +725,9 @@ Canonical reference / investigation validation の concrete category と severit
 
 | category | severity | field / condition |
 |---|---|---|
+| `missing_required_metadata` | `error` | workflow artifact の required metadata field が存在しない |
+| `empty_required_metadata` | `error` | workflow artifact の required scalar metadata field が empty、または required list metadata field に empty item が含まれる |
+| `invalid_metadata_value` | `error` | workflow artifact の required metadata field が non-empty だが value contract を満たさない。例: `date` が strict `YYYY-MM-DD` format ではない |
 | `invalid_semantic_ref_declaration` | `error` | spec front matter の `semantic_refs` entry または `sections` key が active `spec:` grammar に従わない |
 | `missing_section_target` | `error` | spec front matter の `sections` value と一致する Markdown heading が存在しない |
 | `ambiguous_section_target` | `error` | spec front matter の `sections` value が同一 document 内の複数 heading に一致し、section target を単一解決できない |
@@ -723,6 +743,8 @@ Canonical reference / investigation validation の concrete category と severit
 | `invalid_workflow_relation_target` | `error` | workflow relation field に field が要求する kind / ID form ではない target が記載された |
 | `workflow_relation_mismatch` | `error` | `REQ.work_items` と `WORK.source_requirement`、または `WORK.tasks` と `TASK.work_item` の宣言済み双方向 relation が一致しない |
 | `workflow_source_requirement_mismatch` | `error` | task の `source_requirement` が parent work item の `source_requirement` と一致しない |
+
+Workflow metadata diagnostic (`missing_required_metadata` / `empty_required_metadata` / `invalid_metadata_value`) は、既存の diagnostic field に加えて `field` を必須で返す。入力 value が存在する場合は `value` も返す。
 
 Workflow relation diagnostic (`unresolved_workflow_relation` / `invalid_workflow_relation_target` / `workflow_relation_mismatch` / `workflow_source_requirement_mismatch`) は、既存の diagnostic field に加えて `field`（`work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on`）、`value`（入力 ID-as-ref）、`ref_status`（`unresolved` / `invalid_target` / `mismatch`）を必須で返す。
 
@@ -795,9 +817,495 @@ MVP の slug 生成規則は以下とする。
 slug が空になる場合、`suggested_path` は `docs/adr/{NNN}.md` としてよい。
 `suggested_path` は提案であり、人間が起票時に上書きしてよい。
 
+## Authoring transaction model
+
+Authoring transaction tool は artifact-oriented write surface である。
+Physical filesystem path は public request の primary input として受け取らない。
+Tool input は record kind、record ID または `new` placeholder ID、domain、parent context、section selector、structured authoring fields、および必要時の body source に基づく。
+`path` は response で透明性のために返してよいが、caller が write target を path で直接指定する contract ではない。
+
+Authoring write は propose -> accept flow とする。
+
+1. `propose_record_create` または `propose_record_update` は、変更案を作成し、proposal ID、resolved target、previewable diff、validation result、expiry、diagnostics、note を返す。
+2. Proposal creation は repository file を変更してはならない。
+3. `get_proposed_write` は retained proposal の内容と lifecycle state を返す。
+4. `discard_proposed_write` は proposal を discard し、以後 accept できない状態にする。
+5. `accept_proposed_write` は proposal ID を受け取り、accept-time validation / staleness / collision guard を通過した場合だけ repository file を書き込む。
+
+Proposal lifecycle state は `proposed` / `accepted` / `discarded` とする。
+Expired proposal は retained proposal として返さず、`proposal_expired` diagnostic を返す。
+Proposal retention は 3 days とし、proposal response は `expires_at` を必ず返す。
+
+Proposal は base-state information を保持しなければならない。
+Accept は write の直前に少なくとも以下を再確認する。
+
+- proposal が unknown / expired / discarded / already accepted ではないこと
+- target file state が proposal 作成時から変わっていないこと
+- target kind が proposal 作成時の resolved target と一致していること
+- create proposal の resolved ID がまだ使用可能であること
+- update proposal の target ID がまだ同一 record として解決できること
+- pre-write validation に error diagnostic がないこと
+
+上記のいずれかに失敗した場合、`accept_proposed_write` は `written: false` を返し、repository file を変更してはならない。
+
+### Common authoring response fields
+
+Proposal response は少なくとも以下を返す。
+
+| field | required | meaning |
+|---|---:|---|
+| `proposal_id` | yes | proposal lookup key。Format は opaque string とし、caller は構造を解釈しない |
+| `state` | yes | `proposed` |
+| `operation` | yes | `create` / `update` |
+| `target_kind` | yes | resolved target record kind |
+| `target` | yes | requested / resolved target identity object |
+| `expires_at` | yes | proposal expiry timestamp |
+| `retention_days` | yes | `3` |
+| `diff` | yes | previewable diff object |
+| `validation` | yes | validation result object |
+| `diagnostics` | yes | request / proposal diagnostic list |
+| `note` | yes | repository file がまだ書かれていないことと、適用には accept が必要であることを明示する note |
+
+`target` は少なくとも以下を返す。
+
+| field | required | meaning |
+|---|---:|---|
+| `requested_id` | yes | caller が指定した ID。`new` placeholder を含んでよい |
+| `resolved_id` | yes | MCP が index から解決した final record ID |
+| `kind` | yes | target record kind |
+| `domain` | no | domain-scoped workflow record の domain |
+| `parent_id` | no | task create など parent-aware resolution に使われた parent ID |
+| `path` | yes | resolved repository-relative path。Transparency output only; request primary input ではない |
+
+`diff` は少なくとも以下を返す。
+
+| field | required | meaning |
+|---|---:|---|
+| `format` | yes | MVP では `unified` |
+| `text` | yes | previewable unified diff text |
+| `files` | yes | changed file summary list |
+
+`diff.files[]` は `path`、`change` (`create` / `modify`)、および必要に応じて `record_id` / `record_kind` を含む。
+Workflow reciprocal metadata update を含む proposal では、`files[]` は複数 entry になりうる。
+
+`validation` は少なくとも `ok` と `diagnostics` を返す。
+`ok` は error diagnostic がない場合に `true` とする。
+Validation failure と write failure は同じ state として扱わない。
+
+Proposal note の標準意味は以下である。
+
+```text
+No repository files have been written. Call accept_proposed_write with this proposal_id to apply the diff.
+```
+
+Exact wording は implementation detail だが、この意味を弱めてはならない。
+
+### Body source and body cache
+
+Operations that require large Markdown body input accept exactly one of `body` or `body_cache_id`.
+Supplying both is invalid and must not create a proposal or body cache entry.
+Supplying neither is valid only for operations that do not require body input.
+
+MVP body source rules:
+
+| operation case | body requirement |
+|---|---|
+| `propose_record_create` template-driven create from structured fields | `body` / `body_cache_id` may both be omitted |
+| `propose_record_create` create with caller-supplied full body | exactly one of `body` / `body_cache_id` |
+| `propose_record_update` `metadata_block_replace` | `body` / `body_cache_id` must be omitted |
+| `propose_record_update` `named_section_replace` | exactly one of `body` / `body_cache_id` |
+
+If a request supplies both `body` and `body_cache_id`, the tool returns `invalid_body_source` and creates neither proposal nor cache.
+If `body_cache_id` is unknown or expired, the tool returns `body_cache_not_found` or `body_cache_expired` and creates no proposal.
+
+If a request supplies a large `body` and proposal/write preparation fails before the body can be persisted into a proposal, the MCP should preserve the submitted body when possible and return a retryable body cache object:
+
+```json
+{
+  "proposal_created": false,
+  "body_cache": {
+    "body_cache_id": "bc_opaque",
+    "expires_at": "2026-06-05T00:00:00Z",
+    "retention_days": 3
+  },
+  "diagnostics": [
+    {
+      "category": "proposal_preparation_failed",
+      "severity": "error",
+      "message": "proposal could not be prepared; retry with body_cache_id"
+    }
+  ]
+}
+```
+
+Body cache retention is 3 days.
+Body cache responses must include `expires_at`.
+Expired body cache entries must not be used to create proposals.
+
+## `propose_record_create`
+
+### Purpose
+
+`propose_record_create` creates a retained proposal for a new record or workflow artifact.
+It does not write repository files.
+
+MVP create support covers:
+
+- `decision`
+- `spec` skeleton
+- `requirement`
+- `work_item`
+- `task`
+
+Investigation creation is outside this MVP authoring surface.
+
+### Request
+
+```json
+{
+  "kind": "task",
+  "id": "TASK-MCP-008-new",
+  "domain": "MCP",
+  "parent_id": "WORK-MCP-008",
+  "title": "MCP tools spec reflection",
+  "fields": {
+    "status": "todo",
+    "date": "2026-06-01",
+    "source_requirement": "REQ-MCP-008",
+    "estimate": "1d-2d",
+    "depends_on": ["TASK-MCP-008-03"],
+    "outputs": ["Updated SPEC-design-records-mcp-tools"]
+  },
+  "reciprocal_update_mode": "include_required"
+}
+```
+
+| field | required | type | meaning |
+|---|---:|---|---|
+| `kind` | yes | string | create target kind |
+| `id` | yes | string | exact ID or allowed `new` placeholder ID |
+| `domain` | conditional | string | domain-scoped workflow create の domain。ID に domain が含まれる場合は一致必須 |
+| `parent_id` | conditional | string | task create では required。Parent work item ID |
+| `title` | yes | string | H1 title |
+| `fields` | yes | object | kind-specific structured authoring fields |
+| `body` | conditional | string | caller-supplied Markdown body |
+| `body_cache_id` | conditional | string | cached body lookup key |
+| `reciprocal_update_mode` | no | string | workflow reciprocal metadata handling mode |
+
+Allowed `id` placeholder forms:
+
+| kind | allowed create ID forms |
+|---|---|
+| `decision` | exact `ADR-NNN` or `ADR-new` |
+| `spec` | exact `SPEC-<slug>` or `SPEC-new` |
+| `requirement` | exact `REQ-<DOMAIN>-NNN` or `REQ-<DOMAIN>-new` |
+| `work_item` | exact `WORK-<DOMAIN>-NNN` or `WORK-<DOMAIN>-new` |
+| `task` | exact `TASK-<DOMAIN>-<WORK-SEQUENCE>-NN` or `TASK-<DOMAIN>-<WORK-SEQUENCE>-new` |
+
+`new` is valid only for create operations.
+The MCP resolves the final ID using the current record index.
+For `SPEC-new`, the MCP derives a slug from `title`, prefixes it with `SPEC-`, and checks availability in the record index.
+For numeric families, the MCP uses the next available sequence in the relevant family / domain / parent scope and does not fill gaps unless a later spec explicitly changes that rule.
+
+Task create requires `parent_id`.
+The parent work item must resolve to an indexed `work_item` record.
+For task placeholder IDs, `<DOMAIN>` and `<WORK-SEQUENCE>` must match the parent work item ID.
+Task parent relation must be written from explicit metadata, not inferred from ID shape alone.
+
+`reciprocal_update_mode` values:
+
+| value | meaning |
+|---|---|
+| `include_required` | Default. Include required reciprocal workflow metadata updates in the same proposal when needed to keep relation validation valid |
+| `report_required_follow_up` | Do not include reciprocal file updates; return explicit required follow-up updates and reject acceptance until they are represented by an accepted proposal or current index state |
+
+`include_required` may create a multi-file proposal for workflow relation validity.
+This is allowed only for required reciprocal metadata updates such as adding a new work item to `REQ.work_items` or a new task to `WORK.tasks`.
+It is not a general-purpose multi-record atomic transaction with rollback semantics, and arbitrary unrelated record bundling remains outside MVP.
+
+### Response
+
+```json
+{
+  "proposal_id": "pw_opaque",
+  "state": "proposed",
+  "operation": "create",
+  "target_kind": "task",
+  "target": {
+    "requested_id": "TASK-MCP-008-new",
+    "resolved_id": "TASK-MCP-008-04",
+    "kind": "task",
+    "domain": "MCP",
+    "parent_id": "WORK-MCP-008",
+    "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md"
+  },
+  "expires_at": "2026-06-05T00:00:00Z",
+  "retention_days": 3,
+  "diff": {
+    "format": "unified",
+    "files": [
+      {
+        "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md",
+        "change": "create",
+        "record_id": "TASK-MCP-008-04",
+        "record_kind": "task"
+      }
+    ],
+    "text": "--- /dev/null\n+++ docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md\n..."
+  },
+  "validation": {
+    "ok": true,
+    "diagnostics": []
+  },
+  "diagnostics": [],
+  "note": "No repository files have been written. Call accept_proposed_write with this proposal_id to apply the diff."
+}
+```
+
+The proposal response may include `required_follow_up_updates` when `reciprocal_update_mode: "report_required_follow_up"` is used or when the implementation cannot include a required reciprocal update in the same proposal.
+If required follow-up updates are present, acceptance must be rejected with `written: false` until the follow-up requirement is satisfied.
+
+## `propose_record_update`
+
+### Purpose
+
+`propose_record_update` creates a retained proposal for a whole metadata block replacement or a whole named Markdown section replacement.
+It does not write repository files.
+
+MVP update support covers `decision`, `spec`, `requirement`, `work_item`, and `task`.
+Update operations reject any ID containing a `new` placeholder.
+
+### Request
+
+Metadata block replacement:
+
+```json
+{
+  "kind": "task",
+  "id": "TASK-MCP-008-04",
+  "update": {
+    "type": "metadata_block_replace",
+    "metadata": {
+      "id": "TASK-MCP-008-04",
+      "status": "done",
+      "date": "2026-06-01",
+      "work_item": "WORK-MCP-008",
+      "source_requirement": "REQ-MCP-008",
+      "estimate": "1d-2d",
+      "depends_on": ["TASK-MCP-008-03"],
+      "outputs": ["Updated SPEC-design-records-mcp-tools"]
+    }
+  }
+}
+```
+
+Named section replacement:
+
+```json
+{
+  "kind": "task",
+  "id": "TASK-MCP-008-04",
+  "update": {
+    "type": "named_section_replace",
+    "section_selector": {
+      "heading": "Evidence",
+      "match": "exact"
+    }
+  },
+  "body": "2026-06-02: Spec reflection completed.\n"
+}
+```
+
+| field | required | type | meaning |
+|---|---:|---|---|
+| `kind` | yes | string | update target kind |
+| `id` | yes | string | exact existing record ID. `new` placeholder is invalid |
+| `update` | yes | object | update operation object |
+| `body` | conditional | string | replacement Markdown body for `named_section_replace` |
+| `body_cache_id` | conditional | string | cached replacement body for `named_section_replace` |
+
+`update.type` values:
+
+| value | meaning |
+|---|---|
+| `metadata_block_replace` | Replace the kind-specific metadata block as a whole |
+| `named_section_replace` | Replace exactly one Markdown section as a whole |
+
+#### Metadata block replacement
+
+Metadata block replacement targets the kind-specific metadata block, not just YAML front matter.
+
+| kind | replacement target |
+|---|---|
+| `spec` | YAML front matter metadata block |
+| `decision` | H1-following ADR bullet metadata block |
+| `requirement` | H1-following requirement bullet metadata block |
+| `work_item` | H1-following work item bullet metadata block |
+| `task` | H1-following task bullet metadata block |
+
+Spec metadata replacement must validate required recognized spec fields, including `scope`, top-level `status`, and `design_record.id` / `design_record.kind` / `design_record.status` / `design_record.depends_on`.
+Decision metadata replacement must validate recognized ADR fields required by the current ADR metadata contract: `status`, `date`, `depends_on`, `supersedes`, and `migrated_to_spec`.
+Workflow artifact metadata replacement must validate the required fields defined in `schema.md`.
+
+Missing required fields must produce `missing_required_metadata` diagnostics.
+Empty required scalar fields or empty list items must produce `empty_required_metadata`.
+Invalid recognized field values must produce `invalid_metadata_value` or the existing kind-specific diagnostic.
+
+#### Named section replacement
+
+Named section replacement is valid only when `section_selector` resolves to exactly one Markdown ATX section in the target record.
+
+`section_selector` fields:
+
+| field | required | meaning |
+|---|---:|---|
+| `heading` | yes | heading text to match |
+| `match` | no | MVP supports `exact` only |
+| `level` | no | optional ATX heading level constraint |
+
+Exact matching compares the parsed heading text after removing ATX marker syntax and trimming surrounding whitespace.
+Matching is case-sensitive.
+No Unicode normalization, punctuation folding, or prefix / contains matching is applied in the MVP.
+If `level` is supplied, both heading text and level must match.
+
+The replacement range includes the matched heading line and all following lines until the next heading whose level is less than or equal to the matched heading level.
+Nested headings below the matched heading are part of the replaced section.
+
+Zero matches must return `section_selector_no_match` and must not create a proposal.
+Multiple matches must return `section_selector_ambiguous` and must not create a proposal.
+When possible, diagnostics should include `candidate_headings` with heading text, level, and ordinal.
+
+### Response
+
+`propose_record_update` returns the common proposal response fields.
+For update proposals, `target.resolved_id` is the existing record ID, and `diff.files[].change` is `modify`.
+
+## `get_proposed_write`
+
+### Purpose
+
+`get_proposed_write` retrieves a retained proposal by proposal ID.
+It does not write repository files.
+
+### Request
+
+```json
+{
+  "proposal_id": "pw_opaque"
+}
+```
+
+| field | required | type | meaning |
+|---|---:|---|---|
+| `proposal_id` | yes | string | proposal lookup key |
+
+### Response
+
+For a retained proposal, response returns the proposal detail using the common proposal fields and current `state`.
+
+Unknown proposal IDs return `proposal_not_found`.
+Expired proposal IDs return `proposal_expired`.
+
+## `accept_proposed_write`
+
+### Purpose
+
+`accept_proposed_write` applies a retained proposal after accept-time checks.
+This is the only Design Records MCP authoring tool that may write repository files.
+
+### Request
+
+```json
+{
+  "proposal_id": "pw_opaque"
+}
+```
+
+| field | required | type | meaning |
+|---|---:|---|---|
+| `proposal_id` | yes | string | proposal lookup key |
+
+### Response
+
+```json
+{
+  "proposal_id": "pw_opaque",
+  "state": "accepted",
+  "written": true,
+  "files_written": [
+    {
+      "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md",
+      "record_id": "TASK-MCP-008-04",
+      "record_kind": "task"
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "diagnostics": []
+  },
+  "repair_guidance": [],
+  "diagnostics": []
+}
+```
+
+| field | required | meaning |
+|---|---:|---|
+| `proposal_id` | yes | accepted proposal ID |
+| `state` | yes | `accepted` on successful write; otherwise the retained or rejection state |
+| `written` | yes | whether repository files were modified by this accept call |
+| `files_written` | yes | written file list; empty when `written: false` |
+| `validation` | yes | post-accept validation result when applicable, otherwise current validation result |
+| `repair_guidance` | yes | actionable repair suggestions; empty when no repair is needed |
+| `diagnostics` | yes | accept diagnostics |
+
+`written: false` is required for unknown, expired, discarded, already accepted, stale, changed target, ID collision, unresolved target, invalid proposal, and required-follow-up-not-satisfied outcomes.
+These outcomes must not modify repository files.
+
+`written: true` means repository files were modified.
+If post-write validation fails after files were written, the response must still return `written: true`, include validation diagnostics, and provide repair guidance.
+The MVP does not automatically roll back accepted writes after post-write validation failure.
+The caller should create a repair proposal.
+
+Force-accepting invalid proposals is outside MVP.
+If pre-write validation has error diagnostics, accept returns `written: false`.
+
+## `discard_proposed_write`
+
+### Purpose
+
+`discard_proposed_write` discards a retained proposal.
+It does not write repository files.
+
+### Request
+
+```json
+{
+  "proposal_id": "pw_opaque"
+}
+```
+
+| field | required | type | meaning |
+|---|---:|---|---|
+| `proposal_id` | yes | string | proposal lookup key |
+
+### Response
+
+```json
+{
+  "proposal_id": "pw_opaque",
+  "state": "discarded",
+  "discarded": true,
+  "written": false,
+  "diagnostics": []
+}
+```
+
+Discarding an accepted proposal must not undo the accepted write.
+Discard request for unknown or expired proposal IDs returns diagnostics and `discarded: false`.
+
 ## Error handling
 
-MVP tool error code は以下を最小とする。
+Tool error code は以下を最小とする。
 
 | code | meaning |
 |---|---|
@@ -807,6 +1315,20 @@ MVP tool error code は以下を最小とする。
 | `unsupported_kind` | tool が対象外の `kind` を指定された。例: `suggest_next_record` に `kind: spec` を指定した場合 |
 | `invalid_id_range` | `id_range` endpoint が malformed、unsupported family、mixed family、mixed domain、mixed task work sequence、または指定 `kind` と endpoint family 不一致である |
 | `id_range_requires_decision_kind` | legacy error code。REQ-MCP-007 以前の decision-only `id_range` boundary を示す。新規 implementation では `invalid_id_range` を用いる |
+| `proposal_not_found` | requested proposal ID が存在しない |
+| `proposal_expired` | requested proposal ID は expiry を過ぎており、取得・accept・discard できない |
+| `proposal_discarded` | proposal は discard 済みであり accept できない |
+| `proposal_already_accepted` | proposal は accepted 済みであり再適用できない |
+| `proposal_stale` | proposal base state と current target state が一致せず、accept できない |
+| `target_changed` | target record kind / path / identity が proposal 作成時と異なる |
+| `id_collision` | create proposal の resolved ID が accept 前に使用済みになった |
+| `required_follow_up_not_satisfied` | workflow reciprocal metadata など required follow-up updates が未完了で accept できない |
+| `invalid_body_source` | body source rule 違反。例: `body` と `body_cache_id` の両方を指定した、または required body source がない |
+| `body_cache_not_found` | requested body cache ID が存在しない |
+| `body_cache_expired` | requested body cache ID が expiry を過ぎている |
+| `proposal_preparation_failed` | proposal preparation failed before proposal persistence; retry guidance may include `body_cache_id` |
+| `section_selector_no_match` | named section selector が target record 内の section に一致しない |
+| `section_selector_ambiguous` | named section selector が複数 section に一致し、単一 target に解決できない |
 
 `get_record` では、存在しない単一 record ID を指定した場合、tool は machine-readable な error を返す。
 
@@ -823,18 +1345,32 @@ MVP tool error code は以下を最小とする。
 
 `get_record` の `record_not_found` は tool execution error であり、`validate_records` diagnostic category ではない。`get_records` の missing requested ID は batch response 内の item-level `record_not_found` diagnostic として返し、batch tool execution 自体は成功とする。
 
-## Write tool policy
+Authoring diagnostics may appear in normal authoring responses rather than tool execution errors when the tool can return `written: false`, proposal state, validation result, or retry guidance.
+Invalid request shape may still be returned as a tool execution error.
 
-MVP では write 系 tool を提供しない。
+## Authoring write boundary
 
-以下は MVP 外である。
+The authoring transaction MVP intentionally excludes:
 
-- `create_record`
-- `update_record`
-- `set_evidence`
-- `add_record_metadata`
+- generic filesystem write tools
+- path-first authoring APIs
+- immediate write create/update tools such as `create_record` or `update_record`
+- `set_evidence` convenience operation
+- `add_record_metadata` or add/remove relation convenience operations
 - `migrate_record_to_spec`
+- partial Markdown AST editing
+- general-purpose multi-record atomic transactions with rollback semantics
+- arbitrary unrelated record bundling in one proposal
+- automatic close cascades across requirement / work item / task
+- automatic rollback after accepted post-write validation failure
+- formatter integration
+- indefinite proposal or body cache retention
+- force-accepting invalid proposals
 
-write 系 tool を導入する場合は、dry-run diff、ユーザー確認、衝突処理、template 責務、git 運用との境界を別 ADR / spec で定義する。
+Workflow artifact create proposals may include required reciprocal metadata updates in the same proposal when needed to keep relation validation valid.
+That allowance is limited to required reciprocal updates and does not create a general-purpose multi-record atomic transaction.
 
-> 由来: ADR-077 §MVP外, ADR-077 §理由
+Existing read / navigation / guidance tools keep their read-only behavior and request / response semantics.
+`suggest_next_record` remains a read-only suggestion tool and does not create files; authoring creates use `propose_record_create`.
+
+> 由来: ADR-077 §MVP外, ADR-077 §理由, ADR-093 §決定

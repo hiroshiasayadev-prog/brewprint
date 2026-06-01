@@ -119,6 +119,7 @@ func recordDiagnostics(records []Record, recordsByID map[string][]Record, semant
 		if !scope.selectRecord(record) {
 			continue
 		}
+		diagnostics = append(diagnostics, workflowMetadataDiagnostics(record)...)
 		if !statusAllowedForKind(record.Kind, record.Status) {
 			diagnostics = append(diagnostics, Diagnostic{
 				Category: DiagnosticInvalidStatusForKind,
@@ -158,6 +159,86 @@ func recordDiagnostics(records []Record, recordsByID map[string][]Record, semant
 		diagnostics = append(diagnostics, workflowRelationDiagnostics(record, recordsByID)...)
 	}
 	return diagnostics
+}
+
+type workflowRequiredField struct {
+	name   string
+	scalar bool
+}
+
+func workflowMetadataDiagnostics(record Record) []Diagnostic {
+	if record.WorkflowMeta == nil {
+		return nil
+	}
+	var fields []workflowRequiredField
+	switch record.Kind {
+	case RecordKindRequirement:
+		fields = []workflowRequiredField{
+			{name: "id", scalar: true},
+			{name: "status", scalar: true},
+			{name: "date", scalar: true},
+			{name: "source_refs"},
+			{name: "work_items"},
+		}
+	case RecordKindWorkItem:
+		fields = []workflowRequiredField{
+			{name: "id", scalar: true},
+			{name: "status", scalar: true},
+			{name: "date", scalar: true},
+			{name: "source_requirement", scalar: true},
+			{name: "impact_refs"},
+			{name: "tasks"},
+		}
+	case RecordKindTask:
+		fields = []workflowRequiredField{
+			{name: "id", scalar: true},
+			{name: "status", scalar: true},
+			{name: "date", scalar: true},
+			{name: "work_item", scalar: true},
+			{name: "source_requirement", scalar: true},
+			{name: "estimate", scalar: true},
+			{name: "depends_on"},
+			{name: "outputs"},
+		}
+	default:
+		return nil
+	}
+
+	var diagnostics []Diagnostic
+	for _, required := range fields {
+		field, ok := record.WorkflowMeta.Fields[required.name]
+		if !ok || !field.Present {
+			diagnostics = append(diagnostics, workflowMetadataDiagnostic(record, DiagnosticMissingRequiredMetadata, required.name, "", false, fmt.Sprintf("%s is missing required metadata field %s", record.ID, required.name)))
+			continue
+		}
+		if required.scalar {
+			if strings.TrimSpace(field.Value) == "" {
+				diagnostics = append(diagnostics, workflowMetadataDiagnostic(record, DiagnosticEmptyRequiredMetadata, required.name, field.Value, true, fmt.Sprintf("%s.%s is empty", record.ID, required.name)))
+				continue
+			}
+			if required.name == "date" && !validDateOnly(field.Value) {
+				diagnostics = append(diagnostics, workflowMetadataDiagnostic(record, DiagnosticInvalidMetadataValue, required.name, field.Value, true, fmt.Sprintf("%s.date must use strict YYYY-MM-DD format", record.ID)))
+			}
+			continue
+		}
+		for range field.EmptyItems {
+			diagnostics = append(diagnostics, workflowMetadataDiagnostic(record, DiagnosticEmptyRequiredMetadata, required.name, "", true, fmt.Sprintf("%s.%s contains an empty list item", record.ID, required.name)))
+		}
+	}
+	return diagnostics
+}
+
+func workflowMetadataDiagnostic(record Record, category DiagnosticCategory, field, value string, valuePresent bool, message string) Diagnostic {
+	return Diagnostic{
+		Category:     category,
+		Severity:     DiagnosticSeverityError,
+		RecordID:     record.ID,
+		Path:         record.Path,
+		Message:      message,
+		Field:        field,
+		Value:        value,
+		ValuePresent: valuePresent,
+	}
 }
 
 func semanticRefDiagnostics(idx *Index, scope validationScope) []Diagnostic {

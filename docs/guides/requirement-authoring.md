@@ -69,6 +69,14 @@ docs/requirements/<domain>/REQ-<DOMAIN>-NNN-<slug>.md
 
 `source_refs` は physical path ではなく、artifact ID または semantic ref を用いる。
 
+Required metadata は Design Records MCP validation の対象である。
+
+- `id` / `status` / `date` は存在し、non-empty でなければならない。
+- `date` は `YYYY-MM-DD` format とする。
+- `source_refs` / `work_items` は list field として存在しなければならない。
+- `source_refs` / `work_items` は empty list を許容する。
+- `source_refs` / `work_items` の empty item は validation error とし、metadata diagnostic category は `empty_required_metadata` とする。
+
 ## Status
 
 | status | meaning |

@@ -75,6 +75,14 @@ docs/tasks/<domain>/TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>-<slug>.md
 
 `work_item`、`source_requirement`、`depends_on` は `WORK-*` / `REQ-*` / `TASK-*` の ID-as-ref を用いる。
 
+Required metadata は Design Records MCP validation の対象である。
+
+- `id` / `status` / `date` / `work_item` / `source_requirement` / `estimate` は存在し、non-empty でなければならない。
+- `date` は `YYYY-MM-DD` format とする。
+- `depends_on` / `outputs` は list field として存在しなければならない。
+- `depends_on` / `outputs` は empty list を許容する。
+- `depends_on` / `outputs` の empty item は validation error とし、metadata diagnostic category は `empty_required_metadata` とする。
+
 ## Status
 
 | status | meaning |

@@ -63,6 +63,14 @@ docs/work-items/<domain>/WORK-<DOMAIN>-NNN-<slug>.md
 
 `source_requirement` と `tasks` は `REQ-*` / `TASK-*` の ID-as-ref を用いる。
 
+Required metadata は Design Records MCP validation の対象である。
+
+- `id` / `status` / `date` / `source_requirement` は存在し、non-empty でなければならない。
+- `date` は `YYYY-MM-DD` format とする。
+- `impact_refs` / `tasks` は list field として存在しなければならない。
+- `impact_refs` / `tasks` は empty list を許容する。
+- `impact_refs` / `tasks` の empty item は validation error とし、metadata diagnostic category は `empty_required_metadata` とする。
+
 ## Status
 
 | status | meaning |

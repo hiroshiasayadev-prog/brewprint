@@ -1,10 +1,11 @@
 ---
 scope: docs/spec/design-records-mcp/schema.md
 status: draft
-last_updated: 2026-05-31
+last_updated: 2026-06-02
 summary: >
   Design Records MCP MVP が読む design record / workflow artifact metadata schema、
-  record model、authoring guidance source model、H1 title 抽出、diagnostic category を定義する。
+  record model、authoring guidance source model、authoring transaction schema concept、
+  H1 title 抽出、diagnostic category を定義する。
 depends_on:
   - docs/adr/076-design-records-mcp.md
   - docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
@@ -13,6 +14,7 @@ depends_on:
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
   - docs/adr/090-design-records-mcp-batch-retrieval-tool-boundary.md
   - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
+  - docs/adr/093-design-records-mcp-authoring-transaction-model.md
 design_record:
   id: SPEC-design-records-mcp-schema
   kind: spec
@@ -25,6 +27,7 @@ design_record:
     - ADR-088
     - ADR-090
     - ADR-092
+    - ADR-093
 ---
 
 # Design Records MCP schema
@@ -176,9 +179,17 @@ Task の認識 field:
 
 - required: `id`, `status`, `date`, `work_item`, `source_requirement`, `estimate`, `depends_on`, `outputs`
 
+Workflow artifact の required metadata は presence validation の対象とする。
+
+- Required scalar field は存在し、かつ non-empty でなければならない。
+- Required list field は存在しなければならない。
+- Required list field の empty list は、artifact-specific rule が non-empty を要求しない限り valid とする。
+- Required list field 内の empty item は validation error とし、metadata diagnostic category は `empty_required_metadata` とする。
+- `date` は required scalar metadata として扱い、strict `YYYY-MM-DD` format でなければならない。
+
 `task.depends_on` は field が存在し、値と直下の list item がともに空の場合、empty list `[]` として正規化する。この場合、workflow relation diagnostic は生成しない。
 
-`source_refs` / `impact_refs` / `outputs` の workflow 外 reference rule は既存 canonical reference 方針に従い、本 schema は ADR-092 により新しい validation rule を追加しない。`work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on` は workflow relation field として下記 relation integrity validation の対象とする。
+`source_refs` / `impact_refs` / `outputs` の workflow 外 reference rule は既存 canonical reference 方針に従い、本 schema は ADR-092 により新しい reference resolution rule を追加しない。ただし、これらの field 自体は required list metadata として presence validation の対象とする。`work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on` は workflow relation field として下記 relation integrity validation の対象とする。
 
 > 由来: ADR-086 §4〜§7, ADR-087 §5〜§8, ADR-091 §6, ADR-092 §3〜§6
 
@@ -213,6 +224,111 @@ Guide title は first H1 から抽出する。Guide abstract は `## Abstract` s
 Guide source file path は public response contract に含めない。Path は guide ID から内部解決する implementation detail である。
 
 Guide は record kind ではない。Design Records record ID、record status、record path、record headings、record diagnostics、canonical reference resolver target として扱わない。
+
+## Authoring transaction schema concepts
+
+Authoring transaction は Design Records record model そのものではない。
+Proposal / body cache は retained operational object であり、`list_records` / `get_record` / `get_records` / `resolve_reference` の record target には含めない。
+
+### Authoring target identity
+
+Authoring target identity は artifact identity を primary key とする。
+Public request は physical path を primary input として受け取らない。
+
+Authoring target identity fields:
+
+| field | meaning |
+|---|---|
+| `kind` | target record kind |
+| `requested_id` | caller input ID。Create では `new` placeholder を含んでよい |
+| `resolved_id` | MCP が record index から解決した final ID |
+| `domain` | workflow artifact domain。Requirement / work item / task create で使用する |
+| `parent_id` | parent-aware ID resolution に使った parent record ID。Task create では required |
+| `path` | resolved repository-relative path。Transparency output only |
+
+`path` は relocation や slug generation の結果を説明するための output であり、authoring request の canonical target identity ではない。
+
+### Proposal model
+
+Proposal は write candidate の retained representation である。
+Proposal creation does not write repository files.
+
+Proposal fields:
+
+| field | meaning |
+|---|---|
+| `proposal_id` | opaque lookup key |
+| `state` | `proposed` / `accepted` / `discarded` |
+| `operation` | `create` / `update` |
+| `target_kind` | resolved target kind |
+| `target` | authoring target identity |
+| `base_state` | accept-time staleness detection に必要な target file / index state |
+| `diff` | previewable diff |
+| `validation` | proposal-time validation result |
+| `required_follow_up_updates` | acceptance before satisfaction が forbidden な required follow-up list |
+| `expires_at` | proposal expiry timestamp |
+| `retention_days` | `3` |
+
+`base_state` の concrete hash / timestamp / index snapshot shape は implementation detail である。
+Public contract は、accept が stale target / changed target / ID collision を write 前に検出し、`written: false` と diagnostics を返すことである。
+
+Proposal retention is 3 days.
+Expired proposals are not valid authoring targets.
+
+### Body cache model
+
+Body cache は、large Markdown body を proposal retry のために一時保持する operational object である。
+It is not a design record and is not addressable by resolver.
+
+Body cache fields:
+
+| field | meaning |
+|---|---|
+| `body_cache_id` | opaque lookup key |
+| `expires_at` | cache expiry timestamp |
+| `retention_days` | `3` |
+
+Operations requiring large Markdown body input accept exactly one of `body` or `body_cache_id`.
+Supplying both is invalid and must not create a proposal or body cache.
+Operations that do not require body input may omit both.
+Unknown or expired body cache IDs must produce diagnostics and must not create proposals.
+
+### Metadata block replacement target
+
+Metadata block replacement targets the kind-specific metadata block.
+
+| kind | metadata block |
+|---|---|
+| `spec` | YAML front matter metadata block |
+| `decision` | H1-following ADR bullet metadata block |
+| `requirement` | H1-following requirement bullet metadata block |
+| `work_item` | H1-following work item bullet metadata block |
+| `task` | H1-following task bullet metadata block |
+
+Required recognized fields are validated by the same field vocabulary used for record parsing and validation.
+Missing required recognized fields produce `missing_required_metadata`.
+Empty required scalar fields or empty list items produce `empty_required_metadata`.
+Invalid recognized values produce `invalid_metadata_value` or an existing kind-specific diagnostic such as `invalid_status_for_kind`, `spec_status_mismatch`, or `invalid_migrated_to_spec`.
+
+### Section selector model
+
+Named section replacement uses an ATX heading selector.
+The selector resolves within one Markdown record body.
+
+MVP selector fields:
+
+| field | meaning |
+|---|---|
+| `heading` | exact heading text after ATX marker removal and whitespace trim |
+| `match` | `exact` only |
+| `level` | optional ATX heading level constraint |
+
+Matching is case-sensitive.
+No Unicode normalization, punctuation folding, prefix matching, or contains matching is part of MVP.
+If the selector resolves to zero sections, authoring returns `section_selector_no_match`.
+If it resolves to multiple sections, authoring returns `section_selector_ambiguous`.
+Neither case may create a proposal or write files.
+Diagnostics should include candidate headings when possible.
 
 ## Field definitions
 
@@ -509,6 +625,29 @@ setext heading は MVP では扱わない。
 
 `first_index` と `duplicate_indexes` は request `ids` array の zero-based index とする。`duplicate_requested_id_ignored` は重複した requested ID ごとに一件返す。これらは request / retrieval に対する diagnostic であり、record metadata defect を示す `record_id` field は用いない。
 
+Authoring transaction tools additionally use the following diagnostic categories.
+These diagnostics may appear in proposal, accept, discard, get-proposal, or body-cache retry responses.
+
+| category | severity | meaning |
+|---|---|---|
+| `proposal_not_found` | error | requested proposal ID が存在しない |
+| `proposal_expired` | error | requested proposal ID は expiry を過ぎている |
+| `proposal_discarded` | error | proposal は discard 済みであり accept できない |
+| `proposal_already_accepted` | error | proposal は accepted 済みであり再適用できない |
+| `proposal_stale` | error | proposal base state と current target state が一致しない |
+| `target_changed` | error | target record kind / path / identity が proposal 作成時と異なる |
+| `id_collision` | error | create proposal の resolved ID が accept 前に使用済みになった |
+| `required_follow_up_not_satisfied` | error | required reciprocal metadata update などの follow-up が満たされていない |
+| `invalid_body_source` | error | body source rule 違反。`body` と `body_cache_id` の両方指定、または required body source の欠落 |
+| `body_cache_not_found` | error | requested body cache ID が存在しない |
+| `body_cache_expired` | error | requested body cache ID は expiry を過ぎている |
+| `proposal_preparation_failed` | error | proposal preparation failed before proposal persistence |
+| `section_selector_no_match` | error | named section selector が target record 内の section に一致しない |
+| `section_selector_ambiguous` | error | named section selector が複数 section に一致し、単一 target に解決できない |
+
+`section_selector_no_match` / `section_selector_ambiguous` diagnostics should include `candidate_headings` when possible.
+Candidate heading entries contain at least `heading`, `level`, and `ordinal`.
+
 MVP の `validate_records` は以下の diagnostic category を返す。
 
 Diagnostic は検査軸ごとに独立して発火し、1 record に複数 diagnostic が付いてよい。
@@ -519,6 +658,9 @@ Diagnostic は検査軸ごとに独立して発火し、1 record に複数 diagn
 | `filename_id_mismatch` | error | `decision` / `investigation` / workflow artifact record の canonical ID または metadata ID と filename ID 部分が一致しない |
 | `invalid_h1_title` | error | H1 が存在しない、または期待形式に合わない |
 | `invalid_workflow_id` | error | requirement / work item / task の metadata ID または H1 ID が workflow ID grammar に従わない |
+| `missing_required_metadata` | error | requirement / work item / task の required metadata field が存在しない |
+| `empty_required_metadata` | error | required scalar metadata field が empty、または required list metadata field に empty item が含まれる |
+| `invalid_metadata_value` | error | required metadata field が non-empty だが value contract を満たさない。例: workflow artifact `date` が strict `YYYY-MM-DD` format ではない |
 | `invalid_status_for_kind` | error | `kind` に対して許可されない `status` を持つ |
 | `spec_status_mismatch` | error | spec top-level `status` と `design_record.status` が一致しない |
 | `missing_depends_on_target` | error | `depends_on` の参照先 ID が存在しない |
@@ -540,6 +682,8 @@ Diagnostic は検査軸ごとに独立して発火し、1 record に複数 diagn
 | `invalid_workflow_relation_target` | error | workflow relation field に、field が要求する kind / ID form ではない target が記載された |
 | `workflow_relation_mismatch` | error | `REQ.work_items` と `WORK.source_requirement`、または `WORK.tasks` と `TASK.work_item` の宣言済み双方向 relation が一致しない |
 | `workflow_source_requirement_mismatch` | error | task の `source_requirement` が parent work item の `source_requirement` と一致しない |
+
+Workflow metadata diagnostic (`missing_required_metadata` / `empty_required_metadata` / `invalid_metadata_value`) は、通常の `category` / `severity` / `record_id` / `path` / `message` に加えて、`field` を必須で返す。入力 value が存在する場合は `value` も返す。
 
 Workflow relation diagnostic は、通常の `category` / `severity` / `record_id` / `path` / `message` に加えて、`field`、`value`、`ref_status` を必須で返す。`field` は `work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on` のいずれか、`value` は入力 ID-as-ref、`ref_status` は `unresolved` / `invalid_target` / `mismatch` のいずれかとする。対象 ID が特定できる場合は `target_id` も返す。
 

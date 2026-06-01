@@ -72,6 +72,7 @@ type requirementMetadata struct {
 	Status     string
 	SourceRefs []string
 	WorkItems  []string
+	Workflow   WorkflowMetadata
 }
 
 type workItemMetadata struct {
@@ -80,6 +81,7 @@ type workItemMetadata struct {
 	SourceRequirement string
 	ImpactRefs        []string
 	Tasks             []string
+	Workflow          WorkflowMetadata
 }
 
 type taskMetadata struct {
@@ -90,6 +92,7 @@ type taskMetadata struct {
 	Estimate          string
 	DependsOn         []string
 	Outputs           []string
+	Workflow          WorkflowMetadata
 }
 
 func parseADRRecord(path, raw string) (*Record, RecordCandidate, []ParseIssue) {
@@ -499,6 +502,7 @@ func parseWorkflowRecord(path, raw string, lines []string, kind RecordKind) (*Re
 	}
 
 	metadataID, status := "", ""
+	var workflowMeta *WorkflowMetadata
 	var requirement *RequirementDetail
 	var workItem *WorkItemDetail
 	var task *TaskDetail
@@ -507,6 +511,7 @@ func parseWorkflowRecord(path, raw string, lines []string, kind RecordKind) (*Re
 		metadata := parseRequirementMetadata(lines)
 		metadataID = metadata.ID
 		status = metadata.Status
+		workflowMeta = &metadata.Workflow
 		requirement = &RequirementDetail{
 			SourceRefs: metadata.SourceRefs,
 			WorkItems:  metadata.WorkItems,
@@ -515,6 +520,7 @@ func parseWorkflowRecord(path, raw string, lines []string, kind RecordKind) (*Re
 		metadata := parseWorkItemMetadata(lines)
 		metadataID = metadata.ID
 		status = metadata.Status
+		workflowMeta = &metadata.Workflow
 		workItem = &WorkItemDetail{
 			SourceRequirement: metadata.SourceRequirement,
 			ImpactRefs:        metadata.ImpactRefs,
@@ -524,6 +530,7 @@ func parseWorkflowRecord(path, raw string, lines []string, kind RecordKind) (*Re
 		metadata := parseTaskMetadata(lines)
 		metadataID = metadata.ID
 		status = metadata.Status
+		workflowMeta = &metadata.Workflow
 		task = &TaskDetail{
 			WorkItem:          metadata.WorkItem,
 			SourceRequirement: metadata.SourceRequirement,
@@ -580,6 +587,7 @@ func parseWorkflowRecord(path, raw string, lines []string, kind RecordKind) (*Re
 		Headings:     extractHeadings(raw),
 		RawBody:      raw,
 		NormalizedID: normalizeRecordID(id),
+		WorkflowMeta: workflowMeta,
 	}
 	return record, candidate, issues
 }
@@ -605,7 +613,7 @@ func parseWorkflowH1(line string) (string, string, bool) {
 }
 
 func parseRequirementMetadata(lines []string) requirementMetadata {
-	metadata := requirementMetadata{SourceRefs: []string{}, WorkItems: []string{}}
+	metadata := requirementMetadata{SourceRefs: []string{}, WorkItems: []string{}, Workflow: newWorkflowMetadata()}
 	block := metadataBlock(lines)
 	for i := 0; i < len(block); i++ {
 		key, value, ok := parseMetadataLine(block[i])
@@ -614,22 +622,28 @@ func parseRequirementMetadata(lines []string) requirementMetadata {
 		}
 		switch key {
 		case "id":
+			metadata.Workflow.setScalar(key, value)
 			metadata.ID = value
 		case "status":
+			metadata.Workflow.setScalar(key, value)
 			metadata.Status = value
 		case "date":
-			continue
+			metadata.Workflow.setScalar(key, value)
 		case "source_refs":
-			metadata.SourceRefs = metadataListValue(block, i, value)
+			values, emptyItems := metadataListValue(block, i, value)
+			metadata.Workflow.setList(key, value, emptyItems)
+			metadata.SourceRefs = values
 		case "work_items":
-			metadata.WorkItems = metadataListValue(block, i, value)
+			values, emptyItems := metadataListValue(block, i, value)
+			metadata.Workflow.setList(key, value, emptyItems)
+			metadata.WorkItems = values
 		}
 	}
 	return metadata
 }
 
 func parseWorkItemMetadata(lines []string) workItemMetadata {
-	metadata := workItemMetadata{ImpactRefs: []string{}, Tasks: []string{}}
+	metadata := workItemMetadata{ImpactRefs: []string{}, Tasks: []string{}, Workflow: newWorkflowMetadata()}
 	block := metadataBlock(lines)
 	for i := 0; i < len(block); i++ {
 		key, value, ok := parseMetadataLine(block[i])
@@ -638,24 +652,31 @@ func parseWorkItemMetadata(lines []string) workItemMetadata {
 		}
 		switch key {
 		case "id":
+			metadata.Workflow.setScalar(key, value)
 			metadata.ID = value
 		case "status":
+			metadata.Workflow.setScalar(key, value)
 			metadata.Status = value
 		case "date":
-			continue
+			metadata.Workflow.setScalar(key, value)
 		case "source_requirement":
+			metadata.Workflow.setScalar(key, value)
 			metadata.SourceRequirement = value
 		case "impact_refs":
-			metadata.ImpactRefs = metadataListValue(block, i, value)
+			values, emptyItems := metadataListValue(block, i, value)
+			metadata.Workflow.setList(key, value, emptyItems)
+			metadata.ImpactRefs = values
 		case "tasks":
-			metadata.Tasks = metadataListValue(block, i, value)
+			values, emptyItems := metadataListValue(block, i, value)
+			metadata.Workflow.setList(key, value, emptyItems)
+			metadata.Tasks = values
 		}
 	}
 	return metadata
 }
 
 func parseTaskMetadata(lines []string) taskMetadata {
-	metadata := taskMetadata{DependsOn: []string{}, Outputs: []string{}}
+	metadata := taskMetadata{DependsOn: []string{}, Outputs: []string{}, Workflow: newWorkflowMetadata()}
 	block := metadataBlock(lines)
 	for i := 0; i < len(block); i++ {
 		key, value, ok := parseMetadataLine(block[i])
@@ -664,21 +685,30 @@ func parseTaskMetadata(lines []string) taskMetadata {
 		}
 		switch key {
 		case "id":
+			metadata.Workflow.setScalar(key, value)
 			metadata.ID = value
 		case "status":
+			metadata.Workflow.setScalar(key, value)
 			metadata.Status = value
 		case "date":
-			continue
+			metadata.Workflow.setScalar(key, value)
 		case "work_item":
+			metadata.Workflow.setScalar(key, value)
 			metadata.WorkItem = value
 		case "source_requirement":
+			metadata.Workflow.setScalar(key, value)
 			metadata.SourceRequirement = value
 		case "estimate":
+			metadata.Workflow.setScalar(key, value)
 			metadata.Estimate = value
 		case "depends_on":
-			metadata.DependsOn = metadataListValue(block, i, value)
+			values, emptyItems := metadataListValue(block, i, value)
+			metadata.Workflow.setList(key, value, emptyItems)
+			metadata.DependsOn = values
 		case "outputs":
-			metadata.Outputs = metadataListValue(block, i, value)
+			values, emptyItems := metadataListValue(block, i, value)
+			metadata.Workflow.setList(key, value, emptyItems)
+			metadata.Outputs = values
 		}
 	}
 	return metadata
@@ -692,15 +722,40 @@ func parseMetadataLine(line string) (string, string, bool) {
 	return match[1], strings.TrimSpace(match[2]), true
 }
 
-func metadataListValue(block []string, index int, value string) []string {
-	if strings.TrimSpace(value) != "" {
-		return splitCommaList(value)
+func newWorkflowMetadata() WorkflowMetadata {
+	return WorkflowMetadata{Fields: map[string]WorkflowMetadataField{}}
+}
+
+func (m WorkflowMetadata) setScalar(key, value string) {
+	m.setField(key, WorkflowMetadataField{Present: true, Value: value})
+}
+
+func (m WorkflowMetadata) setList(key, value string, emptyItems []string) {
+	m.setField(key, WorkflowMetadataField{Present: true, Value: value, EmptyItems: emptyItems})
+}
+
+func (m WorkflowMetadata) setField(key string, field WorkflowMetadataField) {
+	if m.Fields == nil {
+		return
 	}
-	return collectIndentedList(block, index)
+	m.Fields[key] = field
+}
+
+func metadataListValue(block []string, index int, value string) ([]string, []string) {
+	if strings.TrimSpace(value) != "" {
+		return splitCommaListWithEmptyItems(value)
+	}
+	return collectIndentedListWithEmptyItems(block, index)
 }
 
 func collectIndentedList(block []string, index int) []string {
+	values, _ := collectIndentedListWithEmptyItems(block, index)
+	return values
+}
+
+func collectIndentedListWithEmptyItems(block []string, index int) ([]string, []string) {
 	out := []string{}
+	emptyItems := []string{}
 	for _, line := range block[index+1:] {
 		raw := trimLineEnd(line)
 		if metadataPattern.MatchString(raw) {
@@ -710,15 +765,21 @@ func collectIndentedList(block []string, index int) []string {
 		if len(raw) == len(trimmedLeft) {
 			continue
 		}
+		if strings.TrimSpace(trimmedLeft) == "-" {
+			emptyItems = append(emptyItems, "")
+			continue
+		}
 		if !strings.HasPrefix(trimmedLeft, "- ") {
 			continue
 		}
 		item := strings.TrimSpace(strings.TrimPrefix(trimmedLeft, "- "))
 		if item != "" {
 			out = append(out, item)
+		} else {
+			emptyItems = append(emptyItems, "")
 		}
 	}
-	return out
+	return out, emptyItems
 }
 
 func semanticRefDecls(path string, semanticRefs []string, sections map[string]string) []SemanticRefDecl {
@@ -922,6 +983,25 @@ func splitCommaList(value string) []string {
 		}
 	}
 	return out
+}
+
+func splitCommaListWithEmptyItems(value string) ([]string, []string) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return []string{}, nil
+	}
+	parts := strings.Split(value, ",")
+	out := make([]string, 0, len(parts))
+	emptyItems := []string{}
+	for _, part := range parts {
+		item := strings.TrimSpace(part)
+		if item != "" {
+			out = append(out, item)
+		} else {
+			emptyItems = append(emptyItems, "")
+		}
+	}
+	return out, emptyItems
 }
 
 func validDateOnly(value string) bool {

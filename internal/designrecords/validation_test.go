@@ -130,6 +130,328 @@ func TestValidateRecordsWorkflowStatusAndParseDiagnostics(t *testing.T) {
 	}
 }
 
+func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
+	tests := []struct {
+		name         string
+		kind         RecordKind
+		path         string
+		content      string
+		recordID     string
+		category     DiagnosticCategory
+		field        string
+		value        string
+		valuePresent bool
+		validField   string
+	}{
+		{
+			name:     "requirement missing date",
+			kind:     RecordKindRequirement,
+			path:     "docs/requirements/mcp/REQ-MCP-006-test.md",
+			content:  "# REQ-MCP-006: Test\n- **id**: REQ-MCP-006\n- **status**: accepted\n- **source_refs**:\n- **work_items**:\n",
+			recordID: "REQ-MCP-006",
+			category: DiagnosticMissingRequiredMetadata,
+			field:    "date",
+		},
+		{
+			name:         "requirement invalid date",
+			kind:         RecordKindRequirement,
+			path:         "docs/requirements/mcp/REQ-MCP-006-test.md",
+			content:      "# REQ-MCP-006: Test\n- **id**: REQ-MCP-006\n- **status**: accepted\n- **date**: 2026/06/01\n- **source_refs**:\n- **work_items**:\n",
+			recordID:     "REQ-MCP-006",
+			category:     DiagnosticInvalidMetadataValue,
+			field:        "date",
+			value:        "2026/06/01",
+			valuePresent: true,
+		},
+		{
+			name:     "requirement missing source_refs",
+			kind:     RecordKindRequirement,
+			path:     "docs/requirements/mcp/REQ-MCP-006-test.md",
+			content:  "# REQ-MCP-006: Test\n- **id**: REQ-MCP-006\n- **status**: accepted\n- **date**: 2026-06-01\n- **work_items**:\n",
+			recordID: "REQ-MCP-006",
+			category: DiagnosticMissingRequiredMetadata,
+			field:    "source_refs",
+		},
+		{
+			name:       "requirement empty source_refs list is valid metadata",
+			kind:       RecordKindRequirement,
+			path:       "docs/requirements/mcp/REQ-MCP-006-test.md",
+			content:    "# REQ-MCP-006: Test\n- **id**: REQ-MCP-006\n- **status**: accepted\n- **date**: 2026-06-01\n- **source_refs**:\n- **work_items**:\n",
+			recordID:   "REQ-MCP-006",
+			validField: "source_refs",
+		},
+		{
+			name:         "requirement source_refs empty item",
+			kind:         RecordKindRequirement,
+			path:         "docs/requirements/mcp/REQ-MCP-006-test.md",
+			content:      "# REQ-MCP-006: Test\n- **id**: REQ-MCP-006\n- **status**: accepted\n- **date**: 2026-06-01\n- **source_refs**:\n  -\n- **work_items**:\n",
+			recordID:     "REQ-MCP-006",
+			category:     DiagnosticEmptyRequiredMetadata,
+			field:        "source_refs",
+			valuePresent: true,
+		},
+		{
+			name:     "requirement missing work_items",
+			kind:     RecordKindRequirement,
+			path:     "docs/requirements/mcp/REQ-MCP-006-test.md",
+			content:  "# REQ-MCP-006: Test\n- **id**: REQ-MCP-006\n- **status**: accepted\n- **date**: 2026-06-01\n- **source_refs**:\n",
+			recordID: "REQ-MCP-006",
+			category: DiagnosticMissingRequiredMetadata,
+			field:    "work_items",
+		},
+		{
+			name:       "requirement empty work_items list is valid metadata",
+			kind:       RecordKindRequirement,
+			path:       "docs/requirements/mcp/REQ-MCP-006-test.md",
+			content:    "# REQ-MCP-006: Test\n- **id**: REQ-MCP-006\n- **status**: accepted\n- **date**: 2026-06-01\n- **source_refs**:\n- **work_items**:\n",
+			recordID:   "REQ-MCP-006",
+			validField: "work_items",
+		},
+		{
+			name:     "work item missing date",
+			kind:     RecordKindWorkItem,
+			path:     "docs/work-items/mcp/WORK-MCP-006-test.md",
+			content:  "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
+			recordID: "WORK-MCP-006",
+			category: DiagnosticMissingRequiredMetadata,
+			field:    "date",
+		},
+		{
+			name:         "work item invalid date",
+			kind:         RecordKindWorkItem,
+			path:         "docs/work-items/mcp/WORK-MCP-006-test.md",
+			content:      "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-6-1\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
+			recordID:     "WORK-MCP-006",
+			category:     DiagnosticInvalidMetadataValue,
+			field:        "date",
+			value:        "2026-6-1",
+			valuePresent: true,
+		},
+		{
+			name:     "work item missing source_requirement",
+			kind:     RecordKindWorkItem,
+			path:     "docs/work-items/mcp/WORK-MCP-006-test.md",
+			content:  "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **impact_refs**:\n- **tasks**:\n",
+			recordID: "WORK-MCP-006",
+			category: DiagnosticMissingRequiredMetadata,
+			field:    "source_requirement",
+		},
+		{
+			name:         "work item empty source_requirement",
+			kind:         RecordKindWorkItem,
+			path:         "docs/work-items/mcp/WORK-MCP-006-test.md",
+			content:      "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**:\n- **impact_refs**:\n- **tasks**:\n",
+			recordID:     "WORK-MCP-006",
+			category:     DiagnosticEmptyRequiredMetadata,
+			field:        "source_requirement",
+			valuePresent: true,
+		},
+		{
+			name:     "work item missing impact_refs",
+			kind:     RecordKindWorkItem,
+			path:     "docs/work-items/mcp/WORK-MCP-006-test.md",
+			content:  "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **tasks**:\n",
+			recordID: "WORK-MCP-006",
+			category: DiagnosticMissingRequiredMetadata,
+			field:    "impact_refs",
+		},
+		{
+			name:       "work item empty impact_refs list is valid metadata",
+			kind:       RecordKindWorkItem,
+			path:       "docs/work-items/mcp/WORK-MCP-006-test.md",
+			content:    "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
+			recordID:   "WORK-MCP-006",
+			validField: "impact_refs",
+		},
+		{
+			name:         "work item impact_refs empty item",
+			kind:         RecordKindWorkItem,
+			path:         "docs/work-items/mcp/WORK-MCP-006-test.md",
+			content:      "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n  -\n- **tasks**:\n",
+			recordID:     "WORK-MCP-006",
+			category:     DiagnosticEmptyRequiredMetadata,
+			field:        "impact_refs",
+			valuePresent: true,
+		},
+		{
+			name:     "work item missing tasks",
+			kind:     RecordKindWorkItem,
+			path:     "docs/work-items/mcp/WORK-MCP-006-test.md",
+			content:  "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n",
+			recordID: "WORK-MCP-006",
+			category: DiagnosticMissingRequiredMetadata,
+			field:    "tasks",
+		},
+		{
+			name:       "work item empty tasks list is valid metadata",
+			kind:       RecordKindWorkItem,
+			path:       "docs/work-items/mcp/WORK-MCP-006-test.md",
+			content:    "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
+			recordID:   "WORK-MCP-006",
+			validField: "tasks",
+		},
+		{
+			name:       "fixture_pending remains valid work item status",
+			kind:       RecordKindWorkItem,
+			path:       "docs/work-items/mcp/WORK-MCP-006-test.md",
+			content:    "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: fixture_pending\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
+			recordID:   "WORK-MCP-006",
+			validField: "status",
+		},
+		{
+			name:     "task missing date",
+			kind:     RecordKindTask,
+			path:     "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			recordID: "TASK-MCP-006-04",
+			category: DiagnosticMissingRequiredMetadata,
+			field:    "date",
+		},
+		{
+			name:         "task invalid date",
+			kind:         RecordKindTask,
+			path:         "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: abc\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			recordID:     "TASK-MCP-006-04",
+			category:     DiagnosticInvalidMetadataValue,
+			field:        "date",
+			value:        "abc",
+			valuePresent: true,
+		},
+		{
+			name:     "task missing work_item",
+			kind:     RecordKindTask,
+			path:     "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			recordID: "TASK-MCP-006-04",
+			category: DiagnosticMissingRequiredMetadata,
+			field:    "work_item",
+		},
+		{
+			name:         "task empty work_item",
+			kind:         RecordKindTask,
+			path:         "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**:\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			recordID:     "TASK-MCP-006-04",
+			category:     DiagnosticEmptyRequiredMetadata,
+			field:        "work_item",
+			valuePresent: true,
+		},
+		{
+			name:     "task missing source_requirement",
+			kind:     RecordKindTask,
+			path:     "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			recordID: "TASK-MCP-006-04",
+			category: DiagnosticMissingRequiredMetadata,
+			field:    "source_requirement",
+		},
+		{
+			name:         "task empty source_requirement",
+			kind:         RecordKindTask,
+			path:         "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**:\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			recordID:     "TASK-MCP-006-04",
+			category:     DiagnosticEmptyRequiredMetadata,
+			field:        "source_requirement",
+			valuePresent: true,
+		},
+		{
+			name:     "task missing estimate",
+			kind:     RecordKindTask,
+			path:     "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **depends_on**:\n- **outputs**:\n",
+			recordID: "TASK-MCP-006-04",
+			category: DiagnosticMissingRequiredMetadata,
+			field:    "estimate",
+		},
+		{
+			name:         "task empty estimate",
+			kind:         RecordKindTask,
+			path:         "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**:\n- **depends_on**:\n- **outputs**:\n",
+			recordID:     "TASK-MCP-006-04",
+			category:     DiagnosticEmptyRequiredMetadata,
+			field:        "estimate",
+			valuePresent: true,
+		},
+		{
+			name:     "task missing depends_on",
+			kind:     RecordKindTask,
+			path:     "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **outputs**:\n",
+			recordID: "TASK-MCP-006-04",
+			category: DiagnosticMissingRequiredMetadata,
+			field:    "depends_on",
+		},
+		{
+			name:       "task empty depends_on list is valid metadata",
+			kind:       RecordKindTask,
+			path:       "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:    "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			recordID:   "TASK-MCP-006-04",
+			validField: "depends_on",
+		},
+		{
+			name:         "task depends_on empty item",
+			kind:         RecordKindTask,
+			path:         "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n  -\n- **outputs**:\n",
+			recordID:     "TASK-MCP-006-04",
+			category:     DiagnosticEmptyRequiredMetadata,
+			field:        "depends_on",
+			valuePresent: true,
+		},
+		{
+			name:     "task missing outputs",
+			kind:     RecordKindTask,
+			path:     "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n",
+			recordID: "TASK-MCP-006-04",
+			category: DiagnosticMissingRequiredMetadata,
+			field:    "outputs",
+		},
+		{
+			name:       "task empty outputs list is valid metadata",
+			kind:       RecordKindTask,
+			path:       "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:    "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			recordID:   "TASK-MCP-006-04",
+			validField: "outputs",
+		},
+		{
+			name:         "task outputs empty item",
+			kind:         RecordKindTask,
+			path:         "docs/tasks/mcp/TASK-MCP-006-04-test.md",
+			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  -\n",
+			recordID:     "TASK-MCP-006-04",
+			category:     DiagnosticEmptyRequiredMetadata,
+			field:        "outputs",
+			valuePresent: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeTestFile(t, root, tt.path, tt.content)
+			idx := buildTestIndex(t, root)
+			resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{Kind: tt.kind})
+			if err != nil {
+				t.Fatalf("ValidateRecords: %v", err)
+			}
+			if tt.validField != "" {
+				assertNoWorkflowMetadataDiagnostic(t, resp.Diagnostics, tt.recordID, tt.validField)
+				if tt.validField == "status" && hasDiagnosticForRecord(resp.Diagnostics, DiagnosticInvalidStatusForKind, tt.recordID) {
+					t.Fatalf("fixture_pending produced invalid status diagnostic: %#v", resp.Diagnostics)
+				}
+				return
+			}
+			assertWorkflowMetadataDiagnostic(t, resp.Diagnostics, tt.category, tt.recordID, tt.field, tt.value, tt.valuePresent)
+		})
+	}
+}
+
 func TestValidateRecordsWorkflowRelationHappyPath(t *testing.T) {
 	root := t.TempDir()
 	writeWorkflowHappyPathFixture(t, root)
@@ -1062,6 +1384,43 @@ func assertNoInvestigationDiagnosticValue(t *testing.T, diagnostics []Diagnostic
 		if diagnostic.Value == value {
 			t.Fatalf("unexpected investigation diagnostic for %s: %#v", value, diagnostic)
 		}
+	}
+}
+
+func assertWorkflowMetadataDiagnostic(t *testing.T, diagnostics []Diagnostic, category DiagnosticCategory, recordID, field, value string, valuePresent bool) {
+	t.Helper()
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Category == category && diagnostic.RecordID == recordID && diagnostic.Field == field {
+			if diagnostic.Severity != DiagnosticSeverityError {
+				t.Fatalf("severity = %q, want error for %#v", diagnostic.Severity, diagnostic)
+			}
+			if diagnostic.Path == "" || diagnostic.Message == "" {
+				t.Fatalf("path/message missing for %#v", diagnostic)
+			}
+			if diagnostic.Value != value || diagnostic.ValuePresent != valuePresent {
+				t.Fatalf("value/valuePresent = %q/%v, want %q/%v for %#v", diagnostic.Value, diagnostic.ValuePresent, value, valuePresent, diagnostic)
+			}
+			return
+		}
+	}
+	t.Fatalf("missing workflow metadata diagnostic category=%s record=%s field=%s in %#v", category, recordID, field, diagnostics)
+}
+
+func assertNoWorkflowMetadataDiagnostic(t *testing.T, diagnostics []Diagnostic, recordID, field string) {
+	t.Helper()
+	for _, diagnostic := range diagnostics {
+		if diagnostic.RecordID == recordID && diagnostic.Field == field && isWorkflowMetadataDiagnostic(diagnostic.Category) {
+			t.Fatalf("unexpected workflow metadata diagnostic: %#v", diagnostic)
+		}
+	}
+}
+
+func isWorkflowMetadataDiagnostic(category DiagnosticCategory) bool {
+	switch category {
+	case DiagnosticMissingRequiredMetadata, DiagnosticEmptyRequiredMetadata, DiagnosticInvalidMetadataValue:
+		return true
+	default:
+		return false
 	}
 }
 

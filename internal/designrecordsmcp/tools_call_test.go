@@ -244,6 +244,37 @@ func TestToolsCallValidateDiagnosticsAreNormalResponse(t *testing.T) {
 	}
 }
 
+func TestToolsCallValidateWorkflowMetadataDiagnosticShape(t *testing.T) {
+	root := t.TempDir()
+	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-006-test.md", "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**:\n- **impact_refs**:\n- **tasks**:\n")
+
+	server := NewServerWithIndexBuilder(designrecords.Config{Root: root}, func(ctx context.Context, cfg designrecords.Config) (*designrecords.Index, error) {
+		return designrecords.BuildIndex(ctx, cfg)
+	})
+
+	res := handleLine(t, server, `{"jsonrpc":"2.0","id":"validate","method":"tools/call","params":{"name":"validate_records","arguments":{"kind":"work_item"}}}`)
+	result := assertToolCallResult(t, res, false)
+
+	var text map[string]any
+	unmarshalToolText(t, result.Content[0].Text, &text)
+	diagnostics, ok := text["diagnostics"].([]any)
+	if !ok || len(diagnostics) == 0 {
+		t.Fatalf("diagnostics missing from response text: %#v", text)
+	}
+	diagnostic, ok := diagnostics[0].(map[string]any)
+	if !ok {
+		t.Fatalf("diagnostic shape = %#v", diagnostics[0])
+	}
+	for _, key := range []string{"category", "severity", "record_id", "path", "message", "field", "value"} {
+		if _, ok := diagnostic[key]; !ok {
+			t.Fatalf("diagnostic missing key %q: %#v", key, diagnostic)
+		}
+	}
+	if diagnostic["category"] != string(designrecords.DiagnosticEmptyRequiredMetadata) || diagnostic["field"] != "source_requirement" || diagnostic["value"] != "" {
+		t.Fatalf("metadata diagnostic = %#v", diagnostic)
+	}
+}
+
 func TestToolsListWorkflowKindEnums(t *testing.T) {
 	tools := Tools()
 	for _, toolName := range []string{"list_records", "validate_records"} {
