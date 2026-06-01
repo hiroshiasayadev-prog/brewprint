@@ -292,6 +292,7 @@ Operations requiring large Markdown body input accept exactly one of `body` or `
 Supplying both is invalid and must not create a proposal or body cache.
 Operations that do not require body input may omit both.
 Unknown or expired body cache IDs must produce diagnostics and must not create proposals.
+Body cache entries remain reusable within the 3 day retention period, including after they have been used to create a proposal.
 
 ### Metadata block replacement target
 
@@ -299,11 +300,13 @@ Metadata block replacement targets the kind-specific metadata block.
 
 | kind | metadata block |
 |---|---|
-| `spec` | YAML front matter metadata block |
+| `spec` | recognized spec metadata fields inside YAML front matter |
 | `decision` | H1-following ADR bullet metadata block |
 | `requirement` | H1-following requirement bullet metadata block |
 | `work_item` | H1-following work item bullet metadata block |
 | `task` | H1-following task bullet metadata block |
+
+For `spec`, metadata replacement is scoped to recognized fields only. Unknown or auxiliary YAML front matter fields must be preserved. The recognized spec metadata fields are `scope`, top-level `status`, and `design_record.id` / `design_record.kind` / `design_record.status` / `design_record.depends_on`.
 
 Required recognized fields are validated by the same field vocabulary used for record parsing and validation.
 Missing required recognized fields produce `missing_required_metadata`.
@@ -329,6 +332,10 @@ If the selector resolves to zero sections, authoring returns `section_selector_n
 If it resolves to multiple sections, authoring returns `section_selector_ambiguous`.
 Neither case may create a proposal or write files.
 Diagnostics should include candidate headings when possible.
+
+Section selector resolution uses the same Markdown heading source rules as the `headings` field in the record model.
+YAML front matter content and fenced code block content are not heading sources for section selectors.
+Setext headings are not section sources in the MVP.
 
 ## Field definitions
 

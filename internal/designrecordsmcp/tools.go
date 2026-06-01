@@ -80,6 +80,53 @@ func Tools() []Tool {
 				"title": map[string]any{"type": "string"},
 			}, []string{"kind", "title"}),
 		},
+		{
+			Name:        "propose_record_create",
+			Description: "Create a retained no-write proposal for a new decision or workflow artifact record.",
+			InputSchema: objectSchema(map[string]any{
+				"kind":                   enumStringSchema("decision", "requirement", "work_item", "task"),
+				"id":                     map[string]any{"type": "string"},
+				"domain":                 map[string]any{"type": "string"},
+				"parent_id":              map[string]any{"type": "string"},
+				"title":                  map[string]any{"type": "string"},
+				"fields":                 map[string]any{"type": "object", "additionalProperties": true},
+				"body":                   map[string]any{"type": "string"},
+				"body_cache_id":          map[string]any{"type": "string"},
+				"reciprocal_update_mode": enumStringSchema("include_required", "report_required_follow_up"),
+			}, []string{"kind", "id", "title", "fields"}),
+		},
+		{
+			Name:        "propose_record_update",
+			Description: "Create a retained no-write proposal for metadata block or named section replacement.",
+			InputSchema: objectSchema(map[string]any{
+				"kind":          enumStringSchema("decision", "spec", "requirement", "work_item", "task"),
+				"id":            map[string]any{"type": "string"},
+				"update":        updateSchema(),
+				"body":          map[string]any{"type": "string"},
+				"body_cache_id": map[string]any{"type": "string"},
+			}, []string{"kind", "id", "update"}),
+		},
+		{
+			Name:        "get_proposed_write",
+			Description: "Get one retained authoring proposal by proposal ID.",
+			InputSchema: objectSchema(map[string]any{
+				"proposal_id": map[string]any{"type": "string"},
+			}, []string{"proposal_id"}),
+		},
+		{
+			Name:        "accept_proposed_write",
+			Description: "Accept a retained authoring proposal and write repository files after guards pass.",
+			InputSchema: objectSchema(map[string]any{
+				"proposal_id": map[string]any{"type": "string"},
+			}, []string{"proposal_id"}),
+		},
+		{
+			Name:        "discard_proposed_write",
+			Description: "Discard a retained authoring proposal without writing repository files.",
+			InputSchema: objectSchema(map[string]any{
+				"proposal_id": map[string]any{"type": "string"},
+			}, []string{"proposal_id"}),
+		},
 	}
 }
 
@@ -108,4 +155,20 @@ func enumStringSchema(values ...string) map[string]any {
 		enums = append(enums, value)
 	}
 	return map[string]any{"type": "string", "enum": enums}
+}
+
+func updateSchema() map[string]any {
+	return objectSchema(map[string]any{
+		"type":             enumStringSchema("metadata_block_replace", "named_section_replace"),
+		"metadata":         map[string]any{"type": "object", "additionalProperties": true},
+		"section_selector": sectionSelectorSchema(),
+	}, []string{"type"})
+}
+
+func sectionSelectorSchema() map[string]any {
+	return objectSchema(map[string]any{
+		"heading": map[string]any{"type": "string"},
+		"match":   enumStringSchema("exact"),
+		"level":   map[string]any{"type": "integer", "minimum": 1, "maximum": 6},
+	}, []string{"heading"})
 }

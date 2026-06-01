@@ -371,7 +371,7 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
         "status": "draft",
         "path": "docs/spec/design-records-mcp/tools.md",
         "spec": {
-          "depends_on": ["ADR-076", "ADR-077", "ADR-087", "ADR-088", "ADR-090"]
+          "depends_on": ["ADR-076", "ADR-077", "ADR-087", "ADR-088", "ADR-090", "ADR-092", "ADR-093"]
         },
         "headings": []
       },
@@ -940,6 +940,7 @@ If a request supplies a large `body` and proposal/write preparation fails before
 
 Body cache retention is 3 days.
 Body cache responses must include `expires_at`.
+Body cache entries remain reusable within the 3 day retention period, including after they have been used to create a proposal.
 Expired body cache entries must not be used to create proposals.
 
 ## `propose_record_create`
@@ -952,11 +953,11 @@ It does not write repository files.
 MVP create support covers:
 
 - `decision`
-- `spec` skeleton
 - `requirement`
 - `work_item`
 - `task`
 
+Spec skeleton creation is outside this MVP authoring surface. Existing spec records may still be updated by `propose_record_update` when the target record already exists and the metadata / section selector is unambiguous.
 Investigation creation is outside this MVP authoring surface.
 
 ### Request
@@ -997,14 +998,16 @@ Allowed `id` placeholder forms:
 | kind | allowed create ID forms |
 |---|---|
 | `decision` | exact `ADR-NNN` or `ADR-new` |
-| `spec` | exact `SPEC-<slug>` or `SPEC-new` |
+| `spec` | not supported for create in MVP |
 | `requirement` | exact `REQ-<DOMAIN>-NNN` or `REQ-<DOMAIN>-new` |
 | `work_item` | exact `WORK-<DOMAIN>-NNN` or `WORK-<DOMAIN>-new` |
 | `task` | exact `TASK-<DOMAIN>-<WORK-SEQUENCE>-NN` or `TASK-<DOMAIN>-<WORK-SEQUENCE>-new` |
 
+The `new` placeholder is the literal token `new` in the sequence position. `ADR-new`, `REQ-<DOMAIN>-new`, `WORK-<DOMAIN>-new`, and `TASK-<DOMAIN>-<WORK-SEQUENCE>-new` are the only accepted placeholder forms. Any other token in the sequence position, such as `ADR-newish` or `REQ-MCP-newer`, is treated as malformed and rejected as `invalid_request`.
+
 `new` is valid only for create operations.
 The MCP resolves the final ID using the current record index.
-For `SPEC-new`, the MCP derives a slug from `title`, prefixes it with `SPEC-`, and checks availability in the record index.
+`SPEC-new` and spec skeleton create are rejected in the MVP because spec record placement cannot be derived safely from ID alone. Spec placement discovery / domain tree support is tracked as REQ-MCP-010.
 For numeric families, the MCP uses the next available sequence in the relevant family / domain / parent scope and does not fill gaps unless a later spec explicitly changes that rule.
 
 Task create requires `parent_id`.
@@ -1073,7 +1076,7 @@ If required follow-up updates are present, acceptance must be rejected with `wri
 It does not write repository files.
 
 MVP update support covers `decision`, `spec`, `requirement`, `work_item`, and `task`.
-Update operations reject any ID containing a `new` placeholder.
+Update operations reject any ID containing the literal `new` token in the sequence position.
 
 ### Request
 
@@ -1133,17 +1136,17 @@ Named section replacement:
 
 #### Metadata block replacement
 
-Metadata block replacement targets the kind-specific metadata block, not just YAML front matter.
+Metadata block replacement targets the kind-specific metadata block.
 
 | kind | replacement target |
 |---|---|
-| `spec` | YAML front matter metadata block |
+| `spec` | recognized spec metadata fields inside YAML front matter |
 | `decision` | H1-following ADR bullet metadata block |
 | `requirement` | H1-following requirement bullet metadata block |
 | `work_item` | H1-following work item bullet metadata block |
 | `task` | H1-following task bullet metadata block |
 
-Spec metadata replacement must validate required recognized spec fields, including `scope`, top-level `status`, and `design_record.id` / `design_record.kind` / `design_record.status` / `design_record.depends_on`.
+For `spec`, metadata replacement is scoped to recognized fields only. Unknown or auxiliary YAML front matter fields must be preserved. The recognized spec metadata fields are `scope`, top-level `status`, and `design_record.id` / `design_record.kind` / `design_record.status` / `design_record.depends_on`.
 Decision metadata replacement must validate recognized ADR fields required by the current ADR metadata contract: `status`, `date`, `depends_on`, `supersedes`, and `migrated_to_spec`.
 Workflow artifact metadata replacement must validate the required fields defined in `schema.md`.
 
@@ -1153,7 +1156,7 @@ Invalid recognized field values must produce `invalid_metadata_value` or the exi
 
 #### Named section replacement
 
-Named section replacement is valid only when `section_selector` resolves to exactly one Markdown ATX section in the target record.
+Named section replacement is valid only when `section_selector` resolves to exactly one Markdown ATX section in the target record. Section matching uses the same ATX heading source rules as the `headings` field defined in `schema.md`; YAML front matter and fenced code block content are not section sources, and setext headings are not section sources in the MVP.
 
 `section_selector` fields:
 
@@ -1175,10 +1178,72 @@ Zero matches must return `section_selector_no_match` and must not create a propo
 Multiple matches must return `section_selector_ambiguous` and must not create a proposal.
 When possible, diagnostics should include `candidate_headings` with heading text, level, and ordinal.
 
+Spec metadata block replacement example:
+
+```json
+{
+  "kind": "spec",
+  "id": "SPEC-design-records-mcp-tools",
+  "update": {
+    "type": "metadata_block_replace",
+    "metadata": {
+      "scope": "docs/spec/design-records-mcp/tools.md",
+      "status": "draft",
+      "design_record": {
+        "id": "SPEC-design-records-mcp-tools",
+        "kind": "spec",
+        "status": "draft",
+        "depends_on": ["ADR-076", "ADR-077", "ADR-087", "ADR-088", "ADR-090", "ADR-092", "ADR-093"]
+      }
+    }
+  }
+}
+```
+
 ### Response
 
 `propose_record_update` returns the common proposal response fields.
 For update proposals, `target.resolved_id` is the existing record ID, and `diff.files[].change` is `modify`.
+
+Metadata block replacement response example:
+
+```json
+{
+  "proposal_id": "pw_opaque",
+  "state": "proposed",
+  "operation": "update",
+  "target_kind": "task",
+  "target": {
+    "requested_id": "TASK-MCP-008-04",
+    "resolved_id": "TASK-MCP-008-04",
+    "kind": "task",
+    "domain": "MCP",
+    "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md"
+  },
+  "expires_at": "2026-06-05T00:00:00Z",
+  "retention_days": 3,
+  "diff": {
+    "format": "unified",
+    "files": [
+      {
+        "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md",
+        "change": "modify",
+        "record_id": "TASK-MCP-008-04",
+        "record_kind": "task"
+      }
+    ],
+    "text": "--- docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md\n+++ docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md\n..."
+  },
+  "validation": {
+    "ok": true,
+    "diagnostics": []
+  },
+  "diagnostics": [],
+  "note": "No repository files have been written. Call accept_proposed_write with this proposal_id to apply the diff."
+}
+```
+
+Named section replacement response uses the same proposal shape. `diff.files[].change` is `modify`, and `target.resolved_id` is the existing record ID.
 
 ## `get_proposed_write`
 
@@ -1360,6 +1425,7 @@ The authoring transaction MVP intentionally excludes:
 - `migrate_record_to_spec`
 - partial Markdown AST editing
 - general-purpose multi-record atomic transactions with rollback semantics
+- spec skeleton creation and `SPEC-new` placeholder create
 - arbitrary unrelated record bundling in one proposal
 - automatic close cascades across requirement / work item / task
 - automatic rollback after accepted post-write validation failure

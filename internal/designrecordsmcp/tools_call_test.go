@@ -357,6 +357,49 @@ func TestToolsCallAuthoringGuidance(t *testing.T) {
 	}
 }
 
+func TestToolsCallAuthoringTransaction(t *testing.T) {
+	root := t.TempDir()
+	writeToolsCallTestFile(t, root, "docs/requirements/mcp/REQ-MCP-001-test.md", "# REQ-MCP-001: Test requirement\n\n- **id**: REQ-MCP-001\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-001\n")
+	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-001-test.md", "# WORK-MCP-001: Test work\n\n- **id**: WORK-MCP-001\n- **status**: implementation_pending\n- **date**: 2026-06-02\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-001-01\n")
+	taskRel := "docs/tasks/mcp/TASK-MCP-001-01-test.md"
+	writeToolsCallTestFile(t, root, taskRel, "# TASK-MCP-001-01: Test task\n\n- **id**: TASK-MCP-001-01\n- **status**: todo\n- **date**: 2026-06-02\n- **work_item**: WORK-MCP-001\n- **source_requirement**: REQ-MCP-001\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - output\n\n## Evidence\nold\n")
+	cfg, err := designrecords.NewConfig(root)
+	if err != nil {
+		t.Fatalf("NewConfig: %v", err)
+	}
+	server := NewServer(cfg)
+
+	propose := handleLine(t, server, `{"jsonrpc":"2.0","id":901,"method":"tools/call","params":{"name":"propose_record_update","arguments":{"kind":"task","id":"TASK-MCP-001-01","update":{"type":"named_section_replace","section_selector":{"heading":"Evidence"}},"body":"new evidence\n"}}}`)
+	proposeResult := assertToolCallResult(t, propose, false)
+	var proposed designrecords.ProposeRecordResponse
+	unmarshalToolText(t, proposeResult.Content[0].Text, &proposed)
+	if !proposed.ProposalCreated || proposed.ProposalID == "" {
+		t.Fatalf("propose response = %#v", proposed)
+	}
+	if content := readToolsCallTestFile(t, root, taskRel); strings.Contains(content, "new evidence") {
+		t.Fatalf("propose wrote file:\n%s", content)
+	}
+
+	get := handleLine(t, server, `{"jsonrpc":"2.0","id":902,"method":"tools/call","params":{"name":"get_proposed_write","arguments":{"proposal_id":"`+proposed.ProposalID+`"}}}`)
+	getResult := assertToolCallResult(t, get, false)
+	var got designrecords.GetProposedWriteResponse
+	unmarshalToolText(t, getResult.Content[0].Text, &got)
+	if got.ProposalID != proposed.ProposalID || got.State != designrecords.ProposalStateProposed {
+		t.Fatalf("get proposal response = %#v", got)
+	}
+
+	accept := handleLine(t, server, `{"jsonrpc":"2.0","id":903,"method":"tools/call","params":{"name":"accept_proposed_write","arguments":{"proposal_id":"`+proposed.ProposalID+`"}}}`)
+	acceptResult := assertToolCallResult(t, accept, false)
+	var accepted designrecords.AcceptProposedWriteResponse
+	unmarshalToolText(t, acceptResult.Content[0].Text, &accepted)
+	if !accepted.Written || accepted.State != designrecords.ProposalStateAccepted {
+		t.Fatalf("accept response = %#v", accepted)
+	}
+	if content := readToolsCallTestFile(t, root, taskRel); !strings.Contains(content, "new evidence") {
+		t.Fatalf("accept did not write file:\n%s", content)
+	}
+}
+
 func TestToolsCallToolErrors(t *testing.T) {
 	tests := []struct {
 		name string
@@ -710,6 +753,15 @@ func writeToolsCallTestFile(t *testing.T, root, rel, content string) {
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
+}
+
+func readToolsCallTestFile(t *testing.T, root, rel string) string {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(rel)))
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	return string(data)
 }
 
 func assertToolTextJSONKeys(t *testing.T, text string, want []string) {

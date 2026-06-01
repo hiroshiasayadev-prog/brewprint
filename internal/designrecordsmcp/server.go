@@ -9,8 +9,9 @@ import (
 type IndexBuilder func(context.Context, designrecords.Config) (*designrecords.Index, error)
 
 type Server struct {
-	cfg        designrecords.Config
-	buildIndex IndexBuilder
+	cfg            designrecords.Config
+	buildIndex     IndexBuilder
+	authoringStore *designrecords.AuthoringStore
 }
 
 func NewServer(cfg designrecords.Config) *Server {
@@ -22,8 +23,9 @@ func NewServerWithIndexBuilder(cfg designrecords.Config, buildIndex IndexBuilder
 		buildIndex = designrecords.BuildIndex
 	}
 	return &Server{
-		cfg:        cfg,
-		buildIndex: buildIndex,
+		cfg:            cfg,
+		buildIndex:     buildIndex,
+		authoringStore: designrecords.NewAuthoringStore(),
 	}
 }
 
@@ -32,4 +34,11 @@ func (s *Server) Config() designrecords.Config {
 		return designrecords.Config{}
 	}
 	return s.cfg
+}
+
+func (s *Server) AuthoringStoreForTest() *designrecords.AuthoringStore {
+	if s == nil {
+		return nil
+	}
+	return s.authoringStore
 }

@@ -110,6 +110,45 @@ func (s *Server) HandleToolsCall(params json.RawMessage) ToolsCallResult {
 			return toolBuildIndexErrorResult(buildErr)
 		}
 		return toolHandlerResult(designrecords.SuggestNextRecord(ctx, idx, req))
+	case "propose_record_create":
+		var req designrecords.ProposeRecordCreateRequest
+		if err := decodeToolArguments(call.Arguments, &req); err != nil {
+			return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("invalid propose_record_create arguments: %v", err))
+		}
+		if buildErr != nil {
+			return toolBuildIndexErrorResult(buildErr)
+		}
+		return toolHandlerResult(designrecords.ProposeRecordCreate(ctx, s.cfg, idx, s.authoringStore, req))
+	case "propose_record_update":
+		var req designrecords.ProposeRecordUpdateRequest
+		if err := decodeToolArguments(call.Arguments, &req); err != nil {
+			return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("invalid propose_record_update arguments: %v", err))
+		}
+		if buildErr != nil {
+			return toolBuildIndexErrorResult(buildErr)
+		}
+		return toolHandlerResult(designrecords.ProposeRecordUpdate(ctx, s.cfg, idx, s.authoringStore, req))
+	case "get_proposed_write":
+		var req designrecords.GetProposedWriteRequest
+		if err := decodeToolArguments(call.Arguments, &req); err != nil {
+			return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("invalid get_proposed_write arguments: %v", err))
+		}
+		return toolHandlerResult(designrecords.GetProposedWrite(ctx, s.authoringStore, req))
+	case "accept_proposed_write":
+		var req designrecords.AcceptProposedWriteRequest
+		if err := decodeToolArguments(call.Arguments, &req); err != nil {
+			return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("invalid accept_proposed_write arguments: %v", err))
+		}
+		if buildErr != nil {
+			return toolBuildIndexErrorResult(buildErr)
+		}
+		return toolHandlerResult(designrecords.AcceptProposedWrite(ctx, s.cfg, idx, s.authoringStore, req))
+	case "discard_proposed_write":
+		var req designrecords.DiscardProposedWriteRequest
+		if err := decodeToolArguments(call.Arguments, &req); err != nil {
+			return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("invalid discard_proposed_write arguments: %v", err))
+		}
+		return toolHandlerResult(designrecords.DiscardProposedWrite(ctx, s.authoringStore, req))
 	default:
 		return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("unknown tool %q", call.Name))
 	}

@@ -47,6 +47,12 @@ type Heading struct {
 	Text  string `json:"text"`
 }
 
+type CandidateHeading struct {
+	Heading string `json:"heading"`
+	Level   int    `json:"level"`
+	Ordinal int    `json:"ordinal"`
+}
+
 type Record struct {
 	ID            string               `json:"id"`
 	Kind          RecordKind           `json:"kind"`
@@ -227,65 +233,82 @@ const (
 )
 
 type Diagnostic struct {
-	Category         DiagnosticCategory `json:"category"`
-	Severity         DiagnosticSeverity `json:"severity"`
-	RecordID         string             `json:"record_id,omitempty"`
-	Path             string             `json:"path,omitempty"`
-	Message          string             `json:"message"`
-	TargetID         string             `json:"target_id,omitempty"`
-	Field            string             `json:"field,omitempty"`
-	Value            string             `json:"value,omitempty"`
-	RefStatus        string             `json:"ref_status,omitempty"`
-	RequestedID      string             `json:"requested_id,omitempty"`
-	FirstIndex       *int               `json:"first_index,omitempty"`
-	DuplicateIndexes []int              `json:"duplicate_indexes,omitempty"`
-	ValuePresent     bool               `json:"-"`
+	Category          DiagnosticCategory `json:"category"`
+	Severity          DiagnosticSeverity `json:"severity"`
+	RecordID          string             `json:"record_id,omitempty"`
+	Path              string             `json:"path,omitempty"`
+	Message           string             `json:"message"`
+	TargetID          string             `json:"target_id,omitempty"`
+	Field             string             `json:"field,omitempty"`
+	Value             string             `json:"value,omitempty"`
+	RefStatus         string             `json:"ref_status,omitempty"`
+	RequestedID       string             `json:"requested_id,omitempty"`
+	FirstIndex        *int               `json:"first_index,omitempty"`
+	DuplicateIndexes  []int              `json:"duplicate_indexes,omitempty"`
+	CandidateHeadings []CandidateHeading `json:"candidate_headings,omitempty"`
+	ValuePresent      bool               `json:"-"`
 }
 
 func (d Diagnostic) MarshalJSON() ([]byte, error) {
 	type diagnosticJSON struct {
-		Category         DiagnosticCategory `json:"category"`
-		Severity         DiagnosticSeverity `json:"severity"`
-		RecordID         string             `json:"record_id,omitempty"`
-		Path             string             `json:"path,omitempty"`
-		Message          string             `json:"message"`
-		TargetID         string             `json:"target_id,omitempty"`
-		Field            string             `json:"field,omitempty"`
-		Value            *string            `json:"value,omitempty"`
-		RefStatus        string             `json:"ref_status,omitempty"`
-		RequestedID      string             `json:"requested_id,omitempty"`
-		FirstIndex       *int               `json:"first_index,omitempty"`
-		DuplicateIndexes []int              `json:"duplicate_indexes,omitempty"`
+		Category          DiagnosticCategory `json:"category"`
+		Severity          DiagnosticSeverity `json:"severity"`
+		RecordID          string             `json:"record_id,omitempty"`
+		Path              string             `json:"path,omitempty"`
+		Message           string             `json:"message"`
+		TargetID          string             `json:"target_id,omitempty"`
+		Field             string             `json:"field,omitempty"`
+		Value             *string            `json:"value,omitempty"`
+		RefStatus         string             `json:"ref_status,omitempty"`
+		RequestedID       string             `json:"requested_id,omitempty"`
+		FirstIndex        *int               `json:"first_index,omitempty"`
+		DuplicateIndexes  []int              `json:"duplicate_indexes,omitempty"`
+		CandidateHeadings []CandidateHeading `json:"candidate_headings,omitempty"`
 	}
 	var value *string
 	if d.Value != "" || d.ValuePresent {
 		value = &d.Value
 	}
 	return json.Marshal(diagnosticJSON{
-		Category:         d.Category,
-		Severity:         d.Severity,
-		RecordID:         d.RecordID,
-		Path:             d.Path,
-		Message:          d.Message,
-		TargetID:         d.TargetID,
-		Field:            d.Field,
-		Value:            value,
-		RefStatus:        d.RefStatus,
-		RequestedID:      d.RequestedID,
-		FirstIndex:       d.FirstIndex,
-		DuplicateIndexes: d.DuplicateIndexes,
+		Category:          d.Category,
+		Severity:          d.Severity,
+		RecordID:          d.RecordID,
+		Path:              d.Path,
+		Message:           d.Message,
+		TargetID:          d.TargetID,
+		Field:             d.Field,
+		Value:             value,
+		RefStatus:         d.RefStatus,
+		RequestedID:       d.RequestedID,
+		FirstIndex:        d.FirstIndex,
+		DuplicateIndexes:  d.DuplicateIndexes,
+		CandidateHeadings: d.CandidateHeadings,
 	})
 }
 
 type ErrorCode string
 
 const (
-	ErrorCodeRecordNotFound              ErrorCode = "record_not_found"
-	ErrorCodeGuideNotFound               ErrorCode = "guide_not_found"
-	ErrorCodeInvalidRequest              ErrorCode = "invalid_request"
-	ErrorCodeUnsupportedKind             ErrorCode = "unsupported_kind"
-	ErrorCodeInvalidIDRange              ErrorCode = "invalid_id_range"
-	ErrorCodeIDRangeRequiresDecisionKind ErrorCode = "id_range_requires_decision_kind"
+	ErrorCodeRecordNotFound               ErrorCode = "record_not_found"
+	ErrorCodeGuideNotFound                ErrorCode = "guide_not_found"
+	ErrorCodeInvalidRequest               ErrorCode = "invalid_request"
+	ErrorCodeUnsupportedKind              ErrorCode = "unsupported_kind"
+	ErrorCodeInvalidIDRange               ErrorCode = "invalid_id_range"
+	ErrorCodeIDRangeRequiresDecisionKind  ErrorCode = "id_range_requires_decision_kind"
+	ErrorCodeProposalNotFound             ErrorCode = "proposal_not_found"
+	ErrorCodeProposalExpired              ErrorCode = "proposal_expired"
+	ErrorCodeProposalDiscarded            ErrorCode = "proposal_discarded"
+	ErrorCodeProposalAlreadyAccepted      ErrorCode = "proposal_already_accepted"
+	ErrorCodeProposalStale                ErrorCode = "proposal_stale"
+	ErrorCodeTargetChanged                ErrorCode = "target_changed"
+	ErrorCodeIDCollision                  ErrorCode = "id_collision"
+	ErrorCodeRequiredFollowUpNotSatisfied ErrorCode = "required_follow_up_not_satisfied"
+	ErrorCodeInvalidBodySource            ErrorCode = "invalid_body_source"
+	ErrorCodeBodyCacheNotFound            ErrorCode = "body_cache_not_found"
+	ErrorCodeBodyCacheExpired             ErrorCode = "body_cache_expired"
+	ErrorCodeProposalPreparationFailed    ErrorCode = "proposal_preparation_failed"
+	ErrorCodeSectionSelectorNoMatch       ErrorCode = "section_selector_no_match"
+	ErrorCodeSectionSelectorAmbiguous     ErrorCode = "section_selector_ambiguous"
 )
 
 type ToolError struct {
