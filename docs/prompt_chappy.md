@@ -40,6 +40,7 @@
 - proposal creation は repository files を書き換えない。実書き込みは accept 系 tool の結果で `written` / `files_written` / diagnostics を確認する。
 - `SPEC-new` / spec skeleton create は MVP 外なので、必要なら REQ-MCP-010 系の placement discovery follow-up として扱う。
 - authoring transaction tool が未対応・失敗・曖昧な場合だけ、理由を明記して filesystem edit に fallback する。
+- `propose_record_create` で新規 REQ / WORK / TASK を作る場合は、デフォルトで `*-new` placeholder を使う。ユーザーが exact ID を明示した場合、または番号予約が確認済みの場合だけ exact ID を使う。
 
 ### File operations
 
