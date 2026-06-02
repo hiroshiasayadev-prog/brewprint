@@ -246,6 +246,7 @@ func TestAuthoringCreateIDResolutionAndRejectedNewForms(t *testing.T) {
 func TestAuthoringCreateInputContractNormalization(t *testing.T) {
 	fx := newAuthoringFixture(t)
 	body := "# REQ-MCP-050: Body\n\n- **id**: REQ-MCP-050\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n"
+	sectionBody := "## Requirement\n\nGenerated requirement body.\n\n## Evidence\n\nGenerated evidence.\n"
 	fields := map[string]any{"status": "captured", "date": "2026-06-02", "source_refs": []any{}, "work_items": []any{}}
 
 	fieldsAndBody, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
@@ -254,13 +255,13 @@ func TestAuthoringCreateInputContractNormalization(t *testing.T) {
 		Domain: "mcp",
 		Title:  "Fields and body",
 		Fields: fields,
-		Body:   &body,
+		Body:   &sectionBody,
 	})
 	if err != nil {
 		t.Fatalf("fields plus body: %v", err)
 	}
-	if fieldsAndBody.ProposalCreated || fieldsAndBody.BodyCache != nil || !hasDiagnosticCategory(fieldsAndBody.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
-		t.Fatalf("fields plus body response = %#v", fieldsAndBody)
+	if !fieldsAndBody.ProposalCreated || fieldsAndBody.Target.Domain != "MCP" || !strings.Contains(fieldsAndBody.Diff.Text, "# REQ-MCP-050: Fields and body") || !strings.Contains(fieldsAndBody.Diff.Text, "- **id**: REQ-MCP-050") || !strings.Contains(fieldsAndBody.Diff.Text, "Generated requirement body.") {
+		t.Fatalf("fields plus body response = %#v\n%s", fieldsAndBody, fieldsAndBody.Diff.Text)
 	}
 
 	bodyAndCache, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
@@ -276,6 +277,21 @@ func TestAuthoringCreateInputContractNormalization(t *testing.T) {
 	}
 	if bodyAndCache.ProposalCreated || bodyAndCache.BodyCache != nil || !hasDiagnosticCategory(bodyAndCache.Diagnostics, DiagnosticCategory(ErrorCodeInvalidBodySource)) {
 		t.Fatalf("body plus cache response = %#v", bodyAndCache)
+	}
+
+	fieldsAndCache, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:        RecordKindRequirement,
+		ID:          "REQ-MCP-051",
+		Domain:      "mcp",
+		Title:       "Fields cache conflict",
+		Fields:      fields,
+		BodyCacheID: "bc_other",
+	})
+	if err != nil {
+		t.Fatalf("fields plus cache: %v", err)
+	}
+	if fieldsAndCache.ProposalCreated || fieldsAndCache.BodyCache != nil || !hasDiagnosticCategory(fieldsAndCache.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
+		t.Fatalf("fields plus cache response = %#v", fieldsAndCache)
 	}
 
 	withoutFieldsID, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
@@ -335,6 +351,83 @@ func TestAuthoringCreateInputContractNormalization(t *testing.T) {
 	}
 	if placeholder.ProposalCreated || !hasDiagnosticCategory(placeholder.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
 		t.Fatalf("placeholder fields.id response = %#v", placeholder)
+	}
+
+	placeholderBody, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:   RecordKindRequirement,
+		ID:     "REQ-MCP-new",
+		Domain: "MCP",
+		Title:  "Placeholder body",
+		Fields: fields,
+		Body:   &sectionBody,
+	})
+	if err != nil {
+		t.Fatalf("placeholder fields plus body: %v", err)
+	}
+	if !placeholderBody.ProposalCreated || placeholderBody.Target.ResolvedID != "REQ-MCP-002" || !strings.Contains(placeholderBody.Diff.Text, "# REQ-MCP-002: Placeholder body") || !strings.Contains(placeholderBody.Diff.Text, "- **id**: REQ-MCP-002") {
+		t.Fatalf("placeholder fields plus body response = %#v\n%s", placeholderBody, placeholderBody.Diff.Text)
+	}
+
+	fullRecordInStructuredBody, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:   RecordKindRequirement,
+		ID:     "REQ-MCP-056",
+		Domain: "MCP",
+		Title:  "Full record in structured body",
+		Fields: fields,
+		Body:   &body,
+	})
+	if err != nil {
+		t.Fatalf("full record structured body: %v", err)
+	}
+	if fullRecordInStructuredBody.ProposalCreated || !hasDiagnosticCategory(fullRecordInStructuredBody.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
+		t.Fatalf("full record structured body response = %#v", fullRecordInStructuredBody)
+	}
+
+	metadataInStructuredBody := "- **status**: captured\n\n## Requirement\n"
+	metadataBlockInStructuredBody, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:   RecordKindRequirement,
+		ID:     "REQ-MCP-057",
+		Domain: "MCP",
+		Title:  "Metadata in structured body",
+		Fields: fields,
+		Body:   &metadataInStructuredBody,
+	})
+	if err != nil {
+		t.Fatalf("metadata structured body: %v", err)
+	}
+	if metadataBlockInStructuredBody.ProposalCreated || !hasDiagnosticCategory(metadataBlockInStructuredBody.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
+		t.Fatalf("metadata structured body response = %#v", metadataBlockInStructuredBody)
+	}
+
+	legacyBody := "# REQ-MCP-058: Legacy\n\n- **id**: REQ-MCP-058\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n\n## Requirement\n\nLegacy body.\n"
+	legacy, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:   RecordKindRequirement,
+		ID:     "REQ-MCP-058",
+		Domain: "MCP",
+		Title:  "Legacy",
+		Body:   &legacyBody,
+	})
+	if err != nil {
+		t.Fatalf("legacy body create: %v", err)
+	}
+	if !legacy.ProposalCreated || !strings.Contains(legacy.Diff.Text, "# REQ-MCP-058: Legacy") || !strings.Contains(legacy.Diff.Text, "Legacy body.") {
+		t.Fatalf("legacy body create response = %#v\n%s", legacy, legacy.Diff.Text)
+	}
+
+	cachedLegacyBody := "# REQ-MCP-059: Cached legacy\n\n- **id**: REQ-MCP-059\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n\n## Requirement\n\nCached legacy body.\n"
+	cachedLegacy := fx.store.cacheBody(cachedLegacyBody)
+	legacyCache, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:        RecordKindRequirement,
+		ID:          "REQ-MCP-059",
+		Domain:      "MCP",
+		Title:       "Cached legacy",
+		BodyCacheID: cachedLegacy.BodyCacheID,
+	})
+	if err != nil {
+		t.Fatalf("legacy body cache create: %v", err)
+	}
+	if !legacyCache.ProposalCreated || !strings.Contains(legacyCache.Diff.Text, "# REQ-MCP-059: Cached legacy") || !strings.Contains(legacyCache.Diff.Text, "Cached legacy body.") {
+		t.Fatalf("legacy body cache create response = %#v\n%s", legacyCache, legacyCache.Diff.Text)
 	}
 
 	domainMismatch, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{

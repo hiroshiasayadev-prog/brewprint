@@ -321,6 +321,34 @@ func TestToolsListAuthoringGuidanceTools(t *testing.T) {
 	}
 }
 
+func TestToolsProposeRecordCreateSchemaFieldsOptional(t *testing.T) {
+	createTool := findToolForTest(Tools(), "propose_record_create")
+	if createTool == nil {
+		t.Fatal("missing propose_record_create")
+	}
+	properties, ok := createTool.InputSchema["properties"].(map[string]any)
+	if !ok {
+		t.Fatalf("propose_record_create properties missing: %#v", createTool.InputSchema)
+	}
+	for _, name := range []string{"kind", "id", "domain", "parent_id", "title", "fields", "body", "body_cache_id", "reciprocal_update_mode"} {
+		if _, ok := properties[name]; !ok {
+			t.Fatalf("propose_record_create schema missing property %q: %#v", name, properties)
+		}
+	}
+	required, ok := createTool.InputSchema["required"].([]string)
+	if !ok {
+		t.Fatalf("propose_record_create required missing: %#v", createTool.InputSchema)
+	}
+	for _, want := range []string{"kind", "id", "title"} {
+		if !hasString(required, want) {
+			t.Fatalf("propose_record_create required missing %q: %#v", want, required)
+		}
+	}
+	if hasString(required, "fields") {
+		t.Fatalf("propose_record_create required still includes fields: %#v", required)
+	}
+}
+
 func TestToolsCallAuthoringGuidance(t *testing.T) {
 	root := t.TempDir()
 	writeToolsCallTestFile(t, root, "docs/guides/zeta.md", "# Zeta Guide\n\n## Abstract\n\nZeta summary.\n\n## Body\n\nZeta body.\n")
@@ -656,6 +684,15 @@ func findToolForTest(tools []Tool, name string) *Tool {
 }
 
 func hasEnumValue(values []any, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
+func hasString(values []string, want string) bool {
 	for _, value := range values {
 		if value == want {
 			return true

@@ -93,7 +93,7 @@ func Tools() []Tool {
 				"body":                   map[string]any{"type": "string"},
 				"body_cache_id":          map[string]any{"type": "string"},
 				"reciprocal_update_mode": enumStringSchema("include_required", "report_required_follow_up"),
-			}, []string{"kind", "id", "title", "fields"}),
+			}, []string{"kind", "id", "title"}),
 		},
 		{
 			Name:        "propose_record_update",

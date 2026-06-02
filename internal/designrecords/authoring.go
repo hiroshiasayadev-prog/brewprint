@@ -250,8 +250,8 @@ func ProposeRecordCreate(ctx context.Context, cfg Config, idx *Index, store *Aut
 	if req.Body != nil && req.BodyCacheID != "" {
 		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidBodySource, "body and body_cache_id are mutually exclusive")), nil
 	}
-	if req.Fields != nil && (req.Body != nil || req.BodyCacheID != "") {
-		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "fields cannot be combined with body or body_cache_id for create")), nil
+	if req.Fields != nil && req.BodyCacheID != "" {
+		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "fields cannot be combined with body_cache_id for create")), nil
 	}
 	if req.Fields == nil && req.Body == nil && req.BodyCacheID == "" {
 		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "fields or exactly one full body source is required for create")), nil
@@ -520,8 +520,14 @@ func prepareCreate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 	}
 
 	content := ""
-	if body != nil {
+	if body != nil && req.Fields == nil {
 		content = *body
+	} else if body != nil {
+		var renderErr error
+		content, renderErr = renderCreateBodyWithContent(idx, req.Kind, resolved, req.Title, req.Fields, req.ParentID, req.ID, *body)
+		if renderErr != nil {
+			return authoringPreparation{}, renderErr
+		}
 	} else {
 		var renderErr error
 		content, renderErr = renderCreateBody(idx, req.Kind, resolved, req.Title, req.Fields, req.ParentID)
@@ -745,6 +751,29 @@ func validateCreateFieldsID(kind RecordKind, requestedID string, fields map[stri
 }
 
 func renderCreateBody(idx *Index, kind RecordKind, id, title string, fields map[string]any, parentID string) (string, error) {
+	header, err := renderCreateHeader(idx, kind, id, title, fields, parentID)
+	if err != nil {
+		return "", err
+	}
+	sections := defaultCreateSections(kind)
+	if sections == "" {
+		return header + "\n", nil
+	}
+	return header + "\n\n" + sections, nil
+}
+
+func renderCreateBodyWithContent(idx *Index, kind RecordKind, id, title string, fields map[string]any, parentID, requestedID, body string) (string, error) {
+	if err := validateStructuredCreateContentBody(kind, requestedID, id, body); err != nil {
+		return "", err
+	}
+	header, err := renderCreateHeader(idx, kind, id, title, fields, parentID)
+	if err != nil {
+		return "", err
+	}
+	return header + "\n\n" + normalizeStructuredCreateContentBody(body), nil
+}
+
+func renderCreateHeader(idx *Index, kind RecordKind, id, title string, fields map[string]any, parentID string) (string, error) {
 	switch kind {
 	case RecordKindDecision:
 		num := strings.TrimPrefix(id, "ADR-")
@@ -752,19 +781,19 @@ func renderCreateBody(idx *Index, kind RecordKind, id, title string, fields map[
 		if err != nil {
 			return "", err
 		}
-		return "# " + num + ": " + title + "\n\n" + meta + "\n", nil
+		return "# " + num + ": " + title + "\n\n" + meta, nil
 	case RecordKindRequirement:
 		meta, err := renderRequirementCreateMetadata(id, fields)
 		if err != nil {
 			return "", err
 		}
-		return "# " + id + ": " + title + "\n\n" + meta + "\n\n## Requirement\n\n## Evidence\n", nil
+		return "# " + id + ": " + title + "\n\n" + meta, nil
 	case RecordKindWorkItem:
 		meta, err := renderWorkItemCreateMetadata(id, fields)
 		if err != nil {
 			return "", err
 		}
-		return "# " + id + ": " + title + "\n\n" + meta + "\n\n## Goal\n\n## Boundary\n\n## Evidence\n", nil
+		return "# " + id + ": " + title + "\n\n" + meta, nil
 	case RecordKindTask:
 		if scalarField(fields, "work_item") != parentID {
 			return "", fmt.Errorf("task create requires explicit fields.work_item equal to parent_id")
@@ -773,10 +802,70 @@ func renderCreateBody(idx *Index, kind RecordKind, id, title string, fields map[
 		if err != nil {
 			return "", err
 		}
-		return "# " + id + ": " + title + "\n\n" + meta + "\n\n## Goal\n\n## Work\n\n## Done condition\n\n## Verification\n\n## Evidence\n", nil
+		return "# " + id + ": " + title + "\n\n" + meta, nil
 	default:
 		return "", fmt.Errorf("unsupported kind %q", kind)
 	}
+}
+
+func defaultCreateSections(kind RecordKind) string {
+	switch kind {
+	case RecordKindRequirement:
+		return "## Requirement\n\n## Evidence\n"
+	case RecordKindWorkItem:
+		return "## Goal\n\n## Boundary\n\n## Evidence\n"
+	case RecordKindTask:
+		return "## Goal\n\n## Work\n\n## Done condition\n\n## Verification\n\n## Evidence\n"
+	default:
+		return ""
+	}
+}
+
+func validateStructuredCreateContentBody(kind RecordKind, requestedID, resolvedID, body string) error {
+	trimmed := strings.TrimSpace(body)
+	if trimmed == "" {
+		return fmt.Errorf("fields plus body create requires section content in body")
+	}
+	firstLine := firstNonEmptyLine(body)
+	if strings.HasPrefix(firstLine, "# ") {
+		return fmt.Errorf("fields plus body create body must omit H1; MCP generates the record heading")
+	}
+	if firstLine == "---" {
+		return fmt.Errorf("fields plus body create body must omit YAML metadata; MCP generates the metadata block")
+	}
+	if strings.HasPrefix(firstLine, "- **") {
+		return fmt.Errorf("fields plus body create body must omit the metadata block; MCP generates metadata from fields")
+	}
+	if containsMetadataIDLine(body) {
+		return fmt.Errorf("fields plus body create body must omit metadata id; MCP uses the resolved target id")
+	}
+	if hasSequenceNewToken(requestedID, kind) && strings.Contains(body, resolvedID) {
+		return fmt.Errorf("fields plus body create body must not include guessed resolved id %s", resolvedID)
+	}
+	return nil
+}
+
+func firstNonEmptyLine(body string) string {
+	for _, line := range strings.Split(body, "\n") {
+		trimmed := strings.TrimSpace(strings.TrimSuffix(line, "\r"))
+		if trimmed != "" {
+			return trimmed
+		}
+	}
+	return ""
+}
+
+func containsMetadataIDLine(body string) bool {
+	for _, line := range strings.Split(body, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(strings.TrimSuffix(line, "\r")), "- **id**:") {
+			return true
+		}
+	}
+	return false
+}
+
+func normalizeStructuredCreateContentBody(body string) string {
+	return strings.TrimSpace(strings.ReplaceAll(body, "\r\n", "\n")) + "\n"
 }
 
 func requiredReciprocalUpdates(ctx context.Context, cfg Config, idx *Index, kind RecordKind, id string, fields map[string]any, parentID, mode string) ([]ProposedFile, []RequiredFollowUpUpdate, error) {
