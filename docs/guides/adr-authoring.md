@@ -64,6 +64,11 @@ ADR body:
 
 `id` は H1 の number から導かれる。ADR metadata は Design Records MCP によって読まれるため、field value に注釈を混ぜない。
 
+MCP create note:
+The Markdown above is the full artifact file shape.
+When calling `propose_record_create` with `fields` plus `body`, put metadata in `fields` and make `body` content sections only, starting at `## 背景`.
+Do not include the H1, metadata block, metadata `id`, or guessed server-resolved ID in that MCP `body`.
+
 ## Status
 
 | status | meaning |

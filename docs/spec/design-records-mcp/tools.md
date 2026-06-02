@@ -908,20 +908,26 @@ Exact wording は implementation detail だが、この意味を弱めてはな�
 
 ### Body source and body cache
 
-Operations that require large Markdown body input accept exactly one of `body` or `body_cache_id`.
-Supplying both is invalid and must not create a proposal or body cache entry.
+Operations that require Markdown body input accept a caller-supplied `body` or, where explicitly supported, a cached `body_cache_id`.
+Supplying both `body` and `body_cache_id` is invalid and must not create a proposal or body cache entry.
 Supplying neither is valid only for operations that do not require body input.
 
-For create operations, structured `fields` and a caller-supplied full Markdown body are different content sources.
-`propose_record_create` must reject requests that supply `fields` together with either `body` or `body_cache_id` as `invalid_request`.
-The tool must not define precedence between `body` and `fields`, must not silently ignore either input, and must not create a proposal for such a request.
+For `propose_record_create`, structured `fields` and caller-supplied `body` may be combined when `body` is content sections only.
+In this mode, `fields` render the H1-following metadata block and `body` supplies the Markdown sections after that generated metadata block.
+The MCP owns H1 and metadata rendering for structured creates.
+The caller must not include the H1, metadata block, metadata `id`, or any server-resolved ID in the `body`.
+
+Legacy full-record create body input remains a separate compatibility mode when `fields` is omitted.
+It is not the preferred authoring path.
+Callers that can supply structured metadata must prefer `fields` or `fields` plus section-only `body`.
 
 MVP body source rules:
 
 | operation case | body requirement |
 |---|---|
-| `propose_record_create` template-driven create from structured fields | `body` / `body_cache_id` may both be omitted |
-| `propose_record_create` create with caller-supplied full body | exactly one of `body` / `body_cache_id` |
+| `propose_record_create` structured metadata only | `fields` present; `body` / `body_cache_id` omitted |
+| `propose_record_create` structured metadata plus content sections | `fields` and section-only `body` present; `body_cache_id` omitted |
+| `propose_record_create` legacy full-record body create | `fields` omitted; exactly one of full-record `body` / `body_cache_id` |
 | `propose_record_update` `metadata_block_replace` | `body` / `body_cache_id` must be omitted |
 | `propose_record_update` `named_section_replace` | exactly one of `body` / `body_cache_id` |
 
@@ -1006,6 +1012,7 @@ Investigation creation is outside this MVP authoring surface.
     "depends_on": ["TASK-MCP-008-03"],
     "outputs": ["Updated SPEC-design-records-mcp-tools"]
   },
+  "body": "## Goal\n\nReflect the accepted authoring transaction contract in the Design Records MCP tools spec.\n\n## Work\n\n- Update the public tool contract.\n- Record verification evidence.\n\n## Done condition\n\nThe spec documents the current request and response contract.\n\n## Verification\n\n- go test ./internal/designrecords ./internal/designrecordsmcp\n\n## Evidence\n",
   "reciprocal_update_mode": "include_required"
 }
 ```
@@ -1017,23 +1024,33 @@ Investigation creation is outside this MVP authoring surface.
 | `domain` | conditional | string | domain-scoped workflow create の domain。ID に domain が含まれる場合は一致必須 |
 | `parent_id` | conditional | string | task create では required。Parent work item ID |
 | `title` | yes | string | H1 title |
-| `fields` | conditional | object | kind-specific structured authoring fields。Structured create では required、caller-supplied full body create では omitted |
-| `body` | conditional | string | caller-supplied Markdown body |
-| `body_cache_id` | conditional | string | cached body lookup key |
+| `fields` | conditional | object | kind-specific structured authoring fields。Preferred create path では present。Legacy full-record body create では omitted |
+| `body` | conditional | string | with `fields`, caller-supplied content sections only; without `fields`, legacy full-record Markdown body |
+| `body_cache_id` | conditional | string | cached body lookup key for body-source modes where supported |
 | `reciprocal_update_mode` | no | string | workflow reciprocal metadata handling mode |
 
-`propose_record_create` has two content modes:
+`propose_record_create` has these content input combinations:
 
 | mode | required content input | forbidden content input |
 |---|---|---|
-| structured create | `fields` | `body`, `body_cache_id` |
-| full-body create | exactly one of `body` / `body_cache_id` | `fields` |
+| structured metadata only | `fields` | `body`, `body_cache_id` |
+| structured metadata plus content sections | `fields` plus section-only `body` | `body_cache_id` |
+| legacy full-record body create | full-record `body` or `body_cache_id` | `fields` |
 
-In both modes, top-level `kind`, `id`, `domain` when applicable, `parent_id` when applicable, and `title` remain request-level target inputs.
+In all create modes, top-level `kind`, `id`, `domain` when applicable, `parent_id` when applicable, and `title` remain request-level target inputs.
 For structured create, `title` is also a rendering input.
 The top-level `id` is the canonical create target ID input.
 For exact create IDs, it is the canonical target ID after request normalization.
 For `new` placeholders, it is the canonical target family and server-side resolution request, and the response `target.resolved_id` is the final canonical target ID.
+
+When `fields` is present, the MCP renders the record H1 and metadata block from top-level `id`, `title`, server-resolved target identity, and `fields`.
+If `body` is also present, `body` is appended after the generated metadata block as content sections only.
+The `body` must start at the first content section, such as `## Goal`, `## Requirement`, or `## 背景`, and must not include a leading H1, bullet metadata block, YAML metadata, metadata `id`, or guessed resolved ID.
+For `id` placeholders such as `TASK-MCP-008-new`, the generated H1 and metadata must use `target.resolved_id`, not the literal `new` placeholder.
+
+Legacy full-record body create treats `body` or cached `body_cache_id` as the complete Markdown record, including H1 and metadata.
+This mode is compatibility support for callers that cannot provide structured fields.
+It is not the preferred create guidance, and examples for new agent authoring should not promote it over `fields` plus section-only `body`.
 
 `fields.id` is not required for create.
 Structured create rendering must use `target.resolved_id` as the record metadata ID and must not require callers to duplicate top-level `id` inside `fields`.
@@ -1432,7 +1449,7 @@ Tool error code は以下を最小とする。
 |---|---|
 | `record_not_found` | `get_record` で指定された単一 record ID が存在しない。`get_records` では tool error ではなく item-level diagnostic として用いる |
 | `guide_not_found` | `get_authoring_guidance` で指定された guide ID が存在しない |
-| `invalid_request` | request schema または field value が不正。例: `list_records` に未知の `kind` を指定した場合、`get_records.ids` が欠落・空・非 array・非 string element を含む場合、`get_authoring_guidance.id` が欠落・非 string の場合、`propose_record_create` で `body` / `body_cache_id` と `fields` を同時指定した場合、top-level `id` と `fields.id` が一致しない場合、または `domain` が ID domain と case-insensitive に一致しない場合 |
+| `invalid_request` | request schema または field value が不正。例: `list_records` に未知の `kind` を指定した場合、`get_records.ids` が欠落・空・非 array・非 string element を含む場合、`get_authoring_guidance.id` が欠落・非 string の場合、`propose_record_create` で `fields` と `body_cache_id` を同時指定した場合、top-level `id` と `fields.id` が一致しない場合、`new` placeholder create で `fields.id` を指定した場合、または `domain` が ID domain と case-insensitive に一致しない場合 |
 | `unsupported_kind` | tool が対象外の `kind` を指定された。例: `suggest_next_record` に `kind: spec` を指定した場合 |
 | `invalid_id_range` | `id_range` endpoint が malformed、unsupported family、mixed family、mixed domain、mixed task work sequence、または指定 `kind` と endpoint family 不一致である |
 | `id_range_requires_decision_kind` | legacy error code。REQ-MCP-007 以前の decision-only `id_range` boundary を示す。新規 implementation では `invalid_id_range` を用いる |
@@ -1444,7 +1461,7 @@ Tool error code は以下を最小とする。
 | `target_changed` | target record kind / path / identity が proposal 作成時と異なる |
 | `id_collision` | create proposal の resolved ID が accept 前に使用済みになった |
 | `required_follow_up_not_satisfied` | workflow reciprocal metadata など required follow-up updates が未完了で accept できない |
-| `invalid_body_source` | body source rule 違反。例: `body` と `body_cache_id` の両方を指定した、または required body source がない。Create operation の `fields` と full body source の同時指定は request shape violation として `invalid_request` を用いる |
+| `invalid_body_source` | body source rule 違反。例: `body` と `body_cache_id` の両方を指定した、または required body source がない |
 | `body_cache_not_found` | requested body cache ID が存在しない |
 | `body_cache_expired` | requested body cache ID が expiry を過ぎている |
 | `proposal_preparation_failed` | proposal preparation failed before proposal persistence; retry guidance may include `body_cache_id` |

@@ -73,6 +73,11 @@ docs/tasks/<domain>/TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>-<slug>.md
 
 `id` は H1 の task ID と一致させる。
 
+MCP create note:
+The Markdown above is the full artifact file shape.
+When calling `propose_record_create` with `fields` plus `body`, put metadata in `fields` and make `body` content sections only, starting at `## Goal`.
+Do not include the H1, metadata block, metadata `id`, or guessed server-resolved ID in that MCP `body`.
+
 `work_item`、`source_requirement`、`depends_on` は `WORK-*` / `REQ-*` / `TASK-*` の ID-as-ref を用いる。
 
 Required metadata は Design Records MCP validation の対象である。
