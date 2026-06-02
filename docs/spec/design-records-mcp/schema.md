@@ -248,6 +248,18 @@ Authoring target identity fields:
 
 `path` は relocation や slug generation の結果を説明するための output であり、authoring request の canonical target identity ではない。
 
+Create operation の canonical target ID input は top-level request `id` である。
+Structured `fields.id` is not part of the primary authoring target identity and is not required.
+If a create request supplies `fields.id`, it is a duplicate consistency input only: it must match the exact top-level ID after canonical ID normalization, and it must be omitted when the top-level ID uses a `new` placeholder.
+Mismatch or placeholder-time `fields.id` is an invalid request, not a record validation diagnostic.
+
+For domain-scoped workflow artifact creates, request `domain` comparison with the ID domain is case-insensitive.
+Canonical record IDs keep their uppercase domain segment.
+Repository-relative paths use the lowercase normalized domain directory.
+For example, `domain: "mcp"` with `id: "REQ-MCP-011"` resolves to canonical domain `MCP` and repository path domain `mcp`.
+
+> 由来: REQ-MCP-011, TASK-MCP-011-01
+
 ### Proposal model
 
 Proposal は write candidate の retained representation である。
@@ -275,6 +287,16 @@ Public contract は、accept が stale target / changed target / ID collision �
 Proposal retention is 3 days.
 Expired proposals are not valid authoring targets.
 
+Proposal `validation` is scoped to the proposal-local affected record set in the candidate repository state.
+The affected record set is the proposed target record plus any related records whose files are actually modified by the same proposal, such as required reciprocal workflow metadata updates.
+Unrelated repository diagnostics are repository health information, not proposal-local diagnostics.
+If exposed, repository health must be represented separately from proposal `validation` and must not change proposal-local `validation.ok`.
+
+Proposal-local diagnostics must use the same validation categories and field contracts as `validate_records`.
+They must be reproducible by the same `validate_records` rules against the same affected record set in the same candidate state, or after the candidate state has been accepted/materialized.
+
+> 由来: REQ-MCP-012, TASK-MCP-011-01
+
 ### Body cache model
 
 Body cache は、large Markdown body を proposal retry のために一時保持する operational object である。
@@ -293,6 +315,9 @@ Supplying both is invalid and must not create a proposal or body cache.
 Operations that do not require body input may omit both.
 Unknown or expired body cache IDs must produce diagnostics and must not create proposals.
 Body cache entries remain reusable within the 3 day retention period, including after they have been used to create a proposal.
+
+For create operations, structured `fields` and a full Markdown body source (`body` or `body_cache_id`) are mutually exclusive content sources.
+Supplying both is an invalid request; the schema does not define precedence between them.
 
 ### Metadata block replacement target
 
@@ -645,7 +670,7 @@ These diagnostics may appear in proposal, accept, discard, get-proposal, or body
 | `target_changed` | error | target record kind / path / identity が proposal 作成時と異なる |
 | `id_collision` | error | create proposal の resolved ID が accept 前に使用済みになった |
 | `required_follow_up_not_satisfied` | error | required reciprocal metadata update などの follow-up が満たされていない |
-| `invalid_body_source` | error | body source rule 違反。`body` と `body_cache_id` の両方指定、または required body source の欠落 |
+| `invalid_body_source` | error | body source rule 違反。`body` と `body_cache_id` の両方指定、または required body source の欠落。Create operation の `fields` と full body source の同時指定は request shape violation として `invalid_request` を用いる |
 | `body_cache_not_found` | error | requested body cache ID が存在しない |
 | `body_cache_expired` | error | requested body cache ID は expiry を過ぎている |
 | `proposal_preparation_failed` | error | proposal preparation failed before proposal persistence |

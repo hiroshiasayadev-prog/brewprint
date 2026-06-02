@@ -892,6 +892,12 @@ Workflow reciprocal metadata update を含む proposal では、`files[]` は複
 `ok` は error diagnostic がない場合に `true` とする。
 Validation failure と write failure は同じ state として扱わない。
 
+Proposal-time validation and accept-time pre-write validation are proposal-local.
+`validation.diagnostics` must describe only diagnostics for the affected record set in the candidate state represented by the proposal.
+Unrelated existing repository diagnostics must not be mixed into proposal-local blocking diagnostics.
+If an implementation chooses to expose broader repository health while preparing or accepting a proposal, it must use a field separate from `validation`, such as `repository_health`, or an equivalently distinct response category.
+Repository health diagnostics must not affect proposal-local `validation.ok` or accept-time write eligibility unless the diagnosed record is also in the affected record set.
+
 Proposal note の標準意味は以下である。
 
 ```text
@@ -905,6 +911,10 @@ Exact wording は implementation detail だが、この意味を弱めてはな�
 Operations that require large Markdown body input accept exactly one of `body` or `body_cache_id`.
 Supplying both is invalid and must not create a proposal or body cache entry.
 Supplying neither is valid only for operations that do not require body input.
+
+For create operations, structured `fields` and a caller-supplied full Markdown body are different content sources.
+`propose_record_create` must reject requests that supply `fields` together with either `body` or `body_cache_id` as `invalid_request`.
+The tool must not define precedence between `body` and `fields`, must not silently ignore either input, and must not create a proposal for such a request.
 
 MVP body source rules:
 
@@ -942,6 +952,25 @@ Body cache retention is 3 days.
 Body cache responses must include `expires_at`.
 Body cache entries remain reusable within the 3 day retention period, including after they have been used to create a proposal.
 Expired body cache entries must not be used to create proposals.
+
+### Proposal validation affected record set
+
+The proposal-local affected record set is the set of records whose content is created or modified by the proposal.
+
+For `propose_record_create`, the affected record set contains:
+
+- the proposed target record; and
+- any related records that the proposal actually modifies for required reciprocal workflow metadata under `reciprocal_update_mode`, such as the parent requirement or work item updated by `include_required`.
+
+For `propose_record_update`, the affected record set contains the target record being updated.
+If a future update operation explicitly modifies related records in the same retained proposal, those related records become part of the affected record set.
+
+Proposal-time validation must run against the candidate repository state represented by applying the proposal diff to the current repository state, but returned proposal-local diagnostics must be filtered to the affected record set.
+Accept-time pre-write validation uses the same affected-record-set model after staleness, target-change, and ID-collision guards.
+Diagnostics returned in `validation.diagnostics` must be reproducible by running the same `validate_records` rules against the same affected record set in the same candidate state, or after accepting/materializing that candidate state.
+This contract does not suppress diagnostics for affected related records; it only prevents unrelated repository diagnostics from becoming proposal-local blockers.
+
+> 由来: REQ-MCP-012, TASK-MCP-011-01
 
 ## `propose_record_create`
 
@@ -988,10 +1017,37 @@ Investigation creation is outside this MVP authoring surface.
 | `domain` | conditional | string | domain-scoped workflow create の domain。ID に domain が含まれる場合は一致必須 |
 | `parent_id` | conditional | string | task create では required。Parent work item ID |
 | `title` | yes | string | H1 title |
-| `fields` | yes | object | kind-specific structured authoring fields |
+| `fields` | conditional | object | kind-specific structured authoring fields。Structured create では required、caller-supplied full body create では omitted |
 | `body` | conditional | string | caller-supplied Markdown body |
 | `body_cache_id` | conditional | string | cached body lookup key |
 | `reciprocal_update_mode` | no | string | workflow reciprocal metadata handling mode |
+
+`propose_record_create` has two content modes:
+
+| mode | required content input | forbidden content input |
+|---|---|---|
+| structured create | `fields` | `body`, `body_cache_id` |
+| full-body create | exactly one of `body` / `body_cache_id` | `fields` |
+
+In both modes, top-level `kind`, `id`, `domain` when applicable, `parent_id` when applicable, and `title` remain request-level target inputs.
+For structured create, `title` is also a rendering input.
+The top-level `id` is the canonical create target ID input.
+For exact create IDs, it is the canonical target ID after request normalization.
+For `new` placeholders, it is the canonical target family and server-side resolution request, and the response `target.resolved_id` is the final canonical target ID.
+
+`fields.id` is not required for create.
+Structured create rendering must use `target.resolved_id` as the record metadata ID and must not require callers to duplicate top-level `id` inside `fields`.
+If `fields.id` is supplied with an exact top-level ID, it must match the top-level ID after the same canonical ID normalization used by the request.
+If `fields.id` is supplied with a `new` placeholder top-level ID, the request is invalid because the final ID is not known to the caller before server-side resolution.
+If `fields.id` does not match the exact top-level ID, the tool rejects the request as `invalid_request` and creates no proposal.
+
+For domain-scoped workflow creates, `domain` is compared with the ID domain case-insensitively.
+The canonical ID domain remains the uppercase domain segment in IDs such as `REQ-MCP-011`.
+The response `target.domain` uses the canonical ID domain.
+Repository paths use the lowercase normalized domain directory, such as `docs/requirements/mcp/`.
+Therefore `domain: "mcp"` and `id: "REQ-MCP-011"` are consistent, while `domain: "data"` and `id: "REQ-MCP-011"` are rejected as `invalid_request`.
+
+> 由来: REQ-MCP-011, TASK-MCP-011-01
 
 Allowed `id` placeholder forms:
 
@@ -1376,7 +1432,7 @@ Tool error code は以下を最小とする。
 |---|---|
 | `record_not_found` | `get_record` で指定された単一 record ID が存在しない。`get_records` では tool error ではなく item-level diagnostic として用いる |
 | `guide_not_found` | `get_authoring_guidance` で指定された guide ID が存在しない |
-| `invalid_request` | request schema または field value が不正。例: `list_records` に未知の `kind` を指定した場合、`get_records.ids` が欠落・空・非 array・非 string element を含む場合、または `get_authoring_guidance.id` が欠落・非 string の場合 |
+| `invalid_request` | request schema または field value が不正。例: `list_records` に未知の `kind` を指定した場合、`get_records.ids` が欠落・空・非 array・非 string element を含む場合、`get_authoring_guidance.id` が欠落・非 string の場合、`propose_record_create` で `body` / `body_cache_id` と `fields` を同時指定した場合、top-level `id` と `fields.id` が一致しない場合、または `domain` が ID domain と case-insensitive に一致しない場合 |
 | `unsupported_kind` | tool が対象外の `kind` を指定された。例: `suggest_next_record` に `kind: spec` を指定した場合 |
 | `invalid_id_range` | `id_range` endpoint が malformed、unsupported family、mixed family、mixed domain、mixed task work sequence、または指定 `kind` と endpoint family 不一致である |
 | `id_range_requires_decision_kind` | legacy error code。REQ-MCP-007 以前の decision-only `id_range` boundary を示す。新規 implementation では `invalid_id_range` を用いる |
@@ -1388,7 +1444,7 @@ Tool error code は以下を最小とする。
 | `target_changed` | target record kind / path / identity が proposal 作成時と異なる |
 | `id_collision` | create proposal の resolved ID が accept 前に使用済みになった |
 | `required_follow_up_not_satisfied` | workflow reciprocal metadata など required follow-up updates が未完了で accept できない |
-| `invalid_body_source` | body source rule 違反。例: `body` と `body_cache_id` の両方を指定した、または required body source がない |
+| `invalid_body_source` | body source rule 違反。例: `body` と `body_cache_id` の両方を指定した、または required body source がない。Create operation の `fields` と full body source の同時指定は request shape violation として `invalid_request` を用いる |
 | `body_cache_not_found` | requested body cache ID が存在しない |
 | `body_cache_expired` | requested body cache ID が expiry を過ぎている |
 | `proposal_preparation_failed` | proposal preparation failed before proposal persistence; retry guidance may include `body_cache_id` |

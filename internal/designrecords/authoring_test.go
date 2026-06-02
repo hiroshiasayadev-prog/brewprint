@@ -113,7 +113,7 @@ func TestAuthoringAcceptGuardsStaleTargetAndCreateCollision(t *testing.T) {
 		ID:     "REQ-MCP-new",
 		Domain: "MCP",
 		Title:  "Collision",
-		Fields: map[string]any{"id": "REQ-MCP-new", "status": "captured", "date": "2026-06-02", "source_refs": []any{}, "work_items": []any{}},
+		Fields: map[string]any{"status": "captured", "date": "2026-06-02", "source_refs": []any{}, "work_items": []any{}},
 	})
 	if err != nil {
 		t.Fatalf("Propose create: %v", err)
@@ -136,7 +136,7 @@ func TestAuthoringAcceptPartialMultiFileWriteReportsWrittenFiles(t *testing.T) {
 		Domain:   "MCP",
 		ParentID: "WORK-MCP-001",
 		Title:    "Partial write task",
-		Fields:   map[string]any{"id": "TASK-MCP-001-new", "status": "todo", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}},
+		Fields:   map[string]any{"status": "todo", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}},
 	})
 	if err != nil {
 		t.Fatalf("Propose create: %v", err)
@@ -193,17 +193,17 @@ func TestAuthoringCreateIDResolutionAndRejectedNewForms(t *testing.T) {
 		},
 		{
 			name: "REQ-new",
-			req:  ProposeRecordCreateRequest{Kind: RecordKindRequirement, ID: "REQ-MCP-new", Domain: "MCP", Title: "Next req", Fields: map[string]any{"id": "REQ-MCP-new", "status": "captured", "date": "2026-06-02", "source_refs": []any{}, "work_items": []any{}}},
+			req:  ProposeRecordCreateRequest{Kind: RecordKindRequirement, ID: "REQ-MCP-new", Domain: "MCP", Title: "Next req", Fields: map[string]any{"status": "captured", "date": "2026-06-02", "source_refs": []any{}, "work_items": []any{}}},
 			want: "REQ-MCP-002",
 		},
 		{
 			name: "WORK-new",
-			req:  ProposeRecordCreateRequest{Kind: RecordKindWorkItem, ID: "WORK-MCP-new", Domain: "MCP", Title: "Next work", Fields: map[string]any{"id": "WORK-MCP-new", "status": "implementation_pending", "date": "2026-06-02", "source_requirement": "REQ-MCP-001", "impact_refs": []any{}, "tasks": []any{}}},
+			req:  ProposeRecordCreateRequest{Kind: RecordKindWorkItem, ID: "WORK-MCP-new", Domain: "MCP", Title: "Next work", Fields: map[string]any{"status": "implementation_pending", "date": "2026-06-02", "source_requirement": "REQ-MCP-001", "impact_refs": []any{}, "tasks": []any{}}},
 			want: "WORK-MCP-002",
 		},
 		{
 			name: "TASK-new",
-			req:  ProposeRecordCreateRequest{Kind: RecordKindTask, ID: "TASK-MCP-001-new", Domain: "MCP", ParentID: "WORK-MCP-001", Title: "Next task", Fields: map[string]any{"id": "TASK-MCP-001-new", "status": "todo", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}}},
+			req:  ProposeRecordCreateRequest{Kind: RecordKindTask, ID: "TASK-MCP-001-new", Domain: "MCP", ParentID: "WORK-MCP-001", Title: "Next task", Fields: map[string]any{"status": "todo", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}}},
 			want: "TASK-MCP-001-02",
 		},
 	}
@@ -243,6 +243,115 @@ func TestAuthoringCreateIDResolutionAndRejectedNewForms(t *testing.T) {
 	}
 }
 
+func TestAuthoringCreateInputContractNormalization(t *testing.T) {
+	fx := newAuthoringFixture(t)
+	body := "# REQ-MCP-050: Body\n\n- **id**: REQ-MCP-050\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n"
+	fields := map[string]any{"status": "captured", "date": "2026-06-02", "source_refs": []any{}, "work_items": []any{}}
+
+	fieldsAndBody, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:   RecordKindRequirement,
+		ID:     "REQ-MCP-050",
+		Domain: "mcp",
+		Title:  "Fields and body",
+		Fields: fields,
+		Body:   &body,
+	})
+	if err != nil {
+		t.Fatalf("fields plus body: %v", err)
+	}
+	if fieldsAndBody.ProposalCreated || fieldsAndBody.BodyCache != nil || !hasDiagnosticCategory(fieldsAndBody.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
+		t.Fatalf("fields plus body response = %#v", fieldsAndBody)
+	}
+
+	bodyAndCache, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:        RecordKindRequirement,
+		ID:          "REQ-MCP-051",
+		Domain:      "mcp",
+		Title:       "Body conflict",
+		Body:        &body,
+		BodyCacheID: "bc_other",
+	})
+	if err != nil {
+		t.Fatalf("body plus cache: %v", err)
+	}
+	if bodyAndCache.ProposalCreated || bodyAndCache.BodyCache != nil || !hasDiagnosticCategory(bodyAndCache.Diagnostics, DiagnosticCategory(ErrorCodeInvalidBodySource)) {
+		t.Fatalf("body plus cache response = %#v", bodyAndCache)
+	}
+
+	withoutFieldsID, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:   RecordKindRequirement,
+		ID:     "REQ-MCP-052",
+		Domain: "mcp",
+		Title:  "No fields id",
+		Fields: fields,
+	})
+	if err != nil {
+		t.Fatalf("without fields.id: %v", err)
+	}
+	if !withoutFieldsID.ProposalCreated || withoutFieldsID.Target.Domain != "MCP" || !strings.Contains(withoutFieldsID.Target.Path, "docs/requirements/mcp/REQ-MCP-052") || !strings.Contains(withoutFieldsID.Diff.Text, "- **id**: REQ-MCP-052") {
+		t.Fatalf("without fields.id response = %#v\n%s", withoutFieldsID, withoutFieldsID.Diff.Text)
+	}
+
+	matchingFieldsID := map[string]any{"id": "req-mcp-053", "status": "captured", "date": "2026-06-02", "source_refs": []any{}, "work_items": []any{}}
+	matching, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:   RecordKindRequirement,
+		ID:     "REQ-MCP-053",
+		Domain: "MCP",
+		Title:  "Matching fields id",
+		Fields: matchingFieldsID,
+	})
+	if err != nil {
+		t.Fatalf("matching fields.id: %v", err)
+	}
+	if !matching.ProposalCreated {
+		t.Fatalf("matching fields.id response = %#v", matching)
+	}
+
+	mismatchedFieldsID := map[string]any{"id": "REQ-MCP-999", "status": "captured", "date": "2026-06-02", "source_refs": []any{}, "work_items": []any{}}
+	mismatch, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:   RecordKindRequirement,
+		ID:     "REQ-MCP-054",
+		Domain: "MCP",
+		Title:  "Mismatched fields id",
+		Fields: mismatchedFieldsID,
+	})
+	if err != nil {
+		t.Fatalf("mismatched fields.id: %v", err)
+	}
+	if mismatch.ProposalCreated || !hasDiagnosticCategory(mismatch.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
+		t.Fatalf("mismatched fields.id response = %#v", mismatch)
+	}
+
+	placeholderFieldsID := map[string]any{"id": "REQ-MCP-new", "status": "captured", "date": "2026-06-02", "source_refs": []any{}, "work_items": []any{}}
+	placeholder, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:   RecordKindRequirement,
+		ID:     "REQ-MCP-new",
+		Domain: "MCP",
+		Title:  "Placeholder fields id",
+		Fields: placeholderFieldsID,
+	})
+	if err != nil {
+		t.Fatalf("placeholder fields.id: %v", err)
+	}
+	if placeholder.ProposalCreated || !hasDiagnosticCategory(placeholder.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
+		t.Fatalf("placeholder fields.id response = %#v", placeholder)
+	}
+
+	domainMismatch, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:   RecordKindRequirement,
+		ID:     "REQ-MCP-055",
+		Domain: "data",
+		Title:  "Domain mismatch",
+		Fields: fields,
+	})
+	if err != nil {
+		t.Fatalf("domain mismatch: %v", err)
+	}
+	if domainMismatch.ProposalCreated || !hasDiagnosticCategory(domainMismatch.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
+		t.Fatalf("domain mismatch response = %#v", domainMismatch)
+	}
+}
+
 func TestAuthoringTaskCreateRequiresExplicitParentMetadataAndReciprocalUpdate(t *testing.T) {
 	fx := newAuthoringFixture(t)
 	withoutParent, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
@@ -250,7 +359,7 @@ func TestAuthoringTaskCreateRequiresExplicitParentMetadataAndReciprocalUpdate(t 
 		ID:     "TASK-MCP-001-new",
 		Domain: "MCP",
 		Title:  "No parent",
-		Fields: map[string]any{"id": "TASK-MCP-001-new", "status": "todo", "date": "2026-06-02", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{}},
+		Fields: map[string]any{"status": "todo", "date": "2026-06-02", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{}},
 	})
 	if err != nil {
 		t.Fatalf("task without parent: %v", err)
@@ -265,7 +374,7 @@ func TestAuthoringTaskCreateRequiresExplicitParentMetadataAndReciprocalUpdate(t 
 		Domain:   "MCP",
 		ParentID: "WORK-MCP-001",
 		Title:    "No explicit relation",
-		Fields:   map[string]any{"id": "TASK-MCP-001-new", "status": "todo", "date": "2026-06-02", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{}},
+		Fields:   map[string]any{"status": "todo", "date": "2026-06-02", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{}},
 	})
 	if err != nil {
 		t.Fatalf("task without explicit work_item: %v", err)
@@ -280,7 +389,7 @@ func TestAuthoringTaskCreateRequiresExplicitParentMetadataAndReciprocalUpdate(t 
 		Domain:   "MCP",
 		ParentID: "WORK-MCP-001",
 		Title:    "Second task",
-		Fields:   map[string]any{"id": "TASK-MCP-001-new", "status": "todo", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}},
+		Fields:   map[string]any{"status": "todo", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}},
 	})
 	if err != nil {
 		t.Fatalf("task reciprocal: %v", err)
@@ -298,7 +407,7 @@ func TestAuthoringTaskCreateRequiresExplicitParentMetadataAndReciprocalUpdate(t 
 		Domain:               "MCP",
 		ParentID:             "WORK-MCP-001",
 		Title:                "Follow-up task",
-		Fields:               map[string]any{"id": "TASK-MCP-001-new", "status": "todo", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}},
+		Fields:               map[string]any{"status": "todo", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}},
 		ReciprocalUpdateMode: "report_required_follow_up",
 	})
 	if err != nil {
@@ -530,20 +639,49 @@ func TestAuthoringSectionSelectorIgnoresFrontMatterAndFenceHeadings(t *testing.T
 	}
 }
 
-func TestAuthoringAcceptPostWriteValidationFailureDoesNotRollback(t *testing.T) {
+func TestAuthoringProposalValidationIsAffectedRecordSetOnly(t *testing.T) {
 	fx := newAuthoringFixture(t)
-	resp := proposeTaskSection(t, fx, "post validation still writes\n")
 	writeTestFile(t, fx.root, "docs/requirements/mcp/REQ-MCP-999-bad.md", "# REQ-MCP-999: Bad\n\n- **id**: REQ-MCP-999\n- **status**: captured\n- **date**:\n- **source_refs**:\n- **work_items**:\n")
+	fx.idx = mustBuildIndex(t, fx.cfg)
+	resp := proposeTaskSection(t, fx, "proposal-local validation\n")
+	if !resp.Validation.OK || len(resp.Validation.Diagnostics) != 0 {
+		t.Fatalf("proposal validation included unrelated diagnostics: %#v", resp.Validation)
+	}
 	accepted, err := AcceptProposedWrite(context.Background(), fx.cfg, mustBuildIndex(t, fx.cfg), fx.store, AcceptProposedWriteRequest{ProposalID: resp.ProposalID})
 	if err != nil {
-		t.Fatalf("Accept post validation failure: %v", err)
+		t.Fatalf("Accept with unrelated validation failure: %v", err)
 	}
-	if !accepted.Written || accepted.Validation.OK || len(accepted.RepairGuidance) == 0 {
-		t.Fatalf("post validation accept = %#v", accepted)
+	if !accepted.Written || !accepted.Validation.OK || len(accepted.Validation.Diagnostics) != 0 || len(accepted.RepairGuidance) != 0 {
+		t.Fatalf("accept validation included unrelated diagnostics: %#v", accepted)
 	}
 	taskPath := filepath.Join(fx.root, "docs", "tasks", "mcp", "TASK-MCP-001-01-first-task.md")
-	if !strings.Contains(readTestFile(t, taskPath), "post validation still writes") {
-		t.Fatal("accepted write was rolled back unexpectedly")
+	if !strings.Contains(readTestFile(t, taskPath), "proposal-local validation") {
+		t.Fatal("accepted write was not applied")
+	}
+}
+
+func TestAuthoringHypotheticalIndexPreservesUnchangedSemanticRefSources(t *testing.T) {
+	fx := newAuthoringFixture(t)
+	fx.idx.SemanticRefSources = []SemanticRefSource{{
+		Path:     "docs/spec/test.md",
+		RecordID: "SPEC-test",
+		Decls: []SemanticRefDecl{{
+			Ref:        "spec:test",
+			Path:       "docs/spec/test.md",
+			TargetType: SemanticTargetDocument,
+		}},
+		Headings: []Heading{{Level: 1, Text: "Test spec"}},
+	}}
+
+	hyp := buildHypotheticalIndex(fx.idx, []ProposedFile{{
+		Path:       "docs/tasks/mcp/TASK-MCP-001-01-first-task.md",
+		Change:     "modify",
+		RecordID:   "TASK-MCP-001-01",
+		RecordKind: RecordKindTask,
+		Content:    readTestFile(t, filepath.Join(fx.root, "docs", "tasks", "mcp", "TASK-MCP-001-01-first-task.md")),
+	}})
+	if len(hyp.SemanticRefSources) != 1 || hyp.SemanticRefSources[0].RecordID != "SPEC-test" {
+		t.Fatalf("semantic ref sources were not preserved: %#v", hyp.SemanticRefSources)
 	}
 }
 

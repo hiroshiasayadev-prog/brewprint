@@ -247,6 +247,15 @@ func ProposeRecordCreate(ctx context.Context, cfg Config, idx *Index, store *Aut
 	if err := validateCreateKind(req.Kind); err != nil {
 		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeUnsupportedKind, err.Error())), nil
 	}
+	if req.Body != nil && req.BodyCacheID != "" {
+		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidBodySource, "body and body_cache_id are mutually exclusive")), nil
+	}
+	if req.Fields != nil && (req.Body != nil || req.BodyCacheID != "") {
+		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "fields cannot be combined with body or body_cache_id for create")), nil
+	}
+	if req.Fields == nil && req.Body == nil && req.BodyCacheID == "" {
+		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "fields or exactly one full body source is required for create")), nil
+	}
 	body, bodyCache, diagnostics, ok := resolveBodySource(store, req.Body, req.BodyCacheID, false)
 	if !ok {
 		return failedProposalResponse(nil, nil, diagnostics...), nil
@@ -355,19 +364,10 @@ func AcceptProposedWrite(ctx context.Context, cfg Config, idx *Index, store *Aut
 	if proposal.State == ProposalStateFailedFinal {
 		return acceptRejected(proposal.ProposalID, proposal.State, authoringDiagnostic(ErrorCodeInvalidRequest, "proposal had a partial write failure and cannot be accepted again")), nil
 	}
-	preWriteValidation := proposal.Validation
 	if len(proposal.RequiredFollowUpUpdates) > 0 {
 		if !requiredFollowUpsSatisfied(idx, proposal.RequiredFollowUpUpdates) {
 			return acceptRejected(proposal.ProposalID, proposal.State, authoringDiagnostic(ErrorCodeRequiredFollowUpNotSatisfied, "required follow-up updates are not satisfied")), nil
 		}
-		revalidated, err := validateProposedFiles(ctx, idx, proposal.Files)
-		if err != nil {
-			return AcceptProposedWriteResponse{}, err
-		}
-		preWriteValidation = revalidated
-	}
-	if hasErrorDiagnostics(preWriteValidation.Diagnostics) {
-		return acceptRejected(proposal.ProposalID, proposal.State, authoringDiagnostic(ErrorCodeInvalidRequest, "proposal validation has error diagnostics")), nil
 	}
 	if diagnostics := acceptTimeDiagnostics(cfg, idx, proposal); len(diagnostics) > 0 {
 		return AcceptProposedWriteResponse{
@@ -375,10 +375,17 @@ func AcceptProposedWrite(ctx context.Context, cfg Config, idx *Index, store *Aut
 			State:          proposal.State,
 			Written:        false,
 			FilesWritten:   []WrittenFile{},
-			Validation:     preWriteValidation,
+			Validation:     proposal.Validation,
 			RepairGuidance: []string{},
 			Diagnostics:    diagnostics,
 		}, nil
+	}
+	preWriteValidation, err := validateProposedFiles(ctx, idx, proposal.Files)
+	if err != nil {
+		return AcceptProposedWriteResponse{}, err
+	}
+	if hasErrorDiagnostics(preWriteValidation.Diagnostics) {
+		return acceptRejected(proposal.ProposalID, proposal.State, authoringDiagnostic(ErrorCodeInvalidRequest, "proposal validation has error diagnostics")), nil
 	}
 
 	var written []WrittenFile
@@ -414,7 +421,7 @@ func AcceptProposedWrite(ctx context.Context, cfg Config, idx *Index, store *Aut
 			Diagnostics:    []Diagnostic{},
 		}, nil
 	}
-	validation, err := ValidateRecords(ctx, nextIdx, ValidateRecordsRequest{})
+	validation, err := validateExistingAffectedFiles(ctx, nextIdx, proposal.Files)
 	if err != nil {
 		return AcceptProposedWriteResponse{}, err
 	}
@@ -503,6 +510,9 @@ func prepareCreate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 	}
 	resolved, domain, err := resolveCreateID(idx, req.Kind, req.ID, req.Domain, req.ParentID)
 	if err != nil {
+		return authoringPreparation{}, err
+	}
+	if err := validateCreateFieldsID(req.Kind, req.ID, req.Fields); err != nil {
 		return authoringPreparation{}, err
 	}
 	if findRecordByIDKind(idx, resolved, req.Kind) != nil {
@@ -653,7 +663,7 @@ func resolveCreateID(idx *Index, kind RecordKind, requestedID, requestedDomain, 
 	case RecordKindRequirement:
 		if match := createRequirementPlaceholderPattern.FindStringSubmatch(requestedID); match != nil {
 			domain := match[1]
-			if requestedDomain != "" && requestedDomain != domain {
+			if !domainMatches(requestedDomain, domain) {
 				return "", "", fmt.Errorf("domain %q does not match ID domain %q", requestedDomain, domain)
 			}
 			return nextWorkflowID(idx, RecordKindRequirement, domain), domain, nil
@@ -662,14 +672,14 @@ func resolveCreateID(idx *Index, kind RecordKind, requestedID, requestedDomain, 
 			return "", "", fmt.Errorf("invalid requirement create ID %q", requestedID)
 		}
 		domain := workflowDomain(requestedID)
-		if requestedDomain != "" && requestedDomain != domain {
+		if !domainMatches(requestedDomain, domain) {
 			return "", "", fmt.Errorf("domain %q does not match ID domain %q", requestedDomain, domain)
 		}
 		return requestedID, domain, nil
 	case RecordKindWorkItem:
 		if match := createWorkItemPlaceholderPattern.FindStringSubmatch(requestedID); match != nil {
 			domain := match[1]
-			if requestedDomain != "" && requestedDomain != domain {
+			if !domainMatches(requestedDomain, domain) {
 				return "", "", fmt.Errorf("domain %q does not match ID domain %q", requestedDomain, domain)
 			}
 			return nextWorkflowID(idx, RecordKindWorkItem, domain), domain, nil
@@ -678,7 +688,7 @@ func resolveCreateID(idx *Index, kind RecordKind, requestedID, requestedDomain, 
 			return "", "", fmt.Errorf("invalid work item create ID %q", requestedID)
 		}
 		domain := workflowDomain(requestedID)
-		if requestedDomain != "" && requestedDomain != domain {
+		if !domainMatches(requestedDomain, domain) {
 			return "", "", fmt.Errorf("domain %q does not match ID domain %q", requestedDomain, domain)
 		}
 		return requestedID, domain, nil
@@ -696,7 +706,7 @@ func resolveCreateID(idx *Index, kind RecordKind, requestedID, requestedDomain, 
 			if match[1] != parentDomain || match[2] != parentSeq {
 				return "", "", fmt.Errorf("task placeholder ID must match parent work item domain and sequence")
 			}
-			if requestedDomain != "" && requestedDomain != parentDomain {
+			if !domainMatches(requestedDomain, parentDomain) {
 				return "", "", fmt.Errorf("domain %q does not match parent domain %q", requestedDomain, parentDomain)
 			}
 			return nextTaskID(idx, parentDomain, parentSeq), parentDomain, nil
@@ -707,10 +717,31 @@ func resolveCreateID(idx *Index, kind RecordKind, requestedID, requestedDomain, 
 		if workflowDomain(requestedID) != parentDomain || workflowSequence(requestedID) != parentSeq {
 			return "", "", fmt.Errorf("task ID must match parent work item domain and sequence")
 		}
+		if !domainMatches(requestedDomain, parentDomain) {
+			return "", "", fmt.Errorf("domain %q does not match parent domain %q", requestedDomain, parentDomain)
+		}
 		return requestedID, parentDomain, nil
 	default:
 		return "", "", fmt.Errorf("unsupported kind %q", kind)
 	}
+}
+
+func domainMatches(requestedDomain, canonicalDomain string) bool {
+	return strings.TrimSpace(requestedDomain) == "" || strings.EqualFold(strings.TrimSpace(requestedDomain), canonicalDomain)
+}
+
+func validateCreateFieldsID(kind RecordKind, requestedID string, fields map[string]any) error {
+	fieldID := scalarField(fields, "id")
+	if strings.TrimSpace(fieldID) == "" {
+		return nil
+	}
+	if hasSequenceNewToken(requestedID, kind) {
+		return fmt.Errorf("fields.id must be omitted when top-level id uses a new placeholder")
+	}
+	if normalizeRecordID(fieldID) != normalizeRecordID(requestedID) {
+		return fmt.Errorf("fields.id %q does not match top-level id %q", fieldID, requestedID)
+	}
+	return nil
 }
 
 func renderCreateBody(idx *Index, kind RecordKind, id, title string, fields map[string]any, parentID string) (string, error) {
@@ -723,13 +754,13 @@ func renderCreateBody(idx *Index, kind RecordKind, id, title string, fields map[
 		}
 		return "# " + num + ": " + title + "\n\n" + meta + "\n", nil
 	case RecordKindRequirement:
-		meta, err := renderRequirementMetadata(id, fields)
+		meta, err := renderRequirementCreateMetadata(id, fields)
 		if err != nil {
 			return "", err
 		}
 		return "# " + id + ": " + title + "\n\n" + meta + "\n\n## Requirement\n\n## Evidence\n", nil
 	case RecordKindWorkItem:
-		meta, err := renderWorkItemMetadata(id, fields)
+		meta, err := renderWorkItemCreateMetadata(id, fields)
 		if err != nil {
 			return "", err
 		}
@@ -738,7 +769,7 @@ func renderCreateBody(idx *Index, kind RecordKind, id, title string, fields map[
 		if scalarField(fields, "work_item") != parentID {
 			return "", fmt.Errorf("task create requires explicit fields.work_item equal to parent_id")
 		}
-		meta, err := renderTaskMetadata(id, fields)
+		meta, err := renderTaskCreateMetadata(id, fields)
 		if err != nil {
 			return "", err
 		}
@@ -1021,18 +1052,61 @@ func markdownSections(raw string) []markdownSection {
 }
 
 func validateProposedFiles(ctx context.Context, idx *Index, files []ProposedFile) (ValidateRecordsResponse, error) {
+	return validateAffectedRecordSet(ctx, buildHypotheticalIndex(idx, files), files)
+}
+
+func validateExistingAffectedFiles(ctx context.Context, idx *Index, files []ProposedFile) (ValidateRecordsResponse, error) {
+	return validateAffectedRecordSet(ctx, idx, files)
+}
+
+func validateAffectedRecordSet(ctx context.Context, idx *Index, files []ProposedFile) (ValidateRecordsResponse, error) {
+	validation, err := ValidateRecords(ctx, idx, ValidateRecordsRequest{})
+	if err != nil {
+		return ValidateRecordsResponse{}, err
+	}
+	affectedIDs, affectedPaths := affectedRecordSet(files)
+	diagnostics := make([]Diagnostic, 0, len(validation.Diagnostics))
+	for _, diagnostic := range validation.Diagnostics {
+		if diagnosticInAffectedSet(diagnostic, affectedIDs, affectedPaths) {
+			diagnostics = append(diagnostics, diagnostic)
+		}
+	}
+	return ValidateRecordsResponse{OK: !hasErrorDiagnostics(diagnostics), Diagnostics: diagnostics}, nil
+}
+
+func buildHypotheticalIndex(idx *Index, files []ProposedFile) *Index {
 	hyp := &Index{
 		Root:               idx.Root,
 		Records:            []Record{},
-		Candidates:         append([]RecordCandidate{}, idx.Candidates...),
-		ParseIssues:        append([]ParseIssue{}, idx.ParseIssues...),
-		PathIssues:         append([]PathIssue{}, idx.PathIssues...),
+		Candidates:         []RecordCandidate{},
+		ParseIssues:        []ParseIssue{},
+		PathIssues:         []PathIssue{},
 		SemanticRefs:       []SemanticRefDecl{},
 		SemanticRefSources: []SemanticRefSource{},
 	}
 	replaced := map[string]bool{}
 	for _, file := range files {
 		replaced[file.Path] = true
+	}
+	for _, candidate := range idx.Candidates {
+		if !replaced[candidate.Path] {
+			hyp.Candidates = append(hyp.Candidates, candidate)
+		}
+	}
+	for _, issue := range idx.ParseIssues {
+		if !replaced[issue.Path] {
+			hyp.ParseIssues = append(hyp.ParseIssues, issue)
+		}
+	}
+	for _, issue := range idx.PathIssues {
+		if !replaced[issue.Path] {
+			hyp.PathIssues = append(hyp.PathIssues, issue)
+		}
+	}
+	for _, source := range idx.SemanticRefSources {
+		if !replaced[source.Path] {
+			hyp.SemanticRefSources = append(hyp.SemanticRefSources, source)
+		}
 	}
 	for _, record := range idx.Records {
 		if !replaced[record.Path] {
@@ -1057,7 +1131,34 @@ func validateProposedFiles(ctx context.Context, idx *Index, files []ProposedFile
 	for _, record := range hyp.Records {
 		hyp.SemanticRefs = append(hyp.SemanticRefs, record.SemanticRefs...)
 	}
-	return ValidateRecords(ctx, hyp, ValidateRecordsRequest{})
+	return hyp
+}
+
+func affectedRecordSet(files []ProposedFile) (map[string]bool, map[string]bool) {
+	ids := map[string]bool{}
+	paths := map[string]bool{}
+	for _, file := range files {
+		if file.RecordID != "" {
+			ids[normalizeRecordID(file.RecordID)] = true
+		}
+		if file.BaseID != "" {
+			ids[normalizeRecordID(file.BaseID)] = true
+		}
+		if file.Path != "" {
+			paths[file.Path] = true
+		}
+	}
+	return ids, paths
+}
+
+func diagnosticInAffectedSet(diagnostic Diagnostic, affectedIDs, affectedPaths map[string]bool) bool {
+	if diagnostic.Path != "" && affectedPaths[diagnostic.Path] {
+		return true
+	}
+	if diagnostic.RecordID != "" && affectedIDs[normalizeRecordID(diagnostic.RecordID)] {
+		return true
+	}
+	return false
 }
 
 func parseRecordByPath(path, content string) (*Record, RecordCandidate, []ParseIssue) {
@@ -1497,26 +1598,43 @@ func renderADRMetadata(fields map[string]any) (string, error) {
 }
 
 func renderRequirementMetadata(id string, fields map[string]any) (string, error) {
-	return renderWorkflowMetadata(id, fields, []string{"id", "status", "date", "source_refs", "work_items"})
+	return renderWorkflowMetadata(id, fields, []string{"id", "status", "date", "source_refs", "work_items"}, true)
 }
 
 func renderWorkItemMetadata(id string, fields map[string]any) (string, error) {
-	return renderWorkflowMetadata(id, fields, []string{"id", "status", "date", "source_requirement", "impact_refs", "tasks"})
+	return renderWorkflowMetadata(id, fields, []string{"id", "status", "date", "source_requirement", "impact_refs", "tasks"}, true)
 }
 
 func renderTaskMetadata(id string, fields map[string]any) (string, error) {
-	return renderWorkflowMetadata(id, fields, []string{"id", "status", "date", "work_item", "source_requirement", "estimate", "depends_on", "outputs"})
+	return renderWorkflowMetadata(id, fields, []string{"id", "status", "date", "work_item", "source_requirement", "estimate", "depends_on", "outputs"}, true)
 }
 
-func renderWorkflowMetadata(id string, fields map[string]any, keys []string) (string, error) {
+func renderRequirementCreateMetadata(id string, fields map[string]any) (string, error) {
+	return renderWorkflowMetadata(id, fields, []string{"id", "status", "date", "source_refs", "work_items"}, false)
+}
+
+func renderWorkItemCreateMetadata(id string, fields map[string]any) (string, error) {
+	return renderWorkflowMetadata(id, fields, []string{"id", "status", "date", "source_requirement", "impact_refs", "tasks"}, false)
+}
+
+func renderTaskCreateMetadata(id string, fields map[string]any) (string, error) {
+	return renderWorkflowMetadata(id, fields, []string{"id", "status", "date", "work_item", "source_requirement", "estimate", "depends_on", "outputs"}, false)
+}
+
+func renderWorkflowMetadata(id string, fields map[string]any, keys []string, requireFieldsID bool) (string, error) {
 	out := make([]string, 0, len(keys)*2)
 	for _, key := range keys {
-		if _, ok := fields[key]; !ok {
-			return "", fmt.Errorf("missing required metadata field %s", key)
-		}
 		if key == "id" {
+			if requireFieldsID {
+				if _, ok := fields[key]; !ok {
+					return "", fmt.Errorf("missing required metadata field %s", key)
+				}
+			}
 			out = append(out, "- **id**: "+id)
 			continue
+		}
+		if _, ok := fields[key]; !ok {
+			return "", fmt.Errorf("missing required metadata field %s", key)
 		}
 		if isListMetadataKey(key) {
 			out = append(out, "- **"+key+"**:")
