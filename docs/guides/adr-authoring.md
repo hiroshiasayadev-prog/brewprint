@@ -68,6 +68,7 @@ MCP create note:
 The Markdown above is the full artifact file shape.
 When calling `propose_record_create` with `fields` plus `body`, put metadata in `fields` and make `body` content sections only, starting at `## 背景`.
 Do not include the H1, metadata block, metadata `id`, or guessed server-resolved ID in that MCP `body`.
+Pass `id: ADR-new`; the MCP resolves the next number server-side. Never hardcode a guessed ADR number in `body` or `fields`.
 
 ## Status
 

@@ -86,6 +86,12 @@ Investigation ID は、ADR number、requirement ID、work item ID、task ID、�
 - `source_refs`
 - `follow_up_candidates`
 
+MCP create note:
+The Markdown above is the full artifact file shape.
+When calling `propose_record_create` with `fields` plus `body`, put metadata in `fields` and make `body` content sections only, starting at `## 調査スコープ`.
+Do not include the H1, metadata block, metadata `id`, or guessed server-resolved ID in that MCP `body`.
+Pass `id: INV-<DOMAIN>-new` (e.g. `INV-MCP-new`); the MCP resolves the next number server-side. Never hardcode a guessed investigation number in `body` or `fields`.
+
 ## Optional Metadata
 
 - `supersedes`
