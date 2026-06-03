@@ -120,6 +120,7 @@ func recordDiagnostics(records []Record, recordsByID map[string][]Record, semant
 			continue
 		}
 		diagnostics = append(diagnostics, workflowMetadataDiagnostics(record)...)
+		diagnostics = append(diagnostics, requiredNarrativeSectionDiagnostics(record)...)
 		if !statusAllowedForKind(record.Kind, record.Status) {
 			diagnostics = append(diagnostics, Diagnostic{
 				Category: DiagnosticInvalidStatusForKind,
@@ -715,4 +716,108 @@ func matchingHeadingCount(headings []Heading, text string) int {
 		}
 	}
 	return count
+}
+
+type requiredSectionPolicy struct {
+	sections    []string
+	gatedStatus RecordStatus
+}
+
+func requiredSectionPolicyFor(record Record) *requiredSectionPolicy {
+	switch record.Kind {
+	case RecordKindWorkItem:
+		if record.Status == RecordStatusDone {
+			return &requiredSectionPolicy{
+				sections:    []string{"Goal", "Boundary", "Evidence"},
+				gatedStatus: RecordStatusDone,
+			}
+		}
+	case RecordKindTask:
+		if record.Status == RecordStatusDone {
+			return &requiredSectionPolicy{
+				sections:    []string{"Goal", "Work", "Done condition", "Verification", "Evidence"},
+				gatedStatus: RecordStatusDone,
+			}
+		}
+	case RecordKindRequirement:
+		if record.Status == RecordStatusAccepted {
+			return &requiredSectionPolicy{
+				sections:    []string{"Requirement", "Required Outcome"},
+				gatedStatus: RecordStatusAccepted,
+			}
+		}
+	}
+	return nil
+}
+
+func requiredNarrativeSectionDiagnostics(record Record) []Diagnostic {
+	p := requiredSectionPolicyFor(record)
+	if p == nil {
+		return nil
+	}
+	var diagnostics []Diagnostic
+	for _, sectionName := range p.sections {
+		level, found := findHeadingLevel(record.Headings, sectionName)
+		if !found {
+			diagnostics = append(diagnostics, Diagnostic{
+				Category: DiagnosticMissingRequiredSection,
+				Severity: DiagnosticSeverityError,
+				RecordID: record.ID,
+				Path:     record.Path,
+				Message:  fmt.Sprintf("required section %q must be present when %s status is %q", sectionName, record.Kind, p.gatedStatus),
+				Section:  sectionName,
+				Status:   string(p.gatedStatus),
+			})
+			continue
+		}
+		body := extractSectionBody(record.RawBody, sectionName, level)
+		if strings.TrimSpace(body) == "" {
+			diagnostics = append(diagnostics, Diagnostic{
+				Category: DiagnosticEmptyRequiredSection,
+				Severity: DiagnosticSeverityError,
+				RecordID: record.ID,
+				Path:     record.Path,
+				Message:  fmt.Sprintf("required section %q must be non-empty when %s status is %q", sectionName, record.Kind, p.gatedStatus),
+				Section:  sectionName,
+				Status:   string(p.gatedStatus),
+			})
+		}
+	}
+	return diagnostics
+}
+
+func findHeadingLevel(headings []Heading, text string) (int, bool) {
+	for _, h := range headings {
+		if h.Text == text {
+			return h.Level, true
+		}
+	}
+	return 0, false
+}
+
+func extractSectionBody(raw, headingText string, headingLevel int) string {
+	lines := contentLinesOutsideFrontMatterAndFences(raw)
+	inSection := false
+	var bodyLines []string
+	for _, line := range lines {
+		trimmed := trimLineEnd(line)
+		match := atxHeadingPattern.FindStringSubmatch(trimmed)
+		if match != nil {
+			level := len(match[1])
+			text := strings.TrimSpace(match[2])
+			if !inSection {
+				if level == headingLevel && text == headingText {
+					inSection = true
+				}
+				continue
+			}
+			if level <= headingLevel {
+				break
+			}
+		}
+		if inSection {
+			bodyLines = append(bodyLines, line)
+		}
+	}
+	return strings.Join(bodyLines, "\n")
 }

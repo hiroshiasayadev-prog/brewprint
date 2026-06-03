@@ -1,11 +1,12 @@
 # REQ-MCP-017: workflow artifact close validation for required narrative sections
 
 - **id**: REQ-MCP-017
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-03
 - **source_refs**:
   - WORK-MCP-014
 - **work_items**:
+  - WORK-MCP-016
 
 ## Requirement
 
@@ -14,9 +15,19 @@ Workflow artifact が close 状態になっても、required narrative section �
 特に `WORK` が `status: done` の状態で `Goal` / `Boundary` / `Evidence` の本文が空でも検出されないと、close record としての説明責務を満たさない artifact が残る。
 
 ## Evidence
-
 - `WORK-MCP-014` は一度 `status: done` になったが、`Goal` と `Boundary` が空のまま Design Records MCP validation を通過していた。
 - 現行 validation は metadata と relation の妥当性を主に確認しており、status に応じた required narrative section の non-empty 条件を検出していない。
+
+Close evidence on 2026-06-03:
+
+- `WORK-MCP-016` completed the required narrative section validation work for this requirement.
+- `TASK-MCP-016-01` defined the status-gated policy matrix for `WORK done`, `TASK done`, and `REQ accepted`.
+- `TASK-MCP-016-02` updated `SPEC-design-records-mcp-tools` and `SPEC-design-records-mcp-schema` with diagnostic contract and policy details.
+- `TASK-MCP-016-03` implemented `missing_required_section` and `empty_required_section` diagnostics with regression tests.
+- `TASK-MCP-016-04` completed targeted tests, full tests, newline-delimited JSON-RPC runtime smoke, and close synchronization.
+- Runtime smoke verified `validate_records` returned `ok:true` / `diagnostics:null` for `TASK-MCP-016-01..TASK-MCP-016-04`, `WORK-MCP-016`, and `REQ-MCP-017`.
+- `go test ./internal/designrecords ./internal/designrecordsmcp` passed.
+- `go test ./...` passed.
 
 ## Required Outcome
 

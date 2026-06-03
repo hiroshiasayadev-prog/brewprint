@@ -220,6 +220,8 @@ const (
 	DiagnosticWorkflowSourceReqMismatch     DiagnosticCategory = "workflow_source_requirement_mismatch"
 	DiagnosticMissingRequiredMetadata       DiagnosticCategory = "missing_required_metadata"
 	DiagnosticEmptyRequiredMetadata         DiagnosticCategory = "empty_required_metadata"
+	DiagnosticMissingRequiredSection        DiagnosticCategory = "missing_required_section"
+	DiagnosticEmptyRequiredSection          DiagnosticCategory = "empty_required_section"
 	DiagnosticInvalidMetadataValue          DiagnosticCategory = "invalid_metadata_value"
 	DiagnosticRecordNotFound                DiagnosticCategory = "record_not_found"
 	DiagnosticDuplicateRequestedIDIgnored   DiagnosticCategory = "duplicate_requested_id_ignored"
@@ -242,6 +244,8 @@ type Diagnostic struct {
 	Field             string             `json:"field,omitempty"`
 	Value             string             `json:"value,omitempty"`
 	RefStatus         string             `json:"ref_status,omitempty"`
+	Section           string             `json:"section,omitempty"`
+	Status            string             `json:"status,omitempty"`
 	RequestedID       string             `json:"requested_id,omitempty"`
 	FirstIndex        *int               `json:"first_index,omitempty"`
 	DuplicateIndexes  []int              `json:"duplicate_indexes,omitempty"`
@@ -260,6 +264,8 @@ func (d Diagnostic) MarshalJSON() ([]byte, error) {
 		Field             string             `json:"field,omitempty"`
 		Value             *string            `json:"value,omitempty"`
 		RefStatus         string             `json:"ref_status,omitempty"`
+		Section           string             `json:"section,omitempty"`
+		Status            string             `json:"status,omitempty"`
 		RequestedID       string             `json:"requested_id,omitempty"`
 		FirstIndex        *int               `json:"first_index,omitempty"`
 		DuplicateIndexes  []int              `json:"duplicate_indexes,omitempty"`
@@ -279,6 +285,8 @@ func (d Diagnostic) MarshalJSON() ([]byte, error) {
 		Field:             d.Field,
 		Value:             value,
 		RefStatus:         d.RefStatus,
+		Section:           d.Section,
+		Status:            d.Status,
 		RequestedID:       d.RequestedID,
 		FirstIndex:        d.FirstIndex,
 		DuplicateIndexes:  d.DuplicateIndexes,

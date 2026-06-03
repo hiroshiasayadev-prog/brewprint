@@ -90,7 +90,7 @@ func TestValidateRecordsOKWhenNoErrorDiagnostics(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, root, "docs/adr/001-valid.md", "# 001: Valid\n- **status**: accepted\n- **depends_on**:\n- **supersedes**:\n")
 	writeTestFile(t, root, "docs/spec/valid.md", "---\nstatus: draft\ndesign_record:\n  id: SPEC-valid\n  kind: spec\n  depends_on:\n    - ADR-001\n---\n# Valid spec\n")
-	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-valid.md", "# REQ-MCP-003: Valid requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n  - ADR-001\n- **work_items**:\n  - WORK-MCP-003\n")
+	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-valid.md", "# REQ-MCP-003: Valid requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n  - ADR-001\n- **work_items**:\n  - WORK-MCP-003\n\n## Requirement\n\nRequirement content.\n\n## Required Outcome\n\nOutcome content.\n")
 	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-valid.md", "# WORK-MCP-003: Valid work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n  - ADR-001\n- **tasks**:\n  - TASK-MCP-003-01\n")
 	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-valid.md", "# TASK-MCP-003-01: Valid task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - test\n")
 
@@ -1478,7 +1478,7 @@ func taskTestRecord(id, workItem, sourceRequirement string, dependsOn []string) 
 
 func writeWorkflowHappyPathFixture(t *testing.T, root string) {
 	t.Helper()
-	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-valid.md", "# REQ-MCP-003: Valid requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-003\n")
+	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-valid.md", "# REQ-MCP-003: Valid requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-003\n\n## Requirement\n\nRequirement content.\n\n## Required Outcome\n\nOutcome content.\n")
 	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-valid.md", "# WORK-MCP-003: Valid work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-003-01\n  - TASK-MCP-003-02\n")
 	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-valid.md", "# TASK-MCP-003-01: First task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - first\n")
 	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-02-valid.md", "# TASK-MCP-003-02: Second task\n- **id**: TASK-MCP-003-02\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n  - TASK-MCP-003-01\n- **outputs**:\n  - second\n")
@@ -1519,4 +1519,305 @@ func assertWorkflowDiagnostic(t *testing.T, diagnostics []Diagnostic, category D
 		}
 	}
 	t.Fatalf("missing workflow diagnostic category=%s record=%s field=%s value=%s ref_status=%s target=%s in %#v", category, recordID, field, value, refStatus, targetID, diagnostics)
+}
+
+func assertRequiredSectionDiagnostic(t *testing.T, diagnostics []Diagnostic, category DiagnosticCategory, recordID, section, status string) {
+	t.Helper()
+	for _, d := range diagnostics {
+		if d.Category == category && d.RecordID == recordID && d.Section == section && d.Status == status {
+			if d.Severity != DiagnosticSeverityError {
+				t.Fatalf("severity = %q, want error for %#v", d.Severity, d)
+			}
+			if d.Path == "" {
+				t.Fatalf("path missing for %#v", d)
+			}
+			if d.Message == "" {
+				t.Fatalf("message missing for %#v", d)
+			}
+			return
+		}
+	}
+	t.Fatalf("missing required section diagnostic category=%s record=%s section=%s status=%s in %#v", category, recordID, section, status, diagnostics)
+}
+
+func assertNoRequiredSectionDiagnosticForRecord(t *testing.T, diagnostics []Diagnostic, recordID string) {
+	t.Helper()
+	for _, d := range diagnostics {
+		if (d.Category == DiagnosticMissingRequiredSection || d.Category == DiagnosticEmptyRequiredSection) && d.RecordID == recordID {
+			t.Fatalf("unexpected required section diagnostic for %s: %#v", recordID, d)
+		}
+	}
+}
+
+func TestValidateRecordsRequiredNarrativeSections(t *testing.T) {
+	const (
+		workItemMetaHeader = "- **id**: WORK-MCP-007\n- **status**: done\n- **date**: 2026-06-03\n- **source_requirement**: REQ-MCP-007\n- **impact_refs**:\n- **tasks**:\n"
+		taskMetaHeader     = "- **id**: TASK-MCP-007-01\n- **status**: done\n- **date**: 2026-06-03\n- **work_item**: WORK-MCP-007\n- **source_requirement**: REQ-MCP-007\n- **estimate**: 1d\n- **depends_on**:\n- **outputs**:\n"
+		reqMetaHeader      = "- **id**: REQ-MCP-007\n- **status**: accepted\n- **date**: 2026-06-03\n- **source_refs**:\n- **work_items**:\n"
+	)
+
+	t.Run("work_item done missing Goal", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# WORK-MCP-007: Test\n" + workItemMetaHeader + "\n## Boundary\n\nBoundary text.\n\n## Evidence\n\nEvidence text.\n"
+		writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindWorkItem})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		assertRequiredSectionDiagnostic(t, resp.Diagnostics, DiagnosticMissingRequiredSection, "WORK-MCP-007", "Goal", "done")
+	})
+
+	t.Run("work_item done empty Goal", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# WORK-MCP-007: Test\n" + workItemMetaHeader + "\n## Goal\n\n## Boundary\n\nBoundary text.\n\n## Evidence\n\nEvidence text.\n"
+		writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindWorkItem})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		assertRequiredSectionDiagnostic(t, resp.Diagnostics, DiagnosticEmptyRequiredSection, "WORK-MCP-007", "Goal", "done")
+	})
+
+	t.Run("work_item done empty Boundary", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# WORK-MCP-007: Test\n" + workItemMetaHeader + "\n## Goal\n\nGoal text.\n\n## Boundary\n\n## Evidence\n\nEvidence text.\n"
+		writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindWorkItem})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		assertRequiredSectionDiagnostic(t, resp.Diagnostics, DiagnosticEmptyRequiredSection, "WORK-MCP-007", "Boundary", "done")
+	})
+
+	t.Run("work_item done empty Evidence", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# WORK-MCP-007: Test\n" + workItemMetaHeader + "\n## Goal\n\nGoal text.\n\n## Boundary\n\nBoundary text.\n\n## Evidence\n"
+		writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindWorkItem})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		assertRequiredSectionDiagnostic(t, resp.Diagnostics, DiagnosticEmptyRequiredSection, "WORK-MCP-007", "Evidence", "done")
+	})
+
+	t.Run("work_item done all sections non-empty", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# WORK-MCP-007: Test\n" + workItemMetaHeader + "\n## Goal\n\nGoal text.\n\n## Boundary\n\nBoundary text.\n\n## Evidence\n\nEvidence text.\n"
+		writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindWorkItem})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		assertNoRequiredSectionDiagnosticForRecord(t, resp.Diagnostics, "WORK-MCP-007")
+	})
+
+	t.Run("task done required sections enforced", func(t *testing.T) {
+		for _, sectionName := range []string{"Goal", "Work", "Done condition", "Verification", "Evidence"} {
+			sectionName := sectionName
+			t.Run("missing "+sectionName, func(t *testing.T) {
+				root := t.TempDir()
+				allSections := map[string]string{
+					"Goal":         "Goal text.",
+					"Work":         "Work text.",
+					"Done condition": "Done condition text.",
+					"Verification": "Verification text.",
+					"Evidence":     "Evidence text.",
+				}
+				var body strings.Builder
+				body.WriteString("# TASK-MCP-007-01: Test\n")
+				body.WriteString(taskMetaHeader)
+				for _, s := range []string{"Goal", "Work", "Done condition", "Verification", "Evidence"} {
+					if s == sectionName {
+						continue
+					}
+					body.WriteString("\n## " + s + "\n\n" + allSections[s] + "\n")
+				}
+				writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-007-01-test.md", body.String())
+				resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindTask})
+				if err != nil {
+					t.Fatalf("ValidateRecords: %v", err)
+				}
+				assertRequiredSectionDiagnostic(t, resp.Diagnostics, DiagnosticMissingRequiredSection, "TASK-MCP-007-01", sectionName, "done")
+			})
+		}
+	})
+
+	t.Run("requirement accepted Requirement required", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# REQ-MCP-007: Test\n" + reqMetaHeader + "\n## Required Outcome\n\nOutcome text.\n"
+		writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindRequirement})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		assertRequiredSectionDiagnostic(t, resp.Diagnostics, DiagnosticMissingRequiredSection, "REQ-MCP-007", "Requirement", "accepted")
+	})
+
+	t.Run("requirement accepted Required Outcome required", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# REQ-MCP-007: Test\n" + reqMetaHeader + "\n## Requirement\n\nRequirement text.\n"
+		writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindRequirement})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		assertRequiredSectionDiagnostic(t, resp.Diagnostics, DiagnosticMissingRequiredSection, "REQ-MCP-007", "Required Outcome", "accepted")
+	})
+
+	t.Run("requirement accepted Evidence not required", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# REQ-MCP-007: Test\n" + reqMetaHeader + "\n## Requirement\n\nRequirement text.\n\n## Required Outcome\n\nOutcome text.\n"
+		writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindRequirement})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		assertNoRequiredSectionDiagnosticForRecord(t, resp.Diagnostics, "REQ-MCP-007")
+		for _, d := range resp.Diagnostics {
+			if d.RecordID == "REQ-MCP-007" && d.Section == "Evidence" {
+				t.Fatalf("Evidence incorrectly required for REQ accepted: %#v", d)
+			}
+		}
+	})
+
+	t.Run("requirement accepted Boundary not required", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# REQ-MCP-007: Test\n" + reqMetaHeader + "\n## Requirement\n\nRequirement text.\n\n## Required Outcome\n\nOutcome text.\n"
+		writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindRequirement})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		for _, d := range resp.Diagnostics {
+			if d.RecordID == "REQ-MCP-007" && d.Section == "Boundary" {
+				t.Fatalf("Boundary incorrectly required for REQ accepted: %#v", d)
+			}
+		}
+	})
+
+	t.Run("requirement accepted Explicitly Excluded Scope not required", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# REQ-MCP-007: Test\n" + reqMetaHeader + "\n## Requirement\n\nRequirement text.\n\n## Required Outcome\n\nOutcome text.\n"
+		writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindRequirement})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		for _, d := range resp.Diagnostics {
+			if d.RecordID == "REQ-MCP-007" && d.Section == "Explicitly Excluded Scope" {
+				t.Fatalf("Explicitly Excluded Scope incorrectly required for REQ accepted: %#v", d)
+			}
+		}
+	})
+
+	t.Run("work_item not_started empty Evidence not checked", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# WORK-MCP-007: Test\n- **id**: WORK-MCP-007\n- **status**: not_started\n- **date**: 2026-06-03\n- **source_requirement**: REQ-MCP-007\n- **impact_refs**:\n- **tasks**:\n\n## Goal\n\n## Evidence\n"
+		writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindWorkItem})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		assertNoRequiredSectionDiagnosticForRecord(t, resp.Diagnostics, "WORK-MCP-007")
+	})
+
+	t.Run("task todo empty Evidence not checked", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# TASK-MCP-007-01: Test\n- **id**: TASK-MCP-007-01\n- **status**: todo\n- **date**: 2026-06-03\n- **work_item**: WORK-MCP-007\n- **source_requirement**: REQ-MCP-007\n- **estimate**: 1d\n- **depends_on**:\n- **outputs**:\n\n## Goal\n\n## Evidence\n"
+		writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-007-01-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindTask})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		assertNoRequiredSectionDiagnosticForRecord(t, resp.Diagnostics, "TASK-MCP-007-01")
+	})
+
+	t.Run("requirement captured empty Required Outcome not checked", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# REQ-MCP-007: Test\n- **id**: REQ-MCP-007\n- **status**: captured\n- **date**: 2026-06-03\n- **source_refs**:\n- **work_items**:\n\n## Requirement\n\n## Required Outcome\n"
+		writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindRequirement})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		assertNoRequiredSectionDiagnosticForRecord(t, resp.Diagnostics, "REQ-MCP-007")
+	})
+
+	t.Run("missing_required_section diagnostic fields", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# WORK-MCP-007: Test\n" + workItemMetaHeader + "\n## Boundary\n\nBoundary text.\n\n## Evidence\n\nEvidence text.\n"
+		writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindWorkItem})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		var found *Diagnostic
+		for i := range resp.Diagnostics {
+			d := &resp.Diagnostics[i]
+			if d.Category == DiagnosticMissingRequiredSection && d.RecordID == "WORK-MCP-007" && d.Section == "Goal" {
+				found = d
+				break
+			}
+		}
+		if found == nil {
+			t.Fatalf("missing_required_section diagnostic not found: %#v", resp.Diagnostics)
+		}
+		if found.Severity != DiagnosticSeverityError {
+			t.Fatalf("severity = %q, want error", found.Severity)
+		}
+		if found.RecordID != "WORK-MCP-007" {
+			t.Fatalf("record_id = %q, want WORK-MCP-007", found.RecordID)
+		}
+		if found.Path == "" {
+			t.Fatal("path is empty")
+		}
+		if found.Section != "Goal" {
+			t.Fatalf("section = %q, want Goal", found.Section)
+		}
+		if found.Status != "done" {
+			t.Fatalf("status = %q, want done", found.Status)
+		}
+		if found.Message == "" {
+			t.Fatal("message is empty")
+		}
+	})
+
+	t.Run("empty_required_section diagnostic fields", func(t *testing.T) {
+		root := t.TempDir()
+		content := "# WORK-MCP-007: Test\n" + workItemMetaHeader + "\n## Goal\n\n## Boundary\n\nBoundary text.\n\n## Evidence\n\nEvidence text.\n"
+		writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-007-test.md", content)
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindWorkItem})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		var found *Diagnostic
+		for i := range resp.Diagnostics {
+			d := &resp.Diagnostics[i]
+			if d.Category == DiagnosticEmptyRequiredSection && d.RecordID == "WORK-MCP-007" && d.Section == "Goal" {
+				found = d
+				break
+			}
+		}
+		if found == nil {
+			t.Fatalf("empty_required_section diagnostic not found: %#v", resp.Diagnostics)
+		}
+		if found.Severity != DiagnosticSeverityError {
+			t.Fatalf("severity = %q, want error", found.Severity)
+		}
+		if found.RecordID != "WORK-MCP-007" {
+			t.Fatalf("record_id = %q, want WORK-MCP-007", found.RecordID)
+		}
+		if found.Path == "" {
+			t.Fatal("path is empty")
+		}
+		if found.Section != "Goal" {
+			t.Fatalf("section = %q, want Goal", found.Section)
+		}
+		if found.Status != "done" {
+			t.Fatalf("status = %q, want done", found.Status)
+		}
+		if found.Message == "" {
+			t.Fatal("message is empty")
+		}
+	})
 }

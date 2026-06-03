@@ -519,6 +519,16 @@ func TestToolsCallToolErrors(t *testing.T) {
 			line: `{"jsonrpc":"2.0","id":26,"method":"tools/call","params":{"name":"get_record"}}`,
 			code: designrecords.ErrorCodeInvalidRequest,
 		},
+		{
+			name: "propose_record_create non-string body is decode error no body_cache",
+			line: `{"jsonrpc":"2.0","id":301,"method":"tools/call","params":{"name":"propose_record_create","arguments":{"kind":"requirement","id":"REQ-MCP-060","title":"Test","body":7}}}`,
+			code: designrecords.ErrorCodeInvalidRequest,
+		},
+		{
+			name: "propose_record_update non-string body is decode error no body_cache",
+			line: `{"jsonrpc":"2.0","id":302,"method":"tools/call","params":{"name":"propose_record_update","arguments":{"kind":"task","id":"TASK-MCP-001-01","update":{"type":"named_section_replace","section_selector":{"heading":"Evidence"}},"body":7}}}`,
+			code: designrecords.ErrorCodeInvalidRequest,
+		},
 	}
 
 	for _, tt := range tests {
@@ -633,7 +643,11 @@ func toolsCallTestIndex() *designrecords.Index {
 			Title:        "Workflow support",
 			Status:       designrecords.RecordStatusAccepted,
 			Path:         "docs/requirements/mcp/REQ-MCP-003-workflow-support.md",
-			RawBody:      "# REQ-MCP-003: Workflow support\n",
+			RawBody:      "# REQ-MCP-003: Workflow support\n\n## Requirement\n\nWorkflow artifact MCP support.\n\n## Required Outcome\n\nWorkflow artifacts are queryable via MCP.\n",
+			Headings: []designrecords.Heading{
+				{Level: 2, Text: "Requirement"},
+				{Level: 2, Text: "Required Outcome"},
+			},
 			Requirement: &designrecords.RequirementDetail{
 				SourceRefs: []string{"ADR-092"},
 				WorkItems:  []string{"WORK-MCP-003"},
@@ -660,7 +674,14 @@ func toolsCallTestIndex() *designrecords.Index {
 			Title:        "Workflow evidence",
 			Status:       designrecords.RecordStatusDone,
 			Path:         "docs/tasks/mcp/TASK-MCP-003-01-workflow-evidence.md",
-			RawBody:      "# TASK-MCP-003-01: Workflow evidence\n",
+			RawBody:      "# TASK-MCP-003-01: Workflow evidence\n\n## Goal\n\nRecord workflow evidence.\n\n## Work\n\nCollect and write evidence.\n\n## Done condition\n\nEvidence recorded.\n\n## Verification\n\nEvidence reviewed.\n\n## Evidence\n\nEvidence collected on 2026-06-03.\n",
+			Headings: []designrecords.Heading{
+				{Level: 2, Text: "Goal"},
+				{Level: 2, Text: "Work"},
+				{Level: 2, Text: "Done condition"},
+				{Level: 2, Text: "Verification"},
+				{Level: 2, Text: "Evidence"},
+			},
 			Task: &designrecords.TaskDetail{
 				WorkItem:          "WORK-MCP-003",
 				SourceRequirement: "REQ-MCP-003",
