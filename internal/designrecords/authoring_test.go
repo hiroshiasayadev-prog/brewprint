@@ -702,7 +702,7 @@ func TestAuthoringNamedSectionSelectors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("multi match: %v", err)
 	}
-	if multi.ProposalCreated || !hasDiagnosticCategory(multi.Diagnostics, DiagnosticCategory(ErrorCodeSectionSelectorAmbiguous)) {
+	if multi.ProposalCreated || !hasDiagnosticCategory(multi.Diagnostics, DiagnosticCategory(ErrorCodeSectionSelectorAmbiguous)) || multi.BodyCache == nil {
 		t.Fatalf("multi match response = %#v", multi)
 	}
 	multiDiagnostic := diagnosticByCategory(multi.Diagnostics, DiagnosticCategory(ErrorCodeSectionSelectorAmbiguous))
@@ -775,6 +775,243 @@ func TestAuthoringHypotheticalIndexPreservesUnchangedSemanticRefSources(t *testi
 	}})
 	if len(hyp.SemanticRefSources) != 1 || hyp.SemanticRefSources[0].RecordID != "SPEC-test" {
 		t.Fatalf("semantic ref sources were not preserved: %#v", hyp.SemanticRefSources)
+	}
+}
+
+func TestBodyCacheReturnClassification(t *testing.T) {
+	// Regression tests for TASK-MCP-012-02 / REQ-MCP-015 body_cache return classification.
+	// No-cache: request-level invalid before body is received as a content source.
+	// Cache: body was received as a content source but proposal preparation failed after.
+
+	t.Run("no_cache_body_plus_body_cache_id_create", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		body := "some body\n"
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:        RecordKindRequirement,
+			ID:          "REQ-MCP-060",
+			Domain:      "MCP",
+			Title:       "Body cache conflict",
+			Body:        &body,
+			BodyCacheID: "bc_whatever",
+		})
+		if err != nil {
+			t.Fatalf("body plus body_cache_id: %v", err)
+		}
+		if resp.ProposalCreated || resp.BodyCache != nil {
+			t.Fatalf("body plus body_cache_id must not return body_cache: %#v", resp)
+		}
+		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeInvalidBodySource)) {
+			t.Fatalf("body plus body_cache_id missing InvalidBodySource diagnostic: %#v", resp.Diagnostics)
+		}
+	})
+
+	t.Run("no_cache_fields_plus_body_cache_id_create", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		fields := map[string]any{"status": "captured", "date": "2026-06-02", "source_refs": []any{}, "work_items": []any{}}
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:        RecordKindRequirement,
+			ID:          "REQ-MCP-060",
+			Domain:      "MCP",
+			Title:       "Fields cache conflict",
+			Fields:      fields,
+			BodyCacheID: "bc_whatever",
+		})
+		if err != nil {
+			t.Fatalf("fields plus body_cache_id: %v", err)
+		}
+		if resp.ProposalCreated || resp.BodyCache != nil {
+			t.Fatalf("fields plus body_cache_id must not return body_cache: %#v", resp)
+		}
+		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
+			t.Fatalf("fields plus body_cache_id missing InvalidRequest diagnostic: %#v", resp.Diagnostics)
+		}
+	})
+
+	t.Run("cache_returned_update_no_match_plus_body", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		body := "new content\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind:   RecordKindTask,
+			ID:     "TASK-MCP-001-01",
+			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Missing"}},
+			Body:   &body,
+		})
+		if err != nil {
+			t.Fatalf("no match section: %v", err)
+		}
+		if resp.ProposalCreated || !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeSectionSelectorNoMatch)) || resp.BodyCache == nil {
+			t.Fatalf("no match section must return body_cache: %#v", resp)
+		}
+	})
+
+	t.Run("cache_returned_update_ambiguous_plus_body", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		multiPath := filepath.Join(fx.root, "docs", "tasks", "mcp", "TASK-MCP-001-01-first-task.md")
+		existing := readTestFile(t, multiPath)
+		if err := os.WriteFile(multiPath, []byte(strings.Replace(existing, "## Evidence\n", "## Evidence\n\n## Evidence\n", 1)), 0o644); err != nil {
+			t.Fatalf("write duplicate section: %v", err)
+		}
+		fx.idx = mustBuildIndex(t, fx.cfg)
+		body := "new content\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind:   RecordKindTask,
+			ID:     "TASK-MCP-001-01",
+			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:   &body,
+		})
+		if err != nil {
+			t.Fatalf("ambiguous section: %v", err)
+		}
+		if resp.ProposalCreated || !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeSectionSelectorAmbiguous)) || resp.BodyCache == nil {
+			t.Fatalf("ambiguous section must return body_cache: %#v", resp)
+		}
+	})
+
+	t.Run("cache_returned_create_fields_plus_full_record_body", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		fullBody := "# REQ-MCP-060: Full record body\n\n- **id**: REQ-MCP-060\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n\n## Requirement\n\nContent.\n"
+		fields := map[string]any{"status": "captured", "date": "2026-06-02", "source_refs": []any{}, "work_items": []any{}}
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindRequirement,
+			ID:     "REQ-MCP-060",
+			Domain: "MCP",
+			Title:  "Full record in structured body",
+			Fields: fields,
+			Body:   &fullBody,
+		})
+		if err != nil {
+			t.Fatalf("fields plus full-record body: %v", err)
+		}
+		if resp.ProposalCreated || !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) || resp.BodyCache == nil {
+			t.Fatalf("fields plus full-record body must return body_cache: %#v", resp)
+		}
+	})
+
+	t.Run("cache_returned_create_fields_plus_section_body_render_failure", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		sectionBody := "## Goal\n\nTask goal.\n\n## Evidence\n\nEvidence.\n"
+		// fields.work_item does not match parent_id, causing renderCreateHeader to fail after body validation passes
+		fields := map[string]any{"status": "todo", "date": "2026-06-02", "work_item": "WORK-WRONG-ID", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{}}
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-new",
+			Domain:   "MCP",
+			ParentID: "WORK-MCP-001",
+			Title:    "Section body render failure",
+			Fields:   fields,
+			Body:     &sectionBody,
+		})
+		if err != nil {
+			t.Fatalf("fields plus section body render failure: %v", err)
+		}
+		if resp.ProposalCreated || resp.BodyCache == nil {
+			t.Fatalf("fields plus section body render failure must return body_cache: %#v", resp)
+		}
+	})
+
+	t.Run("cache_returned_legacy_full_body_create_domain_mismatch", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		legacyBody := "# REQ-MCP-060: Domain mismatch\n\n- **id**: REQ-MCP-060\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n\n## Requirement\n\nContent.\n"
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindRequirement,
+			ID:     "REQ-MCP-060",
+			Domain: "DATA",
+			Title:  "Domain mismatch",
+			Body:   &legacyBody,
+		})
+		if err != nil {
+			t.Fatalf("legacy domain mismatch: %v", err)
+		}
+		if resp.ProposalCreated || !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) || resp.BodyCache == nil {
+			t.Fatalf("legacy domain mismatch must return body_cache: %#v", resp)
+		}
+	})
+
+	t.Run("cache_returned_legacy_full_body_create_target_already_exists", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// REQ-MCP-001 already exists in the fixture
+		legacyBody := "# REQ-MCP-001: First req\n\n- **id**: REQ-MCP-001\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n\n## Requirement\n\nContent.\n"
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:  RecordKindRequirement,
+			ID:    "REQ-MCP-001",
+			Title: "Already exists",
+			Body:  &legacyBody,
+		})
+		if err != nil {
+			t.Fatalf("legacy target already exists: %v", err)
+		}
+		if resp.ProposalCreated || !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) || resp.BodyCache == nil {
+			t.Fatalf("legacy target already exists must return body_cache: %#v", resp)
+		}
+	})
+}
+
+// TestReplaceNamedSectionSpacingPreservation is a failing regression test for
+// REQ-MCP-016 / WORK-MCP-015 / TASK-MCP-015-01.
+//
+// replaceNamedSection currently discards the blank line that separated the
+// replaced section body from the next same-level heading.  The blank line
+// should be present regardless of whether the caller-supplied body ends with
+// no newline, one newline, or two newlines.
+//
+// Expected outcome after the fix (TASK-MCP-015-03):
+//   - all three sub-tests pass
+//   - "already_separated" must produce exactly ONE blank line (not two)
+func TestReplaceNamedSectionSpacingPreservation(t *testing.T) {
+	// Document with three same-level sections, each with content.
+	// The blank lines between sections are canonical Markdown separators.
+	doc := "# Doc\n\n## First\n\nFirst content.\n\n## Second\n\nSecond content.\n\n## Third\n\nThird content.\n"
+
+	cases := []struct {
+		name string
+		body string
+	}{
+		{name: "no_trailing_newline", body: "New second content."},
+		{name: "one_trailing_newline", body: "New second content.\n"},
+		{name: "already_separated", body: "New second content.\n\n"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, diags, err := replaceNamedSection(doc, SectionSelector{Heading: "Second"}, tc.body)
+			if err != nil || len(diags) > 0 {
+				t.Fatalf("replaceNamedSection: err=%v diags=%v", err, diags)
+			}
+			// Expect exactly one blank line between replaced body and ## Third.
+			if !strings.Contains(result, "New second content.\n\n## Third") {
+				t.Errorf("blank line between replaced section and next heading is missing or wrong.\nresult:\n%s", result)
+			}
+			// Expect that ## Third is not immediately preceded by more than one blank line.
+			if strings.Contains(result, "New second content.\n\n\n## Third") {
+				t.Errorf("unexpected extra blank line before ## Third.\nresult:\n%s", result)
+			}
+		})
+	}
+}
+
+// TestReplaceNamedSectionSpacingLastSection ensures the fix does not add a
+// spurious trailing blank line when the replaced section is the last one.
+func TestReplaceNamedSectionSpacingLastSection(t *testing.T) {
+	doc := "# Doc\n\n## First\n\nFirst content.\n\n## Last\n\nLast content.\n"
+
+	cases := []struct {
+		name string
+		body string
+	}{
+		{name: "no_trailing_newline", body: "New last content."},
+		{name: "one_trailing_newline", body: "New last content.\n"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, diags, err := replaceNamedSection(doc, SectionSelector{Heading: "Last"}, tc.body)
+			if err != nil || len(diags) > 0 {
+				t.Fatalf("replaceNamedSection: err=%v diags=%v", err, diags)
+			}
+			if !strings.Contains(result, "New last content.") {
+				t.Errorf("replacement body missing from result:\n%s", result)
+			}
+		})
 	}
 }
 

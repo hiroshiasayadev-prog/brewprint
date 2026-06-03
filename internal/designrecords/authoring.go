@@ -1068,13 +1068,16 @@ func replaceNamedSection(raw string, selector SectionSelector, body string) (str
 	}
 	match := matches[0]
 	lines := splitMarkdownLines(raw)
-	replacementBody := strings.TrimSuffix(body, "\n")
+	replacementBody := strings.TrimRight(body, "\n")
 	replacement := []string{strings.Repeat("#", match.Heading.Level) + " " + match.Heading.Text}
 	if replacementBody != "" {
 		replacement = append(replacement, replacementBody)
 	}
 	out := append([]string{}, lines[:match.StartLine]...)
 	out = append(out, replacement...)
+	if match.EndLine < len(lines) {
+		out = append(out, "")
+	}
 	out = append(out, lines[match.EndLine:]...)
 	return strings.Join(out, "\n"), nil, nil
 }

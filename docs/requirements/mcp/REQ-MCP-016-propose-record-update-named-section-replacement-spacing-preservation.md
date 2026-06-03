@@ -1,11 +1,12 @@
 # REQ-MCP-016: propose_record_update named section replacement spacing preservation
 
 - **id**: REQ-MCP-016
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-03
 - **source_refs**:
   - WORK-MCP-014
 - **work_items**:
+  - WORK-MCP-015
 
 ## Requirement
 
@@ -17,6 +18,14 @@ Markdown としては解析可能でも、authoring output としては読みづ
 
 - `WORK-MCP-014` の `Goal` / `Boundary` を MCP の `named_section_replace` で更新したところ、section 本文末尾と次見出しの間の空行が消えた。
 - 末尾改行を含めて再 proposal しても、diff は同じ形になったため、呼び出し側の body ではなく replacement/join logic 側の整形仕様または実装に起因する可能性が高い。
+- Close evidence from `WORK-MCP-015`:
+  - `replaceNamedSection` now trims all trailing replacement-body newlines and inserts the canonical blank line only when a next heading exists.
+  - Regression tests cover no trailing newline, one trailing newline, already-separated replacement body, and last-section behavior.
+  - `go test ./internal/designrecords -run TestReplaceNamedSectionSpacing -v`: pass.
+  - `go test ./internal/designrecords ./internal/designrecordsmcp`: pass.
+  - `go test ./...`: pass.
+  - MCP runtime smoke through `go run ./cmd/design-records-mcp --root .` confirmed `propose_record_update` `named_section_replace` proposal diffs retain a blank line between replacement body and the next heading for all required trailing-newline variants.
+  - Runtime smoke proposals were discarded; no smoke proposal was accepted or written to repository files.
 
 ## Required Outcome
 
