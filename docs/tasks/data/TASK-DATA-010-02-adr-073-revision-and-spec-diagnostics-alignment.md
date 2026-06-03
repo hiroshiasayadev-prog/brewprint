@@ -1,7 +1,7 @@
 # TASK-DATA-010-02: ADR-073 revision and spec / diagnostics alignment
 
 - **id**: TASK-DATA-010-02
-- **status**: todo
+- **status**: done
 - **date**: 2026-06-01
 - **work_item**: WORK-DATA-010
 - **source_requirement**: REQ-DATA-004
@@ -92,4 +92,36 @@ This task exists because TASK-DATA-010-01 concluded that ADR-073 does not need a
 
 ## Evidence
 
-Not started.
+### Sources reviewed
+
+- `TASK-DATA-010-01`: confirmed verdict `revise-before-acceptance`, no conceptual split required, and follow-up scope for ADR / spec / diagnostics alignment.
+- `ADR-073`: confirmed already accepted, with stale M15 / v1.1 wording that needed successor-boundary cleanup.
+- `REQ-DATA-004`: confirmed tagged union / discriminator payload support requirement and explicit excluded scope.
+- `WORK-DATA-010`: confirmed ownership of tagged union successor work and exclusion of DAG TypeRef hint, MCP identity, duplicate task QID repair, and broad notes-retreat cleanup.
+- `docs/spec/nodes.md`, `docs/spec/type-ref.md`, `docs/spec/diagnostics.md`: active specs updated by this task.
+
+### Changes made
+
+- Updated `ADR-073` wording so the accepted contract is framed as REQ-DATA-004 / WORK-DATA-010 successor scope rather than M15 Phase C / v1.1 initial adoption scope.
+- Updated `docs/spec/nodes.md` to define `kind: tagged_union`, required `discriminator`, required `variants`, variant tag uniqueness, `fields: []` semantics, discriminator field exclusion, and variant field subset rules.
+- Updated `docs/spec/type-ref.md` to state that tagged union models are named model TypeRefs, do not introduce inline union syntax, and use nominal compatibility with existing `any` wildcard behavior.
+- Updated `docs/spec/diagnostics.md` to add `invalid_tagged_union_model`, `duplicate_variant_tag`, and `invalid_variant_field`, including chaining guidance with existing TypeRef and model diagnostics.
+
+### Verification result
+
+- ADR-073 no longer frames the accepted minimum as M15 Phase C reopening.
+- ADR-073 remains accepted and explicitly leaves runtime MCP request / response payload validation out of scope.
+- The spec updates do not introduce inline union TypeRef syntax, external discriminator support, untagged union, general oneOf, scalar union, or runtime payload validation.
+- Tagged union render support is not marked as already implemented; it remains follow-up scope under WORK-DATA-010 or later render-specific work.
+- No parser, resolver, validation implementation, renderer implementation, UC-002 YAML migration, fixture, golden, or Go test execution was performed in this task.
+
+### Implementation follow-up input
+
+Next implementation / fixture task should cover:
+
+- raw YAML / semantic model support for `kind: tagged_union`, `discriminator`, and `variants`.
+- resolver support for variant field TypeRefs.
+- validation for `invalid_tagged_union_model`, `duplicate_variant_tag`, `invalid_variant_field`, and reuse of `duplicate_model_field`, `invalid_type_ref`, and `unresolved_field_type` for variant fields.
+- TypeRef compatibility confirmation that tagged union models remain nominal named models and `any` keeps ADR-060 wildcard behavior.
+- render / catalog handling for tagged union discriminator / variants, or an explicit split if render should be deferred again.
+- representative UC-002 fixture / YAML migration candidate starting with `analyze_impact_change`.

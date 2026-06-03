@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/diagnostics.md
 status: draft
-last_updated: 2026-05-31
+last_updated: 2026-06-02
 summary: >
   brewprint validation diagnosticsの外部向け仕様。
   severity / code / file / message の意味、diagnostic file表現、現在のdiagnostic code一覧を定義する。
@@ -17,6 +17,7 @@ depends_on:
   - docs/adr/067-enum-model.md
   - docs/adr/069-type-ref-container-complexity-lint.md
   - docs/adr/070-model-visibility-file-private-helper-model.md
+  - docs/adr/073-tagged-union-model.md
 ---
 
 # Diagnostics仕様
@@ -152,12 +153,29 @@ Sort key:
 | `invalid_type_ref` | error | TypeRef構文が不正、TypeRef として扱えない container kind 等を指定している、または parser safety limit を超過している |
 | `invalid_enum_model` | error | `kind: enum` の定義が不正。`values` 欠落、空、非 string 値、空文字、または enum で禁止される `fields` / `element` / `value` 指定など |
 | `duplicate_enum_value` | error | 同一 enum model 内で `values` が重複している |
+| `invalid_tagged_union_model` | error | `kind: tagged_union` の定義が不正。`discriminator` 欠落、`variants` 欠落、空 variants、禁止 field 指定など |
+| `duplicate_variant_tag` | error | 同一 tagged union model 内で `variants[].tag` が重複している |
+| `invalid_variant_field` | error | variant field が不正。discriminator field の再定義、許可されない field 属性、field shape 不正など |
 
 `invalid_enum_model` は `kind: enum` の `values` が欠落している、空 list である、string list ではない、空文字を含む、または enum model では禁止される `fields` / `element` / `value` を持つ場合に出す。
 
 `duplicate_enum_value` は同一 enum model 内の `values` に重複がある場合に出す。
 
 `invalid_enum_value` は v1.1 minimum では追加しない。現時点の brewprint YAML は主に schema / model 定義であり、enum-typed field に対する runtime literal 値を保持しないためである。
+
+`invalid_tagged_union_model` は `kind: tagged_union` の `discriminator` が欠落・空・dot path である場合、`variants` が欠落・空 list・list でない場合、または tagged union model では扱わない `fields` / `element` / `value` / `values` 等を持つ場合に出す。
+
+`variants[].tag` が欠落している、空文字である、または string でない場合は `invalid_tagged_union_model` として扱う。
+
+`duplicate_variant_tag` は、同一 tagged union model 内で valid な `variants[].tag` が重複している場合に出す。欠落・空文字・非 string tag には使わない。
+
+`invalid_variant_field` は `variants[].fields[]` の payload field が不正な場合に出す。代表例は、variant field が `discriminator` と同じ `name` を再定義している、variant field が `pk` / `fk` / `unique` 等の許可されない属性を持つ、`name` / `type` が欠落している、または field object として扱えない場合である。`variants[].tag` 自体の不正には使わない。
+
+variant field 名の重複には既存の `duplicate_model_field` を流用してよい。variant field の `type` が TypeRef として不正な場合は `invalid_type_ref`、TypeRef 構文は valid だが named model が未解決の場合は `unresolved_field_type` を使う。tagged union model 自体の `kind` が未対応の場合は既存の `invalid_model_kind` を使う。
+
+Tagged union model definition diagnostics は runtime MCP request / response payload validation を行わない。実際の JSON payload に discriminator field が存在するか、discriminator value が許可 tag に含まれるか、payload field が存在するか、unknown additional field を許可するかは WORK-DATA-010 minimum の diagnostic 対象外である。
+
+Tagged union definition が `invalid_tagged_union_model` で既に不正な場合、variant field TypeRef 解決や duplicate variant tag 等の下位検査は連鎖抑制してよい。実装は、同じ YAML から十分に局所的な error を返せる範囲で追加診断してもよいが、未解決 TypeRef に対して flow wiring / return compatibility diagnostic を重ねない既存方針と整合させる。
 
 `duplicate_model_id` は task-file helper minimum の model identity validation に使う。名前衝突 rule は [naming.md](./naming.md#41-task-file-helper-model-の名前衝突) §4.1、task-file helper model の基本 semantics は [nodes.md](./nodes.md#task-file-private-helper-model-semantics) を正とする。
 

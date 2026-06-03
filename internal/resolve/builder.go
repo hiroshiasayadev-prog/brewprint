@@ -267,14 +267,15 @@ func buildModel(fileID semantic.FileID, module string, raw rawyaml.Model, filePr
 			Main:   raw.Main,
 			Note:   raw.Note,
 		},
-		FilePrivate: filePrivate,
-		LocalName:   raw.ID,
-		Kind:        raw.Kind,
-		Element:     raw.Element,
-		ElementRef:  mustBuildTypeRef(module, raw.Element),
-		Value:       raw.Value,
-		ValueRef:    mustBuildTypeRef(module, raw.Value),
-		Values:      append([]string(nil), raw.Values...),
+		FilePrivate:   filePrivate,
+		LocalName:     raw.ID,
+		Kind:          raw.Kind,
+		Element:       raw.Element,
+		ElementRef:    mustBuildTypeRef(module, raw.Element),
+		Value:         raw.Value,
+		ValueRef:      mustBuildTypeRef(module, raw.Value),
+		Values:        append([]string(nil), raw.Values...),
+		Discriminator: raw.Discriminator,
 	}
 	for _, field := range raw.Fields {
 		model.Fields = append(model.Fields, semantic.ModelField{
@@ -286,6 +287,24 @@ func buildModel(fileID semantic.FileID, module string, raw rawyaml.Model, filePr
 			Unique:  field.Unique,
 			Note:    field.Note,
 		})
+	}
+	for _, rawVariant := range raw.Variants {
+		variant := semantic.ModelVariant{Tag: rawVariant.Tag}
+		if rawVariant.Fields != nil {
+			variant.Fields = make([]semantic.ModelField, 0, len(rawVariant.Fields))
+			for _, field := range rawVariant.Fields {
+				variant.Fields = append(variant.Fields, semantic.ModelField{
+					Name:    field.Name,
+					Type:    field.Type,
+					TypeRef: mustBuildTypeRef(module, field.Type),
+					PK:      field.PK,
+					FK:      field.FK,
+					Unique:  field.Unique,
+					Note:    field.Note,
+				})
+			}
+		}
+		model.Variants = append(model.Variants, variant)
 	}
 	return model
 }

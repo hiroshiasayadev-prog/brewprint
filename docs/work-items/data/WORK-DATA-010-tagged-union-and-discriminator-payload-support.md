@@ -1,7 +1,7 @@
 # WORK-DATA-010: Implement tagged union and discriminator payload support
 
 - **id**: WORK-DATA-010
-- **status**: not_started
+- **status**: implementation_pending
 - **date**: 2026-06-01
 - **source_requirement**: REQ-DATA-004
 - **impact_refs**:
@@ -13,6 +13,7 @@
 - **tasks**:
   - TASK-DATA-010-01
   - TASK-DATA-010-02
+  - TASK-DATA-010-03
 
 ## Goal
 
@@ -25,8 +26,8 @@ Implement tagged union and discriminator payload support as a dedicated DATA exp
 - Review ADR-073 and decide whether it can be accepted as-is, revised, or split before implementation.
 - Define the tagged union model shape and discriminator payload validation boundary.
 - Update relevant specs for model representation, TypeRef usage, validation diagnostics, and render behavior.
-- Implement parser / resolver / validation / render support needed for the accepted minimum.
-- Add fixtures / golden evidence for representative UC-002 tagged-union candidates.
+- Implement parser / resolver / validation support needed for the accepted minimum.
+- Add render / catalog support and fixtures / golden evidence for representative UC-002 tagged-union candidates in follow-up tasks.
 
 ### Excluded
 
@@ -41,7 +42,7 @@ Implement tagged union and discriminator payload support as a dedicated DATA exp
 | layer | current state | handling in this work item |
 |---|---|---|
 | source requirement | REQ-DATA-004 captured | Owns tagged union successor work |
-| decision | ADR-073 proposed | Review and accept / revise / split before implementation |
+| decision | ADR-073 accepted | Implement against the accepted tagged union contract; TASK-DATA-010-02 completed spec / diagnostics alignment |
 | investigation | INV-DATA-002 concluded | Use tagged-union candidate inventory as evidence |
 | UC-002 classification | TASK-DATA-003-04 done | Use tagged-union candidates without reopening WORK-DATA-003 |
 
@@ -52,15 +53,25 @@ Initial task artifacts:
 - TASK-DATA-010-01
 - TASK-DATA-010-02
 
+Completed review / alignment:
+
+- TASK-DATA-010-01
+- TASK-DATA-010-02
+
+Implementation task artifacts:
+
+- TASK-DATA-010-03
+
 Expected later split:
 
 ```mermaid
 flowchart TD
   T1["TASK-DATA-010-01 ADR-073 acceptance / split review"]
-  T2["Spec and diagnostics alignment"]
-  T3["Implementation and fixtures"]
-  T4["Verification and close"]
-  T1 --> T2 --> T3 --> T4
+  T2["TASK-DATA-010-02 Spec and diagnostics alignment"]
+  T3["TASK-DATA-010-03 Raw model / resolver / validation implementation"]
+  T4["Render / catalog / UC-002 fixtures follow-up"]
+  T5["Verification and close follow-up"]
+  T1 --> T2 --> T3 --> T4 --> T5
 ```
 
 ## Completion Condition

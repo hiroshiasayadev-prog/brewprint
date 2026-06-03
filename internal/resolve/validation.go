@@ -24,6 +24,9 @@ const (
 	diagnosticOpaqueTypeRef             = "opaque_type_ref"
 	diagnosticInvalidEnumModel          = "invalid_enum_model"
 	diagnosticDuplicateEnumValue        = "duplicate_enum_value"
+	diagnosticInvalidTaggedUnionModel   = "invalid_tagged_union_model"
+	diagnosticDuplicateVariantTag       = "duplicate_variant_tag"
+	diagnosticInvalidVariantField       = "invalid_variant_field"
 	diagnosticDuplicateModelID          = "duplicate_model_id"
 	diagnosticInvalidPrivateModelRef    = "invalid_private_model_reference"
 	diagnosticDuplicateNode             = "duplicate_node"
@@ -74,10 +77,11 @@ var validStoreKinds = map[string]struct{}{
 }
 
 var validModelKinds = map[string]struct{}{
-	"struct": {},
-	"list":   {},
-	"dict":   {},
-	"enum":   {},
+	"struct":       {},
+	"list":         {},
+	"dict":         {},
+	"enum":         {},
+	"tagged_union": {},
 }
 
 var validHTTPMethods = map[string]struct{}{
@@ -164,6 +168,9 @@ func validateModelDefinitions(project *semantic.Project, symbols *symbolTable) {
 		if model.Kind == "enum" {
 			validateEnumModel(symbols, model)
 		}
+		if model.Kind == "tagged_union" {
+			validateTaggedUnionModel(project, symbols, model)
+		}
 		for _, field := range model.Fields {
 			fieldLabel := field.Name
 			if fieldLabel == "" {
@@ -215,6 +222,63 @@ func validateEnumModel(symbols *symbolTable, model *semantic.Model) {
 			continue
 		}
 		seen[value] = struct{}{}
+	}
+}
+
+func validateTaggedUnionModel(project *semantic.Project, symbols *symbolTable, model *semantic.Model) {
+	if len(model.Fields) > 0 || model.Element != "" || model.Value != "" || len(model.Values) > 0 {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidTaggedUnionModel, model.FileID, "tagged union model must not define fields, element, value, or values: "+model.QID.String())
+	}
+	if model.Discriminator == "" {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidTaggedUnionModel, model.FileID, "tagged union discriminator is required: "+model.QID.String())
+	} else if strings.Contains(model.Discriminator, ".") {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidTaggedUnionModel, model.FileID, "tagged union discriminator must not be a dot path: "+model.QID.String())
+	}
+	if len(model.Variants) == 0 {
+		symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidTaggedUnionModel, model.FileID, "tagged union variants are required and must be non-empty: "+model.QID.String())
+		return
+	}
+	module := moduleForFileID(model.FileID)
+	seenTags := map[string]struct{}{}
+	for _, variant := range model.Variants {
+		if variant.Tag == "" {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidTaggedUnionModel, model.FileID, "tagged union variant tag is required and must be non-empty: "+model.QID.String())
+			continue
+		}
+		if _, exists := seenTags[variant.Tag]; exists {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateVariantTag, model.FileID, "duplicate variant tag: "+model.QID.String()+"."+variant.Tag)
+		} else {
+			seenTags[variant.Tag] = struct{}{}
+		}
+		if variant.Fields == nil {
+			symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidVariantField, model.FileID, "tagged union variant fields are required: "+model.QID.String()+"."+variant.Tag)
+			continue
+		}
+		seenFieldNames := map[string]struct{}{}
+		for _, field := range variant.Fields {
+			fieldLabel := field.Name
+			if fieldLabel == "" {
+				fieldLabel = "<unnamed>"
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidVariantField, model.FileID, "variant field name is required: "+model.QID.String()+"."+variant.Tag)
+			}
+			if field.Name != "" {
+				if model.Discriminator != "" && field.Name == model.Discriminator {
+					symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidVariantField, model.FileID, "variant field must not repeat discriminator: "+model.QID.String()+"."+variant.Tag+"."+field.Name)
+				}
+				if _, exists := seenFieldNames[field.Name]; exists {
+					symbols.addDiagnosticCode(semantic.SeverityError, diagnosticDuplicateModelField, model.FileID, "duplicate variant payload field: "+model.QID.String()+"."+variant.Tag+"."+field.Name)
+				}
+				seenFieldNames[field.Name] = struct{}{}
+			}
+			if field.PK || field.FK != "" || field.Unique {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidVariantField, model.FileID, "variant field must not use pk, fk, or unique: "+model.QID.String()+"."+variant.Tag+"."+fieldLabel)
+			}
+			if field.Type == "" {
+				symbols.addDiagnosticCode(semantic.SeverityError, diagnosticInvalidVariantField, model.FileID, "variant field type is required: "+model.QID.String()+"."+variant.Tag+"."+fieldLabel)
+			} else {
+				validateTypeRef(project, symbols, model.FileID, module, field.Type, "variants[].fields[].type "+model.QID.String()+"."+variant.Tag+"."+fieldLabel, diagnosticUnresolvedFieldType, "unresolved variant field type: "+model.QID.String()+"."+variant.Tag+"."+fieldLabel+" -> "+field.Type)
+			}
+		}
 	}
 }
 

@@ -1,17 +1,18 @@
 ---
 scope: docs/spec/type-ref.md
 status: confirmed
-last_updated: 2026-05-31
+last_updated: 2026-06-02
 summary: >
   brewprint v1.1 TypeRef構文と型互換性の基礎定義。
   primitive / named model / inline list / inline dict、named list/dict model の正規化、
-  enum model compatibility、および container TypeRef safety / warning 境界を定義する。
+  enum / tagged union model compatibility、および container TypeRef safety / warning 境界を定義する。
 depends_on:
   - docs/adr/021-model-field-structure.md
   - docs/adr/060-flow-wiring-type-compatibility.md
   - docs/adr/067-enum-model.md
   - docs/adr/069-type-ref-container-complexity-lint.md
   - docs/adr/070-model-visibility-file-private-helper-model.md
+  - docs/adr/073-tagged-union-model.md
 ---
 
 # TypeRef仕様
@@ -105,7 +106,7 @@ nodes:
 
 ## 4. named model TypeRef
 
-primitive でも inline container でもない TypeRef は named model 参照として扱う。enum model も named model TypeRef として参照する。
+primitive でも inline container でもない TypeRef は named model 参照として扱う。enum model と tagged union model も named model TypeRef として参照する。
 
 Task-file helper model の基本 semantics は [nodes.md](./nodes.md#task-file-private-helper-model-semantics) が定義する。本節では、TypeRef resolver における解決順序だけを定義する。
 
@@ -157,7 +158,7 @@ returns:
   model: commerce.order
 ```
 
-list/dict 以外の named model は nominal に比較する。`user` と `customer` が同じ fields を持っていても、型互換とはみなさない。enum model も同じく nominal に比較し、underlying JSON 表現が string であっても `str` とは暗黙互換にしない。
+list/dict 以外の named model は nominal に比較する。`user` と `customer` が同じ fields を持っていても、型互換とはみなさない。enum model も同じく nominal に比較し、underlying JSON 表現が string であっても `str` とは暗黙互換にしない。tagged union model も named model として nominal に比較し、variant set や field 構造が同じであっても別 ID の tagged union model とは互換にしない。
 
 外部shapeとの変換が必要な場合は、adapter / normalize task を明示して別の asset を生成する。
 
@@ -320,7 +321,51 @@ mcp_diagnostic_severity -> any                      OK
 
 ---
 
-## 9. opaque container TypeRef warning
+## 9. tagged union model TypeRef compatibility
+
+tagged union model は、既存 TypeRef の named model 参照として扱う。TypeRef に inline `union<...>` / `tagged_union<...>` / scalar union 構文は存在しない。
+
+```yaml
+nodes:
+  - id: analyze_impact_request
+    type: model
+    kind: struct
+    fields:
+      - name: change
+        type: analyze_impact_change
+
+  - id: analyze_impact_change
+    type: model
+    kind: tagged_union
+    discriminator: kind
+    variants:
+      - tag: rename
+        fields:
+          - name: new_id
+            type: str
+      - tag: remove
+        fields: []
+```
+
+tagged union model の型互換性は nominal である。
+
+```txt
+analyze_impact_change -> analyze_impact_change  OK
+analyze_impact_change -> other_change           NG
+analyze_impact_change -> any                    OK
+any -> analyze_impact_change                    OK
+analyze_impact_change -> str                    NG
+```
+
+`any` は ADR-060 の既存ルール通り、source / target のどちらに現れても互換とする。
+
+tagged union variant field の `type` は通常の TypeRef として扱う。構文が壊れている場合は `invalid_type_ref`、named model が未解決の場合は `unresolved_field_type` を使う。
+
+> 由来: ADR-073 §6, §8
+
+---
+
+## 10. opaque container TypeRef warning
 
 container TypeRef の内部に `any` が含まれ、shape の意味が named model に回収されていない場合、`opaque_type_ref` warning diagnostic の対象とする。
 

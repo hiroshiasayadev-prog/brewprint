@@ -292,10 +292,10 @@ variant field の順序は YAML の `fields[]` 順を保持する。
 一方で、実際の MCP request / response JSON payload を実行時に検査する責務は持たない。
 
 tagged union model は schema generation の入力となる。
-ただし、v1.1 初期導入では具体的な JSON Schema / MCP schema 出力形式、additionalProperties の扱い、required 配列の生成規則までは定義しない。
+ただし、WORK-DATA-010 minimum では具体的な JSON Schema / MCP schema 出力形式、additionalProperties の扱い、required 配列の生成規則までは定義しない。
 これらは schema generation 実装または別ADRで扱う。
 
-### 11. runtime payload validation は v1.1 初期導入では non-goal とする
+### 11. runtime payload validation は WORK-DATA-010 minimum では non-goal とする
 
 本ADRで定義する validation は、tagged union model 定義そのものの検証である。
 
@@ -343,7 +343,7 @@ The core tagged union contract is accepted under REQ-DATA-004 / WORK-DATA-010, w
 
 ## 理由
 
-### なぜ tagged union を v1.1 に入れるか
+### なぜ tagged union を WORK-DATA-010 minimum に入れるか
 
 UC-002 は brewprint 自身の MCP public contract を blueprint 化する self-hosting 実例である。
 この contract には、`kind` の値に応じて payload shape が変わる object が存在する。
@@ -372,7 +372,7 @@ MCP schema 生成、validator、LLM の設計理解にとって、tagged union �
 本ADRの目的は、判定 field が明示された union を安全に表現することである。
 
 discriminator がない union は、shape 推論 / oneOf / optional field ambiguity の問題を持つ。
-これは tagged union とは別機能であり、v1.1 の最小導入としては重い。
+これは tagged union とは別機能であり、WORK-DATA-010 minimum としては重い。
 
 `discriminator` を必須にすることで、validator / schema generator / LLM が variant 判定方法を一意に理解できる。
 
@@ -409,14 +409,14 @@ brewprint model は public contract / design schema を表すが、MCP server �
 実際の JSON request payload が `analyze_impact_change` に一致するかを検査するには、実行時入力、optional/required、unknown field、cross-field constraint などの別領域が必要になる。
 これを本ADRに含めると、tagged union model 導入の範囲を超える。
 
-v1.1 初期導入では、model 定義を machine-readable にすることに集中する。
+WORK-DATA-010 minimum では、model 定義を machine-readable にすることに集中する。
 
 ### なぜ variant fields を struct field の完全コピーにしないか
 
 variant payload の field は struct field と似ているが、ER / DB 的な意味を持つ `pk` / `fk` / `unique` は不要である。
 
 payload object は API / MCP contract の variant shape であり、ER entity ではない。
-そのため、v1.1 では `name` / `type` / `note` の最小サブセットに絞る。
+そのため、WORK-DATA-010 minimum では `name` / `type` / `note` の最小サブセットに絞る。
 
 ## 却下した代替案
 
@@ -460,14 +460,14 @@ union<rename_change | remove_change>
 - 利点: `diagnostic.related` なども表現できる
 - 欠点: discriminator がないため shape 推論が必要になる。optional field と相性が悪く、曖昧性の扱いが重い。これだけで独立した機能になる
 
-→ 却下。v1.1 では tagged union のみに限定する。
+→ 却下。WORK-DATA-010 minimum では tagged union のみに限定する。
 
 ### 代替案E: external discriminator も扱う
 
 - 利点: `get_signature_response.signature` / `inspect_response.signature` も表現できる
 - 欠点: discriminator が同一 object 内にないため、envelope と payload の相関を表す別仕様が必要になる。MCP response schema 全体の composition 問題になり、初期導入として重い
 
-→ 却下。v1.1 では同一 object 内 discriminator に限定する。
+→ 却下。WORK-DATA-010 minimum では同一 object 内 discriminator に限定する。
 
 ### 代替案F: discriminator field を variant fields に明示的に書かせる
 

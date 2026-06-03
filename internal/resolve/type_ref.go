@@ -269,6 +269,11 @@ func resolveScopedTypeRefs(project *semantic.Project) {
 		for i := range model.Fields {
 			resolveScopedTypeRef(project, model.FileID, model.Fields[i].TypeRef)
 		}
+		for i := range model.Variants {
+			for j := range model.Variants[i].Fields {
+				resolveScopedTypeRef(project, model.FileID, model.Variants[i].Fields[j].TypeRef)
+			}
+		}
 	}
 }
 

@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/nodes.md
 status: confirmed
-last_updated: 2026-05-31
+last_updated: 2026-06-02
 summary: >
   brewprintの全ノード種別のフィールド定義。
   各フィールドの必須/任意・型・意味・出典ADRを記載する。
@@ -36,6 +36,7 @@ depends_on:
   - docs/adr/067-enum-model.md
   - docs/adr/070-model-visibility-file-private-helper-model.md
   - docs/adr/071-file-private-helper-model-render-exposure.md
+  - docs/adr/073-tagged-union-model.md
 ---
 
 # ノード定義仕様
@@ -249,6 +250,23 @@ Model file 内 helper model と model file render は `docs/spec/views/model-fil
     - warning
     - info
     - hint
+
+# tagged_union
+- id: analyze_impact_change
+  type: model
+  kind: tagged_union
+  discriminator: kind
+  variants:
+    - tag: rename
+      fields:
+        - name: new_id
+          type: str
+    - tag: remove
+      fields: []
+    - tag: change_type
+      fields:
+        - name: new_type
+          type: str
 ```
 
 
@@ -270,11 +288,13 @@ Model file 内 helper model と model file render は `docs/spec/views/model-fil
 
 | フィールド | 必須 | 型 | 内容 | 出典 |
 |-----------|------|-----|------|------|
-| `kind` | ✓ | enum | `struct` / `list` / `dict` / `enum` | ADR-007→ADR-010, ADR-021, ADR-067 |
+| `kind` | ✓ | enum | `struct` / `list` / `dict` / `enum` / `tagged_union` | ADR-007→ADR-010, ADR-021, ADR-067, ADR-073 |
 | `fields` | struct時必須 | list\<field\> | フィールド定義（structのみ） | ADR-008 |
 | `element` | list時必須 | TypeRef | 要素の型 | ADR-021, ADR-060 |
 | `value` | dict時必須 | TypeRef | 値の型。keyは常に `str` | ADR-021, ADR-060 |
 | `values` | enum時必須 | list\<string\> | enum の許容値集合。non-empty、空文字不可、同一 enum model 内で重複不可 | ADR-067 |
+| `discriminator` | tagged_union時必須 | string | variant 判定に使う top-level field 名。non-empty、dot path不可、external discriminator不可 | ADR-073 |
+| `variants` | tagged_union時必須 | list\<variant\> | tagged union の variant 定義。non-empty、`tag` は同一 model 内で重複不可 | ADR-073 |
 
 `kind: scalar` は廃止。primitive literalを直接使う（ADR-021）。  
 `kind: dict` のkeyは常に `str`。`key` フィールドは存在しない（ADR-021）。
@@ -284,6 +304,33 @@ Model file 内 helper model と model file render は `docs/spec/views/model-fil
 `values` の順序は表示・schema 生成時の順序として保持してよいが、型互換性の意味には使わない。値ごとの `note` / `label` / `deprecated` 等の metadata は v1.1 では導入しない。
 
 > 由来: ADR-067 §1〜§5
+
+`kind: tagged_union` は、同一 object 内の discriminator field によって variant を判定する object model である。使用側は既存 TypeRef の named model として参照し、TypeRef に inline `union<...>` / `tagged_union<...>` 構文は追加しない。
+
+`discriminator` は variant 判定 field 名を表す。WORK-DATA-010 minimum では top-level field name のみを許可し、dot path / external discriminator / adjacent discriminator は扱わない。discriminator field は tagged union object に暗黙に存在するため、variant payload の `fields` には重複して書かない。
+
+`variants` は non-empty list であり、各 variant は non-empty string の `tag` と `fields` を持つ。`variants[].tag` の集合は discriminator field の許可値集合を表し、同一 tagged union model 内で重複してはならない。payload field がない variant は `fields: []` と書く。`fields: []` は payload field を持たない variant を意味し、任意 payload 許可や shape 未定義を意味しない。
+
+variant / variant field の順序は YAML の順序を保持する。render / schema generation / MCP inspect の表示順として使ってよいが、型互換性の意味には使わない。
+
+> 由来: ADR-073 §1〜§4, §7, §10
+
+### variant オブジェクト（tagged_union内）
+
+| フィールド | 必須 | 型 | 内容 | 出典 |
+|-----------|------|-----|------|------|
+| `tag` | ✓ | string | discriminator field の値。non-empty、同一 tagged union model 内でユニーク | ADR-073 |
+| `fields` | ✓ | list\<variant-field\> | この tag の payload field 定義。payload field がない場合は `[]` | ADR-073 |
+
+### variant-field オブジェクト（tagged_union variant内）
+
+| フィールド | 必須 | 型 | 内容 | 出典 |
+|-----------|------|-----|------|------|
+| `name` | ✓ | string | payload field 名。variant 内でユニーク。`discriminator` と同名不可 | ADR-073 |
+| `type` | ✓ | TypeRef | 型。primitive / named model / inline `list<T>` / inline `dict<T>` を指定できる | ADR-060, ADR-073 |
+| `note` | 任意 | string | 人間向けdocstring兼LLM semantic contract | ADR-008, ADR-073 |
+
+variant-field では `pk` / `fk` / `unique` を扱わない。これらは ER / struct model 向けの意味であり、tagged union payload に持ち込まない。variant-field の `type` は通常の TypeRef として構文検証・名前解決する。
 
 ### field オブジェクト（struct内）
 
