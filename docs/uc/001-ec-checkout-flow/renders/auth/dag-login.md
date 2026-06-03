@@ -12,7 +12,7 @@
 ```mermaid
 flowchart TD
   subgraph params
-    form([form])
+    form([form: login_form])
   end
   subgraph initializes
     login_log_db[(login_log_db)]
@@ -26,7 +26,7 @@ flowchart TD
   login -- "write" --> session_store[(session_store)]
   login -- "write" --> login_log_db[(login_log_db)]
 
-  login --> auth_token([auth_token])
+  login --> auth_token([auth_token: token])
   login ==> _end([End])
 
   classDef taskNode     fill:#4A90D9,stroke:#2C5F8A,color:#fff

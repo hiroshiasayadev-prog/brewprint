@@ -8,8 +8,8 @@ pending状態の注文（決済webhook待ち）を返す。
 ```mermaid
 flowchart TD
   subgraph params
-    cart_id([cart_id])
-    shipping_address([shipping_address])
+    cart_id([cart_id: str])
+    shipping_address([shipping_address: address])
   end
 
   _start([Start]) ==> build_order[build_order]
@@ -18,7 +18,7 @@ flowchart TD
   cart_session[(cart.store.cart_session)] -- "read" --> build_order
   user_db[(auth.store.user_db)] -- "read" --> build_order
   build_order -- "write" --> order_db[(order_db)]
-  build_order --> draft_order([draft_order])
+  build_order --> draft_order([draft_order: order])
 
   build_order ==> parallel_processing{{parallel_processing}}
   draft_order --> reserve_inventory[reserve_inventory]
@@ -28,15 +28,15 @@ flowchart TD
   parallel_processing == "parallel" ==> notify_payment_gateway
 
   reserve_inventory <-- "read/write" --> inventory_db[(catalog.store.inventory_db)]
-  reserve_inventory --> reserved([reserved])
-  notify_payment_gateway --> notified([notified])
+  reserve_inventory --> reserved([reserved: order])
+  notify_payment_gateway --> notified([notified: order])
 
   reserve_inventory ==> finalize_checkout{{finalize_checkout}}
   notify_payment_gateway ==> finalize_checkout
   reserved --> finalize_checkout
   notified --> finalize_checkout
 
-  finalize_checkout --> pending_order
+  finalize_checkout --> pending_order([pending_order: order])
   finalize_checkout ==> _end([End])
 
   classDef taskNode     fill:#4A90D9,stroke:#2C5F8A,color:#fff

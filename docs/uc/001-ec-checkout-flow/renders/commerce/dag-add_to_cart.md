@@ -11,9 +11,9 @@
 ```mermaid
 flowchart TD
   subgraph params
-    cart_id([cart_id])
-    item_id([item_id])
-    qty([qty])
+    cart_id([cart_id: str])
+    item_id([item_id: str])
+    qty([qty: int])
   end
 
   _start([Start]) ==> add_to_cart[add_to_cart]
@@ -24,7 +24,7 @@ flowchart TD
   catalog.store.item_collection[(catalog.store.item_collection)] -- "read" --> add_to_cart
   add_to_cart -- "write" --> cart_session[(cart_session)]
 
-  add_to_cart --> updated_cart([updated_cart])
+  add_to_cart --> updated_cart([updated_cart: cart])
   add_to_cart ==> _end([End])
 
   classDef taskNode     fill:#4A90D9,stroke:#2C5F8A,color:#fff

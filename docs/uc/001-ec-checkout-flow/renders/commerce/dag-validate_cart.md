@@ -7,7 +7,7 @@ mode: sequential（1件ずつ順に処理。後続でロールバック単位を
 ```mermaid
 flowchart TD
   subgraph params
-    cart_items([cart_items])
+    cart_items([cart_items: cart_item_list])
   end
 
   _start([Start]) ==> validate_item["↻ validate_item"]
@@ -16,7 +16,7 @@ flowchart TD
   item_collection[(catalog.store.item_collection)] -- "read" --> validate_item
   inventory_db[(catalog.store.inventory_db)] -- "read" --> validate_item
 
-  validate_item --> validated_items
+  validate_item --> validated_items([validated_items: list])
   validate_item ==> _end([End])
   validated_items -- "returns as validated_items" --> _end
 

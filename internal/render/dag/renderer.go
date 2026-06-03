@@ -41,9 +41,18 @@ func RenderTask(project *semantic.Project, task *semantic.Task) (string, error) 
 		b.WriteString("\n\n")
 	}
 
+	var assetRefs []*semantic.TypeRef
+	for _, param := range task.Params {
+		assetRefs = append(assetRefs, param.TypeRef)
+	}
+	if task.Returns != nil {
+		assetRefs = append(assetRefs, task.Returns.TypeRef)
+	}
+	ambiguous := computeAmbiguousHints(assetRefs)
+
 	b.WriteString("```mermaid\n")
 	b.WriteString("flowchart TD\n")
-	writeBoundary(&b, "params", paramNames(task))
+	writeBoundary(&b, "params", paramBoundaryNodes(task, ambiguous))
 	if len(task.Initializes) > 0 {
 		fmt.Fprintf(&b, "  subgraph initializes\n")
 		for _, init := range task.Initializes {
@@ -80,7 +89,12 @@ func RenderTask(project *semantic.Project, task *semantic.Task) (string, error) 
 
 	if task.Returns != nil {
 		b.WriteString("\n")
-		fmt.Fprintf(&b, "  %s --> %s([%s])\n", task.ID, task.Returns.Name, task.Returns.Name)
+		returnsHint := calcAssetHint(task.Returns.TypeRef, ambiguous)
+		if returnsHint != "" {
+			fmt.Fprintf(&b, "  %s --> %s([%s: %s])\n", task.ID, task.Returns.Name, task.Returns.Name, returnsHint)
+		} else {
+			fmt.Fprintf(&b, "  %s --> %s([%s])\n", task.ID, task.Returns.Name, task.Returns.Name)
+		}
 		if task.Returns.Source != "" {
 			source := task.Returns.Source
 			if task.Returns.SourceRef.Kind == semantic.FlowSourceParam {
@@ -137,13 +151,22 @@ func RenderTask(project *semantic.Project, task *semantic.Task) (string, error) 
 	return b.String(), nil
 }
 
-func writeBoundary(b *strings.Builder, name string, nodes []string) {
+type boundaryNode struct {
+	name string
+	hint string
+}
+
+func writeBoundary(b *strings.Builder, name string, nodes []boundaryNode) {
 	if len(nodes) == 0 {
 		return
 	}
 	fmt.Fprintf(b, "  subgraph %s\n", name)
 	for _, node := range nodes {
-		fmt.Fprintf(b, "    %s([%s])\n", node, node)
+		if node.hint != "" {
+			fmt.Fprintf(b, "    %s([%s: %s])\n", node.name, node.name, node.hint)
+		} else {
+			fmt.Fprintf(b, "    %s([%s])\n", node.name, node.name)
+		}
 	}
 	b.WriteString("  end\n")
 }
@@ -182,6 +205,17 @@ func paramNames(task *semantic.Task) []string {
 	out := make([]string, 0, len(task.Params))
 	for _, param := range task.Params {
 		out = append(out, param.Name)
+	}
+	return out
+}
+
+func paramBoundaryNodes(task *semantic.Task, ambiguous map[string]bool) []boundaryNode {
+	out := make([]boundaryNode, 0, len(task.Params))
+	for _, param := range task.Params {
+		out = append(out, boundaryNode{
+			name: param.Name,
+			hint: calcAssetHint(param.TypeRef, ambiguous),
+		})
 	}
 	return out
 }

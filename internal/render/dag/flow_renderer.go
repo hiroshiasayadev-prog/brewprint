@@ -17,8 +17,9 @@ type flowRenderer struct {
 	main    *semantic.Task
 	b       strings.Builder
 
-	defined map[string]bool
-	details map[semantic.QualifiedID]bool
+	defined        map[string]bool
+	details        map[semantic.QualifiedID]bool
+	ambiguousHints map[string]bool
 
 	taskClasses   []string
 	assetClasses  []string
@@ -41,18 +42,22 @@ func newFlowRenderer(project *semantic.Project, main *semantic.Task) *flowRender
 	for _, param := range main.Params {
 		r.defined[param.Name] = true
 	}
-	if main.Returns != nil {
-		r.defined[main.Returns.Name] = true
-	}
+	// Compute ambiguous named-model local-ID hints before any rendering.
+	refs := collectFlowAssetTypeRefs(project, main)
+	r.ambiguousHints = computeAmbiguousHints(refs)
 	r.addDetail(main.QID)
 	return r
+}
+
+func (r *flowRenderer) calcHint(ref *semantic.TypeRef) string {
+	return calcAssetHint(ref, r.ambiguousHints)
 }
 
 func (r *flowRenderer) render() string {
 	r.writeHeader()
 	r.b.WriteString("```mermaid\n")
 	r.b.WriteString("flowchart TD\n")
-	writeBoundary(&r.b, "params", paramNames(r.main))
+	r.writeParamsBoundary()
 	r.writeInitializesBoundary()
 	if len(r.main.Params) > 0 || len(r.main.Initializes) > 0 {
 		r.blank()
@@ -161,7 +166,13 @@ func (r *flowRenderer) renderForeach(flow semantic.ForeachFlow) string {
 	}
 	if flow.Returns != "" {
 		r.blank()
-		r.line("%s --> %s", task.ID, r.assetRef(flow.Returns))
+		var collectedRef *semantic.TypeRef
+		if cs := r.project.FlowCollectedSourcesByFile[r.main.FileID]; cs != nil {
+			if src := cs[flow.Returns]; src != nil {
+				collectedRef = src.TypeRef
+			}
+		}
+		r.line("%s --> %s", task.ID, r.assetRef(flow.Returns, collectedRef))
 	}
 	r.line("%s ==> _end([End])", task.ID)
 	return task.ID
@@ -226,7 +237,7 @@ func (r *flowRenderer) renderFork(flow semantic.ForkFlow) string {
 	}
 	if join != nil && join.Returns != nil {
 		r.blank()
-		r.line("%s --> %s", join.ID, r.assetRef(join.Returns.Name))
+		r.line("%s --> %s", join.ID, r.assetRef(join.Returns.Name, join.Returns.TypeRef))
 		r.line("%s ==> _end([End])", join.ID)
 		return join.ID
 	}
@@ -293,7 +304,7 @@ func (r *flowRenderer) writeTaskReturn(task *semantic.Task) {
 	if task.Returns == nil {
 		return
 	}
-	r.line("%s --> %s", task.ID, r.assetRef(task.Returns.Name))
+	r.line("%s --> %s", task.ID, r.assetRef(task.Returns.Name, task.Returns.TypeRef))
 }
 
 func (r *flowRenderer) writeStoreAccess(task *semantic.Task) {
@@ -387,14 +398,34 @@ func (r *flowRenderer) assetID(name string) string {
 	return name
 }
 
-func (r *flowRenderer) assetRef(name string) string {
+func (r *flowRenderer) assetRef(name string, typeRef *semantic.TypeRef) string {
 	id := r.assetID(name)
 	r.addClass("asset", id)
 	if r.defined[id] {
 		return id
 	}
 	r.defined[id] = true
+	hint := r.calcHint(typeRef)
+	if hint != "" {
+		return fmt.Sprintf("%s([%s: %s])", id, name, hint)
+	}
 	return fmt.Sprintf("%s([%s])", id, name)
+}
+
+func (r *flowRenderer) writeParamsBoundary() {
+	if len(r.main.Params) == 0 {
+		return
+	}
+	fmt.Fprintf(&r.b, "  subgraph params\n")
+	for _, param := range r.main.Params {
+		hint := r.calcHint(param.TypeRef)
+		if hint != "" {
+			fmt.Fprintf(&r.b, "    %s([%s: %s])\n", param.Name, param.Name, hint)
+		} else {
+			fmt.Fprintf(&r.b, "    %s([%s])\n", param.Name, param.Name)
+		}
+	}
+	r.b.WriteString("  end\n")
 }
 
 func (r *flowRenderer) storeRef(ref semantic.StoreRef) string {

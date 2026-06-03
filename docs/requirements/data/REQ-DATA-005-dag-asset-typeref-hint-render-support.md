@@ -1,7 +1,7 @@
 # REQ-DATA-005: DAG asset TypeRef hint render support
 
 - **id**: REQ-DATA-005
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-01
 - **source_refs**:
   - ADR-074
@@ -39,4 +39,16 @@ TASK-DATA-005-01 inventoried ADR-074 as still deferred. TASK-DATA-005-02 classif
 
 ## Boundary
 
-This requirement owns the need for DAG asset TypeRef hint render support. It does not itself update render output; that is owned by `WORK-DATA-007` and its tasks.
+This requirement owns the need for DAG asset TypeRef hint render support. Render output updates were owned and completed by `WORK-DATA-007` and its tasks.
+
+## Close Evidence
+
+Accepted on 2026-06-02.
+
+- ADR-074 was accepted under REQ-DATA-005 / WORK-DATA-007.
+- `docs/spec/views/dag.md` was aligned with the accepted asset TypeRef hint label rule.
+- WORK-DATA-007 implemented DAG renderer TypeRef hint labels for params boundary assets, task returns, join returns, and foreach collected assets.
+- UC-001 DAG golden files were updated for TypeRef hint labels.
+- `go test ./...` passed.
+- UC-001 / UC-002 validation passed with 0 errors and 0 warnings.
+- Explicitly excluded scopes stayed excluded: ADR-073 tagged union support, MCP identity work, UC-002 duplicate task QID repair, remaining notes retreat cleanup, and reopening M15 / WORK-DATA-001〜004.

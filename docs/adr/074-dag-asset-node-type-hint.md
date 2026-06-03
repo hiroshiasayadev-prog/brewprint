@@ -1,9 +1,10 @@
 # 074: DAG asset node label の TypeRef hint 表示
 
-- **status**: proposed
+- **status**: accepted
 - **date**: 2026-05-11
 
-> このADRは起票時点での決定を記録したスナップショットである。
+> このADRは、REQ-DATA-005 / WORK-DATA-007 の active boundary で accepted とする。
+> M15 / WORK-DATA-001 は reopen しない。実装・fixture 更新は後続 task で扱う。
 > 現在の仕様は spec を参照すること。
 
 ## 背景
@@ -111,32 +112,25 @@ response: mcp.model.get_reference_tree_response
 DAG 本体は処理フローを読むための view であり、長い QID を label に含めると可読性が下がる。
 必要な full identity は Markdown detail section、MCP inspect、または model render / catalog render で確認する。
 
-ただし、同一 DAG render scope 内で別 module の同名 model が複数出現する場合、local id だけでは区別できない。
-この場合、衝突した named model の TypeRef hint は shortened QID に fallback する。
-shortened QID は、同一 render scope 内で一意に区別できる最短の module-qualified 表記とする。
-
-shortened QID の算出は以下の規則とする。
-
-1. まず local id を候補にする
-2. 同一 DAG render scope 内で local id が衝突する場合、module path の末尾 segment を local id の前に付ける
-3. それでも衝突する場合、module path を末尾から前方へ 1 segment ずつ伸ばす
-4. 一意になった時点の suffix-qualified id を採用する
-5. module path 全体を使っても一意にならない場合は full QID を使う
+ただし、同一 DAG render scope 内で別 identity の named model が同じ local id hint になる場合、その TypeRef hint は曖昧である。
+WORK-DATA-007 minimum では、曖昧な named model local id に対して shortened QID fallback は行わない。
+曖昧な場合は、その asset label から TypeRef hint を省略し、asset name のみを表示する。
 
 例:
 
 ```text
-# auth/user_response と payment/user_response が衝突する場合
-response: auth.user_response
-response: payment.user_response
+# 通常時
+response: get_reference_tree_response
 
-# foo/auth/user_response と bar/auth/user_response が衝突する場合
-response: foo.auth.user_response
-response: bar.auth.user_response
+# auth.user_response と payment.user_response が同一 DAG render scope 内で衝突する場合
+response
 ```
 
-この fallback は衝突した named model TypeRef にだけ適用する。
+この omit は衝突した named model TypeRef にだけ適用する。
 衝突していない named model TypeRef は local id のまま表示する。
+
+shortened QID fallback / suffix-qualified id の算出は、core readability hint とは別の name disambiguation concern であり、WORK-DATA-007 minimum には含めない。
+将来、同一 DAG render scope 内の named model local id collision fixture が必要になった場合、別 ADR または follow-up task で扱う。
 
 Markdown detail section には、衝突有無にかかわらず full TypeRef / full identity を残す。
 
@@ -306,8 +300,8 @@ diagnostics: list
   - asset node label の形式を `{asset_name}: {type_hint}` に更新する
   - params boundary asset も TypeRef hint 表示対象に含める
   - top-level TypeRef hint の算出規則を定義する
-  - named model local id が同一 render scope 内で衝突する場合の shortened QID fallback を定義する
-  - shortened QID は module path の末尾 segment から順に前方へ伸ばし、一意になった suffix-qualified id を使うことを定義する
+  - named model local id が同一 render scope 内で曖昧な場合は TypeRef hint を省略することを定義する
+  - shortened QID fallback / suffix-qualified id 算出は WORK-DATA-007 minimum から外し、将来 follow-up として扱うことを明記する
   - TypeRef 解決不能時の fallback を定義する
   - full TypeRef は Markdown detail section に残すことを明記する
   - invalid / unresolved TypeRef の説明は diagnostics に一元化することを明記する
@@ -320,8 +314,8 @@ DAG renderer は asset node label 生成時に TypeRef hint を算出する必�
 
 TypeRef hint の算出は top-level のみとし、inline container の内部 TypeRef は展開しない。
 
-named model local id が同一 DAG render scope 内で衝突する場合、renderer は該当 hint を shortened QID に fallback する。
-shortened QID は module path の末尾 segment から順に前方へ伸ばし、一意になった suffix-qualified id を採用する。
+named model local id が同一 DAG render scope 内で曖昧な場合、renderer は該当 TypeRef hint を省略し、asset name のみを表示する。
+shortened QID fallback / suffix-qualified id 算出は WORK-DATA-007 minimum の renderer 実装対象に含めない。
 
 ### UC / fixture への影響
 
@@ -343,5 +337,6 @@ helper model の詳細展開は本ADRの対象ではない。
 
 - commit: 5ae7769
 - impl commit: tbd
-- close boundary: M15 / `v1.1.0-spec` では follow-up scope として deferred。実装は含めない。
+- close boundary: M15 / `v1.1.0-spec` では follow-up scope として deferred。現在の active boundary は REQ-DATA-005 / WORK-DATA-007。M15 / WORK-DATA-001 は reopen しない。実装は後続 task で扱う。
+- collision inventory: TASK-DATA-007-02 / Codex verification で UC-001 / UC-002 は `PASS_NO_COLLISION`。WORK-DATA-007 minimum では曖昧な named model local id の TypeRef hint を omit する。
 - 参考: ADR-060 TypeRef、ADR-064 DAG returns.source render、ADR-071 task file helper model render exposure、ADR-075 model file render

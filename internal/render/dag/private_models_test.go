@@ -60,8 +60,16 @@ func TestRenderDAGPrivateModelsSection(t *testing.T) {
 		t.Fatalf("render missing nested helper used-by row:\n%s", actual)
 	}
 	mermaid := mermaidBlock(actual)
-	if strings.Contains(mermaid, "login_form") || strings.Contains(mermaid, "credentials") || strings.Contains(mermaid, "login_token") {
-		t.Fatalf("helper model leaked into Mermaid body:\n%s", mermaid)
+	// login_form and login_token appear as ADR-074 TypeRef hints on param/returns labels — that is correct.
+	// credentials is a nested helper model not directly referenced as a param/returns TypeRef — must not appear.
+	if strings.Contains(mermaid, "credentials") {
+		t.Fatalf("nested helper model 'credentials' leaked into Mermaid body:\n%s", mermaid)
+	}
+	if !strings.Contains(mermaid, "form([form: login_form])") {
+		t.Fatalf("missing expected TypeRef hint 'login_form' on param 'form':\n%s", mermaid)
+	}
+	if !strings.Contains(mermaid, "token([token: login_token])") {
+		t.Fatalf("missing expected TypeRef hint 'login_token' on returns 'token':\n%s", mermaid)
 	}
 }
 

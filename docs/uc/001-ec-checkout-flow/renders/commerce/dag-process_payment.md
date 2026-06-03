@@ -12,7 +12,7 @@ Stripe からの決済完了/失敗 webhook を受信し、対応する注文ス
 ```mermaid
 flowchart TD
   subgraph params
-    event([event])
+    event([event: payment_event])
   end
 
   _start([Start]) ==> process_payment[process_payment]

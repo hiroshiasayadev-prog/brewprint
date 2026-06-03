@@ -6,14 +6,14 @@ returns なし（各分岐先 task が order_db を更新して終端、DAG的�
 ```mermaid
 flowchart TD
   subgraph params
-    order_id([order_id])
+    order_id([order_id: str])
   end
 
   _start([Start]) ==> check_inventory[check_inventory]
   order_id --> check_inventory
   order_db[(order_db)] -- "read" --> check_inventory
   inventory_db[(catalog.store.inventory_db)] -- "read" --> check_inventory
-  check_inventory --> order_asset([order])
+  check_inventory --> order_asset([order: order])
 
   check_inventory ==> route_by_inventory{route_by_inventory}
   order_asset --> route_by_inventory

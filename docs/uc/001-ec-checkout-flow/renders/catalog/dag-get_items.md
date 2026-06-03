@@ -12,7 +12,7 @@ flowchart TD
 
   item_collection[(item_collection)] -- "read" --> get_items
 
-  get_items --> items([items])
+  get_items --> items([items: item_list])
   get_items ==> _end([End])
 
   classDef taskNode     fill:#4A90D9,stroke:#2C5F8A,color:#fff

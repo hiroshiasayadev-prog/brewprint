@@ -198,15 +198,46 @@ task_id[task_id]
 
 形状: 矩形（Mermaid `[label]`）
 
-Task-file helper model は processing flow node ではないため、task / asset / store / branch / fork / join として Mermaid DAG 本体に描画しない。Helper model の render exposure は `## Private models` detail section に限定する。DAG の asset node label に TypeRef を表示するかどうかは ADR-074 / WORK-DATA-003 以降の範囲であり、本仕様更新では扱わない。
+Task-file helper model は processing flow node ではないため、task / asset / store / branch / fork / join として Mermaid DAG 本体に描画しない。Helper model の render exposure は `## Private models` detail section に限定する。DAG の asset node label に TypeRef hint を表示する範囲は ADR-074 / REQ-DATA-005 / WORK-DATA-007 が所有する。
 
 ### asset
 
 ```
-asset_name([asset_name])
+asset_name([asset_name: type_hint])
 ```
 
 形状: スタジアム（Mermaid `([label])`）。taskの `returns` から暗黙に生成される中間ノード（ADR-009）。
+
+Asset label は ADR-074 により top-level TypeRef hint を表示する。
+
+```text
+{asset_name}: {type_hint}
+```
+
+`type_hint` の算出規則:
+
+| TypeRef | asset label の type_hint |
+|---|---|
+| primitive | primitive 名。例: `str`, `int`, `bool`, `any` |
+| named model | model local id |
+| inline `list<T>` | `list` |
+| inline `dict<T>` | `dict` |
+
+named list / dict model は named model として扱い、`list` / `dict` へ潰さず model local id を表示する。
+
+同一 DAG render scope 内で別 identity の named model が同じ local id hint になる場合、その TypeRef hint は曖昧である。WORK-DATA-007 minimum では shortened QID fallback は行わず、曖昧な asset label では TypeRef hint を省略して asset name のみを表示する。
+
+```text
+# 通常時
+response([response: get_reference_tree_response])
+
+# named model local id が曖昧な場合
+response([response])
+```
+
+TypeRef が invalid / unresolved の場合も、DAG label では TypeRef hint を省略する。invalid / unresolved TypeRef の説明は diagnostics が所有し、DAG render は追加 diagnostic surface を持たない。
+
+full TypeRef は Mermaid label に展開しない。full TypeRef / full identity は Tasks detail section、MCP inspect、model render、または catalog render で確認する。
 
 ### store
 
@@ -256,11 +287,12 @@ class other_task external
 
 ```
 subgraph params
-  config([config])
+  config([config: config])
 end
 ```
 
 - メインノードに `params` がある場合、各paramをassetノードとして列挙する
+- params boundary asset も通常の asset と同じ TypeRef hint 表示対象である
 - 境界assetには `boundaryNode` classDef を適用する
 - `subgraph returns` は ADR-064 により廃止する。`returns.name` を表す boundary asset node は描かず、`returns.source` で指定された値を表す node から `_end` への label 付き data line（`-- "returns as <returns.name>" -->`）で return を表現する。task / join / collected asset source では asset node を経由する
 
@@ -514,15 +546,15 @@ Mermaid出力:
 ```mermaid
 flowchart TD
   subgraph params
-    config([config])
+    config([config: app_config])
   end
 
   _start([Start]) ==> fetch_raw
   config --> fetch_raw[fetch_raw]
-  fetch_raw --> raw([raw])
+  fetch_raw --> raw([raw: raw_data])
   fetch_raw ==> transform
   raw --> transform[transform]
-  transform --> result([result])
+  transform --> result([result: result_data])
   result -- "returns as result" --> _end([End])
   transform ==> _end
 
