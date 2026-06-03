@@ -1,7 +1,7 @@
 # REQ-DATA-004: Tagged union and discriminator payload support
 
 - **id**: REQ-DATA-004
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-01
 - **source_refs**:
   - ADR-073
@@ -22,6 +22,8 @@ This requirement captures ADR-073 as its own DATA expressiveness follow-up rathe
 M15, WORK-DATA-001, REQ-DATA-002, WORK-DATA-002, WORK-DATA-003, and WORK-DATA-004 all kept ADR-073 outside their implementation scope.
 
 TASK-DATA-003-04 classified UC-002 tagged union / kind-specific response payloads as unchanged candidates. TASK-DATA-005-01 inventoried ADR-073 as still deferred. TASK-DATA-005-02 classified ADR-073 as DATA expressiveness that should receive its own requirement and work item.
+
+WORK-DATA-010 closed this requirement's successor work on 2026-06-03: ADR-073 acceptance / split review, spec and diagnostics alignment, raw YAML / semantic model / resolver / validation implementation, model-file render support, representative UC-002 migration, fixture / golden regeneration, and final verification were completed. Deferred items (`change_contract`, `change_transition_target`, and model catalog renderer implementation) remain outside this requirement close because they require separate expressiveness or renderer work beyond the accepted same-object tagged union minimum.
 
 ## Required Outcome
 
