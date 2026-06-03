@@ -79,6 +79,8 @@ When calling `propose_record_create` with `fields` plus `body`, put metadata in 
 Do not include the H1, metadata block, metadata `id`, or guessed server-resolved ID in that MCP `body`.
 Pass `id: TASK-<DOMAIN>-<WORK-SEQUENCE>-new` (e.g. `TASK-MCP-014-new`); the MCP resolves the next number server-side. Never hardcode a guessed task number in `body` or `fields`.
 
+Use exact `TASK-<DOMAIN>-<WORK-SEQUENCE>-NN` only when the specific task ID is intentional. If an exact ID would skip the next task sequence within the parent work item scope, `propose_record_create` may return a non-blocking `exact_id_sequence_gap` info diagnostic. Prefer `TASK-<DOMAIN>-<WORK-SEQUENCE>-new` when no reserved ID is required.
+
 `work_item`、`source_requirement`、`depends_on` は `WORK-*` / `REQ-*` / `TASK-*` の ID-as-ref を用いる。
 
 Required metadata は Design Records MCP validation の対象である。

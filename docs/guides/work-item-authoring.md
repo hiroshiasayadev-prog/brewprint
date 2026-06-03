@@ -67,6 +67,8 @@ When calling `propose_record_create` with `fields` plus `body`, put metadata in 
 Do not include the H1, metadata block, metadata `id`, or guessed server-resolved ID in that MCP `body`.
 Pass `id: WORK-<DOMAIN>-new` (e.g. `WORK-MCP-new`); the MCP resolves the next number server-side. Never hardcode a guessed work item number in `body` or `fields`.
 
+Use exact `WORK-<DOMAIN>-NNN` only when that specific work item ID is intentional. If an exact ID would skip the next domain-scoped work item sequence, `propose_record_create` may return a non-blocking `exact_id_sequence_gap` info diagnostic. Prefer `WORK-<DOMAIN>-new` when no reserved ID is required.
+
 Required metadata は Design Records MCP validation の対象である。
 
 - `id` / `status` / `date` / `source_requirement` は存在し、non-empty でなければならない。

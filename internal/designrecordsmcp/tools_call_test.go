@@ -622,6 +622,71 @@ func TestToolsCallIndexRebuildPolicy(t *testing.T) {
 	}
 }
 
+func TestToolsCallProposeExactWorkIDGapDiagnostic(t *testing.T) {
+	// Regression test for TASK-MCP-017-03: propose_record_create for an exact WORK ID that
+	// skips the next available sequence must return exact_id_sequence_gap in top-level
+	// diagnostics at info severity; it must not appear in validation.diagnostics; the
+	// proposal must be created and remain acceptable.
+	root := t.TempDir()
+	writeToolsCallTestFile(t, root, "docs/requirements/mcp/REQ-MCP-001-test.md",
+		"# REQ-MCP-001: Test req\n\n- **id**: REQ-MCP-001\n- **status**: captured\n- **date**: 2026-06-03\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-001\n")
+	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-001-test.md",
+		"# WORK-MCP-001: Test work\n\n- **id**: WORK-MCP-001\n- **status**: implementation_pending\n- **date**: 2026-06-03\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n")
+	cfg, err := designrecords.NewConfig(root)
+	if err != nil {
+		t.Fatalf("NewConfig: %v", err)
+	}
+	server := NewServer(cfg)
+
+	// Request WORK-MCP-003 while only WORK-MCP-001 exists (skips 002).
+	proposeLine := `{"jsonrpc":"2.0","id":950,"method":"tools/call","params":{"name":"propose_record_create","arguments":{"kind":"work_item","id":"WORK-MCP-003","domain":"MCP","title":"Gap work item","fields":{"status":"implementation_pending","date":"2026-06-03","source_requirement":"REQ-MCP-001","impact_refs":[],"tasks":[]}}}}`
+	res := handleLine(t, server, proposeLine)
+	result := assertToolCallResult(t, res, false)
+
+	var resp designrecords.ProposeRecordResponse
+	unmarshalToolText(t, result.Content[0].Text, &resp)
+
+	if !resp.ProposalCreated {
+		t.Fatalf("proposal not created: %#v", resp)
+	}
+
+	var foundGap bool
+	var gapDiag designrecords.Diagnostic
+	for _, d := range resp.Diagnostics {
+		if d.Category == designrecords.DiagnosticExactIDSequenceGap {
+			foundGap = true
+			gapDiag = d
+		}
+	}
+	if !foundGap {
+		t.Fatalf("expected exact_id_sequence_gap in top-level diagnostics: %#v", resp.Diagnostics)
+	}
+	if gapDiag.Severity != designrecords.DiagnosticSeverityInfo {
+		t.Fatalf("expected info severity, got %q: %#v", gapDiag.Severity, gapDiag)
+	}
+
+	for _, d := range resp.Validation.Diagnostics {
+		if d.Category == designrecords.DiagnosticExactIDSequenceGap {
+			t.Fatalf("exact_id_sequence_gap must not appear in validation.diagnostics: %#v", resp.Validation.Diagnostics)
+		}
+	}
+
+	if resp.ProposalID == "" {
+		t.Fatalf("proposal ID is empty")
+	}
+
+	// Accept the proposal to confirm the warning is non-blocking.
+	acceptLine := `{"jsonrpc":"2.0","id":951,"method":"tools/call","params":{"name":"accept_proposed_write","arguments":{"proposal_id":"` + resp.ProposalID + `"}}}`
+	acceptRes := handleLine(t, server, acceptLine)
+	acceptResult := assertToolCallResult(t, acceptRes, false)
+
+	var accepted designrecords.AcceptProposedWriteResponse
+	unmarshalToolText(t, acceptResult.Content[0].Text, &accepted)
+	if !accepted.Written || accepted.State != designrecords.ProposalStateAccepted {
+		t.Fatalf("accept response = %#v", accepted)
+	}
+}
+
 func toolsCallTestIndex() *designrecords.Index {
 	idx := &designrecords.Index{Records: []designrecords.Record{
 		toolsCallRecord("ADR-001", "One"),

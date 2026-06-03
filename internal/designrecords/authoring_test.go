@@ -1015,6 +1015,291 @@ func TestReplaceNamedSectionSpacingLastSection(t *testing.T) {
 	}
 }
 
+func TestExactIDSequenceGapWarning(t *testing.T) {
+	workFields := func(sourceReq string) map[string]any {
+		return map[string]any{
+			"status":             "implementation_pending",
+			"date":               "2026-06-03",
+			"source_requirement": sourceReq,
+			"impact_refs":        []any{},
+			"tasks":              []any{},
+		}
+	}
+	reqFields := func() map[string]any {
+		return map[string]any{
+			"status":      "captured",
+			"date":        "2026-06-03",
+			"source_refs": []any{},
+			"work_items":  []any{},
+		}
+	}
+	taskFields := func(workItem string) map[string]any {
+		return map[string]any{
+			"status":             "todo",
+			"date":               "2026-06-03",
+			"work_item":          workItem,
+			"source_requirement": "REQ-MCP-001",
+			"estimate":           "0.5d",
+			"depends_on":         []any{},
+			"outputs":            []any{},
+		}
+	}
+
+	t.Run("WORK_gap_warning", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// fixture has WORK-MCP-001; requesting WORK-MCP-003 skips 002
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindWorkItem,
+			ID:     "WORK-MCP-003",
+			Domain: "MCP",
+			Title:  "Gap work item",
+			Fields: workFields("REQ-MCP-001"),
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticExactIDSequenceGap) {
+			t.Fatalf("expected exact_id_sequence_gap in top-level diagnostics: %#v", resp.Diagnostics)
+		}
+		d := diagnosticByCategory(resp.Diagnostics, DiagnosticExactIDSequenceGap)
+		if d.Severity != DiagnosticSeverityInfo {
+			t.Fatalf("expected info severity, got %q: %#v", d.Severity, d)
+		}
+		if hasDiagnosticCategory(resp.Validation.Diagnostics, DiagnosticExactIDSequenceGap) {
+			t.Fatalf("exact_id_sequence_gap must not appear in validation.diagnostics: %#v", resp.Validation.Diagnostics)
+		}
+	})
+
+	t.Run("WORK_no_gap", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// fixture has WORK-MCP-001; requesting WORK-MCP-002 is the next in sequence
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindWorkItem,
+			ID:     "WORK-MCP-002",
+			Domain: "MCP",
+			Title:  "Next work item",
+			Fields: workFields("REQ-MCP-001"),
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if hasDiagnosticCategory(resp.Diagnostics, DiagnosticExactIDSequenceGap) {
+			t.Fatalf("unexpected exact_id_sequence_gap: %#v", resp.Diagnostics)
+		}
+	})
+
+	t.Run("WORK_fills_existing_gap", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// Add WORK-MCP-003 so existing are 001 and 003; requesting 002 fills the gap
+		writeTestFile(t, fx.root, "docs/work-items/mcp/WORK-MCP-003-third.md",
+			"# WORK-MCP-003: Third\n\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-06-03\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n")
+		fx.idx = mustBuildIndex(t, fx.cfg)
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindWorkItem,
+			ID:     "WORK-MCP-002",
+			Domain: "MCP",
+			Title:  "Fills gap",
+			Fields: workFields("REQ-MCP-001"),
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if hasDiagnosticCategory(resp.Diagnostics, DiagnosticExactIDSequenceGap) {
+			t.Fatalf("unexpected exact_id_sequence_gap when filling existing gap: %#v", resp.Diagnostics)
+		}
+	})
+
+	t.Run("WORK_first_record_no_warning", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// DATA domain has no WORK records; requesting WORK-DATA-001 is first
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindWorkItem,
+			ID:     "WORK-DATA-001",
+			Domain: "DATA",
+			Title:  "First data work",
+			Fields: map[string]any{
+				"status":             "implementation_pending",
+				"date":               "2026-06-03",
+				"source_requirement": "REQ-DATA-001",
+				"impact_refs":        []any{},
+				"tasks":              []any{},
+			},
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if hasDiagnosticCategory(resp.Diagnostics, DiagnosticExactIDSequenceGap) {
+			t.Fatalf("unexpected exact_id_sequence_gap for first record in domain: %#v", resp.Diagnostics)
+		}
+	})
+
+	t.Run("WORK_first_record_skip_warning", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// DATA domain has no WORK records; requesting WORK-DATA-003 skips 001 and 002
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindWorkItem,
+			ID:     "WORK-DATA-003",
+			Domain: "DATA",
+			Title:  "Skip data work",
+			Fields: map[string]any{
+				"status":             "implementation_pending",
+				"date":               "2026-06-03",
+				"source_requirement": "REQ-DATA-001",
+				"impact_refs":        []any{},
+				"tasks":              []any{},
+			},
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticExactIDSequenceGap) {
+			t.Fatalf("expected exact_id_sequence_gap when skipping from first record: %#v", resp.Diagnostics)
+		}
+	})
+
+	t.Run("REQ_gap_warning", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// fixture has REQ-MCP-001; requesting REQ-MCP-003 skips 002
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindRequirement,
+			ID:     "REQ-MCP-003",
+			Domain: "MCP",
+			Title:  "Gap requirement",
+			Fields: reqFields(),
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticExactIDSequenceGap) {
+			t.Fatalf("expected exact_id_sequence_gap: %#v", resp.Diagnostics)
+		}
+	})
+
+	t.Run("REQ_no_gap", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// fixture has REQ-MCP-001; requesting REQ-MCP-002 is the next in sequence
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindRequirement,
+			ID:     "REQ-MCP-002",
+			Domain: "MCP",
+			Title:  "Next requirement",
+			Fields: reqFields(),
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if hasDiagnosticCategory(resp.Diagnostics, DiagnosticExactIDSequenceGap) {
+			t.Fatalf("unexpected exact_id_sequence_gap: %#v", resp.Diagnostics)
+		}
+	})
+
+	t.Run("TASK_gap_warning", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// fixture has TASK-MCP-001-01; requesting TASK-MCP-001-04 skips 02 and 03
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-04",
+			Domain:   "MCP",
+			ParentID: "WORK-MCP-001",
+			Title:    "Gap task",
+			Fields:   taskFields("WORK-MCP-001"),
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticExactIDSequenceGap) {
+			t.Fatalf("expected exact_id_sequence_gap: %#v", resp.Diagnostics)
+		}
+	})
+
+	t.Run("TASK_no_gap", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// fixture has TASK-MCP-001-01; requesting TASK-MCP-001-02 is the next in sequence
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-02",
+			Domain:   "MCP",
+			ParentID: "WORK-MCP-001",
+			Title:    "Next task",
+			Fields:   taskFields("WORK-MCP-001"),
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if hasDiagnosticCategory(resp.Diagnostics, DiagnosticExactIDSequenceGap) {
+			t.Fatalf("unexpected exact_id_sequence_gap: %#v", resp.Diagnostics)
+		}
+	})
+
+	t.Run("WORK_new_no_check", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// WORK-MCP-new placeholder must not produce gap warning
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindWorkItem,
+			ID:     "WORK-MCP-new",
+			Domain: "MCP",
+			Title:  "Next work via placeholder",
+			Fields: workFields("REQ-MCP-001"),
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if hasDiagnosticCategory(resp.Diagnostics, DiagnosticExactIDSequenceGap) {
+			t.Fatalf("WORK-new must not produce exact_id_sequence_gap: %#v", resp.Diagnostics)
+		}
+	})
+
+	t.Run("ADR_exact_skip_outside_scope", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// fixture has ADR-001; requesting ADR-005 would skip, but ADR is outside scope
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindDecision,
+			ID:     "ADR-005",
+			Title:  "Skip ADR",
+			Fields: map[string]any{"status": "proposed", "date": "2026-06-03", "depends_on": []any{}, "supersedes": []any{}, "migrated_to_spec": ""},
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if hasDiagnosticCategory(resp.Diagnostics, DiagnosticExactIDSequenceGap) {
+			t.Fatalf("ADR create must not produce exact_id_sequence_gap: %#v", resp.Diagnostics)
+		}
+	})
+}
+
 type authoringFixture struct {
 	root  string
 	cfg   Config

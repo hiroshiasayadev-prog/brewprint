@@ -267,7 +267,7 @@ func ProposeRecordCreate(ctx context.Context, cfg Config, idx *Index, store *Aut
 		}
 		return failedProposalResponse(bodyCache, nil, authoringDiagnostic(ErrorCodeInvalidRequest, err.Error())), nil
 	}
-	if len(prep.diagnostics) > 0 {
+	if hasErrorDiagnostics(prep.diagnostics) {
 		if body != nil {
 			bodyCache = store.cacheBody(*body)
 		}
@@ -547,6 +547,9 @@ func prepareCreate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 	}
 	prep.files = append(prep.files, reciprocalFiles...)
 	prep.requiredFollowUpUpdates = append(prep.requiredFollowUpUpdates, followUps...)
+	if d := exactIDGapWarning(idx, req.Kind, req.ID, resolved, domain, req.ParentID); d != nil {
+		prep.diagnostics = append(prep.diagnostics, *d)
+	}
 	return prep, nil
 }
 
@@ -1536,6 +1539,93 @@ func hasErrorDiagnostics(diagnostics []Diagnostic) bool {
 		}
 	}
 	return false
+}
+
+func exactIDGapWarning(idx *Index, kind RecordKind, requestedID, resolvedID, domain, parentID string) *Diagnostic {
+	if hasSequenceNewToken(requestedID, kind) {
+		return nil
+	}
+	switch kind {
+	case RecordKindRequirement, RecordKindWorkItem:
+		requestedSeq, err := strconv.Atoi(workflowSequence(resolvedID))
+		if err != nil {
+			return nil
+		}
+		maxSeq := maxWorkflowSeq(idx, kind, domain)
+		if requestedSeq <= maxSeq+1 {
+			return nil
+		}
+		prefix := workflowKindPrefix(kind)
+		nextAvailable := fmt.Sprintf("%s-%s-%03d", prefix, domain, maxSeq+1)
+		d := Diagnostic{
+			Category: DiagnosticExactIDSequenceGap,
+			Severity: DiagnosticSeverityInfo,
+			Message:  fmt.Sprintf("%s skips the next available sequence %s; prefer %s-%s-new unless this ID is intentional", resolvedID, nextAvailable, prefix, domain),
+		}
+		return &d
+	case RecordKindTask:
+		parts := strings.Split(resolvedID, "-")
+		if len(parts) != 4 {
+			return nil
+		}
+		requestedTaskSeq, err := strconv.Atoi(parts[3])
+		if err != nil {
+			return nil
+		}
+		parentDomain := workflowDomain(parentID)
+		parentWorkSeq := workflowSequence(parentID)
+		maxSeq := maxTaskSeqForParent(idx, parentDomain, parentWorkSeq)
+		if requestedTaskSeq <= maxSeq+1 {
+			return nil
+		}
+		nextAvailable := fmt.Sprintf("TASK-%s-%s-%02d", parentDomain, parentWorkSeq, maxSeq+1)
+		d := Diagnostic{
+			Category: DiagnosticExactIDSequenceGap,
+			Severity: DiagnosticSeverityInfo,
+			Message:  fmt.Sprintf("%s skips the next available task sequence %s; prefer TASK-%s-%s-new unless this ID is intentional", resolvedID, nextAvailable, parentDomain, parentWorkSeq),
+		}
+		return &d
+	default:
+		return nil
+	}
+}
+
+func maxWorkflowSeq(idx *Index, kind RecordKind, domain string) int {
+	maxNum := 0
+	for _, record := range idx.Records {
+		if record.Kind != kind || workflowDomain(record.ID) != domain {
+			continue
+		}
+		seq, err := strconv.Atoi(workflowSequence(record.ID))
+		if err == nil && seq > maxNum {
+			maxNum = seq
+		}
+	}
+	return maxNum
+}
+
+func maxTaskSeqForParent(idx *Index, domain, workSeq string) int {
+	maxNum := 0
+	for _, record := range idx.Records {
+		if record.Kind != RecordKindTask || workflowDomain(record.ID) != domain || workflowSequence(record.ID) != workSeq {
+			continue
+		}
+		parts := strings.Split(record.ID, "-")
+		if len(parts) == 4 {
+			seq, err := strconv.Atoi(parts[3])
+			if err == nil && seq > maxNum {
+				maxNum = seq
+			}
+		}
+	}
+	return maxNum
+}
+
+func workflowKindPrefix(kind RecordKind) string {
+	if kind == RecordKindWorkItem {
+		return "WORK"
+	}
+	return "REQ"
 }
 
 func repairGuidance(diagnostics []Diagnostic) []string {

@@ -1,11 +1,12 @@
 # REQ-MCP-018: workflow artifact exact ID create gap warning
 
 - **id**: REQ-MCP-018
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-03
 - **source_refs**:
   - WORK-MCP-014
 - **work_items**:
+  - WORK-MCP-017
 
 ## Requirement
 

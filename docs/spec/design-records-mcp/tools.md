@@ -1110,6 +1110,23 @@ The MCP resolves the final ID using the current record index.
 `SPEC-new` and spec skeleton create are rejected in the MVP because spec record placement cannot be derived safely from ID alone. Spec placement discovery / domain tree support is tracked as REQ-MCP-010.
 For numeric families, the MCP uses the next available sequence in the relevant family / domain / parent scope and does not fill gaps unless a later spec explicitly changes that rule.
 
+Exact ID create remains allowed for workflow artifacts, but it may return a non-blocking authoring diagnostic when the requested exact ID would create a sequence gap. This warning is caller feedback only; it must not reject proposal creation or acceptance by itself.
+
+The diagnostic category is `exact_id_sequence_gap`, and severity is `info`. The diagnostic should recommend the matching `*-new` placeholder when the caller does not intentionally need the exact ID.
+This diagnostic is returned in the proposal-level `diagnostics` field, not `validation.diagnostics`, because it is a proposal advisory rather than a record content validation result.
+
+Exact ID gap-warning scopes are:
+
+| kind | sequence scope | warning condition |
+|---|---|---|
+| `requirement` | same requirement kind and domain | requested `NNN` is greater than current max `NNN` plus one |
+| `work_item` | same work item kind and domain | requested `NNN` is greater than current max `NNN` plus one |
+| `task` | same domain and parent work item sequence | requested task `NN` is greater than current max task `NN` plus one |
+
+`decision` / `ADR-*` create is outside this workflow artifact warning scope.
+`new` placeholder create must not emit `exact_id_sequence_gap`, because server-side allocation already uses the current max sequence plus one.
+Exact ID create that fills an existing gap must not emit `exact_id_sequence_gap`; existing duplicate ID checks still reject an exact ID that already exists.
+
 Task create requires `parent_id`.
 The parent work item must resolve to an indexed `work_item` record.
 For task placeholder IDs, `<DOMAIN>` and `<WORK-SEQUENCE>` must match the parent work item ID.
@@ -1167,6 +1184,22 @@ It is not a general-purpose multi-record atomic transaction with rollback semant
 
 The proposal response may include `required_follow_up_updates` when `reciprocal_update_mode: "report_required_follow_up"` is used or when the implementation cannot include a required reciprocal update in the same proposal.
 If required follow-up updates are present, acceptance must be rejected with `written: false` until the follow-up requirement is satisfied.
+
+Exact ID sequence-gap warning example:
+
+```json
+{
+  "diagnostics": [
+    {
+      "category": "exact_id_sequence_gap",
+      "severity": "info",
+      "message": "REQ-MCP-020 skips the next available sequence REQ-MCP-019; prefer REQ-MCP-new unless this ID is intentional"
+    }
+  ]
+}
+```
+
+This example shows only the relevant response field. The full proposal response still includes the common proposal response fields.
 
 ## `propose_record_update`
 

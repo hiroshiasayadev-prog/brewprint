@@ -225,6 +225,7 @@ const (
 	DiagnosticInvalidMetadataValue          DiagnosticCategory = "invalid_metadata_value"
 	DiagnosticRecordNotFound                DiagnosticCategory = "record_not_found"
 	DiagnosticDuplicateRequestedIDIgnored   DiagnosticCategory = "duplicate_requested_id_ignored"
+	DiagnosticExactIDSequenceGap            DiagnosticCategory = "exact_id_sequence_gap"
 )
 
 type DiagnosticSeverity string
