@@ -10,8 +10,8 @@ nodes:
         type: object_selector
         note: "必須。影響分析対象のObject selector。"
       - name: change
-        type: any
-        note: "必須。kindをdiscriminatorとする変更種別object。rename/remove/change_type/change_contract/change_transition_target/add。v1 modelではdiscriminated objectを表せないためany。"
+        type: analyze_impact_change
+        note: "必須。kindをdiscriminatorとする変更種別object。rename/remove/change_type/addは構造化済み。change_contract / change_transition_targetは後続migration対象。"
       - name: scope_modules
         type: any
         note: "任意。分析範囲を絞るmodule list。文字列配列だが専用list modelを作らずanyで暫定表現する。"
@@ -29,4 +29,4 @@ nodes:
       - change_transition_target: new_to / new_action の少なくとも一方が必要
       - add: added_id必須
       kindとpayloadの不正な組み合わせは invalid_change_payload tool error。
-      v1 modelではoptional / enum / discriminated object / payload相関を型として表せないため、changeはany + noteで保持する。
+      change fieldはanalyze_impact_changeモデルに移行した。change_contract / change_transition_targetは後続migration対象。

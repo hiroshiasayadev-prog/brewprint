@@ -59,6 +59,28 @@ func TestRenderModelGolden(t *testing.T) {
 	}
 }
 
+func TestRenderTaggedUnionModelGolden(t *testing.T) {
+	yamlRoot := filepath.FromSlash("../../../docs/uc/002-brewprint-self-hosting/yaml")
+	loader := source.Loader{}
+	raw, err := loader.Load(yamlRoot)
+	if err != nil {
+		t.Fatalf("load yaml root: %v", err)
+	}
+
+	project, diagnostics := resolve.Build(raw)
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Severity == semantic.SeverityError {
+			t.Fatalf("semantic diagnostic: %s: %s", diagnostic.FileID, diagnostic.Message)
+		}
+	}
+
+	actual, err := RenderFile(project, "mcp/model/analyze_impact_change.yaml")
+	if err != nil {
+		t.Fatalf("render model: %v", err)
+	}
+	golden.AssertEqualFile(t, filepath.FromSlash("../../../docs/uc/002-brewprint-self-hosting/renders/mcp/model-analyze_impact_change.md"), actual)
+}
+
 func TestRenderModelPrivateHelpersIncludeMinimumKinds(t *testing.T) {
 	yamlRoot := filepath.FromSlash("../../../docs/uc/001-ec-checkout-flow/yaml")
 	loader := source.Loader{}

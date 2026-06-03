@@ -90,6 +90,25 @@ func writeKindSection(b *strings.Builder, model *semantic.Model) {
 		b.WriteString("| property | value |\n")
 		b.WriteString("|---|---|\n")
 		fmt.Fprintf(b, "| value | %s |\n\n", tableCell(model.Value))
+	case "tagged_union":
+		b.WriteString("### Discriminator\n\n")
+		b.WriteString("| property | value |\n")
+		b.WriteString("|---|---|\n")
+		fmt.Fprintf(b, "| discriminator | %s |\n\n", tableCell(model.Discriminator))
+		b.WriteString("### Variants\n\n")
+		for _, variant := range model.Variants {
+			fmt.Fprintf(b, "#### `%s`\n\n", variant.Tag)
+			if len(variant.Fields) == 0 {
+				b.WriteString("No payload fields.\n\n")
+			} else {
+				b.WriteString("| field | type | note |\n")
+				b.WriteString("|---|---|---|\n")
+				for _, field := range variant.Fields {
+					fmt.Fprintf(b, "| %s | %s | %s |\n", tableCell(field.Name), tableCell(field.Type), tableCell(field.Note))
+				}
+				b.WriteString("\n")
+			}
+		}
 	}
 }
 
@@ -150,6 +169,16 @@ func compactShape(model *semantic.Model) string {
 			return ""
 		}
 		return "value: " + model.Value
+	case "tagged_union":
+		if model.Discriminator == "" && len(model.Variants) == 0 {
+			return ""
+		}
+		parts := make([]string, 0, 1+len(model.Variants))
+		parts = append(parts, "discriminator: "+model.Discriminator)
+		for _, v := range model.Variants {
+			parts = append(parts, "tag: "+v.Tag)
+		}
+		return strings.Join(parts, "<br/>")
 	default:
 		return ""
 	}

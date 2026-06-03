@@ -1,0 +1,32 @@
+# MCP analyze_impact change discriminated object
+# docs/spec/mcp/tools/analyze-impact.md §3 に対応。
+
+nodes:
+  - id: analyze_impact_change
+    type: model
+    main: true
+    kind: tagged_union
+    discriminator: kind
+    variants:
+      - tag: rename
+        fields:
+          - name: new_id
+            type: str
+            note: "必須。rename後のfull qualified ID。"
+      - tag: remove
+        fields: []
+      - tag: change_type
+        fields:
+          - name: new_type
+            type: str
+            note: "必須。変更後の型名。"
+      - tag: add
+        fields:
+          - name: added_id
+            type: str
+            note: "必須。追加後のfull qualified ID。"
+    note: |
+      MCP tool `analyze_impact` のchange discriminated object。
+      discriminator field `kind` の値によってpayload shapeが変わる。
+      rename / remove / change_type / add はpayload shapeが明確なため構造化済み。
+      change_contract / change_transition_target はpayload制約が複雑なため後続migration対象。

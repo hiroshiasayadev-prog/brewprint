@@ -128,6 +128,16 @@ func privateModelShape(model *semantic.Model) string {
 			return "-"
 		}
 		return strings.Join(model.Values, "<br/>")
+	case "tagged_union":
+		if model.Discriminator == "" {
+			return "-"
+		}
+		parts := make([]string, 0, 1+len(model.Variants))
+		parts = append(parts, "discriminator: "+model.Discriminator)
+		for _, v := range model.Variants {
+			parts = append(parts, "tag: "+v.Tag)
+		}
+		return strings.Join(parts, "<br/>")
 	default:
 		return "-"
 	}

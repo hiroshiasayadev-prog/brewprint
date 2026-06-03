@@ -2,6 +2,7 @@
 
 | kind | title | path |
 |---|---|---|
+| Model | analyze_impact_change | [model-analyze_impact_change.md](model-analyze_impact_change.md) |
 | Model | analyze_impact_request | [model-analyze_impact_request.md](model-analyze_impact_request.md) |
 | Model | analyze_impact_response | [model-analyze_impact_response.md](model-analyze_impact_response.md) |
 | Model | diagnostic | [model-diagnostic.md](model-diagnostic.md) |

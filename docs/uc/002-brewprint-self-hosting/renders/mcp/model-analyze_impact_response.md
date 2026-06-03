@@ -20,7 +20,7 @@ docs/spec/mcp/tools/analyze-impact.md §4 Output、§5 Impact entry、§6 severi
 | field | type | note |
 |---|---|---|
 | target | object_ref | 必須。分析対象ObjectRef。 |
-| change | any | 必須。inputで指定されたchangeをそのまま返す。discriminated objectをv1 modelで表せないためany。 |
+| change | analyze_impact_change | 必須。inputで指定されたchangeをそのまま返す。 |
 | summary | any | 必須。by_severity / by_fixability / by_kind の件数集計object。dict shapeを厳密表現しないためany。 |
 | impacts | list<analyze_impact_impact> | 必須。impact entry配列。各entryは id / kind / severity / fixability / object / reason / via / source / recommended_action / suggested_fixes を持つ。 |
 | coverage | analyze_impact_coverage | 必須。analyzed / not_analyzed / note を持つcoverage object。語彙制約はnoteで保持する。 |

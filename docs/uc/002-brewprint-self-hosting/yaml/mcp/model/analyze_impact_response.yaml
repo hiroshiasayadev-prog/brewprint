@@ -11,8 +11,8 @@ nodes:
         type: object_ref
         note: "必須。分析対象ObjectRef。"
       - name: change
-        type: any
-        note: "必須。inputで指定されたchangeをそのまま返す。discriminated objectをv1 modelで表せないためany。"
+        type: analyze_impact_change
+        note: "必須。inputで指定されたchangeをそのまま返す。"
       - name: summary
         type: any
         note: "必須。by_severity / by_fixability / by_kind の件数集計object。dict shapeを厳密表現しないためany。"

@@ -1,10 +1,10 @@
 ---
 scope: docs/spec/views/model-file.md
 status: draft
-last_updated: 2026-05-31
+last_updated: 2026-06-03
 summary: >
   Model file render minimum. Defines Markdown render output for model YAML files,
-  including public main model and file-private helper models for struct / enum / list / dict.
+  including public main model and file-private helper models for struct / enum / list / dict / tagged_union.
 depends_on:
   - docs/adr/070-model-visibility-file-private-helper-model.md
   - docs/adr/072-model-schema-catalog-view.md
@@ -23,16 +23,15 @@ The render shows the public main model and the file-private helper models define
 
 Model file render is not a curated module-wide catalog. Module / contract-level catalog views are owned by the model catalog view.
 
-## WORK-DATA-003 execution boundary
+## Execution boundary
 
-This spec defines the WORK-DATA-003 model-file render minimum for the following model kinds:
+This spec defines the model-file render minimum for the following model kinds:
 
 - `struct`
 - `enum`
 - `list`
 - `dict`
-
-Tagged union discriminator / variants rendering is outside the WORK-DATA-003 current execution scope and is deferred to ADR-073 or a later tagged-union work item.
+- `tagged_union` (added in WORK-DATA-010)
 
 ## Output format
 
@@ -117,6 +116,32 @@ Dict models render their value TypeRef.
 | value | `{TypeRef}` |
 ```
 
+### Tagged union
+
+Tagged union models render the discriminator and each variant.
+
+```markdown
+### Discriminator
+
+| property | value |
+|---|---|
+| discriminator | `{discriminator field name}` |
+
+### Variants
+
+#### `{variant tag}`
+
+| field | type | note |
+|---|---|---|
+| `{field name}` | `{TypeRef}` | `{note summary}` |
+
+#### `{payload-less variant tag}`
+
+No payload fields.
+```
+
+Each variant is rendered as a level-4 heading with its tag. Variants with no payload fields (`fields: []`) render `No payload fields.` instead of a table.
+
 ## Private models table
 
 The `## Private models` table lists file-private helper models defined in the same model YAML file.
@@ -128,7 +153,7 @@ The `## Private models` table lists file-private helper models defined in the sa
 | `shape` | compact kind-specific shape summary |
 | `note` | helper model note summary |
 
-The `shape` column should stay compact. For struct helper models, it may list fields as ``field: TypeRef`` pairs. For enum helper models, it may list enum values. For list / dict helper models, it may show `element: TypeRef` or `value: TypeRef`.
+The `shape` column should stay compact. For struct helper models, it may list fields as ``field: TypeRef`` pairs. For enum helper models, it may list enum values. For list / dict helper models, it may show `element: TypeRef` or `value: TypeRef`. For tagged union helper models, it may show `discriminator: X` followed by `tag: T` entries.
 
 The table does not define signature exposure policy. Rules for helper models appearing in task `params` or `returns` are tracked separately by REQ-DATA-003.
 
@@ -148,9 +173,7 @@ The exact group / directory placement is owned by `docs/spec/project-layout.md`.
 
 The following are not part of this model-file render minimum:
 
-- tagged union discriminator / variants rendering
-- tagged union validation
 - model catalog render implementation
 - DAG asset TypeRef hint
 - MCP helper model exposure / semantic identity
-- UC-002 model response helper migration
+- UC-002 model response helper migration beyond tagged union migration
