@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/schema.md
 status: draft
-last_updated: 2026-06-02
+last_updated: 2026-06-03
 summary: >
   Design Records MCP MVP が読む design record / workflow artifact metadata schema、
   record model、authoring guidance source model、authoring transaction schema concept、
@@ -645,7 +645,6 @@ setext heading は MVP では扱わない。
 > 由来: ADR-077 §list_records の責務, ADR-077 §get_record の責務
 
 ## Diagnostic category
-
 `resolve_reference` は direct query の結果として、supported form だが target が存在しない場合に `unresolved_reference`、同一 ref が複数 target に一致して単一解決できない場合に `ambiguous_reference`、MVP resolver 対象外として behavior を定義する入力には `unsupported_reference` を返す。Reserved prefix `yaml:` の public resolver input / direct query response behavior、および investigation metadata validation behavior は MVP で定義しない。これら resolution response の diagnostic と、`validate_records` が参照元 field や index defect に対して返す下記 validation diagnostic は区別する。
 
 `get_records` は retrieval / request-level diagnostic として以下を返す。
@@ -692,6 +691,8 @@ Diagnostic は検査軸ごとに独立して発火し、1 record に複数 diagn
 | `invalid_workflow_id` | error | requirement / work item / task の metadata ID または H1 ID が workflow ID grammar に従わない |
 | `missing_required_metadata` | error | requirement / work item / task の required metadata field が存在しない |
 | `empty_required_metadata` | error | required scalar metadata field が empty、または required list metadata field に empty item が含まれる |
+| `missing_required_section` | error | workflow artifact が gated status にあるとき、required narrative section heading が存在しない |
+| `empty_required_section` | error | workflow artifact が gated status にあるとき、required narrative section heading は存在するが section body が empty または whitespace-only である |
 | `invalid_metadata_value` | error | required metadata field が non-empty だが value contract を満たさない。例: workflow artifact `date` が strict `YYYY-MM-DD` format ではない |
 | `invalid_status_for_kind` | error | `kind` に対して許可されない `status` を持つ |
 | `spec_status_mismatch` | error | spec top-level `status` と `design_record.status` が一致しない |
@@ -717,9 +718,28 @@ Diagnostic は検査軸ごとに独立して発火し、1 record に複数 diagn
 
 Workflow metadata diagnostic (`missing_required_metadata` / `empty_required_metadata` / `invalid_metadata_value`) は、通常の `category` / `severity` / `record_id` / `path` / `message` に加えて、`field` を必須で返す。入力 value が存在する場合は `value` も返す。
 
+Workflow required section diagnostic (`missing_required_section` / `empty_required_section`) は、通常の `category` / `severity` / `record_id` / `path` / `message` に加えて、`section` と `status` を必須で返す。
+`section` は required narrative section heading text とする。
+`status` は required section rule を発火させた workflow artifact status とする。
+
 Workflow relation diagnostic は、通常の `category` / `severity` / `record_id` / `path` / `message` に加えて、`field`、`value`、`ref_status` を必須で返す。`field` は `work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on` のいずれか、`value` は入力 ID-as-ref、`ref_status` は `unresolved` / `invalid_target` / `mismatch` のいずれかとする。対象 ID が特定できる場合は `target_id` も返す。
 
 Investigation reference diagnostic (`unresolved_*` / `noncanonical_*` / metadata field 由来の `unsupported_reference`) は、通常の `category` / `severity` / `record_id` / `path` / `message` に加えて、`field`、`value`、`ref_status` を必須で返す。`field` は `source_refs` / `follow_up_results` / `follow_up_candidates` のいずれか、`value` は入力 reference 文字列、`ref_status` は `unresolved` / `unsupported` / `noncanonical` のいずれかとする。Investigation metadata が duplicate semantic ref または duplicate record ID を指して単一解決できない場合は field-specific diagnostic を追加せず、index defect を示す `duplicate_semantic_ref` または `duplicate_id` のみを返す。これら duplicate diagnostic および spec declaration / section lookup diagnostic は investigation metadata field 由来の追加 field を要求しない。
+
+Required narrative section policy:
+
+| artifact kind | gated status | required non-empty narrative sections |
+|---|---|---|
+| `work_item` | `done` | `Goal`, `Boundary`, `Evidence` |
+| `task` | `done` | `Goal`, `Work`, `Done condition`, `Verification`, `Evidence` |
+| `requirement` | `accepted` | `Requirement`, `Required Outcome` |
+
+`requirement` の `accepted` は close/completion state ではなく adoption-readiness gate として扱う。
+したがって `Evidence` / `Boundary` / `Explicitly Excluded Scope` は `REQ accepted` の required non-empty section には含めない。
+
+Required narrative section body は、heading 行を除いた section body の前後 whitespace を trim した結果、少なくとも 1 つの non-whitespace character を含む場合に non-empty とする。
+Whitespace-only body は empty とする。
+本文の品質・十分性・意味内容は判定しないため、`Pending` や `None` のような placeholder text も non-empty として扱う。
 
 `follow_up_candidates` の参照先が未作成であること自体は error としない。`validate_records.ok` は error diagnostic の有無だけで決まり、info diagnostic が存在しても failure にはならない。Coverage mapping、semantic realization relation、`internal-design:` / `coverage:` / `COV-*` の解決・診断は MVP diagnostic scope に含めない。Workflow relation validation は宣言済み relation の存在と整合性に限り、未接続 artifact の orphan diagnostics、task dependency cycle detection、execution order projection、task status 由来 progress projection は含めない。
 
@@ -737,7 +757,7 @@ MVP では以下を diagnostic category に含めない。
 `missing_record_path` は、filesystem scan または path normalization により record 候補 path を検出したが、実際の read/stat に失敗した場合に出す。
 例として、scan 後に file が削除された場合、permission denied、symlink target missing、path normalization 後の path が存在しない場合を含む。
 
-> 由来: ADR-077 §validate_records の責務, ADR-090 §Partial result / Ordering と duplicate requested ID, ADR-092 §4〜§7
+> 由来: ADR-077 §validate_records の責務, ADR-090 §Partial result / Ordering と duplicate requested ID, ADR-092 §4〜§7, REQ-MCP-017 / TASK-MCP-016-01 required narrative section policy
 
 ## Bootstrap metadata
 
