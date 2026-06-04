@@ -26,8 +26,8 @@ nodes:
         type: bool
         note: "必須。max_nodes / max_edges により打ち切ったか。"
       - name: truncated_reasons
-        type: any
-        note: "必須。max_nodes / max_edges 等の打ち切り理由文字列配列。専用list modelを作らずanyで暫定表現する。"
+        type: string_list
+        note: "必須。max_nodes / max_edges 等の打ち切り理由文字列配列。"
       - name: diagnostics
         type: diagnostic_list
         note: "必須。Diagnostic list。"
@@ -35,7 +35,6 @@ nodes:
       MCP tool `get_reference_tree` のresponse model。
       docs/spec/mcp/tools/get-reference-tree.md §3 のOutput、§4 Node entry、§5 Edge entry、§6 Traversal semanticsに対応する。
       tool名はtreeだが返却形式は nodes[] / edges[] からなるbounded reference graph。
-      `truncated_reasons` はstring list制約をv1 modelで厳密表現できないため any + note で保持する。
 
   - id: get_reference_tree_node
     type: model

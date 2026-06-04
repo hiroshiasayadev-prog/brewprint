@@ -13,8 +13,8 @@ nodes:
         type: analyze_impact_change
         note: "必須。kindをdiscriminatorとする変更種別object。rename/remove/change_type/addは構造化済み。change_contract / change_transition_targetは後続migration対象。"
       - name: scope_modules
-        type: any
-        note: "任意。分析範囲を絞るmodule list。文字列配列だが専用list modelを作らずanyで暫定表現する。"
+        type: string_list
+        note: "任意。分析範囲を絞るmodule list。"
       - name: max_impacts
         type: int
         note: "任意。impact返却上限。省略時200。"

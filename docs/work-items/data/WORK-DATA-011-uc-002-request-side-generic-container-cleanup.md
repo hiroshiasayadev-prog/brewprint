@@ -1,7 +1,7 @@
 # WORK-DATA-011: Plan UC-002 request-side and generic container cleanup
 
 - **id**: WORK-DATA-011
-- **status**: not_started
+- **status**: done
 - **date**: 2026-06-01
 - **source_requirement**: REQ-DATA-002
 - **impact_refs**:
@@ -11,6 +11,10 @@
   - TASK-DATA-009-03
   - TASK-DATA-009-04
 - **tasks**:
+  - TASK-DATA-011-01
+  - TASK-DATA-011-02
+  - TASK-DATA-011-03
+  - TASK-DATA-011-04
 
 ## Goal
 
@@ -63,3 +67,16 @@ flowchart TD
 ## Completion Condition
 
 This work item can be marked `done` when the request-side / generic container bucket has a concrete accepted cleanup path, implemented and verified if selected, or explicit no-action outcomes for all candidates without reopening completed DATA work.
+
+## Evidence
+
+完了日: 2026-06-05
+
+全候補の cleanup path が確定・実装・検証済みとなったため `done` に遷移する。
+
+| タスク | status |
+|---|---|
+| TASK-DATA-011-01 | done |
+| TASK-DATA-011-02 | done |
+| TASK-DATA-011-03 | done |
+| TASK-DATA-011-04 | done |

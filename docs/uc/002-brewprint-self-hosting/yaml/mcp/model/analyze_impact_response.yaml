@@ -14,8 +14,8 @@ nodes:
         type: analyze_impact_change
         note: "必須。inputで指定されたchangeをそのまま返す。"
       - name: summary
-        type: any
-        note: "必須。by_severity / by_fixability / by_kind の件数集計object。dict shapeを厳密表現しないためany。"
+        type: analyze_impact_summary
+        note: "必須。by_severity / by_fixability / by_kind の件数集計object。"
       - name: impacts
         type: list<analyze_impact_impact>
         note: "必須。impact entry配列。各entryは id / kind / severity / fixability / object / reason / via / source / recommended_action / suggested_fixes を持つ。"
@@ -23,14 +23,14 @@ nodes:
         type: analyze_impact_coverage
         note: "必須。analyzed / not_analyzed / note を持つcoverage object。語彙制約はnoteで保持する。"
       - name: assumptions
-        type: any
-        note: "必須。tool側の前提・限界の文字列配列。専用list modelを作らずanyで暫定表現する。"
+        type: string_list
+        note: "必須。tool側の前提・限界の文字列配列。"
       - name: truncated
         type: bool
         note: "必須。max_impactsにより打ち切ったか。"
       - name: truncated_reasons
-        type: any
-        note: "必須。打ち切り理由の文字列配列。専用list modelを作らずanyで暫定表現する。"
+        type: string_list
+        note: "必須。打ち切り理由の文字列配列。"
       - name: diagnostics
         type: diagnostic_list
         note: "必須。unsupported selector時のunsupported_selector等を含む。"
@@ -96,3 +96,53 @@ nodes:
     note: |
       `analyze_impact_response.coverage` のresponse-local helper model。
       coverage vocabularyのenum化はこのmigrationでは行わない。
+
+  - id: analyze_impact_severity_counts
+    type: model
+    kind: struct
+    fields:
+      - name: breaking
+        type: int
+        note: "必須。breaking severity の件数。"
+      - name: warning
+        type: int
+        note: "必須。warning severity の件数。"
+      - name: info
+        type: int
+        note: "必須。info severity の件数。"
+    note: "`analyze_impact_summary.by_severity` のhelper model。"
+
+  - id: analyze_impact_fixability_counts
+    type: model
+    kind: struct
+    fields:
+      - name: mechanical
+        type: int
+        note: "必須。mechanical fixability の件数。"
+      - name: suggested
+        type: int
+        note: "必須。suggested fixability の件数。"
+      - name: manual_review
+        type: int
+        note: "必須。manual_review fixability の件数。"
+      - name: unknown
+        type: int
+        note: "必須。unknown fixability の件数。"
+    note: "`analyze_impact_summary.by_fixability` のhelper model。"
+
+  - id: analyze_impact_summary
+    type: model
+    kind: struct
+    fields:
+      - name: by_severity
+        type: analyze_impact_severity_counts
+        note: "必須。severity 別件数集計。"
+      - name: by_fixability
+        type: analyze_impact_fixability_counts
+        note: "必須。fixability 別件数集計。"
+      - name: by_kind
+        type: any
+        note: "必須。impact kind 別件数集計。kind 語彙は実装裁量のため any を維持する。"
+    note: |
+      `analyze_impact_response.summary` のhelper model。
+      `by_kind` は impact kind 語彙が実装裁量であり、v1 model では dict key semantics を型として表現できないため `any` を維持する。

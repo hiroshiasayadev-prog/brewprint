@@ -16,8 +16,8 @@ nodes:
         type: int
         note: "必須。0..4。範囲外はinvalid_depth error。"
       - name: kinds
-        type: any
-        note: "任意。traversal / return対象のreference kind filter文字列配列。専用list modelを作らずanyで暫定表現する。"
+        type: string_list
+        note: "任意。traversal / return対象のreference kind filter文字列配列。"
       - name: max_nodes
         type: int
         note: "任意。node返却上限。省略時200。"
