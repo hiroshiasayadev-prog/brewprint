@@ -222,6 +222,7 @@ const (
 	DiagnosticEmptyRequiredMetadata         DiagnosticCategory = "empty_required_metadata"
 	DiagnosticMissingRequiredSection        DiagnosticCategory = "missing_required_section"
 	DiagnosticEmptyRequiredSection          DiagnosticCategory = "empty_required_section"
+	DiagnosticSectionHeadingCaseMismatch   DiagnosticCategory = "section_heading_case_mismatch"
 	DiagnosticInvalidMetadataValue          DiagnosticCategory = "invalid_metadata_value"
 	DiagnosticRecordNotFound                DiagnosticCategory = "record_not_found"
 	DiagnosticDuplicateRequestedIDIgnored   DiagnosticCategory = "duplicate_requested_id_ignored"
@@ -251,6 +252,7 @@ type Diagnostic struct {
 	FirstIndex        *int               `json:"first_index,omitempty"`
 	DuplicateIndexes  []int              `json:"duplicate_indexes,omitempty"`
 	CandidateHeadings []CandidateHeading `json:"candidate_headings,omitempty"`
+	ActualHeading     string             `json:"-"`
 	ValuePresent      bool               `json:"-"`
 }
 
@@ -267,6 +269,7 @@ func (d Diagnostic) MarshalJSON() ([]byte, error) {
 		RefStatus         string             `json:"ref_status,omitempty"`
 		Section           string             `json:"section,omitempty"`
 		Status            string             `json:"status,omitempty"`
+		ActualHeading     string             `json:"actual_heading,omitempty"`
 		RequestedID       string             `json:"requested_id,omitempty"`
 		FirstIndex        *int               `json:"first_index,omitempty"`
 		DuplicateIndexes  []int              `json:"duplicate_indexes,omitempty"`
@@ -288,6 +291,7 @@ func (d Diagnostic) MarshalJSON() ([]byte, error) {
 		RefStatus:         d.RefStatus,
 		Section:           d.Section,
 		Status:            d.Status,
+		ActualHeading:     d.ActualHeading,
 		RequestedID:       d.RequestedID,
 		FirstIndex:        d.FirstIndex,
 		DuplicateIndexes:  d.DuplicateIndexes,

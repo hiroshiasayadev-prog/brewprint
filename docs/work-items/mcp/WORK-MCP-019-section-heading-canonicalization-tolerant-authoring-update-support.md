@@ -12,6 +12,7 @@
   - TASK-MCP-019-02
   - TASK-MCP-019-03
   - TASK-MCP-019-04
+  - TASK-MCP-019-05
 
 ## Goal
 

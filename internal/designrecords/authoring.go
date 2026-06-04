@@ -576,7 +576,7 @@ func prepareUpdate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 		if body == nil {
 			return authoringPreparation{}, fmt.Errorf("body is required for named_section_replace")
 		}
-		updated, diagnostics, err = replaceNamedSection(raw, *req.Update.SectionSelector, *body)
+		updated, diagnostics, err = replaceNamedSection(raw, *req.Update.SectionSelector, *body, req.Kind)
 	default:
 		return authoringPreparation{}, fmt.Errorf("unsupported update.type %q", req.Update.Type)
 	}
@@ -1041,7 +1041,20 @@ func replaceSpecMetadata(expectedID, raw string, metadata map[string]any) (strin
 	return "---\n" + string(rendered) + "---\n" + strings.TrimPrefix(rest, "\n"), nil, nil
 }
 
-func replaceNamedSection(raw string, selector SectionSelector, body string) (string, []Diagnostic, error) {
+func requiredSectionsForKind(kind RecordKind) []string {
+	switch kind {
+	case RecordKindTask:
+		return []string{"Goal", "Work", "Done condition", "Verification", "Evidence"}
+	case RecordKindWorkItem:
+		return []string{"Goal", "Boundary", "Evidence"}
+	case RecordKindRequirement:
+		return []string{"Requirement", "Required Outcome"}
+	default:
+		return nil
+	}
+}
+
+func replaceNamedSection(raw string, selector SectionSelector, body string, kind ...RecordKind) (string, []Diagnostic, error) {
 	if strings.TrimSpace(selector.Heading) == "" {
 		return "", nil, fmt.Errorf("section_selector.heading is required")
 	}
@@ -1063,6 +1076,53 @@ func replaceNamedSection(raw string, selector SectionSelector, body string) (str
 		matches = append(matches, section)
 	}
 	if len(matches) == 0 {
+		// Case-only fallback: only for required headings of workflow artifact kinds.
+		var recordKind RecordKind
+		if len(kind) > 0 {
+			recordKind = kind[0]
+		}
+		requiredSections := requiredSectionsForKind(recordKind)
+		isRequired := false
+		for _, s := range requiredSections {
+			if s == selector.Heading {
+				isRequired = true
+				break
+			}
+		}
+		if isRequired {
+			var caseFallbacks []markdownSection
+			for _, section := range sections {
+				if section.Heading.Text == selector.Heading {
+					continue
+				}
+				if !strings.EqualFold(section.Heading.Text, selector.Heading) {
+					continue
+				}
+				if selector.Level != nil && section.Heading.Level != *selector.Level {
+					continue
+				}
+				caseFallbacks = append(caseFallbacks, section)
+			}
+			if len(caseFallbacks) == 1 {
+				match := caseFallbacks[0]
+				lines := splitMarkdownLines(raw)
+				replacementBody := strings.TrimRight(body, "\n")
+				replacement := []string{strings.Repeat("#", match.Heading.Level) + " " + selector.Heading}
+				if replacementBody != "" {
+					replacement = append(replacement, replacementBody)
+				}
+				out := append([]string{}, lines[:match.StartLine]...)
+				out = append(out, replacement...)
+				if match.EndLine < len(lines) {
+					out = append(out, "")
+				}
+				out = append(out, lines[match.EndLine:]...)
+				return strings.Join(out, "\n"), nil, nil
+			}
+			if len(caseFallbacks) > 1 {
+				return "", []Diagnostic{sectionSelectorDiagnostic(ErrorCodeSectionSelectorAmbiguous, "section selector matched multiple ATX sections by case-insensitive comparison", caseFallbacks)}, nil
+			}
+		}
 		return "", []Diagnostic{sectionSelectorDiagnostic(ErrorCodeSectionSelectorNoMatch, "section selector matched no ATX section", sections)}, nil
 	}
 	if len(matches) > 1 {

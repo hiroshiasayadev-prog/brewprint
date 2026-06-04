@@ -1,7 +1,7 @@
 # TASK-MCP-019-04: Implement required heading case canonicalization support
 
 - **id**: TASK-MCP-019-04
-- **status**: todo
+- **status**: done
 - **date**: 2026-06-05
 - **work_item**: WORK-MCP-019
 - **source_requirement**: REQ-MCP-021
@@ -52,5 +52,54 @@ go test ./internal/designrecords ./internal/designrecordsmcp
 ```
 
 ## Evidence
+Implementation completed by Claude Code.
 
-未実施。
+Verdict: PASS.
+
+Files changed:
+
+- `internal/designrecords/types.go`
+  - Added `DiagnosticSectionHeadingCaseMismatch`.
+  - Added `ActualHeading string` to `Diagnostic`.
+  - Added `actual_heading,omitempty` to custom JSON marshaling.
+- `internal/designrecords/validation.go`
+  - Added `findCaseOnlyMismatch` helper.
+  - Updated required narrative section diagnostics to emit info `section_heading_case_mismatch` after `missing_required_section` when the canonical required section is missing and exactly one case-only mismatch exists.
+- `internal/designrecords/authoring.go`
+  - Added `requiredSectionsForKind` helper.
+  - Updated `replaceNamedSection` to accept optional record kind context and implement required-heading case-only fallback.
+  - Updated `prepareUpdate` call path to pass `req.Kind`.
+
+Implementation summary:
+
+- Validation keeps strict `missing_required_section` behavior.
+- Validation emits `section_heading_case_mismatch` only for gated workflow artifacts when the required canonical heading is missing and a single case-only non-canonical heading exists.
+- Authoring exact matching remains default and case-sensitive.
+- Authoring fallback applies only after exact matching finds zero matches.
+- Authoring fallback is limited to workflow artifact kinds and required headings of the target kind.
+- Authoring fallback respects `section_selector.level`.
+- Ambiguous case-insensitive matches return `section_selector_ambiguous`.
+- Successful fallback rewrites the matched heading line to canonical `section_selector.heading` in the proposal diff.
+- Optional/user-defined headings, cross-kind headings, and non-case differences remain on existing exact/no-match behavior.
+
+Tests run:
+
+```powershell
+go test ./internal/designrecords -run TestRequiredSectionHeadingCaseMismatch -v
+go test ./internal/designrecords -run TestProposeRecordUpdateRequiredHeadingCaseFallback -v
+go test ./internal/designrecordsmcp -run TestToolsCallValidateRecordsExposesSectionHeadingCaseMismatchFields -v
+go test ./internal/designrecords ./internal/designrecordsmcp
+```
+
+Results:
+
+- `TestRequiredSectionHeadingCaseMismatchDiagnostics`: PASS, all 2 subtests.
+- `TestProposeRecordUpdateRequiredHeadingCaseFallback`: PASS, all 8 subtests.
+- `TestToolsCallValidateRecordsExposesSectionHeadingCaseMismatchFields`: PASS.
+- `go test ./internal/designrecords ./internal/designrecordsmcp`: PASS.
+
+Closure assessment:
+
+- All `TASK-MCP-019-04` done conditions are satisfied.
+- No fuzzy matching was introduced.
+- Optional heading canonicalization and cross-kind heading canonicalization remain excluded.

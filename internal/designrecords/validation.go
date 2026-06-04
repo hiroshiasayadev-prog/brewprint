@@ -768,6 +768,23 @@ func requiredNarrativeSectionDiagnostics(record Record) []Diagnostic {
 				Section:  sectionName,
 				Status:   string(p.gatedStatus),
 			})
+			if actual, ok := findCaseOnlyMismatch(record.Headings, sectionName); ok {
+				candidates := make([]CandidateHeading, len(record.Headings))
+				for i, h := range record.Headings {
+					candidates[i] = CandidateHeading{Heading: h.Text, Level: h.Level, Ordinal: i + 1}
+				}
+				diagnostics = append(diagnostics, Diagnostic{
+					Category:          DiagnosticSectionHeadingCaseMismatch,
+					Severity:          DiagnosticSeverityInfo,
+					RecordID:          record.ID,
+					Path:              record.Path,
+					Message:           fmt.Sprintf("canonical required section %q found with non-canonical case as %q; repair heading to canonical text", sectionName, actual),
+					Section:           sectionName,
+					Status:            string(p.gatedStatus),
+					ActualHeading:     actual,
+					CandidateHeadings: candidates,
+				})
+			}
 			continue
 		}
 		body := extractSectionBody(record.RawBody, sectionName, level)
@@ -793,6 +810,15 @@ func findHeadingLevel(headings []Heading, text string) (int, bool) {
 		}
 	}
 	return 0, false
+}
+
+func findCaseOnlyMismatch(headings []Heading, canonical string) (string, bool) {
+	for _, h := range headings {
+		if strings.EqualFold(h.Text, canonical) && h.Text != canonical {
+			return h.Text, true
+		}
+	}
+	return "", false
 }
 
 func extractSectionBody(raw, headingText string, headingLevel int) string {
