@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/tools.md
 status: draft
-last_updated: 2026-06-03
+last_updated: 2026-06-05
 summary: >
   Design Records MCP の read/navigation/guidance tool interface と
   authoring transaction tool interface の責務境界を定義する。
@@ -708,7 +708,6 @@ Diagnostic object は少なくとも以下を持つ。
 | `target_id` | no | 参照切れなどの対象 ID |
 
 ### Diagnostic categories
-
 MVP diagnostic category は `schema.md` の定義に従う。
 
 - `duplicate_id`
@@ -719,6 +718,7 @@ MVP diagnostic category は `schema.md` の定義に従う。
 - `empty_required_metadata`
 - `missing_required_section`
 - `empty_required_section`
+- `section_heading_case_mismatch`
 - `invalid_metadata_value`
 - `invalid_status_for_kind`
 - `spec_status_mismatch`
@@ -735,6 +735,7 @@ Canonical reference / investigation / workflow validation の concrete category 
 | `empty_required_metadata` | `error` | workflow artifact の required scalar metadata field が empty、または required list metadata field に empty item が含まれる |
 | `missing_required_section` | `error` | workflow artifact が gated status にあるとき、required narrative section heading が存在しない |
 | `empty_required_section` | `error` | workflow artifact が gated status にあるとき、required narrative section heading は存在するが section body が empty または whitespace-only である |
+| `section_heading_case_mismatch` | `info` | workflow artifact の target-kind-specific validation-required narrative section heading と case-only で一致する non-canonical heading が存在する |
 | `invalid_metadata_value` | `error` | workflow artifact の required metadata field が non-empty だが value contract を満たさない。例: `date` が strict `YYYY-MM-DD` format ではない |
 | `invalid_semantic_ref_declaration` | `error` | spec front matter の `semantic_refs` entry または `sections` key が active `spec:` grammar に従わない |
 | `missing_section_target` | `error` | spec front matter の `sections` value と一致する Markdown heading が存在しない |
@@ -758,6 +759,17 @@ Workflow required section diagnostic (`missing_required_section` / `empty_requir
 `section` は required narrative section heading text とする。
 `status` は required section rule を発火させた workflow artifact status とする。
 
+When validation detects that a canonical required section is missing for the target record kind and current gated status, and exactly one heading exists whose text differs only by case from that canonical heading, validation MUST also return `section_heading_case_mismatch` with severity `info`.
+This diagnostic is repair guidance only. It does not relax canonical required-section validation and does not suppress any `missing_required_section` / `empty_required_section` error.
+
+`section_heading_case_mismatch` MUST include:
+
+- `section`: canonical required heading text for the target record kind.
+- `actual_heading`: matched non-canonical heading text.
+- `status`: workflow artifact status that activated the required-section rule.
+
+It SHOULD include `candidate_headings` with heading text, level, and ordinal when available.
+
 Workflow relation diagnostic (`unresolved_workflow_relation` / `invalid_workflow_relation_target` / `workflow_relation_mismatch` / `workflow_source_requirement_mismatch`) は、既存の diagnostic field に加えて `field`（`work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on`）、`value`（入力 ID-as-ref）、`ref_status`（`unresolved` / `invalid_target` / `mismatch`）を必須で返す。
 
 Investigation reference diagnostic (`unresolved_*` / `noncanonical_*` / metadata field 由来の `unsupported_reference`) は、既存の diagnostic field に加えて `field`（`source_refs` / `follow_up_results` / `follow_up_candidates`）、`value`（入力 ref 文字列）、`ref_status`（`unresolved` / `unsupported` / `noncanonical`）を必須で返す。対象が record ID-as-ref の場合は `target_id` も返してよい。Investigation metadata が duplicate semantic ref または duplicate record ID を指して単一解決できない場合は field-specific diagnostic を追加せず、index defect を示す `duplicate_semantic_ref` または `duplicate_id` のみを返す。これら duplicate diagnostic および spec declaration / section lookup diagnostic は investigation metadata field 由来の追加 field を要求しない。
@@ -769,6 +781,10 @@ Required narrative section policy:
 | `work_item` | `done` | `Goal`, `Boundary`, `Evidence` |
 | `task` | `done` | `Goal`, `Work`, `Done condition`, `Verification`, `Evidence` |
 | `requirement` | `accepted` | `Requirement`, `Required Outcome` |
+
+Only headings listed for the target record kind in the Required narrative section policy are canonical workflow required headings for the case-only repair behavior defined by `propose_record_update` named section replacement.
+The target record does not need to currently be in the gated status for the authoring selector fallback to apply; the target record kind and requested heading determine fallback eligibility.
+Authoring guide format headings that are not listed for the target record kind, and user-defined optional headings, are not canonicalized by this rule.
 
 `requirement` の `accepted` は close/completion state ではなく adoption-readiness gate として扱う。
 したがって `Evidence` / `Boundary` / `Explicitly Excluded Scope` は `REQ accepted` の required non-empty section には含めない。
@@ -1291,7 +1307,6 @@ Empty required scalar fields or empty list items must produce `empty_required_me
 Invalid recognized field values must produce `invalid_metadata_value` or the existing kind-specific diagnostic.
 
 #### Named section replacement
-
 Named section replacement is valid only when `section_selector` resolves to exactly one Markdown ATX section in the target record. Section matching uses the same ATX heading source rules as the `headings` field defined in `schema.md`; YAML front matter and fenced code block content are not section sources, and setext headings are not section sources in the MVP.
 
 `section_selector` fields:
@@ -1303,9 +1318,23 @@ Named section replacement is valid only when `section_selector` resolves to exac
 | `level` | no | optional ATX heading level constraint |
 
 Exact matching compares the parsed heading text after removing ATX marker syntax and trimming surrounding whitespace.
-Matching is case-sensitive.
+Exact matching is case-sensitive.
 No Unicode normalization, punctuation folding, or prefix / contains matching is applied in the MVP.
 If `level` is supplied, both heading text and level must match.
+
+Narrow case-only fallback:
+
+- The fallback applies only to workflow artifact records (`requirement`, `work_item`, `task`).
+- The fallback applies only when `section_selector.heading` is listed as a validation-required canonical heading for the target record kind in the Required narrative section policy.
+- The target record does not need to currently be in the gated status for the fallback to apply; target record kind and requested heading determine fallback eligibility.
+- Authoring guide format headings that are not validation-required for the target record kind, and user-defined optional headings, are not canonicalized by this fallback.
+- The fallback is attempted only after exact matching finds zero matches.
+- The fallback compares parsed heading text case-insensitively, without Unicode normalization, punctuation folding, typo correction, prefix matching, or contains matching.
+- If `level` is supplied, fallback candidate matching uses the same level constraint before determining zero, one, or ambiguous case-insensitive matches.
+- If exactly one eligible case-insensitive match is found, the selector resolves through fallback and proposal creation proceeds unless an independent proposal-preparation error applies.
+- When proposal creation proceeds through this fallback, the retained proposal diff MUST rewrite the matched heading line to the canonical `section_selector.heading` text.
+- If multiple case-insensitive matches are found, proposal creation MUST fail with `section_selector_ambiguous` and MUST NOT create a proposal.
+- Non-case differences remain governed by the existing exact selector rules and MUST NOT use this fallback.
 
 The replacement range includes the matched heading line and all following lines until the next heading whose level is less than or equal to the matched heading level.
 Nested headings below the matched heading are part of the replaced section.

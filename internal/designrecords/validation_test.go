@@ -2,10 +2,13 @@ package designrecords
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
 )
+
+const diagnosticSectionHeadingCaseMismatch DiagnosticCategory = "section_heading_case_mismatch"
 
 func TestValidateRecordsDiagnosticCategories(t *testing.T) {
 	root := t.TempDir()
@@ -1540,6 +1543,40 @@ func assertRequiredSectionDiagnostic(t *testing.T, diagnostics []Diagnostic, cat
 	t.Fatalf("missing required section diagnostic category=%s record=%s section=%s status=%s in %#v", category, recordID, section, status, diagnostics)
 }
 
+func assertSectionHeadingCaseMismatchDiagnostic(t *testing.T, diagnostics []Diagnostic, recordID, section, actualHeading, status string) {
+	t.Helper()
+	for _, d := range diagnostics {
+		if d.Category != diagnosticSectionHeadingCaseMismatch || d.RecordID != recordID || d.Section != section || d.Status != status {
+			continue
+		}
+		if d.Severity != DiagnosticSeverityInfo {
+			t.Fatalf("severity = %q, want info for %#v", d.Severity, d)
+		}
+		if d.Path == "" {
+			t.Fatalf("path missing for %#v", d)
+		}
+		if d.Message == "" {
+			t.Fatalf("message missing for %#v", d)
+		}
+		var raw map[string]any
+		data, err := json.Marshal(d)
+		if err != nil {
+			t.Fatalf("marshal diagnostic: %v", err)
+		}
+		if err := json.Unmarshal(data, &raw); err != nil {
+			t.Fatalf("unmarshal diagnostic: %v\n%s", err, data)
+		}
+		if raw["actual_heading"] != actualHeading {
+			t.Fatalf("actual_heading = %#v, want %q in %#v", raw["actual_heading"], actualHeading, raw)
+		}
+		if len(d.CandidateHeadings) == 0 {
+			t.Fatalf("candidate_headings missing for %#v", d)
+		}
+		return
+	}
+	t.Fatalf("missing section_heading_case_mismatch record=%s section=%s actual=%s status=%s in %#v", recordID, section, actualHeading, status, diagnostics)
+}
+
 func assertNoRequiredSectionDiagnosticForRecord(t *testing.T, diagnostics []Diagnostic, recordID string) {
 	t.Helper()
 	for _, d := range diagnostics {
@@ -1617,11 +1654,11 @@ func TestValidateRecordsRequiredNarrativeSections(t *testing.T) {
 			t.Run("missing "+sectionName, func(t *testing.T) {
 				root := t.TempDir()
 				allSections := map[string]string{
-					"Goal":         "Goal text.",
-					"Work":         "Work text.",
+					"Goal":           "Goal text.",
+					"Work":           "Work text.",
 					"Done condition": "Done condition text.",
-					"Verification": "Verification text.",
-					"Evidence":     "Evidence text.",
+					"Verification":   "Verification text.",
+					"Evidence":       "Evidence text.",
 				}
 				var body strings.Builder
 				body.WriteString("# TASK-MCP-007-01: Test\n")
@@ -1820,4 +1857,48 @@ func TestValidateRecordsRequiredNarrativeSections(t *testing.T) {
 			t.Fatal("message is empty")
 		}
 	})
+}
+
+func TestRequiredSectionHeadingCaseMismatchDiagnostics(t *testing.T) {
+	const doneTaskMetadata = "- **id**: TASK-MCP-021-01\n- **status**: done\n- **date**: 2026-06-05\n- **work_item**: WORK-MCP-021\n- **source_requirement**: REQ-MCP-021\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n"
+
+	t.Run("gated task emits strict missing error plus repair info", func(t *testing.T) {
+		root := t.TempDir()
+		writeHeadingCaseMismatchWorkflowParents(t, root)
+		content := "# TASK-MCP-021-01: Heading case mismatch\n" + doneTaskMetadata + "\n## Goal\n\nGoal text.\n\n## Work\n\nWork text.\n\n## Done Condition\n\nDone text.\n\n## Verification\n\nVerification text.\n\n## Evidence\n\nEvidence text.\n"
+		writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-021-01-heading-case-mismatch.md", content)
+
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindTask})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		if resp.OK {
+			t.Fatal("OK = true, want false because canonical required section is still missing")
+		}
+		assertRequiredSectionDiagnostic(t, resp.Diagnostics, DiagnosticMissingRequiredSection, "TASK-MCP-021-01", "Done condition", "done")
+		assertSectionHeadingCaseMismatchDiagnostic(t, resp.Diagnostics, "TASK-MCP-021-01", "Done condition", "Done Condition", "done")
+	})
+
+	t.Run("non-gated task does not emit repair info", func(t *testing.T) {
+		root := t.TempDir()
+		writeHeadingCaseMismatchWorkflowParents(t, root)
+		content := "# TASK-MCP-021-01: Heading case mismatch\n" +
+			strings.Replace(doneTaskMetadata, "- **status**: done", "- **status**: todo", 1) +
+			"\n## Goal\n\nGoal text.\n\n## Work\n\nWork text.\n\n## Done Condition\n\nDone text.\n\n## Verification\n\nVerification text.\n\n## Evidence\n\nEvidence text.\n"
+		writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-021-01-heading-case-mismatch.md", content)
+
+		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindTask})
+		if err != nil {
+			t.Fatalf("ValidateRecords: %v", err)
+		}
+		if hasDiagnosticForRecord(resp.Diagnostics, diagnosticSectionHeadingCaseMismatch, "TASK-MCP-021-01") {
+			t.Fatalf("unexpected section_heading_case_mismatch for non-gated task: %#v", resp.Diagnostics)
+		}
+	})
+}
+
+func writeHeadingCaseMismatchWorkflowParents(t *testing.T, root string) {
+	t.Helper()
+	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-021-heading-case-mismatch.md", "# REQ-MCP-021: Heading case mismatch\n\n- **id**: REQ-MCP-021\n- **status**: captured\n- **date**: 2026-06-05\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-021\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-021-heading-case-mismatch.md", "# WORK-MCP-021: Heading case mismatch\n\n- **id**: WORK-MCP-021\n- **status**: implementation_pending\n- **date**: 2026-06-05\n- **source_requirement**: REQ-MCP-021\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-021-01\n")
 }

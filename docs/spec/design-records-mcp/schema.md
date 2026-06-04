@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/schema.md
 status: draft
-last_updated: 2026-06-03
+last_updated: 2026-06-05
 summary: >
   Design Records MCP MVP が読む design record / workflow artifact metadata schema、
   record model、authoring guidance source model、authoring transaction schema concept、
@@ -695,6 +695,7 @@ Diagnostic は検査軸ごとに独立して発火し、1 record に複数 diagn
 | `empty_required_metadata` | error | required scalar metadata field が empty、または required list metadata field に empty item が含まれる |
 | `missing_required_section` | error | workflow artifact が gated status にあるとき、required narrative section heading が存在しない |
 | `empty_required_section` | error | workflow artifact が gated status にあるとき、required narrative section heading は存在するが section body が empty または whitespace-only である |
+| `section_heading_case_mismatch` | info | workflow artifact の target-kind-specific validation-required narrative section heading と case-only で一致する non-canonical heading が存在する |
 | `invalid_metadata_value` | error | required metadata field が non-empty だが value contract を満たさない。例: workflow artifact `date` が strict `YYYY-MM-DD` format ではない |
 | `invalid_status_for_kind` | error | `kind` に対して許可されない `status` を持つ |
 | `spec_status_mismatch` | error | spec top-level `status` と `design_record.status` が一致しない |
@@ -724,6 +725,17 @@ Workflow required section diagnostic (`missing_required_section` / `empty_requir
 `section` は required narrative section heading text とする。
 `status` は required section rule を発火させた workflow artifact status とする。
 
+When validation detects that a canonical required section is missing for the target record kind and current gated status, and exactly one heading exists whose text differs only by case from that canonical heading, validation MUST also return `section_heading_case_mismatch` with severity `info`.
+This diagnostic is repair guidance only. It does not relax canonical required-section validation and does not suppress any `missing_required_section` / `empty_required_section` error.
+
+`section_heading_case_mismatch` MUST include:
+
+- `section`: canonical required heading text for the target record kind.
+- `actual_heading`: matched non-canonical heading text.
+- `status`: workflow artifact status that activated the required-section rule.
+
+It SHOULD include `candidate_headings` with heading text, level, and ordinal when available.
+
 Workflow relation diagnostic は、通常の `category` / `severity` / `record_id` / `path` / `message` に加えて、`field`、`value`、`ref_status` を必須で返す。`field` は `work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on` のいずれか、`value` は入力 ID-as-ref、`ref_status` は `unresolved` / `invalid_target` / `mismatch` のいずれかとする。対象 ID が特定できる場合は `target_id` も返す。
 
 Investigation reference diagnostic (`unresolved_*` / `noncanonical_*` / metadata field 由来の `unsupported_reference`) は、通常の `category` / `severity` / `record_id` / `path` / `message` に加えて、`field`、`value`、`ref_status` を必須で返す。`field` は `source_refs` / `follow_up_results` / `follow_up_candidates` のいずれか、`value` は入力 reference 文字列、`ref_status` は `unresolved` / `unsupported` / `noncanonical` のいずれかとする。Investigation metadata が duplicate semantic ref または duplicate record ID を指して単一解決できない場合は field-specific diagnostic を追加せず、index defect を示す `duplicate_semantic_ref` または `duplicate_id` のみを返す。これら duplicate diagnostic および spec declaration / section lookup diagnostic は investigation metadata field 由来の追加 field を要求しない。
@@ -735,6 +747,10 @@ Required narrative section policy:
 | `work_item` | `done` | `Goal`, `Boundary`, `Evidence` |
 | `task` | `done` | `Goal`, `Work`, `Done condition`, `Verification`, `Evidence` |
 | `requirement` | `accepted` | `Requirement`, `Required Outcome` |
+
+Only headings listed for the target record kind in the Required narrative section policy are canonical workflow required headings for the case-only repair behavior defined by `propose_record_update` named section replacement.
+The target record does not need to currently be in the gated status for the authoring selector fallback to apply; the target record kind and requested heading determine fallback eligibility.
+Authoring guide format headings that are not listed for the target record kind, and user-defined optional headings, are not canonicalized by this rule.
 
 `requirement` の `accepted` は close/completion state ではなく adoption-readiness gate として扱う。
 したがって `Evidence` / `Boundary` / `Explicitly Excluded Scope` は `REQ accepted` の required non-empty section には含めない。

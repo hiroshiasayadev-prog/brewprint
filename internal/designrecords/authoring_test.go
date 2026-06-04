@@ -748,6 +748,131 @@ func TestAuthoringNamedSectionSelectors(t *testing.T) {
 	}
 }
 
+func TestProposeRecordUpdateRequiredHeadingCaseFallback(t *testing.T) {
+	t.Run("case-only task required heading repair creates proposal and canonicalizes diff", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		writeAuthoringTaskRecord(t, fx.root, RecordStatusDone, "## Goal\n\nGoal text.\n\n## Work\n\nWork text.\n\n## Done Condition\n\nOld done text.\n\n## Verification\n\nVerification text.\n\n## Evidence\n\nEvidence text.\n")
+		fx.idx = mustBuildIndex(t, fx.cfg)
+
+		resp, err := proposeNamedSectionForAuthoringFixture(t, fx, RecordKindTask, "TASK-MCP-001-01", SectionSelector{Heading: "Done condition"}, "New done text.\n")
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal was not created: %#v", resp)
+		}
+		if resp.Diff == nil || !strings.Contains(resp.Diff.Text, "+## Done condition\n") || strings.Contains(resp.Diff.Text, "+## Done Condition\n") {
+			t.Fatalf("proposal diff did not canonicalize heading:\n%s", resp.Diff.Text)
+		}
+	})
+
+	t.Run("fallback applies even when task is not in gated status", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		writeAuthoringTaskRecord(t, fx.root, RecordStatusTodo, "## Goal\n\nGoal text.\n\n## Done Condition\n\nOld done text.\n")
+		fx.idx = mustBuildIndex(t, fx.cfg)
+
+		resp, err := proposeNamedSectionForAuthoringFixture(t, fx, RecordKindTask, "TASK-MCP-001-01", SectionSelector{Heading: "Done condition"}, "New done text.\n")
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal was not created for non-gated task: %#v", resp)
+		}
+	})
+
+	t.Run("ambiguous case-insensitive required headings fail closed", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		writeAuthoringTaskRecord(t, fx.root, RecordStatusTodo, "## Goal\n\nGoal text.\n\n## Done Condition\n\nFirst.\n\n## DONE CONDITION\n\nSecond.\n")
+		fx.idx = mustBuildIndex(t, fx.cfg)
+
+		resp, err := proposeNamedSectionForAuthoringFixture(t, fx, RecordKindTask, "TASK-MCP-001-01", SectionSelector{Heading: "Done condition"}, "New done text.\n")
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if resp.ProposalCreated || !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeSectionSelectorAmbiguous)) {
+			t.Fatalf("ambiguous case-insensitive match response = %#v", resp)
+		}
+		diag := diagnosticByCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeSectionSelectorAmbiguous))
+		if diag == nil || len(diag.CandidateHeadings) != 2 {
+			t.Fatalf("ambiguous diagnostic candidate headings = %#v", resp.Diagnostics)
+		}
+	})
+
+	t.Run("non-case mismatch still fails with no fuzzy matching", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		writeAuthoringTaskRecord(t, fx.root, RecordStatusTodo, "## Goal\n\nGoal text.\n\n## Done conditions\n\nOld done text.\n")
+		fx.idx = mustBuildIndex(t, fx.cfg)
+
+		resp, err := proposeNamedSectionForAuthoringFixture(t, fx, RecordKindTask, "TASK-MCP-001-01", SectionSelector{Heading: "Done condition"}, "New done text.\n")
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if resp.ProposalCreated || !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeSectionSelectorNoMatch)) {
+			t.Fatalf("non-case mismatch response = %#v", resp)
+		}
+	})
+
+	t.Run("optional user-defined headings are not canonicalized", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		writeAuthoringTaskRecord(t, fx.root, RecordStatusTodo, "## Goal\n\nGoal text.\n\n## Custom Notes\n\nOptional notes.\n")
+		fx.idx = mustBuildIndex(t, fx.cfg)
+
+		resp, err := proposeNamedSectionForAuthoringFixture(t, fx, RecordKindTask, "TASK-MCP-001-01", SectionSelector{Heading: "Custom notes"}, "Updated notes.\n")
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if resp.ProposalCreated || !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeSectionSelectorNoMatch)) {
+			t.Fatalf("optional heading case fallback response = %#v", resp)
+		}
+	})
+
+	t.Run("cross-kind required headings are not canonicalized", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		reqPath := filepath.Join(fx.root, "docs", "requirements", "mcp", "REQ-MCP-001-first-req.md")
+		if err := os.WriteFile(reqPath, []byte("# REQ-MCP-001: First req\n\n- **id**: REQ-MCP-001\n- **status**: captured\n- **date**: 2026-06-01\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-001\n\n## Requirement\n\nRequirement text.\n\n## evidence\n\nEvidence text.\n"), 0o644); err != nil {
+			t.Fatalf("write requirement: %v", err)
+		}
+		fx.idx = mustBuildIndex(t, fx.cfg)
+
+		resp, err := proposeNamedSectionForAuthoringFixture(t, fx, RecordKindRequirement, "REQ-MCP-001", SectionSelector{Heading: "Evidence"}, "Updated evidence.\n")
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if resp.ProposalCreated || !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeSectionSelectorNoMatch)) {
+			t.Fatalf("cross-kind heading case fallback response = %#v", resp)
+		}
+	})
+
+	t.Run("exact case-sensitive match remains default", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		writeAuthoringTaskRecord(t, fx.root, RecordStatusTodo, "## Evidence\n\nExact evidence.\n\n## evidence\n\nLowercase evidence.\n")
+		fx.idx = mustBuildIndex(t, fx.cfg)
+
+		resp, err := proposeNamedSectionForAuthoringFixture(t, fx, RecordKindTask, "TASK-MCP-001-01", SectionSelector{Heading: "Evidence"}, "Updated exact evidence.\n")
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated || hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeSectionSelectorAmbiguous)) {
+			t.Fatalf("exact match should win before fallback: %#v", resp)
+		}
+	})
+
+	t.Run("fallback honors selector level", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		writeAuthoringTaskRecord(t, fx.root, RecordStatusTodo, "## Goal\n\nGoal text.\n\n### Done Condition\n\nNested done text.\n")
+		fx.idx = mustBuildIndex(t, fx.cfg)
+		level := 2
+
+		resp, err := proposeNamedSectionForAuthoringFixture(t, fx, RecordKindTask, "TASK-MCP-001-01", SectionSelector{Heading: "Done condition", Level: &level}, "New done text.\n")
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if resp.ProposalCreated || !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeSectionSelectorNoMatch)) {
+			t.Fatalf("level-constrained fallback response = %#v", resp)
+		}
+	})
+}
+
 func TestAuthoringSectionSelectorIgnoresFrontMatterAndFenceHeadings(t *testing.T) {
 	fx := newAuthoringFixture(t)
 	spec, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
@@ -1371,6 +1496,38 @@ func proposeTaskSection(t *testing.T, fx authoringFixture, body string) ProposeR
 		t.Fatalf("proposal was not created: %#v", resp)
 	}
 	return resp
+}
+
+func proposeNamedSectionForAuthoringFixture(t *testing.T, fx authoringFixture, kind RecordKind, id string, selector SectionSelector, body string) (ProposeRecordResponse, error) {
+	t.Helper()
+	return ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+		Kind: kind,
+		ID:   id,
+		Update: UpdateRequest{
+			Type:            UpdateTypeNamedSectionReplace,
+			SectionSelector: &selector,
+		},
+		Body: &body,
+	})
+}
+
+func writeAuthoringTaskRecord(t *testing.T, root string, status RecordStatus, sections string) {
+	t.Helper()
+	content := "# TASK-MCP-001-01: First task\n\n" +
+		"- **id**: TASK-MCP-001-01\n" +
+		"- **status**: " + string(status) + "\n" +
+		"- **date**: 2026-06-01\n" +
+		"- **work_item**: WORK-MCP-001\n" +
+		"- **source_requirement**: REQ-MCP-001\n" +
+		"- **estimate**: 0.5d\n" +
+		"- **depends_on**:\n" +
+		"- **outputs**:\n" +
+		"  - initial\n\n" +
+		sections
+	path := filepath.Join(root, "docs", "tasks", "mcp", "TASK-MCP-001-01-first-task.md")
+	if err := os.WriteFile(path, []byte(ensureTrailingNewline(content)), 0o644); err != nil {
+		t.Fatalf("write task record: %v", err)
+	}
 }
 
 func mustBuildIndex(t *testing.T, cfg Config) *Index {

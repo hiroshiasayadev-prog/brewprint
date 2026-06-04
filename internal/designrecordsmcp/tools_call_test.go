@@ -425,6 +425,42 @@ func TestToolsCallAuthoringTransaction(t *testing.T) {
 	}
 }
 
+func TestToolsCallValidateRecordsExposesSectionHeadingCaseMismatchFields(t *testing.T) {
+	root := t.TempDir()
+	writeToolsCallTestFile(t, root, "docs/requirements/mcp/REQ-MCP-021-heading-case-mismatch.md", "# REQ-MCP-021: Heading case mismatch\n\n- **id**: REQ-MCP-021\n- **status**: captured\n- **date**: 2026-06-05\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-021\n")
+	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-021-heading-case-mismatch.md", "# WORK-MCP-021: Heading case mismatch\n\n- **id**: WORK-MCP-021\n- **status**: implementation_pending\n- **date**: 2026-06-05\n- **source_requirement**: REQ-MCP-021\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-021-01\n")
+	writeToolsCallTestFile(t, root, "docs/tasks/mcp/TASK-MCP-021-01-heading-case-mismatch.md", "# TASK-MCP-021-01: Heading case mismatch\n\n- **id**: TASK-MCP-021-01\n- **status**: done\n- **date**: 2026-06-05\n- **work_item**: WORK-MCP-021\n- **source_requirement**: REQ-MCP-021\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n\n## Goal\n\nGoal text.\n\n## Work\n\nWork text.\n\n## Done Condition\n\nDone text.\n\n## Verification\n\nVerification text.\n\n## Evidence\n\nEvidence text.\n")
+	cfg, err := designrecords.NewConfig(root)
+	if err != nil {
+		t.Fatalf("NewConfig: %v", err)
+	}
+	server := NewServer(cfg)
+
+	validate := handleLine(t, server, `{"jsonrpc":"2.0","id":921,"method":"tools/call","params":{"name":"validate_records","arguments":{"kind":"task"}}}`)
+	result := assertToolCallResult(t, validate, false)
+	var raw struct {
+		OK          bool             `json:"ok"`
+		Diagnostics []map[string]any `json:"diagnostics"`
+	}
+	unmarshalToolText(t, result.Content[0].Text, &raw)
+	if raw.OK {
+		t.Fatal("OK = true, want false because canonical required section is still missing")
+	}
+	for _, diagnostic := range raw.Diagnostics {
+		if diagnostic["category"] != "section_heading_case_mismatch" {
+			continue
+		}
+		if diagnostic["severity"] != "info" || diagnostic["section"] != "Done condition" || diagnostic["actual_heading"] != "Done Condition" || diagnostic["status"] != "done" {
+			t.Fatalf("section_heading_case_mismatch fields = %#v", diagnostic)
+		}
+		if _, ok := diagnostic["candidate_headings"]; !ok {
+			t.Fatalf("candidate_headings missing from %#v", diagnostic)
+		}
+		return
+	}
+	t.Fatalf("section_heading_case_mismatch diagnostic not found in %#v", raw.Diagnostics)
+}
+
 func TestToolsCallToolErrors(t *testing.T) {
 	tests := []struct {
 		name string
