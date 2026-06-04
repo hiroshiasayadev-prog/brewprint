@@ -310,14 +310,16 @@ Body cache fields:
 | `expires_at` | cache expiry timestamp |
 | `retention_days` | `3` |
 
-Operations requiring large Markdown body input accept exactly one of `body` or `body_cache_id`.
-Supplying both is invalid and must not create a proposal or body cache.
+Operations requiring large Markdown body input accept exactly one of `body` or `body_cache_id` unless a tool-specific contract explicitly permits omission.
+Supplying both `body` and `body_cache_id` is invalid and must not create a proposal or body cache.
 Operations that do not require body input may omit both.
 Unknown or expired body cache IDs must produce diagnostics and must not create proposals.
 Body cache entries remain reusable within the 3 day retention period, including after they have been used to create a proposal.
 
-For create operations, structured `fields` and a full Markdown body source (`body` or `body_cache_id`) are mutually exclusive content sources.
-Supplying both is an invalid request; the schema does not define precedence between them.
+For `propose_record_create`, structured `fields` are required.
+`body` and `body_cache_id` are section-only content sources and may be combined with `fields`, but not with each other.
+A create request that supplies `body` without `fields` is invalid; when the submitted `body` is a string, the failed response should include a new body cache entry so the caller can retry with `fields + body_cache_id`.
+A create request that supplies only `body_cache_id` without `fields` is invalid and cannot create a new body cache because no submitted body is present.
 
 ### Metadata block replacement target
 
@@ -669,7 +671,7 @@ These diagnostics may appear in proposal, accept, discard, get-proposal, or body
 | `target_changed` | error | target record kind / path / identity が proposal 作成時と異なる |
 | `id_collision` | error | create proposal の resolved ID が accept 前に使用済みになった |
 | `required_follow_up_not_satisfied` | error | required reciprocal metadata update などの follow-up が満たされていない |
-| `invalid_body_source` | error | body source rule 違反。`body` と `body_cache_id` の両方指定、または required body source の欠落。Create operation の `fields` と full body source の同時指定は request shape violation として `invalid_request` を用いる |
+| `invalid_body_source` | error | body source rule 違反。`body` と `body_cache_id` の両方指定、または required body source の欠落 |
 | `body_cache_not_found` | error | requested body cache ID が存在しない |
 | `body_cache_expired` | error | requested body cache ID は expiry を過ぎている |
 | `proposal_preparation_failed` | error | proposal preparation failed before proposal persistence |

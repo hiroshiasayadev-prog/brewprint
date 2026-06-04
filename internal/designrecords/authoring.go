@@ -250,11 +250,12 @@ func ProposeRecordCreate(ctx context.Context, cfg Config, idx *Index, store *Aut
 	if req.Body != nil && req.BodyCacheID != "" {
 		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidBodySource, "body and body_cache_id are mutually exclusive")), nil
 	}
-	if req.Fields != nil && req.BodyCacheID != "" {
-		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "fields cannot be combined with body_cache_id for create")), nil
-	}
-	if req.Fields == nil && req.Body == nil && req.BodyCacheID == "" {
-		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "fields or exactly one full body source is required for create")), nil
+	if req.Fields == nil {
+		var bodyCache *BodyCacheEntry
+		if req.Body != nil {
+			bodyCache = store.cacheBody(*req.Body)
+		}
+		return failedProposalResponse(bodyCache, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "fields is required for create")), nil
 	}
 	body, bodyCache, diagnostics, ok := resolveBodySource(store, req.Body, req.BodyCacheID, false)
 	if !ok {
@@ -520,9 +521,7 @@ func prepareCreate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 	}
 
 	content := ""
-	if body != nil && req.Fields == nil {
-		content = *body
-	} else if body != nil {
+	if body != nil {
 		var renderErr error
 		content, renderErr = renderCreateBodyWithContent(idx, req.Kind, resolved, req.Title, req.Fields, req.ParentID, req.ID, *body)
 		if renderErr != nil {

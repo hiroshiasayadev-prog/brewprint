@@ -260,7 +260,7 @@ func TestAuthoringCreateInputContractNormalization(t *testing.T) {
 	if err != nil {
 		t.Fatalf("fields plus body: %v", err)
 	}
-	if !fieldsAndBody.ProposalCreated || fieldsAndBody.Target.Domain != "MCP" || !strings.Contains(fieldsAndBody.Diff.Text, "# REQ-MCP-050: Fields and body") || !strings.Contains(fieldsAndBody.Diff.Text, "- **id**: REQ-MCP-050") || !strings.Contains(fieldsAndBody.Diff.Text, "Generated requirement body.") {
+	if !fieldsAndBody.ProposalCreated || fieldsAndBody.Target.Domain != "MCP" || !strings.Contains(fieldsAndBody.Diff.Text, "# REQ-MCP-050: Fields and body") || !strings.Contains(fieldsAndBody.Diff.Text, "- **id**: REQ-MCP-050") || !strings.Contains(fieldsAndBody.Diff.Text, "Generated requirement body.") || fieldsAndBody.BodyCache == nil {
 		t.Fatalf("fields plus body response = %#v\n%s", fieldsAndBody, fieldsAndBody.Diff.Text)
 	}
 
@@ -283,15 +283,15 @@ func TestAuthoringCreateInputContractNormalization(t *testing.T) {
 		Kind:        RecordKindRequirement,
 		ID:          "REQ-MCP-051",
 		Domain:      "mcp",
-		Title:       "Fields cache conflict",
+		Title:       "Fields and missing cache",
 		Fields:      fields,
 		BodyCacheID: "bc_other",
 	})
 	if err != nil {
-		t.Fatalf("fields plus cache: %v", err)
+		t.Fatalf("fields plus missing cache: %v", err)
 	}
-	if fieldsAndCache.ProposalCreated || fieldsAndCache.BodyCache != nil || !hasDiagnosticCategory(fieldsAndCache.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
-		t.Fatalf("fields plus cache response = %#v", fieldsAndCache)
+	if fieldsAndCache.ProposalCreated || fieldsAndCache.BodyCache != nil || !hasDiagnosticCategory(fieldsAndCache.Diagnostics, DiagnosticCategory(ErrorCodeBodyCacheNotFound)) {
+		t.Fatalf("fields plus missing cache response = %#v", fieldsAndCache)
 	}
 
 	withoutFieldsID, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
@@ -401,17 +401,16 @@ func TestAuthoringCreateInputContractNormalization(t *testing.T) {
 
 	legacyBody := "# REQ-MCP-058: Legacy\n\n- **id**: REQ-MCP-058\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n\n## Requirement\n\nLegacy body.\n"
 	legacy, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
-		Kind:   RecordKindRequirement,
-		ID:     "REQ-MCP-058",
-		Domain: "MCP",
-		Title:  "Legacy",
-		Body:   &legacyBody,
+		Kind:  RecordKindRequirement,
+		ID:    "REQ-MCP-058",
+		Title: "Legacy body only",
+		Body:  &legacyBody,
 	})
 	if err != nil {
-		t.Fatalf("legacy body create: %v", err)
+		t.Fatalf("body-only create: %v", err)
 	}
-	if !legacy.ProposalCreated || !strings.Contains(legacy.Diff.Text, "# REQ-MCP-058: Legacy") || !strings.Contains(legacy.Diff.Text, "Legacy body.") {
-		t.Fatalf("legacy body create response = %#v\n%s", legacy, legacy.Diff.Text)
+	if legacy.ProposalCreated || legacy.BodyCache == nil || !hasDiagnosticCategory(legacy.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
+		t.Fatalf("body-only create must be invalid and preserve body: %#v", legacy)
 	}
 
 	cachedLegacyBody := "# REQ-MCP-059: Cached legacy\n\n- **id**: REQ-MCP-059\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n\n## Requirement\n\nCached legacy body.\n"
@@ -420,14 +419,14 @@ func TestAuthoringCreateInputContractNormalization(t *testing.T) {
 		Kind:        RecordKindRequirement,
 		ID:          "REQ-MCP-059",
 		Domain:      "MCP",
-		Title:       "Cached legacy",
+		Title:       "Body cache id only",
 		BodyCacheID: cachedLegacy.BodyCacheID,
 	})
 	if err != nil {
-		t.Fatalf("legacy body cache create: %v", err)
+		t.Fatalf("body_cache_id-only create: %v", err)
 	}
-	if !legacyCache.ProposalCreated || !strings.Contains(legacyCache.Diff.Text, "# REQ-MCP-059: Cached legacy") || !strings.Contains(legacyCache.Diff.Text, "Cached legacy body.") {
-		t.Fatalf("legacy body cache create response = %#v\n%s", legacyCache, legacyCache.Diff.Text)
+	if legacyCache.ProposalCreated || legacyCache.BodyCache != nil || !hasDiagnosticCategory(legacyCache.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
+		t.Fatalf("body_cache_id-only create must be invalid without body preservation: %#v", legacyCache)
 	}
 
 	domainMismatch, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
@@ -442,6 +441,39 @@ func TestAuthoringCreateInputContractNormalization(t *testing.T) {
 	}
 	if domainMismatch.ProposalCreated || !hasDiagnosticCategory(domainMismatch.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
 		t.Fatalf("domain mismatch response = %#v", domainMismatch)
+	}
+
+	// fields + body_cache_id retry success: use cache obtained from the earlier fields+body create.
+	fieldsAndCacheRetry, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:        RecordKindRequirement,
+		ID:          "REQ-MCP-060",
+		Domain:      "mcp",
+		Title:       "Fields and cache retry",
+		Fields:      fields,
+		BodyCacheID: fieldsAndBody.BodyCache.BodyCacheID,
+	})
+	if err != nil {
+		t.Fatalf("fields plus cache retry: %v", err)
+	}
+	if !fieldsAndCacheRetry.ProposalCreated || !strings.Contains(fieldsAndCacheRetry.Diff.Text, "Generated requirement body.") || !strings.Contains(fieldsAndCacheRetry.Diff.Text, "# REQ-MCP-060: Fields and cache retry") {
+		t.Fatalf("fields plus cache retry response = %#v\n%s", fieldsAndCacheRetry, fieldsAndCacheRetry.Diff.Text)
+	}
+
+	// fields + body + body_cache_id remains invalid (invalid_body_source, no body_cache).
+	fieldsBodyCacheConflict, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:        RecordKindRequirement,
+		ID:          "REQ-MCP-061",
+		Domain:      "mcp",
+		Title:       "Fields body cache conflict",
+		Fields:      fields,
+		Body:        &sectionBody,
+		BodyCacheID: fieldsAndBody.BodyCache.BodyCacheID,
+	})
+	if err != nil {
+		t.Fatalf("fields plus body plus cache: %v", err)
+	}
+	if fieldsBodyCacheConflict.ProposalCreated || fieldsBodyCacheConflict.BodyCache != nil || !hasDiagnosticCategory(fieldsBodyCacheConflict.Diagnostics, DiagnosticCategory(ErrorCodeInvalidBodySource)) {
+		t.Fatalf("fields plus body plus cache must be invalid_body_source: %#v", fieldsBodyCacheConflict)
 	}
 }
 
@@ -812,18 +844,18 @@ func TestBodyCacheReturnClassification(t *testing.T) {
 			Kind:        RecordKindRequirement,
 			ID:          "REQ-MCP-060",
 			Domain:      "MCP",
-			Title:       "Fields cache conflict",
+			Title:       "Fields plus missing cache",
 			Fields:      fields,
 			BodyCacheID: "bc_whatever",
 		})
 		if err != nil {
-			t.Fatalf("fields plus body_cache_id: %v", err)
+			t.Fatalf("fields plus body_cache_id missing cache: %v", err)
 		}
 		if resp.ProposalCreated || resp.BodyCache != nil {
-			t.Fatalf("fields plus body_cache_id must not return body_cache: %#v", resp)
+			t.Fatalf("fields plus missing body_cache_id must not return body_cache: %#v", resp)
 		}
-		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) {
-			t.Fatalf("fields plus body_cache_id missing InvalidRequest diagnostic: %#v", resp.Diagnostics)
+		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeBodyCacheNotFound)) {
+			t.Fatalf("fields plus missing body_cache_id must return BodyCacheNotFound diagnostic: %#v", resp.Diagnostics)
 		}
 	})
 
@@ -909,39 +941,38 @@ func TestBodyCacheReturnClassification(t *testing.T) {
 		}
 	})
 
-	t.Run("cache_returned_legacy_full_body_create_domain_mismatch", func(t *testing.T) {
+	t.Run("cache_returned_body_only_fields_missing", func(t *testing.T) {
 		fx := newAuthoringFixture(t)
-		legacyBody := "# REQ-MCP-060: Domain mismatch\n\n- **id**: REQ-MCP-060\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n\n## Requirement\n\nContent.\n"
+		bodyOnly := "# REQ-MCP-060: Body only\n\n- **id**: REQ-MCP-060\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n\n## Requirement\n\nContent.\n"
 		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
-			Kind:   RecordKindRequirement,
-			ID:     "REQ-MCP-060",
-			Domain: "DATA",
-			Title:  "Domain mismatch",
-			Body:   &legacyBody,
+			Kind:  RecordKindRequirement,
+			ID:    "REQ-MCP-060",
+			Title: "Body only no fields",
+			Body:  &bodyOnly,
 		})
 		if err != nil {
-			t.Fatalf("legacy domain mismatch: %v", err)
+			t.Fatalf("body-only no fields: %v", err)
 		}
 		if resp.ProposalCreated || !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) || resp.BodyCache == nil {
-			t.Fatalf("legacy domain mismatch must return body_cache: %#v", resp)
+			t.Fatalf("body-only without fields must be invalid and preserve body: %#v", resp)
 		}
 	})
 
-	t.Run("cache_returned_legacy_full_body_create_target_already_exists", func(t *testing.T) {
+	t.Run("cache_returned_body_only_fields_missing_known_id", func(t *testing.T) {
 		fx := newAuthoringFixture(t)
-		// REQ-MCP-001 already exists in the fixture
-		legacyBody := "# REQ-MCP-001: First req\n\n- **id**: REQ-MCP-001\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n\n## Requirement\n\nContent.\n"
+		// REQ-MCP-001 already exists in the fixture, but fields==nil fires first
+		bodyOnly := "# REQ-MCP-001: First req\n\n- **id**: REQ-MCP-001\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n\n## Requirement\n\nContent.\n"
 		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
 			Kind:  RecordKindRequirement,
 			ID:    "REQ-MCP-001",
-			Title: "Already exists",
-			Body:  &legacyBody,
+			Title: "Body only known id",
+			Body:  &bodyOnly,
 		})
 		if err != nil {
-			t.Fatalf("legacy target already exists: %v", err)
+			t.Fatalf("body-only with known id: %v", err)
 		}
 		if resp.ProposalCreated || !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeInvalidRequest)) || resp.BodyCache == nil {
-			t.Fatalf("legacy target already exists must return body_cache: %#v", resp)
+			t.Fatalf("body-only without fields must be invalid and preserve body: %#v", resp)
 		}
 	})
 }

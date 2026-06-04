@@ -321,7 +321,7 @@ func TestToolsListAuthoringGuidanceTools(t *testing.T) {
 	}
 }
 
-func TestToolsProposeRecordCreateSchemaFieldsOptional(t *testing.T) {
+func TestToolsProposeRecordCreateSchemaFieldsRequired(t *testing.T) {
 	createTool := findToolForTest(Tools(), "propose_record_create")
 	if createTool == nil {
 		t.Fatal("missing propose_record_create")
@@ -339,13 +339,10 @@ func TestToolsProposeRecordCreateSchemaFieldsOptional(t *testing.T) {
 	if !ok {
 		t.Fatalf("propose_record_create required missing: %#v", createTool.InputSchema)
 	}
-	for _, want := range []string{"kind", "id", "title"} {
+	for _, want := range []string{"kind", "id", "title", "fields"} {
 		if !hasString(required, want) {
 			t.Fatalf("propose_record_create required missing %q: %#v", want, required)
 		}
-	}
-	if hasString(required, "fields") {
-		t.Fatalf("propose_record_create required still includes fields: %#v", required)
 	}
 }
 
