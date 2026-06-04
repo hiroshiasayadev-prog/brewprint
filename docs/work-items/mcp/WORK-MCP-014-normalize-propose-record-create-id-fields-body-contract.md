@@ -13,9 +13,28 @@
   - TASK-MCP-014-04
 
 ## Goal
+Normalize the `propose_record_create` contract so callers can create design records without duplicating or guessing record identity.
+
+This work item completes `REQ-MCP-014` by making top-level `id` the canonical create target input, allowing `fields + body` create proposals, and ensuring MCP-generated H1 / metadata use the resolved target ID while caller-supplied `body` contains only content sections.
 
 ## Boundary
+This work item owns the `propose_record_create` contract cleanup for schema exposure, public spec/guidance, implementation, tests, and runtime smoke evidence.
 
+In scope:
+
+- `propose_record_create` schema and validation
+- `fields.id` compatibility and rejection rules
+- `fields + body` section-only body create mode
+- MCP-generated H1 and metadata from resolved ID
+- legacy `body-only` / `body_cache_id-only` full-record mode separation
+- runtime smoke and close evidence for `REQ-MCP-014`
+
+Out of scope:
+
+- `propose_record_update` contract changes
+- `REQ-MCP-015` cache/retry expansion
+- making `fields + body_cache_id` valid
+- unrelated DATA / UC / ADR changes
 ## Evidence
 WORK-MCP-014 is closed on 2026-06-02 because all owned tasks have completed and the runtime contract was verified.
 
