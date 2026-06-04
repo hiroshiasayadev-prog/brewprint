@@ -1,0 +1,71 @@
+# Task-file helper model fixture candidate
+#
+# Purpose:
+# - Exercise TASK-DATA-002 Option A: task-file helper minimum.
+# - Keep helper model usage inside a task YAML file.
+# - Provide material for checking DAG Markdown `## Private models` rendering.
+#
+# Boundary:
+# - This file intentionally uses task-file helper models only.
+# - It does not exercise model-file helper render, model catalog, tagged union,
+#   DAG TypeRef hint, or MCP helper model exposure.
+
+nodes:
+  - id: login
+    type: task
+    main: true
+    endpoint: true
+    method: POST
+    path: login
+    params:
+      - name: form
+        model: login_form
+        note: "Login form submitted by the client."
+      - name: audit_context
+        model: login_audit_context
+        note: "Task-local helper schema used only by this login task file."
+    returns:
+      name: auth_token
+      model: login_token
+    note: |
+      Authenticate a user and return a token.
+      This task file intentionally declares helper models below the main task
+      so renderer behavior for `## Private models` can be inspected.
+
+  - id: login_form
+    type: model
+    kind: struct
+    fields:
+      - name: username
+        type: str
+      - name: password
+        type: str
+    note: |
+      File-private request shape for the login task.
+      It is referenced only from `login.params[].model` in this YAML file.
+
+  - id: login_audit_context
+    type: model
+    kind: struct
+    fields:
+      - name: ip_address
+        type: str
+      - name: user_agent
+        type: str
+      - name: requested_at
+        type: str
+    note: |
+      File-private audit context shape for the login task.
+      This helper exists to make multiple private models visible in render output.
+
+  - id: login_token
+    type: model
+    kind: struct
+    fields:
+      - name: access_token
+        type: str
+      - name: expires_at
+        type: str
+    note: |
+      File-private response shape for the login task.
+      It is referenced only from `login.returns.model` in this YAML file.
