@@ -6,6 +6,7 @@
 - **source_refs**:
   - TASK-DATA-011-01
 - **work_items**:
+  - WORK-MCP-020
 
 ## Requirement
 

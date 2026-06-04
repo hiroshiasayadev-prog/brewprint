@@ -973,6 +973,7 @@ MVP body source rules:
 | `propose_record_create` retry with cached content sections | `fields` and `body_cache_id` present; `body` omitted |
 | `propose_record_create` body-only / cache-only create | invalid; `fields` is required |
 | `propose_record_update` `metadata_block_replace` | `body` / `body_cache_id` must be omitted |
+| `propose_record_update` `metadata_fields_replace` | `body` / `body_cache_id` must be omitted |
 | `propose_record_update` `named_section_replace` | exactly one of `body` / `body_cache_id` |
 
 If a request supplies both `body` and `body_cache_id`, the tool returns `invalid_body_source` and creates neither proposal nor cache.
@@ -1224,7 +1225,7 @@ This example shows only the relevant response field. The full proposal response 
 
 ### Purpose
 
-`propose_record_update` creates a retained proposal for a whole metadata block replacement or a whole named Markdown section replacement.
+`propose_record_update` creates a retained proposal for a whole metadata block replacement, a field-level metadata patch, or a whole named Markdown section replacement.
 It does not write repository files.
 
 MVP update support covers `decision`, `spec`, `requirement`, `work_item`, and `task`.
@@ -1271,6 +1272,21 @@ Named section replacement:
 }
 ```
 
+Metadata field replacement:
+
+```json
+{
+  "kind": "task",
+  "id": "TASK-MCP-020-02",
+  "update": {
+    "type": "metadata_fields_replace",
+    "metadata": {
+      "status": "done"
+    }
+  }
+}
+```
+
 | field | required | type | meaning |
 |---|---:|---|---|
 | `kind` | yes | string | update target kind |
@@ -1284,6 +1300,7 @@ Named section replacement:
 | value | meaning |
 |---|---|
 | `metadata_block_replace` | Replace the kind-specific metadata block as a whole |
+| `metadata_fields_replace` | Patch one or more metadata fields; preserve unspecified existing fields |
 | `named_section_replace` | Replace exactly one Markdown section as a whole |
 
 #### Metadata block replacement
@@ -1305,6 +1322,22 @@ Workflow artifact metadata replacement must validate the required fields defined
 Missing required fields must produce `missing_required_metadata` diagnostics.
 Empty required scalar fields or empty list items must produce `empty_required_metadata`.
 Invalid recognized field values must produce `invalid_metadata_value` or the existing kind-specific diagnostic.
+
+#### Metadata field replacement
+
+Metadata field replacement reads the existing metadata of the target record, applies only the caller-supplied field changes, and preserves all unspecified existing metadata fields.
+
+`update.metadata` must contain only the fields to be patched. Fields omitted from `update.metadata` are kept from the current record as-is.
+
+After applying the patch, the resulting complete metadata block is validated using the same metadata validation rules as `metadata_block_replace`:
+
+- Missing required fields produce `missing_required_metadata` diagnostics.
+- Empty required scalar fields or empty list items produce `empty_required_metadata`.
+- Invalid recognized field values produce `invalid_metadata_value` or the existing kind-specific diagnostic.
+
+`body` and `body_cache_id` must be omitted for `metadata_fields_replace`. Supplying either returns `invalid_body_source` and must not create a proposal.
+
+`metadata_block_replace` remains available for intentional whole-block replacement when the caller needs to provide or reset the complete metadata set.
 
 #### Named section replacement
 Named section replacement is valid only when `section_selector` resolves to exactly one Markdown ATX section in the target record. Section matching uses the same ATX heading source rules as the `headings` field defined in `schema.md`; YAML front matter and fenced code block content are not section sources, and setext headings are not section sources in the MVP.
