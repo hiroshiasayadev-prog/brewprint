@@ -2,6 +2,15 @@
 # docs/spec/mcp/tools/get-references.md §3〜§4 に対応。
 
 nodes:
+  - id: reference_query_direction
+    type: model
+    kind: enum
+    values:
+      - out
+      - in
+      - both
+    note: "get_references_response.direction の query direction。out / in / both を含む。reference_direction (out/in のみ) や reference_tree_direction (tree traversal) とは別 enum。"
+
   - id: get_references_response
     type: model
     kind: struct
@@ -10,8 +19,8 @@ nodes:
         type: object_ref
         note: "必須。query対象object。"
       - name: direction
-        type: str
-        note: "必須。実際に使ったdirection。out / in / both。"
+        type: reference_query_direction
+        note: "必須。実際に使ったdirection。"
       - name: depth
         type: int
         note: "必須。get_referencesでは常に1を返す。"

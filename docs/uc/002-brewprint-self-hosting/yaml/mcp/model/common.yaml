@@ -34,6 +34,38 @@ nodes:
       - both
     note: "get_reference_tree traversal direction。"
 
+  - id: reference_kind
+    type: model
+    kind: enum
+    values:
+      - param_model
+      - return_model
+      - produces_asset
+      - consumes_asset
+      - reads
+      - writes
+      - store_of
+      - field_type
+      - field_fk
+      - transition_event
+      - transition_from
+      - transition_to
+      - transition_action
+      - event_payload
+      - event_actor
+      - event_watches
+      - scenario_state_file
+      - scenario_step_transition
+    note: "semantic reference kind。reference.kind / get_reference_tree_edge.kind / get_reference_tree_node.via で使う。"
+
+  - id: reference_direction
+    type: model
+    kind: enum
+    values:
+      - out
+      - in
+    note: "semantic reference direction。out / in のみ。get_references_response.direction 等 both を含む query direction には reference_query_direction を使う。"
+
   - id: object_selector
     type: model
     kind: struct

@@ -2,15 +2,31 @@
 # docs/spec/mcp/errors.md §3 に対応。
 
 nodes:
+  - id: mcp_error_code
+    type: model
+    kind: enum
+    values:
+      - project_invalid
+      - invalid_args
+      - invalid_selector
+      - invalid_change_payload
+      - not_found
+      - kind_mismatch
+      - ambiguous
+      - unsupported_object
+      - unsupported_detail
+      - unsupported_direction
+      - invalid_depth
+      - internal_error
+    note: "MCP tool error code。docs/spec/mcp/errors.md §3 の closed 値集合。"
+
   - id: mcp_error
     type: model
     kind: struct
     fields:
       - name: code
-        type: str
-        note: |
-          error code。
-          値集合: project_invalid / invalid_args / invalid_selector / invalid_change_payload / not_found / kind_mismatch / ambiguous / unsupported_object / unsupported_detail / unsupported_direction / invalid_depth / internal_error。
+        type: mcp_error_code
+        note: "error code。"
       - name: message
         type: str
         note: "human-readable error message。必須"
@@ -23,4 +39,3 @@ nodes:
     note: |
       MCP tool実行自体が成立しない場合に返すtool error payload。
       JSON-RPC envelopeそのものではなく、brewprint MCP error bodyを表す。
-      codeのenum値集合はv1 modelでは型制約できないためnoteに列挙する。

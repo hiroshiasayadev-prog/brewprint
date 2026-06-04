@@ -1,7 +1,7 @@
 # WORK-DATA-012: Plan UC-002 enum, literal, and vocabulary cleanup
 
 - **id**: WORK-DATA-012
-- **status**: not_started
+- **status**: done
 - **date**: 2026-06-01
 - **source_requirement**: REQ-DATA-002
 - **impact_refs**:
@@ -11,6 +11,9 @@
   - TASK-DATA-009-03
   - TASK-DATA-009-04
 - **tasks**:
+  - TASK-DATA-012-01
+  - TASK-DATA-012-02
+  - TASK-DATA-012-03
 
 ## Goal
 
@@ -66,3 +69,15 @@ flowchart TD
 ## Completion Condition
 
 This work item can be marked `done` when the enum-like / literal constraint bucket has a concrete accepted cleanup path, implemented and verified if selected, or explicit no-action outcomes for all candidates without reopening completed DATA work.
+
+## Evidence
+
+Completed on 2026-06-05.
+
+All three tasks completed:
+
+- `TASK-DATA-012-01` (done): Reviewed and classified all WORK-DATA-012 candidates (N-006 residual, N-015 residual, N-019, N-023 residual, N-029 residual, N-030, N-034, N-045, N-046, N-051).
+- `TASK-DATA-012-02` (done): Decided cleanup path for each candidate; produced decision table and YAML cleanup input.
+- `TASK-DATA-012-03` (done): Applied selected enum models and usage-site updates to UC-002 YAML; ran validation (`ok`), render (`rendered 47 file(s)`), and Go tests; updated evidence.
+
+All selected candidates were implemented as named enums. N-023 residual and N-029 residual are explicitly confirmed no-action / note-only. No closed DATA work was reopened.

@@ -2,13 +2,23 @@
 # docs/spec/mcp/tools/list-objects.md §2 に対応。
 
 nodes:
+  - id: list_objects_object_filter
+    type: model
+    kind: enum
+    values:
+      - node
+      - view
+      - transition
+      - field
+    note: "list_objects_request.object filter。省略時は全object種別を対象にする。mcp_object_type より狭い list-objects-specific filter。"
+
   - id: list_objects_request
     type: model
     kind: struct
     fields:
       - name: object
-        type: str
-        note: "任意。node / view / transition / field。省略時は全object種別を対象にする。"
+        type: list_objects_object_filter
+        note: "任意。省略時は全object種別を対象にする。"
       - name: kind
         type: str
         note: "任意。task / model / api_table / transition / field 等。object種別ごとのkind filter。"
@@ -21,4 +31,4 @@ nodes:
     note: |
       MCP tool `list_objects` のrequest model。
       docs/spec/mcp/tools/list-objects.md §2 のInputに対応する。
-      `object` と `kind` はenum相当だが、brewprint v1 modelではenum制約を表せないため type: str + note で保持する。
+      `kind` は object種別ごとのkind filterであり、object-dependent語彙は REQ-DATA-007 / WORK-DATA-014 スコープのためnoteで保持する。

@@ -18,7 +18,7 @@ nodes:
         note: "必須。実際に使ったmax traversal depth。"
       - name: nodes
         type: list<get_reference_tree_node>
-        note: "必須。到達object entry配列。各entryは object:ObjectRef / depth:int / via:string[] を持つ。"
+        note: "必須。到達object entry配列。各entryは object:ObjectRef / depth:int / via:reference_kind[] を持つ。"
       - name: edges
         type: list<get_reference_tree_edge>
         note: "必須。traversalで辿ったReference entry配列。Referenceにdepth:intを加えたshape。継承 / extensionは使わずsame-file helperで表す。"
@@ -47,7 +47,7 @@ nodes:
         type: int
         note: "必須。rootからの最短到達hop数。"
       - name: via
-        type: string_list
+        type: list<reference_kind>
         note: "必須。rootから最初に到達したBFS経路のReference.kind列。"
     note: "`get_reference_tree_response.nodes[]` のresponse-local helper model。"
 
@@ -56,11 +56,11 @@ nodes:
     kind: struct
     fields:
       - name: kind
-        type: str
-        note: "必須。Reference kind。値集合はreference modelのnoteに従う。"
+        type: reference_kind
+        note: "必須。semantic reference kind。"
       - name: direction
-        type: str
-        note: "必須。out / in。query対象から見た方向。"
+        type: reference_direction
+        note: "必須。query対象から見た方向。out / in。"
       - name: from
         type: object_ref
         note: "必須。参照元object。"

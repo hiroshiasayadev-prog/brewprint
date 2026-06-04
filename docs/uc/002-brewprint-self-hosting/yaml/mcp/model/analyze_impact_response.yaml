@@ -21,7 +21,7 @@ nodes:
         note: "必須。impact entry配列。各entryは id / kind / severity / fixability / object / reason / via / source / recommended_action / suggested_fixes を持つ。"
       - name: coverage
         type: analyze_impact_coverage
-        note: "必須。analyzed / not_analyzed / note を持つcoverage object。語彙制約はnoteで保持する。"
+        note: "必須。analyzed / not_analyzed / note を持つcoverage object。"
       - name: assumptions
         type: string_list
         note: "必須。tool側の前提・限界の文字列配列。"
@@ -39,7 +39,7 @@ nodes:
       docs/spec/mcp/tools/analyze-impact.md §4 Output、§5 Impact entry、§6 severity / fixability、§7 coverage、§8 suggested_fixes、§9 SourceLocation、§10 coverage scope details、§12 assumptionsに対応する。
       `impact.severity` は breaking / warning / info。
       `impact.fixability` は mechanical / suggested / manual_review / unknown。
-      `coverage.analyzed` / `coverage.not_analyzed` はv1標準語彙を持つが、brewprint v1 modelではenum listを厳密表現できないためany + noteで保持する。
+      `coverage.analyzed` / `coverage.not_analyzed` は `analyze_impact_coverage_vocabulary` enum の typed list で表現する。
       `suggested_fixes[]` はfix kind依存payloadを持つためany内に含める。
 
   - id: analyze_impact_impact
@@ -80,22 +80,41 @@ nodes:
       `analyze_impact_response.impacts[]` のresponse-local helper model。
       severity / fixability の値集合と suggested_fixes のkind依存payloadは、このmigrationではnoteに保持する。
 
+  - id: analyze_impact_coverage_vocabulary
+    type: model
+    kind: enum
+    values:
+      - direct_references
+      - reference_tree
+      - model_field_resolution
+      - transition_action_resolution
+      - flow_step_task_resolution
+      - flow_param_field_resolution
+      - sequence_step_task_resolution
+      - type_signature_identity
+      - render_output_files
+      - name_collision
+      - type_structural_compatibility
+      - semantic_contract_compatibility
+      - render_presentation_details
+      - wireframe_element_binding
+    note: "analyze_impact coverage vocabulary。v1 標準語彙。docs/spec/mcp/tools/analyze-impact.md §7 に対応。"
+
   - id: analyze_impact_coverage
     type: model
     kind: struct
     fields:
       - name: analyzed
-        type: string_list
-        note: "必須。分析したcoverage語彙。標準語彙制約はnoteで保持する。"
+        type: list<analyze_impact_coverage_vocabulary>
+        note: "必須。分析したcoverage語彙一覧。"
       - name: not_analyzed
-        type: string_list
-        note: "必須。分析していないcoverage語彙。標準語彙制約はnoteで保持する。"
+        type: list<analyze_impact_coverage_vocabulary>
+        note: "必須。分析していないcoverage語彙一覧。"
       - name: note
         type: str
         note: "任意。LLM向け補足説明。"
     note: |
       `analyze_impact_response.coverage` のresponse-local helper model。
-      coverage vocabularyのenum化はこのmigrationでは行わない。
 
   - id: analyze_impact_severity_counts
     type: model
