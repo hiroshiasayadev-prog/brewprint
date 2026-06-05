@@ -1,7 +1,7 @@
 # REQ-MCP-020: propose_record_update metadata field replace support
 
 - **id**: REQ-MCP-020
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-05
 - **source_refs**:
   - TASK-DATA-011-01

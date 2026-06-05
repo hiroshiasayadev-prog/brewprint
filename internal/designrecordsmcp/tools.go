@@ -159,7 +159,7 @@ func enumStringSchema(values ...string) map[string]any {
 
 func updateSchema() map[string]any {
 	return objectSchema(map[string]any{
-		"type":             enumStringSchema("metadata_block_replace", "named_section_replace"),
+		"type":             enumStringSchema("metadata_block_replace", "metadata_fields_replace", "named_section_replace"),
 		"metadata":         map[string]any{"type": "object", "additionalProperties": true},
 		"section_selector": sectionSelectorSchema(),
 	}, []string{"type"})

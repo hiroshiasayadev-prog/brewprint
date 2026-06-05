@@ -56,3 +56,16 @@ REQ-MCP-020 acceptance criteria coverage:
 - Post-patch complete-block validation: explicitly stated.
 - Invalid/cleared required fields still fail: explicitly stated via existing diagnostics reuse.
 - `metadata_block_replace` remains supported: explicitly stated.
+
+Review result:
+
+- Codex review verdict: PASS.
+- Blocking findings: none.
+- Non-blocking finding: workflow artifact files were untracked at review time and must be included in the intended spec-only changeset.
+- Reviewed files: `docs/spec/design-records-mcp/tools.md`, `docs/tasks/mcp/TASK-MCP-020-02-update-mcp-tools-spec-for-metadata-field-replacement.md`, `docs/requirements/mcp/REQ-MCP-020-propose-record-update-metadata-field-replace-support.md`, `docs/work-items/mcp/WORK-MCP-020-add-metadata-field-replacement-support-to-propose-record-update.md`, and `docs/adr/093-design-records-mcp-authoring-transaction-model.md`.
+- Validation confirmed OK for `REQ-MCP-020`, `WORK-MCP-020`, `TASK-MCP-020-02`, `SPEC-design-records-mcp-tools`, and `ADR-093`.
+- `go test ./internal/designrecords ./internal/designrecordsmcp` failed only in heading canonicalization tests under `REQ-MCP-021` / `WORK-MCP-019`; this is outside `TASK-MCP-020-02` scope.
+
+ADR impact judgment:
+
+- No `ADR-093` update is needed. `ADR-093` is migrated to the spec and delegates current tool names / request-response schemas to `SPEC-design-records-mcp-tools`.

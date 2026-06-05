@@ -693,6 +693,93 @@ func TestAuthoringMetadataReplacementMissingRequiredFields(t *testing.T) {
 	}
 }
 
+func TestAuthoringMetadataFieldsReplace(t *testing.T) {
+	fx := newAuthoringFixture(t)
+
+	// Status-only update: id not supplied, all other fields must be preserved.
+	// Fixture task: status=todo, date=2026-06-01, work_item=WORK-MCP-001,
+	//   source_requirement=REQ-MCP-001, estimate=0.5d, depends_on=[], outputs=[initial].
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+		Kind: RecordKindTask,
+		ID:   "TASK-MCP-001-01",
+		Update: UpdateRequest{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{
+			"status": "done",
+		}},
+	})
+	if err != nil {
+		t.Fatalf("metadata_fields_replace status-only: %v", err)
+	}
+	if !resp.ProposalCreated {
+		t.Fatalf("proposal not created: %#v", resp)
+	}
+	diff := resp.Diff.Text
+	if !strings.Contains(diff, "- **status**: done") {
+		t.Errorf("diff missing updated status:\n%s", diff)
+	}
+	// Unspecified fields must be preserved.
+	if !strings.Contains(diff, "TASK-MCP-001-01") {
+		t.Errorf("diff missing preserved id:\n%s", diff)
+	}
+	if !strings.Contains(diff, "2026-06-01") {
+		t.Errorf("diff missing preserved date:\n%s", diff)
+	}
+	if !strings.Contains(diff, "WORK-MCP-001") {
+		t.Errorf("diff missing preserved work_item:\n%s", diff)
+	}
+	if !strings.Contains(diff, "REQ-MCP-001") {
+		t.Errorf("diff missing preserved source_requirement:\n%s", diff)
+	}
+	if !strings.Contains(diff, "0.5d") {
+		t.Errorf("diff missing preserved estimate:\n%s", diff)
+	}
+	// List field: outputs has "initial" — must be preserved.
+	if !strings.Contains(diff, "initial") {
+		t.Errorf("diff missing preserved outputs list item:\n%s", diff)
+	}
+}
+
+func TestAuthoringMetadataFieldsReplaceBodyForbidden(t *testing.T) {
+	fx := newAuthoringFixture(t)
+	body := "some body\n"
+
+	// body must be rejected for metadata_fields_replace.
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+		Kind:   RecordKindTask,
+		ID:     "TASK-MCP-001-01",
+		Update: UpdateRequest{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{"status": "done"}},
+		Body:   &body,
+	})
+	if err != nil {
+		t.Fatalf("metadata_fields_replace with body: %v", err)
+	}
+	if resp.ProposalCreated || !hasDiagnosticCategory(resp.Diagnostics, DiagnosticCategory(ErrorCodeInvalidBodySource)) {
+		t.Fatalf("metadata_fields_replace with body must fail with invalid_body_source: %#v", resp)
+	}
+}
+
+func TestAuthoringMetadataFieldsReplaceRequiredFieldValidation(t *testing.T) {
+	fx := newAuthoringFixture(t)
+
+	// Clearing status to empty string: the render step succeeds (key is present in merged map)
+	// but post-proposal validation must catch the empty required scalar field.
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+		Kind: RecordKindTask,
+		ID:   "TASK-MCP-001-01",
+		Update: UpdateRequest{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{
+			"status": "",
+		}},
+	})
+	if err != nil {
+		t.Fatalf("metadata_fields_replace empty status: %v", err)
+	}
+	if resp.Validation.OK {
+		t.Fatalf("expected validation failure for empty required status: %#v", resp)
+	}
+	if !hasDiagnosticCategory(resp.Validation.Diagnostics, DiagnosticEmptyRequiredMetadata) {
+		t.Fatalf("expected empty_required_metadata diagnostic, got: %v", resp.Validation.Diagnostics)
+	}
+}
+
 func TestAuthoringNamedSectionSelectors(t *testing.T) {
 	fx := newAuthoringFixture(t)
 	ok := proposeTaskSection(t, fx, "single match\n")

@@ -27,8 +27,9 @@ const (
 	ProposalOperationCreate = "create"
 	ProposalOperationUpdate = "update"
 
-	UpdateTypeMetadataBlockReplace = "metadata_block_replace"
-	UpdateTypeNamedSectionReplace  = "named_section_replace"
+	UpdateTypeMetadataBlockReplace  = "metadata_block_replace"
+	UpdateTypeMetadataFieldsReplace = "metadata_fields_replace"
+	UpdateTypeNamedSectionReplace   = "named_section_replace"
 )
 
 const noWriteProposalNote = "No repository files have been written. Call accept_proposed_write with this proposal_id to apply the diff."
@@ -294,9 +295,9 @@ func ProposeRecordUpdate(ctx context.Context, cfg Config, idx *Index, store *Aut
 		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "new placeholder is invalid for update operations")), nil
 	}
 	bodyRequired := req.Update.Type == UpdateTypeNamedSectionReplace
-	bodyForbidden := req.Update.Type == UpdateTypeMetadataBlockReplace
+	bodyForbidden := req.Update.Type == UpdateTypeMetadataBlockReplace || req.Update.Type == UpdateTypeMetadataFieldsReplace
 	if bodyForbidden && (req.Body != nil || req.BodyCacheID != "") {
-		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidBodySource, "metadata_block_replace must not include body or body_cache_id")), nil
+		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidBodySource, req.Update.Type+" must not include body or body_cache_id")), nil
 	}
 	body, bodyCache, diagnostics, ok := resolveBodySource(store, req.Body, req.BodyCacheID, bodyRequired)
 	if !ok {
@@ -569,6 +570,15 @@ func prepareUpdate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 	switch req.Update.Type {
 	case UpdateTypeMetadataBlockReplace:
 		updated, diagnostics, err = replaceMetadataBlock(*record, raw, req.Update.Metadata)
+	case UpdateTypeMetadataFieldsReplace:
+		if req.Update.Metadata == nil {
+			return authoringPreparation{}, fmt.Errorf("metadata is required for metadata_fields_replace")
+		}
+		var base map[string]any
+		base, err = currentMetadataAsMap(*record, raw)
+		if err == nil {
+			updated, diagnostics, err = replaceMetadataBlock(*record, raw, patchMetadataFields(base, req.Update.Metadata))
+		}
 	case UpdateTypeNamedSectionReplace:
 		if req.Update.SectionSelector == nil {
 			return authoringPreparation{}, fmt.Errorf("section_selector is required for named_section_replace")
@@ -1957,4 +1967,124 @@ func workflowMetadataScalar(record Record, key string) string {
 
 func ensureTrailingNewline(s string) string {
 	return strings.TrimRight(s, "\n") + "\n"
+}
+
+// patchMetadataFields merges patch fields on top of base, returning a new map.
+// Fields present in patch overwrite or extend fields from base.
+// Fields absent from patch are kept from base unchanged.
+func patchMetadataFields(base, patch map[string]any) map[string]any {
+	merged := make(map[string]any, len(base))
+	for k, v := range base {
+		merged[k] = v
+	}
+	for k, v := range patch {
+		merged[k] = v
+	}
+	return merged
+}
+
+// currentMetadataAsMap builds a metadata map from an existing record's parsed data.
+// The returned map is suitable for passing to replaceMetadataBlock after field patching.
+func currentMetadataAsMap(record Record, raw string) (map[string]any, error) {
+	switch record.Kind {
+	case RecordKindSpec:
+		return currentSpecMetadataAsMap(raw)
+	case RecordKindDecision:
+		m := map[string]any{
+			"status": string(record.Status),
+			"date":   rawMetadataScalarValue(raw, "date"),
+		}
+		if record.Decision != nil {
+			m["depends_on"] = record.Decision.DependsOn
+			m["supersedes"] = record.Decision.Supersedes
+			migratedToSpec := ""
+			if record.Decision.MigratedToSpec != nil {
+				migratedToSpec = *record.Decision.MigratedToSpec
+			}
+			m["migrated_to_spec"] = migratedToSpec
+		} else {
+			m["depends_on"] = []string{}
+			m["supersedes"] = []string{}
+			m["migrated_to_spec"] = ""
+		}
+		return m, nil
+	case RecordKindTask:
+		m := map[string]any{
+			"id":     record.ID,
+			"status": string(record.Status),
+			"date":   workflowMetadataScalar(record, "date"),
+		}
+		if record.Task != nil {
+			m["work_item"] = record.Task.WorkItem
+			m["source_requirement"] = record.Task.SourceRequirement
+			m["estimate"] = record.Task.Estimate
+			m["depends_on"] = record.Task.DependsOn
+			m["outputs"] = record.Task.Outputs
+		}
+		return m, nil
+	case RecordKindWorkItem:
+		m := map[string]any{
+			"id":     record.ID,
+			"status": string(record.Status),
+			"date":   workflowMetadataScalar(record, "date"),
+		}
+		if record.WorkItem != nil {
+			m["source_requirement"] = record.WorkItem.SourceRequirement
+			m["impact_refs"] = record.WorkItem.ImpactRefs
+			m["tasks"] = record.WorkItem.Tasks
+		}
+		return m, nil
+	case RecordKindRequirement:
+		m := map[string]any{
+			"id":     record.ID,
+			"status": string(record.Status),
+			"date":   workflowMetadataScalar(record, "date"),
+		}
+		if record.Requirement != nil {
+			m["source_refs"] = record.Requirement.SourceRefs
+			m["work_items"] = record.Requirement.WorkItems
+		}
+		return m, nil
+	default:
+		return nil, fmt.Errorf("metadata_fields_replace does not support kind %q", record.Kind)
+	}
+}
+
+// currentSpecMetadataAsMap extracts recognized spec metadata fields from YAML front matter.
+// The returned map is suitable for passing to replaceMetadataBlock after field patching.
+func currentSpecMetadataAsMap(raw string) (map[string]any, error) {
+	fm, _, ok := extractFrontMatter(raw)
+	if !ok {
+		return nil, fmt.Errorf("spec front matter is required")
+	}
+	var node map[string]any
+	if err := yaml.Unmarshal([]byte(fm), &node); err != nil {
+		return nil, err
+	}
+	if node == nil {
+		node = map[string]any{}
+	}
+	result := map[string]any{}
+	for _, key := range []string{"scope", "status"} {
+		if v, ok2 := node[key]; ok2 {
+			result[key] = v
+		}
+	}
+	if v, ok2 := node["design_record"]; ok2 {
+		result["design_record"] = v
+	}
+	return result, nil
+}
+
+// rawMetadataScalarValue reads a single scalar field from the metadata block in raw Markdown.
+// Used for fields not stored in the parsed Record struct (e.g., ADR date).
+func rawMetadataScalarValue(raw, key string) string {
+	lines := splitMarkdownLines(raw)
+	for _, line := range metadataBlock(lines) {
+		k, v, ok := parseMetadataLine(line)
+		if ok && k == key {
+			return v
+		}
+	}
+	return ""
 }

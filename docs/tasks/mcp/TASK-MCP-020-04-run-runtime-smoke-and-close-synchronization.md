@@ -1,7 +1,7 @@
 # TASK-MCP-020-04: Run runtime smoke and close synchronization
 
 - **id**: TASK-MCP-020-04
-- **status**: todo
+- **status**: done
 - **date**: 2026-06-05
 - **work_item**: WORK-MCP-020
 - **source_requirement**: REQ-MCP-020
@@ -37,5 +37,43 @@ Run runtime smoke for the new metadata field replacement operation and synchroni
 - Run Design Records validation for the affected workflow artifacts.
 
 ## Evidence
+Runtime smoke PASS.
 
-Not started.
+Smoke target:
+
+- Temp root copied from the current docs tree.
+- MCP server launched with Python `subprocess.Popen` using `go run ./cmd/design-records-mcp --root <temp-root>`.
+- `propose_record_update` was called with:
+  - id: `TASK-MCP-020-04`
+  - kind: `task`
+  - update.type: `metadata_fields_replace`
+  - metadata.status: `doing`
+
+Result:
+
+- initialize: success
+- proposal_created: true
+- proposal_id: `pw_000001`
+- proposal validation: ok
+- `accept_proposed_write`: written true
+- accept validation: ok
+- `get_record` confirmed `TASK-MCP-020-04.status == "doing"` in the temp root.
+- Existing metadata fields were preserved:
+  - `work_item == WORK-MCP-020`
+  - `source_requirement == REQ-MCP-020`
+  - `depends_on == [TASK-MCP-020-03]`
+  - `outputs` preserved both runtime smoke and close synchronization entries.
+
+Implementation tests:
+
+- `go test ./internal/designrecords -run TestAuthoringMetadata -v`: PASS
+- `go test ./internal/designrecords ./internal/designrecordsmcp`: PASS
+
+Close synchronization:
+
+- `TASK-MCP-020-01`: done
+- `TASK-MCP-020-02`: done
+- `TASK-MCP-020-03`: done
+- `TASK-MCP-020-04`: done
+- `WORK-MCP-020`: done
+- `REQ-MCP-020`: accepted

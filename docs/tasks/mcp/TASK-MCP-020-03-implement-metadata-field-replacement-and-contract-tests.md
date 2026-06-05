@@ -1,7 +1,7 @@
 # TASK-MCP-020-03: Implement metadata field replacement and contract tests
 
 - **id**: TASK-MCP-020-03
-- **status**: todo
+- **status**: done
 - **date**: 2026-06-05
 - **work_item**: WORK-MCP-020
 - **source_requirement**: REQ-MCP-020
@@ -38,5 +38,37 @@ Implement the field-level metadata replacement operation for `propose_record_upd
 - Run MCP tool call tests that cover request schema and handler behavior.
 
 ## Evidence
+Verdict: PASS.
 
-Not started.
+Implementation completed on 2026-06-05.
+
+Changed files:
+- `internal/designrecords/authoring.go`: Added `UpdateTypeMetadataFieldsReplace = "metadata_fields_replace"` constant; updated `bodyForbidden` check in `ProposeRecordUpdate` to include `metadata_fields_replace`; added `UpdateTypeMetadataFieldsReplace` case in `prepareUpdate` switch; added helper functions `patchMetadataFields`, `currentMetadataAsMap`, `currentSpecMetadataAsMap`, `rawMetadataScalarValue`.
+- `internal/designrecords/authoring_test.go`: Added `TestAuthoringMetadataFieldsReplace`, `TestAuthoringMetadataFieldsReplaceBodyForbidden`, `TestAuthoringMetadataFieldsReplaceRequiredFieldValidation`.
+- `internal/designrecordsmcp/tools.go`: Added `metadata_fields_replace` to the `update.type` enum in `updateSchema()`.
+
+Implementation summary:
+- `metadata_fields_replace` reads existing record metadata into a map via `currentMetadataAsMap`, patches only the caller-supplied fields via `patchMetadataFields`, then passes the merged map to the existing `replaceMetadataBlock` path, reusing all existing rendering and validation behavior.
+- `body` and `body_cache_id` are forbidden for `metadata_fields_replace`; supplying either returns `invalid_body_source`.
+- `metadata_block_replace` behavior is unchanged.
+- `named_section_replace` behavior is unchanged.
+
+Tests added:
+- `TestAuthoringMetadataFieldsReplace`: task status-only update (only `status: done` supplied); verifies `id`, `date`, `work_item`, `source_requirement`, `estimate`, and `outputs` list item `initial` are all preserved in the diff.
+- `TestAuthoringMetadataFieldsReplaceBodyForbidden`: `body` with `metadata_fields_replace` returns `invalid_body_source` and `ProposalCreated: false`.
+- `TestAuthoringMetadataFieldsReplaceRequiredFieldValidation`: clearing `status` to empty string produces `Validation.OK: false` with `empty_required_metadata` diagnostic (post-proposal validation).
+
+Commands run and results:
+```
+go test ./internal/designrecords -run TestAuthoringMetadata -v
+# All 5 metadata tests PASS (3 new + 2 existing)
+
+go test ./internal/designrecords ./internal/designrecordsmcp
+# ok  internal/designrecords     3.245s
+# ok  internal/designrecordsmcp  0.639s
+# FAIL count: 0
+```
+
+Known unrelated failures: none in the targeted packages. Heading canonicalization tests (REQ-MCP-021 / WORK-MCP-019) are in pre-existing dirty state outside this scope.
+
+Remaining concerns: none for this task scope. TASK-MCP-020-04 runtime smoke will be the next step.

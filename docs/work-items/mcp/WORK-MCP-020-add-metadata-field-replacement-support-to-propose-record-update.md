@@ -1,7 +1,7 @@
 # WORK-MCP-020: Add metadata field replacement support to propose_record_update
 
 - **id**: WORK-MCP-020
-- **status**: design_spec_pending
+- **status**: done
 - **date**: 2026-06-05
 - **source_requirement**: REQ-MCP-020
 - **impact_refs**:
@@ -66,3 +66,31 @@ TASK-MCP-020-01 -> TASK-MCP-020-02 -> TASK-MCP-020-03 -> TASK-MCP-020-04
 - `metadata_block_replace` remains supported.
 - Tests and runtime smoke evidence are recorded.
 - `REQ-MCP-020`, `WORK-MCP-020`, and all related tasks are synchronized to their final statuses.
+
+## Evidence
+
+Verdict: PASS.
+
+Completed scope:
+
+- `SPEC-design-records-mcp-tools` defines `metadata_fields_replace` for `propose_record_update`.
+- Implementation supports status-only metadata field replacement while preserving unspecified metadata fields.
+- Existing `metadata_block_replace` behavior remains supported.
+- Invalid required metadata changes still fail through existing metadata diagnostics.
+- Contract tests pass.
+- Runtime smoke through MCP JSON-RPC passes in a temp root.
+
+Verification:
+
+- `go test ./internal/designrecords -run TestAuthoringMetadata -v`: PASS
+- `go test ./internal/designrecords ./internal/designrecordsmcp`: PASS
+- Runtime smoke confirmed `metadata_fields_replace` can update only `TASK-MCP-020-04.status` to `doing` via proposal / accept flow while preserving `work_item`, `source_requirement`, `depends_on`, and `outputs`.
+
+Close synchronization:
+
+- `TASK-MCP-020-01`: done
+- `TASK-MCP-020-02`: done
+- `TASK-MCP-020-03`: done
+- `TASK-MCP-020-04`: done
+- `WORK-MCP-020`: done
+- `REQ-MCP-020`: accepted
