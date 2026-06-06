@@ -6,6 +6,7 @@
 - **source_refs**:
   - REQ-MCP-023
 - **work_items**:
+  - WORK-MCP-025
 
 ## Requirement
 
