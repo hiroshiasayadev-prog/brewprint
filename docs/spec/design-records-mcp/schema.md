@@ -491,8 +491,8 @@ MVP では legacy M-series task record / UC / impl note を record kind とし�
 | `spec` | `confirmed` / `draft` / `wip` |
 | `investigation` | `investigating` / `concluded` / `superseded` |
 | `requirement` | `captured` / `decision_needed` / `accepted` / `deferred` / `rejected` |
-| `work_item` | `not_started` / `decision_pending` / `design_spec_pending` / `internal_design_pending` / `yaml_pending` / `implementation_pending` / `fixture_pending` / `verification_pending` / `done` / `blocked` |
-| `task` | `todo` / `doing` / `blocked` / `done` |
+| `work_item` | `not_started` / `in_progress` / `blocked` / `done` |
+| `task` | `not_started` / `in_progress` / `blocked` / `done` |
 
 `decision` record の `status` は ADR 箇条書きmetadataから読む。
 
@@ -505,7 +505,7 @@ MVP では legacy M-series task record / UC / impl note を record kind とし�
 
 `kind` に対して許可されない `status` は `invalid_status_for_kind` とする。
 
-> 由来: ADR-076 §front matter 方針, ADR-077 §validate_records の責務, ADR-086 §5, ADR-091, ADR-092
+> 由来: ADR-076 §front matter 方針, ADR-077 §validate_records の責務, ADR-086 §5, ADR-091, ADR-092, ADR-094
 
 ## `depends_on`
 
