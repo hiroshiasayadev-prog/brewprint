@@ -1,7 +1,7 @@
 # WORK-MCP-022: status vocabulary alignment across workflow artifact kinds
 
 - **id**: WORK-MCP-022
-- **status**: blocked
+- **status**: done
 - **date**: 2026-06-06
 - **source_requirement**: REQ-MCP-026
 - **impact_refs**:
@@ -58,8 +58,17 @@ TASK-MCP-022-06 (existing record migration) ✓
 - TASK-MCP-022-06: existing record migration ✓
 
 ## Completion Condition
-
 - alignment 済み status vocabulary が spec・Go・guides に反映されている
 - 既存レコードが新 canonical values にすべて migration 済みである
 - `validate_records` で全レコード pass
 - REQ-MCP-023 の残存 scope について判断が済んでいる
+
+## Evidence
+
+- TASK-MCP-022-01: vocabulary alignment analysis 完了（options matrix / migration cost 実測）
+- TASK-MCP-022-02: ADR-094 drafting and acceptance 完了
+- TASK-MCP-022-03: spec schema.md status vocabulary 更新完了
+- TASK-MCP-022-04: Go implementation 完了（types.go / validation.go 更新、`go test ./...` pass、commit: 3181ba7）
+- TASK-MCP-022-05: authoring guides / tools.md examples 更新完了
+- TASK-MCP-022-06: 既存レコード migration 完了
+- USER GATE ②: REQ-MCP-023 を `accepted`（実質 superseded）でクローズ、criteria 1/5/6 を REQ-MCP-028 へ移管、criterion 2 を REQ-MCP-024 へ移管
