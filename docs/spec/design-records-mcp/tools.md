@@ -701,11 +701,15 @@ Diagnostic object は少なくとも以下を持つ。
 | field | required | meaning |
 |---|---:|---|
 | `category` | yes | diagnostic category |
-| `severity` | yes | `error` または `info` |
+| `severity` | yes | `error`, `warning`, または `info` |
 | `record_id` | no | 問題がある record ID |
 | `path` | no | 問題がある path |
 | `message` | yes | human-readable message |
 | `target_id` | no | 参照切れなどの対象 ID |
+
+`error` severity は `validation.ok` を `false` にし、retained proposal の作成をブロックする。
+`warning` severity は retained proposal 上で返されるが、`validation.ok` を `false` にせず、proposal creation をブロックしない。
+`info` severity は `validation.ok` を `false` にしない。
 
 ### Diagnostic categories
 MVP diagnostic category は `schema.md` の定義に従う。
@@ -795,7 +799,7 @@ Whitespace-only body は empty とする。
 
 `depends_on` は `ADR-*` / `SPEC-*` / `INV-*` の canonical record ID-as-ref を参照できる。したがって `ADR-086` の `depends_on: INV-DOCS-001` は contract 上 valid であり、investigation integration 実装前に返る `missing_depends_on_target` は既知 implementation gap である。M19 implementation 後は `INV-DOCS-001` の index integration によりこの diagnostic が解消されなければならない。
 
-`ok` は `error` diagnostic がない場合に `true` とし、`info` diagnostic が存在しても `false` にしない。
+`ok` は `error` diagnostic がない場合に `true` とし、`warning` および `info` diagnostic が存在しても `false` にしない。
 Coverage mapping、semantic realization relation、`internal-design:` / `coverage:` / `COV-*` の解決・診断は MVP tool acceptance に含めない。Workflow relation validation は宣言済み relation の存在と整合性に限り、未接続 artifact の orphan diagnostics、task dependency cycle detection、execution order projection、task status 由来 progress projection は含めない。
 
 `accepted_but_not_migrated` / `missing_design_record` などの運用 gap 診断、および orphan requirement / orphan work item / orphan task diagnostic は MVP 外である。
@@ -1375,6 +1379,21 @@ Nested headings below the matched heading are part of the replaced section.
 Zero matches must return `section_selector_no_match` and must not create a proposal.
 Multiple matches must return `section_selector_ambiguous` and must not create a proposal.
 When possible, diagnostics should include `candidate_headings` with heading text, level, and ordinal.
+
+**Heading-safe replacement body normalization:**
+
+This normalization is evaluated after `section_selector` resolves to exactly one target section. The comparison uses the resolved selected section heading text and resolved selected section heading level — not the raw `section_selector` input values. The strip condition therefore applies regardless of whether `section_selector.level` was supplied by the caller.
+
+When the first non-empty line of the replacement body is a Markdown ATX heading whose text equals the resolved selected section heading text and whose ATX level equals the resolved selected section heading level, that heading line is stripped before retained proposal creation.
+
+- This normalization applies to both direct `body` and `body_cache_id` replacement content.
+- Only the first matching heading line is stripped.
+- Body-internal headings after the first content line are preserved as section content.
+- If the first non-empty line is a heading whose text does not equal the resolved selected section heading text, or whose ATX level does not equal the resolved selected section heading level, no stripping occurs and existing selector validation behavior applies.
+- When stripping occurs, a `section_replacement_body_heading_stripped` warning diagnostic is returned with `stripped_heading` (the stripped heading text) and `stripped_level` (the ATX level of the stripped heading as an integer).
+- The warning does not block retained proposal creation.
+- Error-severity diagnostics continue to block proposal creation regardless of this normalization.
+- Multi-section replacement, arbitrary string replacement, and canonical workflow section name changes are not supported by this operation.
 
 Spec metadata block replacement example:
 

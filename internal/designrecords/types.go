@@ -222,8 +222,9 @@ const (
 	DiagnosticEmptyRequiredMetadata         DiagnosticCategory = "empty_required_metadata"
 	DiagnosticMissingRequiredSection        DiagnosticCategory = "missing_required_section"
 	DiagnosticEmptyRequiredSection          DiagnosticCategory = "empty_required_section"
-	DiagnosticSectionHeadingCaseMismatch   DiagnosticCategory = "section_heading_case_mismatch"
-	DiagnosticInvalidMetadataValue          DiagnosticCategory = "invalid_metadata_value"
+	DiagnosticSectionHeadingCaseMismatch               DiagnosticCategory = "section_heading_case_mismatch"
+	DiagnosticSectionReplacementBodyHeadingStripped    DiagnosticCategory = "section_replacement_body_heading_stripped"
+	DiagnosticInvalidMetadataValue                     DiagnosticCategory = "invalid_metadata_value"
 	DiagnosticRecordNotFound                DiagnosticCategory = "record_not_found"
 	DiagnosticDuplicateRequestedIDIgnored   DiagnosticCategory = "duplicate_requested_id_ignored"
 	DiagnosticExactIDSequenceGap            DiagnosticCategory = "exact_id_sequence_gap"
@@ -232,8 +233,9 @@ const (
 type DiagnosticSeverity string
 
 const (
-	DiagnosticSeverityError DiagnosticSeverity = "error"
-	DiagnosticSeverityInfo  DiagnosticSeverity = "info"
+	DiagnosticSeverityError   DiagnosticSeverity = "error"
+	DiagnosticSeverityWarning DiagnosticSeverity = "warning"
+	DiagnosticSeverityInfo    DiagnosticSeverity = "info"
 )
 
 type Diagnostic struct {
@@ -253,6 +255,8 @@ type Diagnostic struct {
 	DuplicateIndexes  []int              `json:"duplicate_indexes,omitempty"`
 	CandidateHeadings []CandidateHeading `json:"candidate_headings,omitempty"`
 	ActualHeading     string             `json:"-"`
+	StrippedHeading   string             `json:"-"`
+	StrippedLevel     int                `json:"-"`
 	ValuePresent      bool               `json:"-"`
 }
 
@@ -270,6 +274,8 @@ func (d Diagnostic) MarshalJSON() ([]byte, error) {
 		Section           string             `json:"section,omitempty"`
 		Status            string             `json:"status,omitempty"`
 		ActualHeading     string             `json:"actual_heading,omitempty"`
+		StrippedHeading   string             `json:"stripped_heading,omitempty"`
+		StrippedLevel     *int               `json:"stripped_level,omitempty"`
 		RequestedID       string             `json:"requested_id,omitempty"`
 		FirstIndex        *int               `json:"first_index,omitempty"`
 		DuplicateIndexes  []int              `json:"duplicate_indexes,omitempty"`
@@ -278,6 +284,11 @@ func (d Diagnostic) MarshalJSON() ([]byte, error) {
 	var value *string
 	if d.Value != "" || d.ValuePresent {
 		value = &d.Value
+	}
+	var strippedLevel *int
+	if d.StrippedLevel != 0 {
+		sl := d.StrippedLevel
+		strippedLevel = &sl
 	}
 	return json.Marshal(diagnosticJSON{
 		Category:          d.Category,
@@ -292,6 +303,8 @@ func (d Diagnostic) MarshalJSON() ([]byte, error) {
 		Section:           d.Section,
 		Status:            d.Status,
 		ActualHeading:     d.ActualHeading,
+		StrippedHeading:   d.StrippedHeading,
+		StrippedLevel:     strippedLevel,
 		RequestedID:       d.RequestedID,
 		FirstIndex:        d.FirstIndex,
 		DuplicateIndexes:  d.DuplicateIndexes,

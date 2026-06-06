@@ -1647,3 +1647,242 @@ func diagnosticByCategory(diagnostics []Diagnostic, category DiagnosticCategory)
 	}
 	return nil
 }
+
+func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
+	t.Run("direct_body_heading_stripped", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		body := "## Evidence\n\nRuntime smoke passed.\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind:   RecordKindTask,
+			ID:     "TASK-MCP-001-01",
+			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:   &body,
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("expected proposal to be created (warning must not block): %#v", resp)
+		}
+		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped) {
+			t.Fatalf("expected section_replacement_body_heading_stripped diagnostic: %#v", resp.Diagnostics)
+		}
+		diag := diagnosticByCategory(resp.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped)
+		if diag.Severity != DiagnosticSeverityWarning {
+			t.Fatalf("expected warning severity, got %q: %#v", diag.Severity, diag)
+		}
+		if diag.StrippedHeading != "Evidence" {
+			t.Fatalf("expected StrippedHeading %q, got %q", "Evidence", diag.StrippedHeading)
+		}
+		if diag.StrippedLevel != 2 {
+			t.Fatalf("expected StrippedLevel 2, got %d", diag.StrippedLevel)
+		}
+		if resp.Diff == nil {
+			t.Fatalf("expected diff in response")
+		}
+		if strings.Count(resp.Diff.Text, "+## Evidence\n") != 1 {
+			t.Fatalf("expected exactly one +## Evidence in diff, got:\n%s", resp.Diff.Text)
+		}
+	})
+
+	t.Run("body_cache_id_heading_stripped", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		body := "## Evidence\n\nRuntime smoke passed.\n"
+		first, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind:   RecordKindTask,
+			ID:     "TASK-MCP-001-01",
+			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:   &body,
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate (direct): %v", err)
+		}
+		if !first.ProposalCreated || first.BodyCache == nil {
+			t.Fatalf("first proposal: %#v", first)
+		}
+		cached, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind:        RecordKindTask,
+			ID:          "TASK-MCP-001-01",
+			Update:      UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			BodyCacheID: first.BodyCache.BodyCacheID,
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate (cached): %v", err)
+		}
+		if !cached.ProposalCreated {
+			t.Fatalf("cached proposal should be created: %#v", cached)
+		}
+		if !hasDiagnosticCategory(cached.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped) {
+			t.Fatalf("expected stripping warning via body_cache_id: %#v", cached.Diagnostics)
+		}
+		if strings.Count(cached.Diff.Text, "+## Evidence\n") != 1 {
+			t.Fatalf("expected exactly one +## Evidence in cached diff:\n%s", cached.Diff.Text)
+		}
+	})
+
+	t.Run("only_first_heading_stripped", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		body := "## Evidence\n\n## Evidence\n\nSecond evidence.\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind:   RecordKindTask,
+			ID:     "TASK-MCP-001-01",
+			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:   &body,
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped) {
+			t.Fatalf("expected stripping warning: %#v", resp.Diagnostics)
+		}
+		// The section heading is written once by replacement, plus one body-internal ## Evidence remains.
+		if strings.Count(resp.Diff.Text, "+## Evidence\n") != 2 {
+			t.Fatalf("expected two +## Evidence in diff (one prefix, one body-internal), got:\n%s", resp.Diff.Text)
+		}
+	})
+
+	t.Run("internal_subheading_preserved", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		body := "## Evidence\n\n### Sub\n\nSubcontent.\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind:   RecordKindTask,
+			ID:     "TASK-MCP-001-01",
+			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:   &body,
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped) {
+			t.Fatalf("expected stripping warning: %#v", resp.Diagnostics)
+		}
+		if !strings.Contains(resp.Diff.Text, "+### Sub\n") {
+			t.Fatalf("internal subheading should be preserved in diff:\n%s", resp.Diff.Text)
+		}
+	})
+
+	t.Run("level_mismatch_no_strip", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		body := "### Evidence\n\nContent.\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind:   RecordKindTask,
+			ID:     "TASK-MCP-001-01",
+			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:   &body,
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if hasDiagnosticCategory(resp.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped) {
+			t.Fatalf("should not strip when level mismatches: %#v", resp.Diagnostics)
+		}
+		// Both ## Evidence (section heading) and ### Evidence (body content) appear.
+		if strings.Count(resp.Diff.Text, "+## Evidence\n") != 1 {
+			t.Fatalf("expected one +## Evidence in diff:\n%s", resp.Diff.Text)
+		}
+		if !strings.Contains(resp.Diff.Text, "+### Evidence\n") {
+			t.Fatalf("body ### Evidence should remain in diff:\n%s", resp.Diff.Text)
+		}
+	})
+
+	t.Run("text_mismatch_no_strip", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		body := "## Notes\n\nContent.\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind:   RecordKindTask,
+			ID:     "TASK-MCP-001-01",
+			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:   &body,
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if hasDiagnosticCategory(resp.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped) {
+			t.Fatalf("should not strip when heading text mismatches: %#v", resp.Diagnostics)
+		}
+		if !strings.Contains(resp.Diff.Text, "+## Notes\n") {
+			t.Fatalf("body ## Notes should remain in diff:\n%s", resp.Diff.Text)
+		}
+	})
+
+	t.Run("omitted_selector_level_strip", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// No level in selector; resolves to ## Evidence (level 2). Body matches level 2 → strip.
+		body := "## Evidence\n\nContent.\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind:   RecordKindTask,
+			ID:     "TASK-MCP-001-01",
+			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:   &body,
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped) {
+			t.Fatalf("expected stripping for omitted selector level: %#v", resp.Diagnostics)
+		}
+		if strings.Count(resp.Diff.Text, "+## Evidence\n") != 1 {
+			t.Fatalf("expected exactly one +## Evidence in diff:\n%s", resp.Diff.Text)
+		}
+	})
+
+	t.Run("omitted_selector_level_level_mismatch", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// No level in selector; resolves to ## Evidence (level 2). Body has level 3 → no strip.
+		body := "### Evidence\n\nContent.\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind:   RecordKindTask,
+			ID:     "TASK-MCP-001-01",
+			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:   &body,
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal not created: %#v", resp)
+		}
+		if hasDiagnosticCategory(resp.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped) {
+			t.Fatalf("should not strip when resolved level does not match body heading level: %#v", resp.Diagnostics)
+		}
+	})
+
+	t.Run("warning_does_not_block_proposal_creation", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		body := "## Evidence\n\nContent.\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind:   RecordKindTask,
+			ID:     "TASK-MCP-001-01",
+			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:   &body,
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("warning must not block proposal creation: %#v", resp)
+		}
+		if resp.ProposalID == "" {
+			t.Fatalf("proposal_id should be set: %#v", resp)
+		}
+		warnDiag := diagnosticByCategory(resp.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped)
+		if warnDiag == nil || warnDiag.Severity != DiagnosticSeverityWarning {
+			t.Fatalf("expected warning-severity diagnostic, got: %#v", resp.Diagnostics)
+		}
+	})
+}

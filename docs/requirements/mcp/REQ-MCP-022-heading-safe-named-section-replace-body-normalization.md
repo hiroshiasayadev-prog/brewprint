@@ -1,12 +1,13 @@
 # REQ-MCP-022: heading-safe named_section_replace body normalization
 
 - **id**: REQ-MCP-022
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-05
 - **source_refs**:
   - TASK-DATA-011-01
   - REQ-MCP-021
 - **work_items**:
+  - WORK-MCP-021
 
 ## Requirement
 
@@ -28,13 +29,17 @@ Diff を確認すると ## Evidence が二重になっています。body に見
 
 Because `named_section_replace` already identifies the target section via `section_selector`, a leading duplicate of that same heading is redundant syntax noise, not intended section content.
 
+Close evidence: WORK-MCP-021 completed the contract update, implementation, regression coverage, runtime smoke, and close synchronization for this requirement.
+
 ## Required Outcome
 
 For `named_section_replace`, the authoring update flow supports heading-safe replacement body normalization.
 
 Acceptance criteria:
 
-- When `body` first non-empty line is a Markdown heading matching the selected `section_selector.heading` and `section_selector.level`, that heading line is stripped before proposal creation.
+- After `section_selector` resolves exactly one target section, replacement body normalization compares the first non-empty replacement line against the resolved selected section heading text and resolved selected section level.
+- When that first non-empty line is a Markdown heading matching the resolved selected section heading text and resolved selected section level, that heading line is stripped before proposal creation.
+- This applies even when `section_selector.level` was omitted by the caller; matching uses the resolved selected section level, not only a raw selector value.
 - The same normalization applies when replacement content is supplied through `body_cache_id`.
 - The retained proposal diff reflects the normalized replacement body.
 - A warning diagnostic is returned, with a category such as `section_replacement_body_heading_stripped`, identifying the stripped heading and level.

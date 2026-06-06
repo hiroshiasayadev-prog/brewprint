@@ -310,7 +310,7 @@ func ProposeRecordUpdate(ctx context.Context, cfg Config, idx *Index, store *Aut
 		}
 		return failedProposalResponse(bodyCache, nil, authoringDiagnostic(ErrorCodeInvalidRequest, err.Error())), nil
 	}
-	if len(prep.diagnostics) > 0 {
+	if hasErrorDiagnostics(prep.diagnostics) {
 		if body != nil {
 			bodyCache = store.cacheBody(*body)
 		}
@@ -593,7 +593,7 @@ func prepareUpdate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 	if err != nil {
 		return authoringPreparation{}, err
 	}
-	if len(diagnostics) > 0 {
+	if hasErrorDiagnostics(diagnostics) {
 		return authoringPreparation{diagnostics: diagnostics}, nil
 	}
 	file := ProposedFile{
@@ -614,7 +614,8 @@ func prepareUpdate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 			Domain:      workflowDomain(record.ID),
 			Path:        record.Path,
 		},
-		files: []ProposedFile{file},
+		files:       []ProposedFile{file},
+		diagnostics: diagnostics,
 	}, nil
 }
 
@@ -1116,7 +1117,12 @@ func replaceNamedSection(raw string, selector SectionSelector, body string, kind
 			if len(caseFallbacks) == 1 {
 				match := caseFallbacks[0]
 				lines := splitMarkdownLines(raw)
-				replacementBody := strings.TrimRight(body, "\n")
+				strippedBody, sh, sl, stripped := stripBodyLeadingHeading(body, match.Heading)
+				replacementBody := strings.TrimRight(strippedBody, "\n")
+				var warnDiags []Diagnostic
+				if stripped {
+					warnDiags = append(warnDiags, sectionBodyHeadingStrippedDiagnostic(sh, sl))
+				}
 				replacement := []string{strings.Repeat("#", match.Heading.Level) + " " + selector.Heading}
 				if replacementBody != "" {
 					replacement = append(replacement, replacementBody)
@@ -1127,7 +1133,7 @@ func replaceNamedSection(raw string, selector SectionSelector, body string, kind
 					out = append(out, "")
 				}
 				out = append(out, lines[match.EndLine:]...)
-				return strings.Join(out, "\n"), nil, nil
+				return strings.Join(out, "\n"), warnDiags, nil
 			}
 			if len(caseFallbacks) > 1 {
 				return "", []Diagnostic{sectionSelectorDiagnostic(ErrorCodeSectionSelectorAmbiguous, "section selector matched multiple ATX sections by case-insensitive comparison", caseFallbacks)}, nil
@@ -1140,7 +1146,12 @@ func replaceNamedSection(raw string, selector SectionSelector, body string, kind
 	}
 	match := matches[0]
 	lines := splitMarkdownLines(raw)
-	replacementBody := strings.TrimRight(body, "\n")
+	strippedBody, sh, sl, stripped := stripBodyLeadingHeading(body, match.Heading)
+	replacementBody := strings.TrimRight(strippedBody, "\n")
+	var warnDiags []Diagnostic
+	if stripped {
+		warnDiags = append(warnDiags, sectionBodyHeadingStrippedDiagnostic(sh, sl))
+	}
 	replacement := []string{strings.Repeat("#", match.Heading.Level) + " " + match.Heading.Text}
 	if replacementBody != "" {
 		replacement = append(replacement, replacementBody)
@@ -1151,7 +1162,45 @@ func replaceNamedSection(raw string, selector SectionSelector, body string, kind
 		out = append(out, "")
 	}
 	out = append(out, lines[match.EndLine:]...)
-	return strings.Join(out, "\n"), nil, nil
+	return strings.Join(out, "\n"), warnDiags, nil
+}
+
+func stripBodyLeadingHeading(body string, heading Heading) (stripped string, headingText string, headingLevel int, wasStripped bool) {
+	splitLines := strings.Split(strings.ReplaceAll(body, "\r\n", "\n"), "\n")
+	firstNonEmptyIdx := -1
+	for i, line := range splitLines {
+		if strings.TrimSpace(line) != "" {
+			firstNonEmptyIdx = i
+			break
+		}
+	}
+	if firstNonEmptyIdx < 0 {
+		return body, "", 0, false
+	}
+	headingLine := strings.TrimRight(splitLines[firstNonEmptyIdx], "\r")
+	match := atxHeadingPattern.FindStringSubmatch(headingLine)
+	if match == nil {
+		return body, "", 0, false
+	}
+	level := len(match[1])
+	text := strings.TrimSpace(match[2])
+	if level != heading.Level || text != heading.Text {
+		return body, "", 0, false
+	}
+	newLines := make([]string, 0, len(splitLines)-1)
+	newLines = append(newLines, splitLines[:firstNonEmptyIdx]...)
+	newLines = append(newLines, splitLines[firstNonEmptyIdx+1:]...)
+	return strings.Join(newLines, "\n"), text, level, true
+}
+
+func sectionBodyHeadingStrippedDiagnostic(headingText string, headingLevel int) Diagnostic {
+	return Diagnostic{
+		Category:        DiagnosticSectionReplacementBodyHeadingStripped,
+		Severity:        DiagnosticSeverityWarning,
+		Message:         fmt.Sprintf("replacement body leading heading %q (level %d) was stripped: it duplicates the resolved section heading", headingText, headingLevel),
+		StrippedHeading: headingText,
+		StrippedLevel:   headingLevel,
+	}
 }
 
 type markdownSection struct {

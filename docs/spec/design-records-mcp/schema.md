@@ -677,9 +677,13 @@ These diagnostics may appear in proposal, accept, discard, get-proposal, or body
 | `proposal_preparation_failed` | error | proposal preparation failed before proposal persistence |
 | `section_selector_no_match` | error | named section selector が target record 内の section に一致しない |
 | `section_selector_ambiguous` | error | named section selector が複数 section に一致し、単一 target に解決できない |
+| `section_replacement_body_heading_stripped` | warning | `named_section_replace` replacement body の最初の non-empty 行が `section_selector` に一致する Markdown ATX heading であり、duplicate heading を防ぐために proposal creation 前に strip された |
 
 `section_selector_no_match` / `section_selector_ambiguous` diagnostics should include `candidate_headings` when possible.
 Candidate heading entries contain at least `heading`, `level`, and `ordinal`.
+
+`section_replacement_body_heading_stripped` diagnostics MUST include `stripped_heading` (the stripped heading text) and `stripped_level` (the ATX level of the stripped heading as an integer).
+This diagnostic does not block retained proposal creation.
 
 MVP の `validate_records` は以下の diagnostic category を返す。
 
