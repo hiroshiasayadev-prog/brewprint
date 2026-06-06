@@ -49,6 +49,14 @@ brewprint は **人間と LLM の共通設計言語**。
 `docs/doc-policy.md` は入口方針と安全ルールだけを所有する。
 Artifact-specific な書式・起票手順・責務境界はここに再掲しない。
 
+### Third-party notices
+
+Third-party dependency license notices は `docs/third-party-notices.md` で管理する。
+
+`go.mod` / `go.sum` は Go module dependency metadata を記録するが、source / binary redistribution 時の notice obligation の代替ではない。外部 runtime / build dependency を追加する場合は、distribution hygiene 完了前に dependency notice entry を記録する。
+
+この項目は notice document の所在と最低限の運用だけを所有する。個別 dependency の notice 本文は `docs/third-party-notices.md` に記録する。
+
 ### Authoring guidance
 
 起票・更新時は、Design Records MCP の authoring guidance tools を使う。
