@@ -697,7 +697,7 @@ func TestAuthoringMetadataFieldsReplace(t *testing.T) {
 	fx := newAuthoringFixture(t)
 
 	// Status-only update: id not supplied, all other fields must be preserved.
-	// Fixture task: status=todo, date=2026-06-01, work_item=WORK-MCP-001,
+	// Fixture task: status=not_started, date=2026-06-01, work_item=WORK-MCP-001,
 	//   source_requirement=REQ-MCP-001, estimate=0.5d, depends_on=[], outputs=[initial].
 	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
 		Kind: RecordKindTask,
@@ -713,29 +713,77 @@ func TestAuthoringMetadataFieldsReplace(t *testing.T) {
 		t.Fatalf("proposal not created: %#v", resp)
 	}
 	diff := resp.Diff.Text
-	if !strings.Contains(diff, "- **status**: done") {
-		t.Errorf("diff missing updated status:\n%s", diff)
+	assertGitModifyDiff(t, diff, resp.Target.Path)
+	assertDiffContains(t, diff, "-- **status**: not_started")
+	assertDiffContains(t, diff, "+- **status**: done")
+	assertDiffOmits(t, diff, "+# TASK-MCP-001-01: First task")
+	proposal, diagnostic := fx.store.lookupProposal(resp.ProposalID)
+	if diagnostic != nil || proposal == nil || len(proposal.Files) != 1 {
+		t.Fatalf("stored proposal lookup failed: proposal=%#v diagnostic=%#v", proposal, diagnostic)
 	}
+	content := proposal.Files[0].Content
 	// Unspecified fields must be preserved.
-	if !strings.Contains(diff, "TASK-MCP-001-01") {
-		t.Errorf("diff missing preserved id:\n%s", diff)
+	if !strings.Contains(content, "TASK-MCP-001-01") {
+		t.Errorf("proposal content missing preserved id:\n%s", content)
 	}
-	if !strings.Contains(diff, "2026-06-01") {
-		t.Errorf("diff missing preserved date:\n%s", diff)
+	if !strings.Contains(content, "2026-06-01") {
+		t.Errorf("proposal content missing preserved date:\n%s", content)
 	}
-	if !strings.Contains(diff, "WORK-MCP-001") {
-		t.Errorf("diff missing preserved work_item:\n%s", diff)
+	if !strings.Contains(content, "WORK-MCP-001") {
+		t.Errorf("proposal content missing preserved work_item:\n%s", content)
 	}
-	if !strings.Contains(diff, "REQ-MCP-001") {
-		t.Errorf("diff missing preserved source_requirement:\n%s", diff)
+	if !strings.Contains(content, "REQ-MCP-001") {
+		t.Errorf("proposal content missing preserved source_requirement:\n%s", content)
 	}
-	if !strings.Contains(diff, "0.5d") {
-		t.Errorf("diff missing preserved estimate:\n%s", diff)
+	if !strings.Contains(content, "0.5d") {
+		t.Errorf("proposal content missing preserved estimate:\n%s", content)
 	}
 	// List field: outputs has "initial" — must be preserved.
-	if !strings.Contains(diff, "initial") {
-		t.Errorf("diff missing preserved outputs list item:\n%s", diff)
+	if !strings.Contains(content, "initial") {
+		t.Errorf("proposal content missing preserved outputs list item:\n%s", content)
 	}
+}
+
+func TestAuthoringMetadataFieldsReplaceNoOp(t *testing.T) {
+	fx := newAuthoringFixture(t)
+
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+		Kind: RecordKindTask,
+		ID:   "TASK-MCP-001-01",
+		Update: UpdateRequest{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{
+			"status": "not_started",
+		}},
+	})
+	if err != nil {
+		t.Fatalf("metadata_fields_replace no-op: %v", err)
+	}
+	assertNoOpUpdateResponse(t, resp)
+	if len(fx.store.proposals) != 0 {
+		t.Fatalf("no-op update retained proposals: %#v", fx.store.proposals)
+	}
+}
+
+func TestAuthoringMetadataBlockReplaceNoOp(t *testing.T) {
+	fx := newAuthoringFixture(t)
+
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+		Kind: RecordKindTask,
+		ID:   "TASK-MCP-001-01",
+		Update: UpdateRequest{Type: UpdateTypeMetadataBlockReplace, Metadata: map[string]any{
+			"id":                 "TASK-MCP-001-01",
+			"status":             "not_started",
+			"date":               "2026-06-01",
+			"work_item":          "WORK-MCP-001",
+			"source_requirement": "REQ-MCP-001",
+			"estimate":           "0.5d",
+			"depends_on":         []any{},
+			"outputs":            []any{"initial"},
+		}},
+	})
+	if err != nil {
+		t.Fatalf("metadata_block_replace no-op: %v", err)
+	}
+	assertNoOpUpdateResponse(t, resp)
 }
 
 func TestAuthoringMetadataFieldsReplaceBodyForbidden(t *testing.T) {
@@ -786,6 +834,9 @@ func TestAuthoringNamedSectionSelectors(t *testing.T) {
 	if !ok.ProposalCreated || !strings.Contains(ok.Diff.Text, "single match") {
 		t.Fatalf("section proposal = %#v", ok)
 	}
+	assertGitModifyDiff(t, ok.Diff.Text, ok.Target.Path)
+	assertDiffContains(t, ok.Diff.Text, "-old evidence")
+	assertDiffContains(t, ok.Diff.Text, "+single match")
 
 	noMatch, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
 		Kind:   RecordKindTask,
@@ -833,6 +884,61 @@ func TestAuthoringNamedSectionSelectors(t *testing.T) {
 			t.Fatalf("ambiguous candidate heading = %#v", candidate)
 		}
 	}
+}
+
+func TestAuthoringNamedSectionReplaceNoOp(t *testing.T) {
+	fx := newAuthoringFixture(t)
+	body := "## Evidence\nold evidence\n"
+
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+		Kind:   RecordKindTask,
+		ID:     "TASK-MCP-001-01",
+		Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+		Body:   &body,
+	})
+	if err != nil {
+		t.Fatalf("named_section_replace no-op: %v", err)
+	}
+	assertNoOpUpdateResponse(t, resp)
+	if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped) {
+		t.Fatalf("expected heading stripped warning to be preserved with no-op diagnostic: %#v", resp.Diagnostics)
+	}
+}
+
+func TestBuildDiffMultiHunkModify(t *testing.T) {
+	diff := buildDiff([]ProposedFile{{
+		Path:        "docs/tasks/mcp/TASK-MCP-001-01-first-task.md",
+		Change:      "modify",
+		RecordID:    "TASK-MCP-001-01",
+		RecordKind:  RecordKindTask,
+		BaseContent: strings.Join([]string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j"}, "\n") + "\n",
+		Content:     strings.Join([]string{"a", "B", "c", "d", "e", "f", "g", "h", "I", "j"}, "\n") + "\n",
+	}})
+
+	assertGitModifyDiff(t, diff.Text, "docs/tasks/mcp/TASK-MCP-001-01-first-task.md")
+	if got := strings.Count(diff.Text, "@@"); got != 2 {
+		t.Fatalf("hunk header count = %d, want 2:\n%s", got, diff.Text)
+	}
+	assertDiffContains(t, diff.Text, "-b")
+	assertDiffContains(t, diff.Text, "+B")
+	assertDiffContains(t, diff.Text, "-i")
+	assertDiffContains(t, diff.Text, "+I")
+}
+
+func TestBuildDiffCreateUsesAddDiff(t *testing.T) {
+	diff := buildDiff([]ProposedFile{{
+		Path:       "docs/requirements/mcp/REQ-MCP-002-new.md",
+		Change:     "create",
+		RecordID:   "REQ-MCP-002",
+		RecordKind: RecordKindRequirement,
+		Content:    "# REQ-MCP-002: New\n\n- **id**: REQ-MCP-002\n",
+	}})
+
+	assertDiffContains(t, diff.Text, "diff --git a/docs/requirements/mcp/REQ-MCP-002-new.md b/docs/requirements/mcp/REQ-MCP-002-new.md")
+	assertDiffContains(t, diff.Text, "--- /dev/null")
+	assertDiffContains(t, diff.Text, "+++ b/docs/requirements/mcp/REQ-MCP-002-new.md")
+	assertDiffContains(t, diff.Text, "@@")
+	assertDiffContains(t, diff.Text, "+# REQ-MCP-002: New")
 }
 
 func TestProposeRecordUpdateRequiredHeadingCaseFallback(t *testing.T) {
@@ -1648,6 +1754,58 @@ func diagnosticByCategory(diagnostics []Diagnostic, category DiagnosticCategory)
 	return nil
 }
 
+func assertGitModifyDiff(t *testing.T, diff, path string) {
+	t.Helper()
+	assertDiffContains(t, diff, "diff --git a/"+path+" b/"+path)
+	assertDiffContains(t, diff, "index ")
+	assertDiffContains(t, diff, "--- a/"+path)
+	assertDiffContains(t, diff, "+++ b/"+path)
+	assertDiffContains(t, diff, "@@")
+}
+
+func assertNoOpUpdateResponse(t *testing.T, resp ProposeRecordResponse) {
+	t.Helper()
+	if resp.ProposalCreated {
+		t.Fatalf("no-op response created proposal: %#v", resp)
+	}
+	if resp.ProposalID != "" {
+		t.Fatalf("no-op response must omit proposal_id, got %q", resp.ProposalID)
+	}
+	if resp.Diff != nil {
+		t.Fatalf("no-op response must omit diff: %#v", resp.Diff)
+	}
+	if resp.Operation != ProposalOperationUpdate {
+		t.Fatalf("no-op operation = %q, want update: %#v", resp.Operation, resp)
+	}
+	if resp.Target == nil || resp.Target.ResolvedID == "" || resp.Target.Path == "" {
+		t.Fatalf("no-op response missing target identity: %#v", resp)
+	}
+	if !resp.Validation.OK {
+		t.Fatalf("no-op validation must remain OK: %#v", resp.Validation)
+	}
+	diag := diagnosticByCategory(resp.Diagnostics, DiagnosticNoOpUpdate)
+	if diag == nil {
+		t.Fatalf("missing no_op_update diagnostic: %#v", resp.Diagnostics)
+	}
+	if diag.Severity != DiagnosticSeverityInfo || diag.RecordID == "" || diag.Path == "" {
+		t.Fatalf("invalid no_op_update diagnostic: %#v", diag)
+	}
+}
+
+func assertDiffContains(t *testing.T, diff, want string) {
+	t.Helper()
+	if !strings.Contains(diff, want) {
+		t.Fatalf("diff missing %q:\n%s", want, diff)
+	}
+}
+
+func assertDiffOmits(t *testing.T, diff, unwanted string) {
+	t.Helper()
+	if strings.Contains(diff, unwanted) {
+		t.Fatalf("diff unexpectedly contains %q:\n%s", unwanted, diff)
+	}
+}
+
 func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 	t.Run("direct_body_heading_stripped", func(t *testing.T) {
 		fx := newAuthoringFixture(t)
@@ -1680,9 +1838,10 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 		if resp.Diff == nil {
 			t.Fatalf("expected diff in response")
 		}
-		if strings.Count(resp.Diff.Text, "+## Evidence\n") != 1 {
-			t.Fatalf("expected exactly one +## Evidence in diff, got:\n%s", resp.Diff.Text)
-		}
+		assertDiffContains(t, resp.Diff.Text, " ## Evidence")
+		assertDiffContains(t, resp.Diff.Text, "-old evidence")
+		assertDiffContains(t, resp.Diff.Text, "+Runtime smoke passed.")
+		assertDiffOmits(t, resp.Diff.Text, "+## Evidence")
 	})
 
 	t.Run("body_cache_id_heading_stripped", func(t *testing.T) {
@@ -1715,9 +1874,9 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 		if !hasDiagnosticCategory(cached.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped) {
 			t.Fatalf("expected stripping warning via body_cache_id: %#v", cached.Diagnostics)
 		}
-		if strings.Count(cached.Diff.Text, "+## Evidence\n") != 1 {
-			t.Fatalf("expected exactly one +## Evidence in cached diff:\n%s", cached.Diff.Text)
-		}
+		assertDiffContains(t, cached.Diff.Text, " ## Evidence")
+		assertDiffContains(t, cached.Diff.Text, "+Runtime smoke passed.")
+		assertDiffOmits(t, cached.Diff.Text, "+## Evidence")
 	})
 
 	t.Run("only_first_heading_stripped", func(t *testing.T) {
@@ -1738,9 +1897,9 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped) {
 			t.Fatalf("expected stripping warning: %#v", resp.Diagnostics)
 		}
-		// The section heading is written once by replacement, plus one body-internal ## Evidence remains.
-		if strings.Count(resp.Diff.Text, "+## Evidence\n") != 2 {
-			t.Fatalf("expected two +## Evidence in diff (one prefix, one body-internal), got:\n%s", resp.Diff.Text)
+		// The replacement heading is unchanged context; only the body-internal heading is added.
+		if strings.Count(resp.Diff.Text, "+## Evidence\n") != 1 {
+			t.Fatalf("expected one body-internal +## Evidence in diff, got:\n%s", resp.Diff.Text)
 		}
 	})
 
@@ -1785,10 +1944,8 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 		if hasDiagnosticCategory(resp.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped) {
 			t.Fatalf("should not strip when level mismatches: %#v", resp.Diagnostics)
 		}
-		// Both ## Evidence (section heading) and ### Evidence (body content) appear.
-		if strings.Count(resp.Diff.Text, "+## Evidence\n") != 1 {
-			t.Fatalf("expected one +## Evidence in diff:\n%s", resp.Diff.Text)
-		}
+		assertDiffContains(t, resp.Diff.Text, " ## Evidence")
+		assertDiffOmits(t, resp.Diff.Text, "+## Evidence")
 		if !strings.Contains(resp.Diff.Text, "+### Evidence\n") {
 			t.Fatalf("body ### Evidence should remain in diff:\n%s", resp.Diff.Text)
 		}
@@ -1836,9 +1993,9 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 		if !hasDiagnosticCategory(resp.Diagnostics, DiagnosticSectionReplacementBodyHeadingStripped) {
 			t.Fatalf("expected stripping for omitted selector level: %#v", resp.Diagnostics)
 		}
-		if strings.Count(resp.Diff.Text, "+## Evidence\n") != 1 {
-			t.Fatalf("expected exactly one +## Evidence in diff:\n%s", resp.Diff.Text)
-		}
+		assertDiffContains(t, resp.Diff.Text, " ## Evidence")
+		assertDiffContains(t, resp.Diff.Text, "+Content.")
+		assertDiffOmits(t, resp.Diff.Text, "+## Evidence")
 	})
 
 	t.Run("omitted_selector_level_level_mismatch", func(t *testing.T) {

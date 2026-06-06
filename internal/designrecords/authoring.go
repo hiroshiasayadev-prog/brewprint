@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pmezard/go-difflib/difflib"
 	"gopkg.in/yaml.v3"
 )
 
@@ -67,14 +68,15 @@ type StoredProposal struct {
 }
 
 type ProposedFile struct {
-	Path       string
-	Change     string
-	RecordID   string
-	RecordKind RecordKind
-	BaseHash   string
-	BaseID     string
-	BaseKind   RecordKind
-	Content    string
+	Path        string
+	Change      string
+	RecordID    string
+	RecordKind  RecordKind
+	BaseContent string
+	BaseHash    string
+	BaseID      string
+	BaseKind    RecordKind
+	Content     string
 }
 
 type BodyCacheEntry struct {
@@ -315,6 +317,9 @@ func ProposeRecordUpdate(ctx context.Context, cfg Config, idx *Index, store *Aut
 			bodyCache = store.cacheBody(*body)
 		}
 		return failedProposalResponse(bodyCache, nil, prep.diagnostics...), nil
+	}
+	if isNoOpUpdate(prep.files) {
+		return noOpUpdateResponse(ctx, idx, prep)
 	}
 	return persistProposal(ctx, cfg, idx, store, ProposalOperationUpdate, prep, bodyCache)
 }
@@ -597,14 +602,15 @@ func prepareUpdate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 		return authoringPreparation{diagnostics: diagnostics}, nil
 	}
 	file := ProposedFile{
-		Path:       record.Path,
-		Change:     "modify",
-		RecordID:   record.ID,
-		RecordKind: record.Kind,
-		BaseHash:   contentHash(raw),
-		BaseID:     record.ID,
-		BaseKind:   record.Kind,
-		Content:    ensureTrailingNewline(updated),
+		Path:        record.Path,
+		Change:      "modify",
+		RecordID:    record.ID,
+		RecordKind:  record.Kind,
+		BaseContent: raw,
+		BaseHash:    contentHash(raw),
+		BaseID:      record.ID,
+		BaseKind:    record.Kind,
+		Content:     ensureTrailingNewline(updated),
 	}
 	return authoringPreparation{
 		target: AuthoringTarget{
@@ -936,14 +942,15 @@ func reciprocalMetadataFile(cfg Config, record Record, values []string) Proposed
 	}
 	updated, _, _ := replaceMetadataBlock(record, raw, fields)
 	return ProposedFile{
-		Path:       record.Path,
-		Change:     "modify",
-		RecordID:   record.ID,
-		RecordKind: record.Kind,
-		BaseHash:   contentHash(raw),
-		BaseID:     record.ID,
-		BaseKind:   record.Kind,
-		Content:    ensureTrailingNewline(updated),
+		Path:        record.Path,
+		Change:      "modify",
+		RecordID:    record.ID,
+		RecordKind:  record.Kind,
+		BaseContent: raw,
+		BaseHash:    contentHash(raw),
+		BaseID:      record.ID,
+		BaseKind:    record.Kind,
+		Content:     ensureTrailingNewline(updated),
 	}
 }
 
@@ -1448,17 +1455,81 @@ func buildDiff(files []ProposedFile) Diff {
 	var text strings.Builder
 	for _, file := range files {
 		diffFiles = append(diffFiles, DiffFile{Path: file.Path, Change: file.Change, RecordID: file.RecordID, RecordKind: file.RecordKind})
-		oldPath := file.Path
-		if file.Change == "create" {
-			oldPath = "/dev/null"
-		}
-		text.WriteString("--- " + oldPath + "\n")
-		text.WriteString("+++ " + file.Path + "\n")
-		for _, line := range strings.Split(strings.TrimSuffix(file.Content, "\n"), "\n") {
-			text.WriteString("+" + line + "\n")
-		}
+		text.WriteString(buildFileDiff(file))
 	}
 	return Diff{Format: "unified", Files: diffFiles, Text: text.String()}
+}
+
+func buildFileDiff(file ProposedFile) string {
+	oldContent := file.BaseContent
+	oldName := "a/" + file.Path
+	newName := "b/" + file.Path
+	oldHeader := oldName
+	if file.Change == "create" {
+		oldContent = ""
+		oldHeader = "/dev/null"
+	}
+	var text strings.Builder
+	text.WriteString("diff --git a/" + file.Path + " b/" + file.Path + "\n")
+	text.WriteString("index " + shortContentHash(oldContent) + ".." + shortContentHash(file.Content) + " 100644\n")
+	text.WriteString("--- " + oldHeader + "\n")
+	text.WriteString("+++ " + newName + "\n")
+	hunks, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+		A:        difflib.SplitLines(oldContent),
+		B:        difflib.SplitLines(file.Content),
+		FromFile: oldHeader,
+		ToFile:   newName,
+		Context:  3,
+	})
+	if err != nil {
+		return text.String()
+	}
+	text.WriteString(stripUnifiedDiffFileHeaders(hunks))
+	return text.String()
+}
+
+func stripUnifiedDiffFileHeaders(diff string) string {
+	lines := strings.Split(diff, "\n")
+	if len(lines) >= 2 && strings.HasPrefix(lines[0], "--- ") && strings.HasPrefix(lines[1], "+++ ") {
+		lines = lines[2:]
+	}
+	return strings.Join(lines, "\n")
+}
+
+func noOpUpdateResponse(ctx context.Context, idx *Index, prep authoringPreparation) (ProposeRecordResponse, error) {
+	validation, err := validateProposedFiles(ctx, idx, prep.files)
+	if err != nil {
+		return ProposeRecordResponse{}, err
+	}
+	target := prep.target
+	diagnostics := cloneDiagnostics(prep.diagnostics)
+	diagnostics = append(diagnostics, Diagnostic{
+		Category: DiagnosticNoOpUpdate,
+		Severity: DiagnosticSeverityInfo,
+		RecordID: target.ResolvedID,
+		Path:     target.Path,
+		Message:  "update produced no persisted content changes",
+	})
+	return ProposeRecordResponse{
+		ProposalCreated: false,
+		Operation:       ProposalOperationUpdate,
+		TargetKind:      target.Kind,
+		Target:          &target,
+		Validation:      validation,
+		Diagnostics:     diagnostics,
+	}, nil
+}
+
+func isNoOpUpdate(files []ProposedFile) bool {
+	if len(files) == 0 {
+		return false
+	}
+	for _, file := range files {
+		if file.Change != "modify" || file.BaseContent != file.Content {
+			return false
+		}
+	}
+	return true
 }
 
 func failedProposalResponse(bodyCache *BodyCacheEntry, validation *ValidateRecordsResponse, diagnostics ...Diagnostic) ProposeRecordResponse {
@@ -1762,6 +1833,14 @@ func cloneDiagnostics(in []Diagnostic) []Diagnostic {
 func contentHash(raw string) string {
 	sum := sha256.Sum256([]byte(raw))
 	return hex.EncodeToString(sum[:])
+}
+
+func shortContentHash(raw string) string {
+	hash := contentHash(raw)
+	if len(hash) <= 12 {
+		return hash
+	}
+	return hash[:12]
 }
 
 func readRepoFile(cfg Config, rel string) (string, error) {

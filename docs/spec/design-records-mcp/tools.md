@@ -1232,6 +1232,9 @@ This example shows only the relevant response field. The full proposal response 
 `propose_record_update` creates a retained proposal for a whole metadata block replacement, a field-level metadata patch, or a whole named Markdown section replacement.
 It does not write repository files.
 
+If the requested update operation is a no-op after operation semantics are applied, `propose_record_update` MUST NOT create a retained proposal.
+A no-op update is an update request whose proposed persisted content is byte-equivalent to the current persisted file content after the requested update operation semantics are applied.
+
 MVP update support covers `decision`, `spec`, `requirement`, `work_item`, and `task`.
 Update operations reject any ID containing the literal `new` token in the sequence position.
 
@@ -1419,8 +1422,49 @@ Spec metadata block replacement example:
 
 ### Response
 
-`propose_record_update` returns the common proposal response fields.
-For update proposals, `target.resolved_id` is the existing record ID, and `diff.files[].change` is `modify`.
+When an update request produces changed content, `propose_record_update` returns the common retained proposal response fields.
+For retained update proposals, `target.resolved_id` is the existing record ID, and `diff.files[].change` is `modify`.
+
+For existing-file update proposals, `diff.text` MUST compare the current persisted file content with the proposed persisted content after the requested operation semantics are applied.
+It MUST NOT render the entire target record as newly added content unless the target file is actually new.
+
+Modify proposal `diff.text` MUST use a git-style unified diff suitable for proposal review.
+For each modified file, it MUST include:
+
+- `diff --git a/<path> b/<path>`
+- either an `index <oldhash>..<newhash> 100644` line or an equivalent stable old/new content hash representation when available
+- `--- a/<path>`
+- `+++ b/<path>`
+- one or more `@@` hunk headers when file content differs
+- changed lines plus bounded context, rather than the whole record as added content for metadata-only updates
+
+Whole-file `+` output is valid for actual create/add proposals. It is not valid for existing-file modify proposals.
+
+A no-op update MUST NOT create a retained write proposal.
+A no-op update response MUST have:
+
+| field | required | meaning |
+|---|---:|---|
+| `proposal_created` | yes | `false` |
+| `operation` | yes | `update` |
+| `target_kind` | yes | resolved target record kind |
+| `target` | yes | requested / resolved target identity object |
+| `validation` | yes | proposal-local validation result after applying operation semantics; `ok` is `true` when there are no error diagnostics |
+| `diagnostics` | yes | includes an info diagnostic with category `no_op_update` |
+| `diff` | no | omitted or `null` because no retained proposal exists |
+| `proposal_id` | no | omitted because no retained proposal exists |
+
+The `no_op_update` diagnostic identifies a successful update request that would not change the persisted file content.
+It MUST have severity `info` and SHOULD include `record_id`, `path`, and `message`.
+It MUST NOT be returned as a tool execution error.
+It MUST NOT make `validation.ok` false.
+
+No-op detection is evaluated after operation-specific semantics and normalization, including metadata field preservation, metadata validation, section selector resolution, and heading-safe replacement body normalization.
+For example:
+
+- `metadata_fields_replace` with `status: done` is a real update when the current status is not `done`.
+- `metadata_fields_replace` with `status: done` is a no-op update when the current status is already `done` and the resulting persisted content is byte-equivalent.
+- `named_section_replace` is a no-op update when the replacement body, after heading-safe normalization, yields byte-equivalent persisted content.
 
 Metadata block replacement response example:
 
@@ -1449,7 +1493,7 @@ Metadata block replacement response example:
         "record_kind": "task"
       }
     ],
-    "text": "--- docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md\n+++ docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md\n..."
+    "text": "diff --git a/docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md b/docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md\nindex oldhash..newhash 100644\n--- a/docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md\n+++ b/docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md\n@@ -1,7 +1,7 @@\n # TASK-MCP-008-04: MCP tools spec reflection\n \n - **id**: TASK-MCP-008-04\n-- **status**: todo\n+- **status**: done\n - **date**: 2026-06-01\n"
   },
   "validation": {
     "ok": true,
@@ -1460,7 +1504,37 @@ Metadata block replacement response example:
 }
 ```
 
-Named section replacement response uses the same proposal shape. `diff.files[].change` is `modify`, and `target.resolved_id` is the existing record ID.
+No-op metadata field replacement response example:
+
+```json
+{
+  "proposal_created": false,
+  "operation": "update",
+  "target_kind": "task",
+  "target": {
+    "requested_id": "TASK-MCP-008-04",
+    "resolved_id": "TASK-MCP-008-04",
+    "kind": "task",
+    "domain": "MCP",
+    "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md"
+  },
+  "validation": {
+    "ok": true,
+    "diagnostics": []
+  },
+  "diagnostics": [
+    {
+      "category": "no_op_update",
+      "severity": "info",
+      "record_id": "TASK-MCP-008-04",
+      "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md",
+      "message": "update produced no persisted content changes"
+    }
+  ]
+}
+```
+
+Named section replacement response uses the same proposal shape for real changes. `diff.files[].change` is `modify`, and `target.resolved_id` is the existing record ID.
 
 ## `get_proposed_write`
 

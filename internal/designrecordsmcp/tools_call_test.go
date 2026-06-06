@@ -425,6 +425,51 @@ func TestToolsCallAuthoringTransaction(t *testing.T) {
 	}
 }
 
+func TestToolsCallProposeRecordUpdateNoOpResponseShape(t *testing.T) {
+	root := t.TempDir()
+	writeToolsCallTestFile(t, root, "docs/requirements/mcp/REQ-MCP-001-test.md", "# REQ-MCP-001: Test requirement\n\n- **id**: REQ-MCP-001\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-001\n")
+	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-001-test.md", "# WORK-MCP-001: Test work\n\n- **id**: WORK-MCP-001\n- **status**: in_progress\n- **date**: 2026-06-02\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-001-01\n")
+	writeToolsCallTestFile(t, root, "docs/tasks/mcp/TASK-MCP-001-01-test.md", "# TASK-MCP-001-01: Test task\n\n- **id**: TASK-MCP-001-01\n- **status**: not_started\n- **date**: 2026-06-02\n- **work_item**: WORK-MCP-001\n- **source_requirement**: REQ-MCP-001\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - output\n\n## Evidence\nold\n")
+	cfg, err := designrecords.NewConfig(root)
+	if err != nil {
+		t.Fatalf("NewConfig: %v", err)
+	}
+	server := NewServer(cfg)
+
+	propose := handleLine(t, server, `{"jsonrpc":"2.0","id":904,"method":"tools/call","params":{"name":"propose_record_update","arguments":{"kind":"task","id":"TASK-MCP-001-01","update":{"type":"metadata_fields_replace","metadata":{"status":"not_started"}}}}}`)
+	proposeResult := assertToolCallResult(t, propose, false)
+
+	var raw map[string]any
+	unmarshalToolText(t, proposeResult.Content[0].Text, &raw)
+	if raw["proposal_created"] != false {
+		t.Fatalf("proposal_created = %#v, want false; raw=%#v", raw["proposal_created"], raw)
+	}
+	if _, ok := raw["proposal_id"]; ok {
+		t.Fatalf("no-op response must omit proposal_id: %#v", raw)
+	}
+	if _, ok := raw["diff"]; ok {
+		t.Fatalf("no-op response must omit diff: %#v", raw)
+	}
+
+	var resp designrecords.ProposeRecordResponse
+	unmarshalToolText(t, proposeResult.Content[0].Text, &resp)
+	if resp.Operation != designrecords.ProposalOperationUpdate || resp.Target == nil || !resp.Validation.OK {
+		t.Fatalf("invalid no-op response shape: %#v", resp)
+	}
+	var found bool
+	for _, diagnostic := range resp.Diagnostics {
+		if diagnostic.Category == designrecords.DiagnosticNoOpUpdate {
+			found = true
+			if diagnostic.Severity != designrecords.DiagnosticSeverityInfo {
+				t.Fatalf("no_op_update severity = %q, want info: %#v", diagnostic.Severity, diagnostic)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("missing no_op_update diagnostic: %#v", resp.Diagnostics)
+	}
+}
+
 func TestToolsCallValidateRecordsExposesSectionHeadingCaseMismatchFields(t *testing.T) {
 	root := t.TempDir()
 	writeToolsCallTestFile(t, root, "docs/requirements/mcp/REQ-MCP-021-heading-case-mismatch.md", "# REQ-MCP-021: Heading case mismatch\n\n- **id**: REQ-MCP-021\n- **status**: captured\n- **date**: 2026-06-05\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-021\n")
