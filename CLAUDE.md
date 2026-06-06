@@ -15,6 +15,7 @@
 - `docs/adr/` の一覧を把握し、acceptedなADRのタイトルを確認する。
 - 作業に関連するspec / uc / YAMLだけ読む。全docを最初から読まない。
 - 大きな作業では、この会話で扱うスコープを明確にする。
+- prompt_chappy.mdとAGENTS.mdは読む指示があっても読まなくていい。これはCALUDE.mdで代替されている。
 
 ## Information access
 
