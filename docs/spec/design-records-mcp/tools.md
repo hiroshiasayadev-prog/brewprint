@@ -112,7 +112,7 @@ Workflow artifact example:
   "id": "WORK-MCP-003",
   "kind": "work_item",
   "title": "Workflow artifact MCP support の最小 public contract を判断・実現する",
-  "status": "design_spec_pending",
+  "status": "in_progress",
   "path": "docs/work-items/mcp/WORK-MCP-003-workflow-artifact-mcp-support.md",
   "work_item": {
     "source_requirement": "REQ-MCP-003",
@@ -1054,7 +1054,7 @@ Investigation creation is outside this MVP authoring surface.
   "parent_id": "WORK-MCP-008",
   "title": "MCP tools spec reflection",
   "fields": {
-    "status": "todo",
+    "status": "not_started",
     "date": "2026-06-01",
     "source_requirement": "REQ-MCP-008",
     "estimate": "1d-2d",

@@ -246,7 +246,7 @@ func TestToolsCallValidateDiagnosticsAreNormalResponse(t *testing.T) {
 
 func TestToolsCallValidateWorkflowMetadataDiagnosticShape(t *testing.T) {
 	root := t.TempDir()
-	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-006-test.md", "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**:\n- **impact_refs**:\n- **tasks**:\n")
+	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-006-test.md", "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: in_progress\n- **date**: 2026-06-01\n- **source_requirement**:\n- **impact_refs**:\n- **tasks**:\n")
 
 	server := NewServerWithIndexBuilder(designrecords.Config{Root: root}, func(ctx context.Context, cfg designrecords.Config) (*designrecords.Index, error) {
 		return designrecords.BuildIndex(ctx, cfg)
@@ -385,9 +385,9 @@ func TestToolsCallAuthoringGuidance(t *testing.T) {
 func TestToolsCallAuthoringTransaction(t *testing.T) {
 	root := t.TempDir()
 	writeToolsCallTestFile(t, root, "docs/requirements/mcp/REQ-MCP-001-test.md", "# REQ-MCP-001: Test requirement\n\n- **id**: REQ-MCP-001\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-001\n")
-	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-001-test.md", "# WORK-MCP-001: Test work\n\n- **id**: WORK-MCP-001\n- **status**: implementation_pending\n- **date**: 2026-06-02\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-001-01\n")
+	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-001-test.md", "# WORK-MCP-001: Test work\n\n- **id**: WORK-MCP-001\n- **status**: in_progress\n- **date**: 2026-06-02\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-001-01\n")
 	taskRel := "docs/tasks/mcp/TASK-MCP-001-01-test.md"
-	writeToolsCallTestFile(t, root, taskRel, "# TASK-MCP-001-01: Test task\n\n- **id**: TASK-MCP-001-01\n- **status**: todo\n- **date**: 2026-06-02\n- **work_item**: WORK-MCP-001\n- **source_requirement**: REQ-MCP-001\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - output\n\n## Evidence\nold\n")
+	writeToolsCallTestFile(t, root, taskRel, "# TASK-MCP-001-01: Test task\n\n- **id**: TASK-MCP-001-01\n- **status**: not_started\n- **date**: 2026-06-02\n- **work_item**: WORK-MCP-001\n- **source_requirement**: REQ-MCP-001\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - output\n\n## Evidence\nold\n")
 	cfg, err := designrecords.NewConfig(root)
 	if err != nil {
 		t.Fatalf("NewConfig: %v", err)
@@ -428,7 +428,7 @@ func TestToolsCallAuthoringTransaction(t *testing.T) {
 func TestToolsCallValidateRecordsExposesSectionHeadingCaseMismatchFields(t *testing.T) {
 	root := t.TempDir()
 	writeToolsCallTestFile(t, root, "docs/requirements/mcp/REQ-MCP-021-heading-case-mismatch.md", "# REQ-MCP-021: Heading case mismatch\n\n- **id**: REQ-MCP-021\n- **status**: captured\n- **date**: 2026-06-05\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-021\n")
-	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-021-heading-case-mismatch.md", "# WORK-MCP-021: Heading case mismatch\n\n- **id**: WORK-MCP-021\n- **status**: implementation_pending\n- **date**: 2026-06-05\n- **source_requirement**: REQ-MCP-021\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-021-01\n")
+	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-021-heading-case-mismatch.md", "# WORK-MCP-021: Heading case mismatch\n\n- **id**: WORK-MCP-021\n- **status**: in_progress\n- **date**: 2026-06-05\n- **source_requirement**: REQ-MCP-021\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-021-01\n")
 	writeToolsCallTestFile(t, root, "docs/tasks/mcp/TASK-MCP-021-01-heading-case-mismatch.md", "# TASK-MCP-021-01: Heading case mismatch\n\n- **id**: TASK-MCP-021-01\n- **status**: done\n- **date**: 2026-06-05\n- **work_item**: WORK-MCP-021\n- **source_requirement**: REQ-MCP-021\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n\n## Goal\n\nGoal text.\n\n## Work\n\nWork text.\n\n## Done Condition\n\nDone text.\n\n## Verification\n\nVerification text.\n\n## Evidence\n\nEvidence text.\n")
 	cfg, err := designrecords.NewConfig(root)
 	if err != nil {
@@ -664,7 +664,7 @@ func TestToolsCallProposeExactWorkIDGapDiagnostic(t *testing.T) {
 	writeToolsCallTestFile(t, root, "docs/requirements/mcp/REQ-MCP-001-test.md",
 		"# REQ-MCP-001: Test req\n\n- **id**: REQ-MCP-001\n- **status**: captured\n- **date**: 2026-06-03\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-001\n")
 	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-001-test.md",
-		"# WORK-MCP-001: Test work\n\n- **id**: WORK-MCP-001\n- **status**: implementation_pending\n- **date**: 2026-06-03\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n")
+		"# WORK-MCP-001: Test work\n\n- **id**: WORK-MCP-001\n- **status**: in_progress\n- **date**: 2026-06-03\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n")
 	cfg, err := designrecords.NewConfig(root)
 	if err != nil {
 		t.Fatalf("NewConfig: %v", err)
@@ -672,7 +672,7 @@ func TestToolsCallProposeExactWorkIDGapDiagnostic(t *testing.T) {
 	server := NewServer(cfg)
 
 	// Request WORK-MCP-003 while only WORK-MCP-001 exists (skips 002).
-	proposeLine := `{"jsonrpc":"2.0","id":950,"method":"tools/call","params":{"name":"propose_record_create","arguments":{"kind":"work_item","id":"WORK-MCP-003","domain":"MCP","title":"Gap work item","fields":{"status":"implementation_pending","date":"2026-06-03","source_requirement":"REQ-MCP-001","impact_refs":[],"tasks":[]}}}}`
+	proposeLine := `{"jsonrpc":"2.0","id":950,"method":"tools/call","params":{"name":"propose_record_create","arguments":{"kind":"work_item","id":"WORK-MCP-003","domain":"MCP","title":"Gap work item","fields":{"status":"in_progress","date":"2026-06-03","source_requirement":"REQ-MCP-001","impact_refs":[],"tasks":[]}}}}`
 	res := handleLine(t, server, proposeLine)
 	result := assertToolCallResult(t, res, false)
 
@@ -756,7 +756,7 @@ func toolsCallTestIndex() *designrecords.Index {
 			NormalizedID: "WORK-MCP-003",
 			Kind:         designrecords.RecordKindWorkItem,
 			Title:        "Workflow implementation",
-			Status:       designrecords.RecordStatusImplementationPending,
+			Status:       designrecords.RecordStatusInProgress,
 			Path:         "docs/work-items/mcp/WORK-MCP-003-workflow-implementation.md",
 			RawBody:      "# WORK-MCP-003: Workflow implementation\n",
 			WorkItem: &designrecords.WorkItemDetail{

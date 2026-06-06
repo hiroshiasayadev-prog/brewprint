@@ -94,8 +94,8 @@ func TestValidateRecordsOKWhenNoErrorDiagnostics(t *testing.T) {
 	writeTestFile(t, root, "docs/adr/001-valid.md", "# 001: Valid\n- **status**: accepted\n- **depends_on**:\n- **supersedes**:\n")
 	writeTestFile(t, root, "docs/spec/valid.md", "---\nstatus: draft\ndesign_record:\n  id: SPEC-valid\n  kind: spec\n  depends_on:\n    - ADR-001\n---\n# Valid spec\n")
 	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-valid.md", "# REQ-MCP-003: Valid requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n  - ADR-001\n- **work_items**:\n  - WORK-MCP-003\n\n## Requirement\n\nRequirement content.\n\n## Required Outcome\n\nOutcome content.\n")
-	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-valid.md", "# WORK-MCP-003: Valid work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n  - ADR-001\n- **tasks**:\n  - TASK-MCP-003-01\n")
-	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-valid.md", "# TASK-MCP-003-01: Valid task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - test\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-valid.md", "# WORK-MCP-003: Valid work item\n- **id**: WORK-MCP-003\n- **status**: not_started\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n  - ADR-001\n- **tasks**:\n  - TASK-MCP-003-01\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-valid.md", "# TASK-MCP-003-01: Valid task\n- **id**: TASK-MCP-003-01\n- **status**: not_started\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - test\n")
 
 	idx := buildTestIndex(t, root)
 	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
@@ -109,10 +109,10 @@ func TestValidateRecordsOKWhenNoErrorDiagnostics(t *testing.T) {
 
 func TestValidateRecordsWorkflowStatusAndParseDiagnostics(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-001-bad-status.md", "# REQ-MCP-001: Bad requirement status\n- **id**: REQ-MCP-001\n- **status**: todo\n- **date**: 2026-05-25\n- **source_refs**:\n- **work_items**:\n")
+	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-001-bad-status.md", "# REQ-MCP-001: Bad requirement status\n- **id**: REQ-MCP-001\n- **status**: not_started\n- **date**: 2026-05-25\n- **source_refs**:\n- **work_items**:\n")
 	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-001-bad-status.md", "# WORK-MCP-001: Bad work status\n- **id**: WORK-MCP-001\n- **status**: accepted\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n")
-	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-001-01-bad-status.md", "# TASK-MCP-001-01: Bad task status\n- **id**: TASK-MCP-001-01\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-001\n- **source_requirement**: REQ-MCP-001\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n")
-	writeTestFile(t, root, "docs/tasks/mcp/TASK-mcp-001-02-invalid.md", "# TASK-mcp-001-02: Invalid task ID\n- **id**: TASK-mcp-001-02\n- **status**: todo\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-001-01-bad-status.md", "# TASK-MCP-001-01: Bad task status\n- **id**: TASK-MCP-001-01\n- **status**: accepted\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-001\n- **source_requirement**: REQ-MCP-001\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-mcp-001-02-invalid.md", "# TASK-mcp-001-02: Invalid task ID\n- **id**: TASK-mcp-001-02\n- **status**: not_started\n")
 	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-002-mismatch.md", "# REQ-MCP-002: Mismatch\n- **id**: REQ-MCP-003\n- **status**: accepted\n")
 
 	idx := buildTestIndex(t, root)
@@ -214,7 +214,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:     "work item missing date",
 			kind:     RecordKindWorkItem,
 			path:     "docs/work-items/mcp/WORK-MCP-006-test.md",
-			content:  "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
+			content:  "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: not_started\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
 			recordID: "WORK-MCP-006",
 			category: DiagnosticMissingRequiredMetadata,
 			field:    "date",
@@ -223,7 +223,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:         "work item invalid date",
 			kind:         RecordKindWorkItem,
 			path:         "docs/work-items/mcp/WORK-MCP-006-test.md",
-			content:      "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-6-1\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
+			content:      "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: not_started\n- **date**: 2026-6-1\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
 			recordID:     "WORK-MCP-006",
 			category:     DiagnosticInvalidMetadataValue,
 			field:        "date",
@@ -234,7 +234,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:     "work item missing source_requirement",
 			kind:     RecordKindWorkItem,
 			path:     "docs/work-items/mcp/WORK-MCP-006-test.md",
-			content:  "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **impact_refs**:\n- **tasks**:\n",
+			content:  "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: not_started\n- **date**: 2026-06-01\n- **impact_refs**:\n- **tasks**:\n",
 			recordID: "WORK-MCP-006",
 			category: DiagnosticMissingRequiredMetadata,
 			field:    "source_requirement",
@@ -243,7 +243,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:         "work item empty source_requirement",
 			kind:         RecordKindWorkItem,
 			path:         "docs/work-items/mcp/WORK-MCP-006-test.md",
-			content:      "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**:\n- **impact_refs**:\n- **tasks**:\n",
+			content:      "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: not_started\n- **date**: 2026-06-01\n- **source_requirement**:\n- **impact_refs**:\n- **tasks**:\n",
 			recordID:     "WORK-MCP-006",
 			category:     DiagnosticEmptyRequiredMetadata,
 			field:        "source_requirement",
@@ -253,7 +253,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:     "work item missing impact_refs",
 			kind:     RecordKindWorkItem,
 			path:     "docs/work-items/mcp/WORK-MCP-006-test.md",
-			content:  "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **tasks**:\n",
+			content:  "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: not_started\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **tasks**:\n",
 			recordID: "WORK-MCP-006",
 			category: DiagnosticMissingRequiredMetadata,
 			field:    "impact_refs",
@@ -262,7 +262,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:       "work item empty impact_refs list is valid metadata",
 			kind:       RecordKindWorkItem,
 			path:       "docs/work-items/mcp/WORK-MCP-006-test.md",
-			content:    "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
+			content:    "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: not_started\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
 			recordID:   "WORK-MCP-006",
 			validField: "impact_refs",
 		},
@@ -270,7 +270,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:         "work item impact_refs empty item",
 			kind:         RecordKindWorkItem,
 			path:         "docs/work-items/mcp/WORK-MCP-006-test.md",
-			content:      "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n  -\n- **tasks**:\n",
+			content:      "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: not_started\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n  -\n- **tasks**:\n",
 			recordID:     "WORK-MCP-006",
 			category:     DiagnosticEmptyRequiredMetadata,
 			field:        "impact_refs",
@@ -280,7 +280,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:     "work item missing tasks",
 			kind:     RecordKindWorkItem,
 			path:     "docs/work-items/mcp/WORK-MCP-006-test.md",
-			content:  "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n",
+			content:  "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: not_started\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n",
 			recordID: "WORK-MCP-006",
 			category: DiagnosticMissingRequiredMetadata,
 			field:    "tasks",
@@ -289,15 +289,15 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:       "work item empty tasks list is valid metadata",
 			kind:       RecordKindWorkItem,
 			path:       "docs/work-items/mcp/WORK-MCP-006-test.md",
-			content:    "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
+			content:    "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: not_started\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
 			recordID:   "WORK-MCP-006",
 			validField: "tasks",
 		},
 		{
-			name:       "fixture_pending remains valid work item status",
+			name:       "in_progress is valid work item status",
 			kind:       RecordKindWorkItem,
 			path:       "docs/work-items/mcp/WORK-MCP-006-test.md",
-			content:    "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: fixture_pending\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
+			content:    "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: in_progress\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **impact_refs**:\n- **tasks**:\n",
 			recordID:   "WORK-MCP-006",
 			validField: "status",
 		},
@@ -305,7 +305,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:     "task missing date",
 			kind:     RecordKindTask,
 			path:     "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
 			recordID: "TASK-MCP-006-04",
 			category: DiagnosticMissingRequiredMetadata,
 			field:    "date",
@@ -314,7 +314,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:         "task invalid date",
 			kind:         RecordKindTask,
 			path:         "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: abc\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **date**: abc\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
 			recordID:     "TASK-MCP-006-04",
 			category:     DiagnosticInvalidMetadataValue,
 			field:        "date",
@@ -325,7 +325,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:     "task missing work_item",
 			kind:     RecordKindTask,
 			path:     "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
 			recordID: "TASK-MCP-006-04",
 			category: DiagnosticMissingRequiredMetadata,
 			field:    "work_item",
@@ -334,7 +334,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:         "task empty work_item",
 			kind:         RecordKindTask,
 			path:         "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**:\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **date**: 2026-06-01\n- **work_item**:\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
 			recordID:     "TASK-MCP-006-04",
 			category:     DiagnosticEmptyRequiredMetadata,
 			field:        "work_item",
@@ -344,7 +344,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:     "task missing source_requirement",
 			kind:     RecordKindTask,
 			path:     "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
 			recordID: "TASK-MCP-006-04",
 			category: DiagnosticMissingRequiredMetadata,
 			field:    "source_requirement",
@@ -353,7 +353,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:         "task empty source_requirement",
 			kind:         RecordKindTask,
 			path:         "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**:\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**:\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
 			recordID:     "TASK-MCP-006-04",
 			category:     DiagnosticEmptyRequiredMetadata,
 			field:        "source_requirement",
@@ -363,7 +363,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:     "task missing estimate",
 			kind:     RecordKindTask,
 			path:     "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **depends_on**:\n- **outputs**:\n",
+			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **depends_on**:\n- **outputs**:\n",
 			recordID: "TASK-MCP-006-04",
 			category: DiagnosticMissingRequiredMetadata,
 			field:    "estimate",
@@ -372,7 +372,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:         "task empty estimate",
 			kind:         RecordKindTask,
 			path:         "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**:\n- **depends_on**:\n- **outputs**:\n",
+			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**:\n- **depends_on**:\n- **outputs**:\n",
 			recordID:     "TASK-MCP-006-04",
 			category:     DiagnosticEmptyRequiredMetadata,
 			field:        "estimate",
@@ -382,7 +382,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:     "task missing depends_on",
 			kind:     RecordKindTask,
 			path:     "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **outputs**:\n",
+			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **outputs**:\n",
 			recordID: "TASK-MCP-006-04",
 			category: DiagnosticMissingRequiredMetadata,
 			field:    "depends_on",
@@ -391,7 +391,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:       "task empty depends_on list is valid metadata",
 			kind:       RecordKindTask,
 			path:       "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:    "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			content:    "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
 			recordID:   "TASK-MCP-006-04",
 			validField: "depends_on",
 		},
@@ -399,7 +399,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:         "task depends_on empty item",
 			kind:         RecordKindTask,
 			path:         "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n  -\n- **outputs**:\n",
+			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n  -\n- **outputs**:\n",
 			recordID:     "TASK-MCP-006-04",
 			category:     DiagnosticEmptyRequiredMetadata,
 			field:        "depends_on",
@@ -409,7 +409,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:     "task missing outputs",
 			kind:     RecordKindTask,
 			path:     "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n",
+			content:  "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n",
 			recordID: "TASK-MCP-006-04",
 			category: DiagnosticMissingRequiredMetadata,
 			field:    "outputs",
@@ -418,7 +418,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:       "task empty outputs list is valid metadata",
 			kind:       RecordKindTask,
 			path:       "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:    "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
+			content:    "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n",
 			recordID:   "TASK-MCP-006-04",
 			validField: "outputs",
 		},
@@ -426,7 +426,7 @@ func TestValidateRecordsWorkflowMetadataStrictness(t *testing.T) {
 			name:         "task outputs empty item",
 			kind:         RecordKindTask,
 			path:         "docs/tasks/mcp/TASK-MCP-006-04-test.md",
-			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  -\n",
+			content:      "# TASK-MCP-006-04: Test\n- **id**: TASK-MCP-006-04\n- **status**: not_started\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-006\n- **source_requirement**: REQ-MCP-006\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  -\n",
 			recordID:     "TASK-MCP-006-04",
 			category:     DiagnosticEmptyRequiredMetadata,
 			field:        "outputs",
@@ -892,8 +892,8 @@ func TestValidateRecordsInvestigationWorkflowReferenceBoundary(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, root, "docs/adr/001-valid.md", "# 001: Valid\n- **status**: accepted\n")
 	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-valid.md", "# REQ-MCP-003: Valid requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n  - ADR-001\n- **work_items**:\n  - WORK-MCP-003\n")
-	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-valid.md", "# WORK-MCP-003: Valid work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n  - ADR-001\n- **tasks**:\n  - TASK-MCP-003-01\n")
-	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-valid.md", "# TASK-MCP-003-01: Valid task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - test\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-valid.md", "# WORK-MCP-003: Valid work item\n- **id**: WORK-MCP-003\n- **status**: not_started\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n  - ADR-001\n- **tasks**:\n  - TASK-MCP-003-01\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-valid.md", "# TASK-MCP-003-01: Valid task\n- **id**: TASK-MCP-003-01\n- **status**: not_started\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - test\n")
 	writeTestFile(t, root, "docs/investigations/docs/INV-DOCS-001-test.md", "# INV-DOCS-001: Test investigation\n- **status**: concluded\n- **date**: 2026-05-19\n- **trigger**: TASK-MCP-003-01\n- **scope**: test\n- **non_scope**: none\n- **source_refs**:\n  - REQ-MCP-003\n  - WORK-MCP-003\n  - REQ-MCP-999\n  - WORK-MCP-999\n  - TASK-MCP-003-01\n  - TASK-MCP-999-99\n- **follow_up_candidates**:\n  - REQ-MCP-003\n  - WORK-MCP-003\n  - REQ-MCP-998\n  - WORK-MCP-998\n  - TASK-MCP-003-01\n  - TASK-MCP-998-99\n- **follow_up_results**:\n  - REQ-MCP-003\n  - WORK-MCP-003\n  - REQ-MCP-997\n  - WORK-MCP-997\n  - TASK-MCP-003-01\n  - TASK-MCP-997-99\n- **related_requirements**:\n  - REQ-MCP-999\n  - TASK-MCP-003-01\n- **related_work_items**:\n  - WORK-MCP-999\n")
 	idx := buildTestIndex(t, root)
 
@@ -1063,7 +1063,7 @@ func TestValidateRecordsKindFilter(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, root, "docs/adr/001-decision.md", "# 001: Decision\n- **status**: draft\n")
 	writeTestFile(t, root, "docs/spec/spec.md", "---\nstatus: accepted\ndesign_record:\n  id: SPEC-bad\n  kind: spec\n---\n# Spec\n")
-	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-task.md", "# TASK-MCP-003-01: Task\n- **id**: TASK-MCP-003-01\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-task.md", "# TASK-MCP-003-01: Task\n- **id**: TASK-MCP-003-01\n- **status**: accepted\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n")
 
 	idx := buildTestIndex(t, root)
 	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{Kind: RecordKindDecision})
@@ -1153,12 +1153,12 @@ func TestValidateRecordsIDRangeFilter(t *testing.T) {
 func TestValidateRecordsWorkflowIDRangeFilter(t *testing.T) {
 	records := []Record{
 		{ID: "REQ-DATA-001", NormalizedID: "REQ-DATA-001", Kind: RecordKindRequirement, Title: "Req 1", Status: RecordStatusCaptured, Path: "docs/requirements/data/REQ-DATA-001-test.md", Requirement: &RequirementDetail{}},
-		{ID: "REQ-DATA-002", NormalizedID: "REQ-DATA-002", Kind: RecordKindRequirement, Title: "Req 2", Status: RecordStatusTodo, Path: "docs/requirements/data/REQ-DATA-002-test.md", Requirement: &RequirementDetail{}},
-		{ID: "REQ-MCP-001", NormalizedID: "REQ-MCP-001", Kind: RecordKindRequirement, Title: "Req other domain", Status: RecordStatusTodo, Path: "docs/requirements/mcp/REQ-MCP-001-test.md", Requirement: &RequirementDetail{}},
+		{ID: "REQ-DATA-002", NormalizedID: "REQ-DATA-002", Kind: RecordKindRequirement, Title: "Req 2", Status: RecordStatusNotStarted, Path: "docs/requirements/data/REQ-DATA-002-test.md", Requirement: &RequirementDetail{}},
+		{ID: "REQ-MCP-001", NormalizedID: "REQ-MCP-001", Kind: RecordKindRequirement, Title: "Req other domain", Status: RecordStatusNotStarted, Path: "docs/requirements/mcp/REQ-MCP-001-test.md", Requirement: &RequirementDetail{}},
 		{ID: "WORK-DATA-001", NormalizedID: "WORK-DATA-001", Kind: RecordKindWorkItem, Title: "Work 1", Status: RecordStatusNotStarted, Path: "docs/work-items/data/WORK-DATA-001-test.md", WorkItem: &WorkItemDetail{}},
 		{ID: "WORK-DATA-002", NormalizedID: "WORK-DATA-002", Kind: RecordKindWorkItem, Title: "Work 2", Status: RecordStatusAccepted, Path: "docs/work-items/data/WORK-DATA-002-test.md", WorkItem: &WorkItemDetail{}},
 		{ID: "WORK-MCP-002", NormalizedID: "WORK-MCP-002", Kind: RecordKindWorkItem, Title: "Work other domain", Status: RecordStatusAccepted, Path: "docs/work-items/mcp/WORK-MCP-002-test.md", WorkItem: &WorkItemDetail{}},
-		{ID: "TASK-MCP-007-01", NormalizedID: "TASK-MCP-007-01", Kind: RecordKindTask, Title: "Task 1", Status: RecordStatusTodo, Path: "docs/tasks/mcp/TASK-MCP-007-01-test.md", Task: &TaskDetail{}},
+		{ID: "TASK-MCP-007-01", NormalizedID: "TASK-MCP-007-01", Kind: RecordKindTask, Title: "Task 1", Status: RecordStatusNotStarted, Path: "docs/tasks/mcp/TASK-MCP-007-01-test.md", Task: &TaskDetail{}},
 		{ID: "TASK-MCP-007-02", NormalizedID: "TASK-MCP-007-02", Kind: RecordKindTask, Title: "Task 2", Status: RecordStatusAccepted, Path: "docs/tasks/mcp/TASK-MCP-007-02-test.md", Task: &TaskDetail{}},
 		{ID: "TASK-MCP-008-01", NormalizedID: "TASK-MCP-008-01", Kind: RecordKindTask, Title: "Task other work", Status: RecordStatusAccepted, Path: "docs/tasks/mcp/TASK-MCP-008-01-test.md", Task: &TaskDetail{}},
 	}
@@ -1451,7 +1451,7 @@ func workItemTestRecord(id, sourceRequirement string, tasks []string) Record {
 		NormalizedID: normalizeRecordID(id),
 		Kind:         RecordKindWorkItem,
 		Title:        id,
-		Status:       RecordStatusImplementationPending,
+		Status:       RecordStatusInProgress,
 		Path:         "docs/work-items/mcp/" + id + "-test.md",
 		WorkItem: &WorkItemDetail{
 			SourceRequirement: sourceRequirement,
@@ -1467,7 +1467,7 @@ func taskTestRecord(id, workItem, sourceRequirement string, dependsOn []string) 
 		NormalizedID: normalizeRecordID(id),
 		Kind:         RecordKindTask,
 		Title:        id,
-		Status:       RecordStatusTodo,
+		Status:       RecordStatusNotStarted,
 		Path:         "docs/tasks/mcp/" + id + "-test.md",
 		Task: &TaskDetail{
 			WorkItem:          workItem,
@@ -1482,9 +1482,9 @@ func taskTestRecord(id, workItem, sourceRequirement string, dependsOn []string) 
 func writeWorkflowHappyPathFixture(t *testing.T, root string) {
 	t.Helper()
 	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-003-valid.md", "# REQ-MCP-003: Valid requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-003\n\n## Requirement\n\nRequirement content.\n\n## Required Outcome\n\nOutcome content.\n")
-	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-valid.md", "# WORK-MCP-003: Valid work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-003-01\n  - TASK-MCP-003-02\n")
-	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-valid.md", "# TASK-MCP-003-01: First task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - first\n")
-	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-02-valid.md", "# TASK-MCP-003-02: Second task\n- **id**: TASK-MCP-003-02\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n  - TASK-MCP-003-01\n- **outputs**:\n  - second\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-003-valid.md", "# WORK-MCP-003: Valid work item\n- **id**: WORK-MCP-003\n- **status**: in_progress\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-003-01\n  - TASK-MCP-003-02\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-01-valid.md", "# TASK-MCP-003-01: First task\n- **id**: TASK-MCP-003-01\n- **status**: not_started\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - first\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-003-02-valid.md", "# TASK-MCP-003-02: Second task\n- **id**: TASK-MCP-003-02\n- **status**: not_started\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n  - TASK-MCP-003-01\n- **outputs**:\n  - second\n")
 }
 
 func isWorkflowRelationDiagnostic(category DiagnosticCategory) bool {
@@ -1760,7 +1760,7 @@ func TestValidateRecordsRequiredNarrativeSections(t *testing.T) {
 
 	t.Run("task todo empty Evidence not checked", func(t *testing.T) {
 		root := t.TempDir()
-		content := "# TASK-MCP-007-01: Test\n- **id**: TASK-MCP-007-01\n- **status**: todo\n- **date**: 2026-06-03\n- **work_item**: WORK-MCP-007\n- **source_requirement**: REQ-MCP-007\n- **estimate**: 1d\n- **depends_on**:\n- **outputs**:\n\n## Goal\n\n## Evidence\n"
+		content := "# TASK-MCP-007-01: Test\n- **id**: TASK-MCP-007-01\n- **status**: not_started\n- **date**: 2026-06-03\n- **work_item**: WORK-MCP-007\n- **source_requirement**: REQ-MCP-007\n- **estimate**: 1d\n- **depends_on**:\n- **outputs**:\n\n## Goal\n\n## Evidence\n"
 		writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-007-01-test.md", content)
 		resp, err := ValidateRecords(context.Background(), buildTestIndex(t, root), ValidateRecordsRequest{Kind: RecordKindTask})
 		if err != nil {
@@ -1900,5 +1900,5 @@ func TestRequiredSectionHeadingCaseMismatchDiagnostics(t *testing.T) {
 func writeHeadingCaseMismatchWorkflowParents(t *testing.T, root string) {
 	t.Helper()
 	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-021-heading-case-mismatch.md", "# REQ-MCP-021: Heading case mismatch\n\n- **id**: REQ-MCP-021\n- **status**: captured\n- **date**: 2026-06-05\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-021\n")
-	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-021-heading-case-mismatch.md", "# WORK-MCP-021: Heading case mismatch\n\n- **id**: WORK-MCP-021\n- **status**: implementation_pending\n- **date**: 2026-06-05\n- **source_requirement**: REQ-MCP-021\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-021-01\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-021-heading-case-mismatch.md", "# WORK-MCP-021: Heading case mismatch\n\n- **id**: WORK-MCP-021\n- **status**: not_started\n- **date**: 2026-06-05\n- **source_requirement**: REQ-MCP-021\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-021-01\n")
 }

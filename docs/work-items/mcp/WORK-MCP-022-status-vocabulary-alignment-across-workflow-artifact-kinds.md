@@ -1,7 +1,7 @@
 # WORK-MCP-022: status vocabulary alignment across workflow artifact kinds
 
 - **id**: WORK-MCP-022
-- **status**: not_started
+- **status**: blocked
 - **date**: 2026-06-06
 - **source_requirement**: REQ-MCP-026
 - **impact_refs**:
@@ -11,6 +11,9 @@
   - TASK-MCP-022-01
   - TASK-MCP-022-02
   - TASK-MCP-022-03
+  - TASK-MCP-022-04
+  - TASK-MCP-022-05
+  - TASK-MCP-022-06
 
 ## Goal
 
@@ -33,26 +36,26 @@ LLM callers が trial-and-error なしに valid status を使えるよう、reca
 - 既存 task / work_item records — migration
 
 ## Task flow
-
 ```
-TASK-MCP-022-01 (analysis)
-  → USER GATE: alignment direction 決定
-TASK-MCP-022-02 (spec update)
-  → EXTERNAL REVIEW: Codex spec diff (optional)
-TASK-MCP-022-03 (Go implementation)
-  → EXTERNAL REVIEW: Codex code review (optional)
-TASK-MCP-022-04 (authoring guide update)
-TASK-MCP-022-05 (record migration)
-  → USER GATE: REQ-MCP-023 scope reassessment
+TASK-MCP-022-01 (analysis) ✓
+  → USER GATE ①: alignment direction 決定 ✓
+TASK-MCP-022-02 (ADR-094 drafting and acceptance) ✓
+  → EXTERNAL REVIEW: Codex spec diff ✓
+TASK-MCP-022-03 (spec schema.md status vocabulary update) ✓
+  → EXTERNAL REVIEW: Codex code review ✓
+TASK-MCP-022-04 (Go implementation: types.go / validation.go) ✓
+TASK-MCP-022-05 (authoring guide update + tools.md examples) ✓
+TASK-MCP-022-06 (existing record migration) ✓
+  → USER GATE ②: REQ-MCP-023 scope reassessment ← pending
 ```
 
 ## Task Candidates
-
-- TASK-MCP-022-01: vocabulary alignment analysis
-- TASK-MCP-022-02: spec schema.md 更新
-- TASK-MCP-022-03: Go implementation 更新
-- TASK-MCP-022-04: authoring guide 更新
-- TASK-MCP-022-05: 既存レコード migration
+- TASK-MCP-022-01: vocabulary alignment analysis ✓
+- TASK-MCP-022-02: ADR-094 drafting and acceptance ✓
+- TASK-MCP-022-03: spec schema.md status vocabulary update ✓
+- TASK-MCP-022-04: Go implementation (types.go / validation.go) ✓
+- TASK-MCP-022-05: authoring guide update + tools.md examples ✓
+- TASK-MCP-022-06: existing record migration ✓
 
 ## Completion Condition
 

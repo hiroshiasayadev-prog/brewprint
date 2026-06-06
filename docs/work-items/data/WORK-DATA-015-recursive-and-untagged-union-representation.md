@@ -1,7 +1,7 @@
 # WORK-DATA-015: Define recursive and untagged-union representation
 
 - **id**: WORK-DATA-015
-- **status**: decision_pending
+- **status**: blocked
 - **date**: 2026-06-01
 - **source_requirement**: REQ-DATA-008
 - **impact_refs**:

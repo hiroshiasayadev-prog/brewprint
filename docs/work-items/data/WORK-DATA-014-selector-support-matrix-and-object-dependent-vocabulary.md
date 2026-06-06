@@ -1,7 +1,7 @@
 # WORK-DATA-014: Define selector support matrix and object-dependent vocabulary
 
 - **id**: WORK-DATA-014
-- **status**: decision_pending
+- **status**: blocked
 - **date**: 2026-06-01
 - **source_requirement**: REQ-DATA-007
 - **impact_refs**:

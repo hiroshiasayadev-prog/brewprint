@@ -266,7 +266,7 @@ func TestWorkflowRecordParsersMetadataAndDiagnostics(t *testing.T) {
 
 	workRaw := "# WORK-MCP-003: Workflow implementation\n\n" +
 		"- **id**: WORK-MCP-003\n" +
-		"- **status**: implementation_pending\n" +
+		"- **status**: in_progress\n" +
 		"- **date**: 2026-05-26\n" +
 		"- **source_requirement**: REQ-MCP-003\n" +
 		"- **impact_refs**:\n" +
@@ -277,7 +277,7 @@ func TestWorkflowRecordParsersMetadataAndDiagnostics(t *testing.T) {
 	if work == nil || candidate.FilenameIDMismatch || len(issues) != 0 {
 		t.Fatalf("work item parse = %#v candidate=%#v issues=%#v", work, candidate, issues)
 	}
-	if work.Kind != RecordKindWorkItem || work.ID != "WORK-MCP-003" || work.Status != RecordStatusImplementationPending {
+	if work.Kind != RecordKindWorkItem || work.ID != "WORK-MCP-003" || work.Status != RecordStatusInProgress {
 		t.Fatalf("work item record = %#v", work)
 	}
 	if work.WorkItem.SourceRequirement != "REQ-MCP-003" {
@@ -288,7 +288,7 @@ func TestWorkflowRecordParsersMetadataAndDiagnostics(t *testing.T) {
 
 	taskRaw := "# TASK-MCP-003-04: Implement workflow records\n\n" +
 		"- **id**: TASK-MCP-003-04\n" +
-		"- **status**: doing\n" +
+		"- **status**: in_progress\n" +
 		"- **date**: 2026-05-26\n" +
 		"- **work_item**: WORK-MCP-003\n" +
 		"- **source_requirement**: REQ-MCP-003\n" +
@@ -300,7 +300,7 @@ func TestWorkflowRecordParsersMetadataAndDiagnostics(t *testing.T) {
 	if task == nil || candidate.FilenameIDMismatch || len(issues) != 0 {
 		t.Fatalf("task parse = %#v candidate=%#v issues=%#v", task, candidate, issues)
 	}
-	if task.Kind != RecordKindTask || task.ID != "TASK-MCP-003-04" || task.Status != RecordStatusDoing {
+	if task.Kind != RecordKindTask || task.ID != "TASK-MCP-003-04" || task.Status != RecordStatusInProgress {
 		t.Fatalf("task record = %#v", task)
 	}
 	if task.Task.WorkItem != "WORK-MCP-003" || task.Task.SourceRequirement != "REQ-MCP-003" || task.Task.Estimate != "1.5d" {

@@ -136,7 +136,7 @@ func TestAuthoringAcceptPartialMultiFileWriteReportsWrittenFiles(t *testing.T) {
 		Domain:   "MCP",
 		ParentID: "WORK-MCP-001",
 		Title:    "Partial write task",
-		Fields:   map[string]any{"status": "todo", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}},
+		Fields:   map[string]any{"status": "not_started", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}},
 	})
 	if err != nil {
 		t.Fatalf("Propose create: %v", err)
@@ -198,12 +198,12 @@ func TestAuthoringCreateIDResolutionAndRejectedNewForms(t *testing.T) {
 		},
 		{
 			name: "WORK-new",
-			req:  ProposeRecordCreateRequest{Kind: RecordKindWorkItem, ID: "WORK-MCP-new", Domain: "MCP", Title: "Next work", Fields: map[string]any{"status": "implementation_pending", "date": "2026-06-02", "source_requirement": "REQ-MCP-001", "impact_refs": []any{}, "tasks": []any{}}},
+			req:  ProposeRecordCreateRequest{Kind: RecordKindWorkItem, ID: "WORK-MCP-new", Domain: "MCP", Title: "Next work", Fields: map[string]any{"status": "not_started", "date": "2026-06-02", "source_requirement": "REQ-MCP-001", "impact_refs": []any{}, "tasks": []any{}}},
 			want: "WORK-MCP-002",
 		},
 		{
 			name: "TASK-new",
-			req:  ProposeRecordCreateRequest{Kind: RecordKindTask, ID: "TASK-MCP-001-new", Domain: "MCP", ParentID: "WORK-MCP-001", Title: "Next task", Fields: map[string]any{"status": "todo", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}}},
+			req:  ProposeRecordCreateRequest{Kind: RecordKindTask, ID: "TASK-MCP-001-new", Domain: "MCP", ParentID: "WORK-MCP-001", Title: "Next task", Fields: map[string]any{"status": "not_started", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}}},
 			want: "TASK-MCP-001-02",
 		},
 	}
@@ -484,7 +484,7 @@ func TestAuthoringTaskCreateRequiresExplicitParentMetadataAndReciprocalUpdate(t 
 		ID:     "TASK-MCP-001-new",
 		Domain: "MCP",
 		Title:  "No parent",
-		Fields: map[string]any{"status": "todo", "date": "2026-06-02", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{}},
+		Fields: map[string]any{"status": "not_started", "date": "2026-06-02", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{}},
 	})
 	if err != nil {
 		t.Fatalf("task without parent: %v", err)
@@ -499,7 +499,7 @@ func TestAuthoringTaskCreateRequiresExplicitParentMetadataAndReciprocalUpdate(t 
 		Domain:   "MCP",
 		ParentID: "WORK-MCP-001",
 		Title:    "No explicit relation",
-		Fields:   map[string]any{"status": "todo", "date": "2026-06-02", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{}},
+		Fields:   map[string]any{"status": "not_started", "date": "2026-06-02", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{}},
 	})
 	if err != nil {
 		t.Fatalf("task without explicit work_item: %v", err)
@@ -514,7 +514,7 @@ func TestAuthoringTaskCreateRequiresExplicitParentMetadataAndReciprocalUpdate(t 
 		Domain:   "MCP",
 		ParentID: "WORK-MCP-001",
 		Title:    "Second task",
-		Fields:   map[string]any{"status": "todo", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}},
+		Fields:   map[string]any{"status": "not_started", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}},
 	})
 	if err != nil {
 		t.Fatalf("task reciprocal: %v", err)
@@ -532,7 +532,7 @@ func TestAuthoringTaskCreateRequiresExplicitParentMetadataAndReciprocalUpdate(t 
 		Domain:               "MCP",
 		ParentID:             "WORK-MCP-001",
 		Title:                "Follow-up task",
-		Fields:               map[string]any{"status": "todo", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}},
+		Fields:               map[string]any{"status": "not_started", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}},
 		ReciprocalUpdateMode: "report_required_follow_up",
 	})
 	if err != nil {
@@ -633,13 +633,13 @@ func TestAuthoringMetadataReplacement(t *testing.T) {
 		Kind: RecordKindTask,
 		ID:   "TASK-MCP-001-01",
 		Update: UpdateRequest{Type: UpdateTypeMetadataBlockReplace, Metadata: map[string]any{
-			"id": "TASK-MCP-001-01", "status": "doing", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "1d", "depends_on": []any{}, "outputs": []any{"updated"},
+			"id": "TASK-MCP-001-01", "status": "in_progress", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "1d", "depends_on": []any{}, "outputs": []any{"updated"},
 		}},
 	})
 	if err != nil {
 		t.Fatalf("task metadata replace: %v", err)
 	}
-	if !task.ProposalCreated || !strings.Contains(task.Diff.Text, "- **status**: doing") {
+	if !task.ProposalCreated || !strings.Contains(task.Diff.Text, "- **status**: in_progress") {
 		t.Fatalf("task metadata response = %#v", task)
 	}
 
@@ -682,7 +682,7 @@ func TestAuthoringMetadataReplacementMissingRequiredFields(t *testing.T) {
 		Kind: RecordKindTask,
 		ID:   "TASK-MCP-001-01",
 		Update: UpdateRequest{Type: UpdateTypeMetadataBlockReplace, Metadata: map[string]any{
-			"id": "TASK-MCP-001-01", "status": "doing", "date": "2026-06-02", "work_item": "WORK-MCP-001", "estimate": "1d", "depends_on": []any{}, "outputs": []any{"updated"},
+			"id": "TASK-MCP-001-01", "status": "in_progress", "date": "2026-06-02", "work_item": "WORK-MCP-001", "estimate": "1d", "depends_on": []any{}, "outputs": []any{"updated"},
 		}},
 	})
 	if err != nil {
@@ -855,7 +855,7 @@ func TestProposeRecordUpdateRequiredHeadingCaseFallback(t *testing.T) {
 
 	t.Run("fallback applies even when task is not in gated status", func(t *testing.T) {
 		fx := newAuthoringFixture(t)
-		writeAuthoringTaskRecord(t, fx.root, RecordStatusTodo, "## Goal\n\nGoal text.\n\n## Done Condition\n\nOld done text.\n")
+		writeAuthoringTaskRecord(t, fx.root, RecordStatusNotStarted, "## Goal\n\nGoal text.\n\n## Done Condition\n\nOld done text.\n")
 		fx.idx = mustBuildIndex(t, fx.cfg)
 
 		resp, err := proposeNamedSectionForAuthoringFixture(t, fx, RecordKindTask, "TASK-MCP-001-01", SectionSelector{Heading: "Done condition"}, "New done text.\n")
@@ -869,7 +869,7 @@ func TestProposeRecordUpdateRequiredHeadingCaseFallback(t *testing.T) {
 
 	t.Run("ambiguous case-insensitive required headings fail closed", func(t *testing.T) {
 		fx := newAuthoringFixture(t)
-		writeAuthoringTaskRecord(t, fx.root, RecordStatusTodo, "## Goal\n\nGoal text.\n\n## Done Condition\n\nFirst.\n\n## DONE CONDITION\n\nSecond.\n")
+		writeAuthoringTaskRecord(t, fx.root, RecordStatusNotStarted, "## Goal\n\nGoal text.\n\n## Done Condition\n\nFirst.\n\n## DONE CONDITION\n\nSecond.\n")
 		fx.idx = mustBuildIndex(t, fx.cfg)
 
 		resp, err := proposeNamedSectionForAuthoringFixture(t, fx, RecordKindTask, "TASK-MCP-001-01", SectionSelector{Heading: "Done condition"}, "New done text.\n")
@@ -887,7 +887,7 @@ func TestProposeRecordUpdateRequiredHeadingCaseFallback(t *testing.T) {
 
 	t.Run("non-case mismatch still fails with no fuzzy matching", func(t *testing.T) {
 		fx := newAuthoringFixture(t)
-		writeAuthoringTaskRecord(t, fx.root, RecordStatusTodo, "## Goal\n\nGoal text.\n\n## Done conditions\n\nOld done text.\n")
+		writeAuthoringTaskRecord(t, fx.root, RecordStatusNotStarted, "## Goal\n\nGoal text.\n\n## Done conditions\n\nOld done text.\n")
 		fx.idx = mustBuildIndex(t, fx.cfg)
 
 		resp, err := proposeNamedSectionForAuthoringFixture(t, fx, RecordKindTask, "TASK-MCP-001-01", SectionSelector{Heading: "Done condition"}, "New done text.\n")
@@ -901,7 +901,7 @@ func TestProposeRecordUpdateRequiredHeadingCaseFallback(t *testing.T) {
 
 	t.Run("optional user-defined headings are not canonicalized", func(t *testing.T) {
 		fx := newAuthoringFixture(t)
-		writeAuthoringTaskRecord(t, fx.root, RecordStatusTodo, "## Goal\n\nGoal text.\n\n## Custom Notes\n\nOptional notes.\n")
+		writeAuthoringTaskRecord(t, fx.root, RecordStatusNotStarted, "## Goal\n\nGoal text.\n\n## Custom Notes\n\nOptional notes.\n")
 		fx.idx = mustBuildIndex(t, fx.cfg)
 
 		resp, err := proposeNamedSectionForAuthoringFixture(t, fx, RecordKindTask, "TASK-MCP-001-01", SectionSelector{Heading: "Custom notes"}, "Updated notes.\n")
@@ -932,7 +932,7 @@ func TestProposeRecordUpdateRequiredHeadingCaseFallback(t *testing.T) {
 
 	t.Run("exact case-sensitive match remains default", func(t *testing.T) {
 		fx := newAuthoringFixture(t)
-		writeAuthoringTaskRecord(t, fx.root, RecordStatusTodo, "## Evidence\n\nExact evidence.\n\n## evidence\n\nLowercase evidence.\n")
+		writeAuthoringTaskRecord(t, fx.root, RecordStatusNotStarted, "## Evidence\n\nExact evidence.\n\n## evidence\n\nLowercase evidence.\n")
 		fx.idx = mustBuildIndex(t, fx.cfg)
 
 		resp, err := proposeNamedSectionForAuthoringFixture(t, fx, RecordKindTask, "TASK-MCP-001-01", SectionSelector{Heading: "Evidence"}, "Updated exact evidence.\n")
@@ -946,7 +946,7 @@ func TestProposeRecordUpdateRequiredHeadingCaseFallback(t *testing.T) {
 
 	t.Run("fallback honors selector level", func(t *testing.T) {
 		fx := newAuthoringFixture(t)
-		writeAuthoringTaskRecord(t, fx.root, RecordStatusTodo, "## Goal\n\nGoal text.\n\n### Done Condition\n\nNested done text.\n")
+		writeAuthoringTaskRecord(t, fx.root, RecordStatusNotStarted, "## Goal\n\nGoal text.\n\n### Done Condition\n\nNested done text.\n")
 		fx.idx = mustBuildIndex(t, fx.cfg)
 		level := 2
 
@@ -1135,7 +1135,7 @@ func TestBodyCacheReturnClassification(t *testing.T) {
 		fx := newAuthoringFixture(t)
 		sectionBody := "## Goal\n\nTask goal.\n\n## Evidence\n\nEvidence.\n"
 		// fields.work_item does not match parent_id, causing renderCreateHeader to fail after body validation passes
-		fields := map[string]any{"status": "todo", "date": "2026-06-02", "work_item": "WORK-WRONG-ID", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{}}
+		fields := map[string]any{"status": "not_started", "date": "2026-06-02", "work_item": "WORK-WRONG-ID", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{}}
 		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
 			Kind:     RecordKindTask,
 			ID:       "TASK-MCP-001-new",
@@ -1555,8 +1555,8 @@ func newAuthoringFixture(t *testing.T) authoringFixture {
 	root := t.TempDir()
 	writeTestFile(t, root, "docs/adr/001-one.md", "# 001: One\n\n- **status**: accepted\n- **date**: 2026-06-01\n- **depends_on**: \n- **supersedes**: \n- **migrated_to_spec**: \n")
 	writeTestFile(t, root, "docs/requirements/mcp/REQ-MCP-001-first-req.md", "# REQ-MCP-001: First req\n\n- **id**: REQ-MCP-001\n- **status**: captured\n- **date**: 2026-06-01\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-001\n\n## Requirement\n")
-	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-001-first-work.md", "# WORK-MCP-001: First work\n\n- **id**: WORK-MCP-001\n- **status**: implementation_pending\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-001-01\n\n## Goal\n")
-	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-001-01-first-task.md", "# TASK-MCP-001-01: First task\n\n- **id**: TASK-MCP-001-01\n- **status**: todo\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-001\n- **source_requirement**: REQ-MCP-001\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - initial\n\n## Goal\n\n## Verification\n\n## Evidence\nold evidence\n")
+	writeTestFile(t, root, "docs/work-items/mcp/WORK-MCP-001-first-work.md", "# WORK-MCP-001: First work\n\n- **id**: WORK-MCP-001\n- **status**: in_progress\n- **date**: 2026-06-01\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-001-01\n\n## Goal\n")
+	writeTestFile(t, root, "docs/tasks/mcp/TASK-MCP-001-01-first-task.md", "# TASK-MCP-001-01: First task\n\n- **id**: TASK-MCP-001-01\n- **status**: not_started\n- **date**: 2026-06-01\n- **work_item**: WORK-MCP-001\n- **source_requirement**: REQ-MCP-001\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - initial\n\n## Goal\n\n## Verification\n\n## Evidence\nold evidence\n")
 	writeTestFile(t, root, "docs/spec/test.md", "---\nscope: docs/spec/test.md\nstatus: draft\nauxiliary: keep-me\nsummary: '# Ignored'\ndesign_record:\n  id: SPEC-test\n  kind: spec\n  status: draft\n  depends_on:\n    - ADR-001\n---\n\n# Test spec\n\n```md\n## Ignored\n```\n\n## Real\n")
 	cfg, err := NewConfig(root)
 	if err != nil {

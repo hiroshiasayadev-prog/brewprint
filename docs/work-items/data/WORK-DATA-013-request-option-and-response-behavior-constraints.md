@@ -1,7 +1,7 @@
 # WORK-DATA-013: Define request option and response behavior constraints
 
 - **id**: WORK-DATA-013
-- **status**: decision_pending
+- **status**: blocked
 - **date**: 2026-06-01
 - **source_requirement**: REQ-DATA-006
 - **impact_refs**:

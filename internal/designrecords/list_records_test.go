@@ -205,9 +205,9 @@ func TestListRecordsWorkflowIDRangeFilter(t *testing.T) {
 		{ID: "WORK-DATA-002", NormalizedID: "WORK-DATA-002", Kind: RecordKindWorkItem, Title: "Data work 2", Status: RecordStatusNotStarted, Path: "docs/work-items/data/WORK-DATA-002-test.md", WorkItem: &WorkItemDetail{}},
 		{ID: "WORK-DATA-003", NormalizedID: "WORK-DATA-003", Kind: RecordKindWorkItem, Title: "Data work 3", Status: RecordStatusNotStarted, Path: "docs/work-items/data/WORK-DATA-003-test.md", WorkItem: &WorkItemDetail{}},
 		{ID: "WORK-MCP-001", NormalizedID: "WORK-MCP-001", Kind: RecordKindWorkItem, Title: "MCP work 1", Status: RecordStatusNotStarted, Path: "docs/work-items/mcp/WORK-MCP-001-test.md", WorkItem: &WorkItemDetail{}},
-		{ID: "TASK-MCP-007-01", NormalizedID: "TASK-MCP-007-01", Kind: RecordKindTask, Title: "Task 1", Status: RecordStatusTodo, Path: "docs/tasks/mcp/TASK-MCP-007-01-test.md", Task: &TaskDetail{}},
-		{ID: "TASK-MCP-007-02", NormalizedID: "TASK-MCP-007-02", Kind: RecordKindTask, Title: "Task 2", Status: RecordStatusTodo, Path: "docs/tasks/mcp/TASK-MCP-007-02-test.md", Task: &TaskDetail{}},
-		{ID: "TASK-MCP-008-01", NormalizedID: "TASK-MCP-008-01", Kind: RecordKindTask, Title: "Task other work", Status: RecordStatusTodo, Path: "docs/tasks/mcp/TASK-MCP-008-01-test.md", Task: &TaskDetail{}},
+		{ID: "TASK-MCP-007-01", NormalizedID: "TASK-MCP-007-01", Kind: RecordKindTask, Title: "Task 1", Status: RecordStatusNotStarted, Path: "docs/tasks/mcp/TASK-MCP-007-01-test.md", Task: &TaskDetail{}},
+		{ID: "TASK-MCP-007-02", NormalizedID: "TASK-MCP-007-02", Kind: RecordKindTask, Title: "Task 2", Status: RecordStatusNotStarted, Path: "docs/tasks/mcp/TASK-MCP-007-02-test.md", Task: &TaskDetail{}},
+		{ID: "TASK-MCP-008-01", NormalizedID: "TASK-MCP-008-01", Kind: RecordKindTask, Title: "Task other work", Status: RecordStatusNotStarted, Path: "docs/tasks/mcp/TASK-MCP-008-01-test.md", Task: &TaskDetail{}},
 	}}
 
 	tests := []struct {

@@ -567,9 +567,9 @@ func statusAllowedForKind(kind RecordKind, status RecordStatus) bool {
 	case RecordKindRequirement:
 		return status == RecordStatusCaptured || status == RecordStatusDecisionNeeded || status == RecordStatusAccepted || status == RecordStatusDeferred || status == RecordStatusRejected
 	case RecordKindWorkItem:
-		return status == RecordStatusNotStarted || status == RecordStatusDecisionPending || status == RecordStatusDesignSpecPending || status == RecordStatusInternalDesignPending || status == RecordStatusYAMLPending || status == RecordStatusImplementationPending || status == RecordStatusFixturePending || status == RecordStatusVerificationPending || status == RecordStatusDone || status == RecordStatusBlocked
+		return status == RecordStatusNotStarted || status == RecordStatusInProgress || status == RecordStatusBlocked || status == RecordStatusDone
 	case RecordKindTask:
-		return status == RecordStatusTodo || status == RecordStatusDoing || status == RecordStatusBlocked || status == RecordStatusDone
+		return status == RecordStatusNotStarted || status == RecordStatusInProgress || status == RecordStatusBlocked || status == RecordStatusDone
 	default:
 		return false
 	}

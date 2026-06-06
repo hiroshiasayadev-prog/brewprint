@@ -60,7 +60,7 @@ func TestGetRecordsMixedKindsPartialResultsAndDuplicates(t *testing.T) {
 			ID:      "WORK-MCP-003",
 			Kind:    RecordKindWorkItem,
 			Title:   "Workflow implementation",
-			Status:  RecordStatusImplementationPending,
+			Status:  RecordStatusInProgress,
 			Path:    "docs/work-items/mcp/WORK-MCP-003-workflow-implementation.md",
 			RawBody: "# WORK-MCP-003: Workflow implementation\n",
 			WorkItem: &WorkItemDetail{

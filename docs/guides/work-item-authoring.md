@@ -38,7 +38,7 @@ docs/work-items/<domain>/WORK-<DOMAIN>-NNN-<slug>.md
 # WORK-<DOMAIN>-NNN: <title>
 
 - **id**: WORK-<DOMAIN>-NNN
-- **status**: not_started / decision_pending / design_spec_pending / internal_design_pending / yaml_pending / implementation_pending / fixture_pending / verification_pending / done / blocked
+- **status**: not_started / in_progress / blocked / done
 - **date**: YYYY-MM-DD
 - **source_requirement**: REQ-<DOMAIN>-NNN
 - **impact_refs**:
@@ -82,15 +82,9 @@ Required metadata は Design Records MCP validation の対象である。
 | status | meaning |
 |---|---|
 | `not_started` | 未着手 |
-| `decision_pending` | ADR 等の設計判断待ち |
-| `design_spec_pending` | design spec 反映待ち |
-| `internal_design_pending` | internal design 反映待ち |
-| `yaml_pending` | brewprint DSL YAML 更新待ち |
-| `implementation_pending` | implementation / renderer / validator / MCP 更新待ち |
-| `fixture_pending` | fixture / golden 更新待ち |
-| `verification_pending` | 検証待ち |
-| `done` | 必要な反映・検証が完了 |
+| `in_progress` | 作業中 |
 | `blocked` | 依存判断・外部要因で停止中 |
+| `done` | 必要な反映・検証が完了 |
 
 ## Responsibility Boundary
 

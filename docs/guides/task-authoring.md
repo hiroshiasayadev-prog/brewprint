@@ -50,7 +50,7 @@ docs/tasks/<domain>/TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>-<slug>.md
 # TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>: <title>
 
 - **id**: TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>
-- **status**: todo / doing / blocked / done
+- **status**: not_started / in_progress / blocked / done
 - **date**: YYYY-MM-DD
 - **work_item**: WORK-<DOMAIN>-NNN
 - **source_requirement**: REQ-<DOMAIN>-NNN
@@ -95,8 +95,8 @@ Required metadata は Design Records MCP validation の対象である。
 
 | status | meaning |
 |---|---|
-| `todo` | 未着手 |
-| `doing` | 作業中 |
+| `not_started` | 未着手 |
+| `in_progress` | 作業中 |
 | `blocked` | blocker により停止中 |
 | `done` | Done condition を満たした |
 

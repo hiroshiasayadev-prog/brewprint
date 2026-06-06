@@ -28,18 +28,10 @@ const (
 	RecordStatusDecisionNeeded        RecordStatus = "decision_needed"
 	RecordStatusDeferred              RecordStatus = "deferred"
 	RecordStatusRejected              RecordStatus = "rejected"
-	RecordStatusNotStarted            RecordStatus = "not_started"
-	RecordStatusDecisionPending       RecordStatus = "decision_pending"
-	RecordStatusDesignSpecPending     RecordStatus = "design_spec_pending"
-	RecordStatusInternalDesignPending RecordStatus = "internal_design_pending"
-	RecordStatusYAMLPending           RecordStatus = "yaml_pending"
-	RecordStatusImplementationPending RecordStatus = "implementation_pending"
-	RecordStatusFixturePending        RecordStatus = "fixture_pending"
-	RecordStatusVerificationPending   RecordStatus = "verification_pending"
-	RecordStatusBlocked               RecordStatus = "blocked"
-	RecordStatusTodo                  RecordStatus = "todo"
-	RecordStatusDoing                 RecordStatus = "doing"
-	RecordStatusDone                  RecordStatus = "done"
+	RecordStatusNotStarted RecordStatus = "not_started"
+	RecordStatusInProgress RecordStatus = "in_progress"
+	RecordStatusBlocked    RecordStatus = "blocked"
+	RecordStatusDone       RecordStatus = "done"
 )
 
 type Heading struct {
