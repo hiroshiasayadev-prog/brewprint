@@ -35,5 +35,5 @@ This work item belongs to the MCP/project maintenance boundary. The immediate tr
 
 - TASK-MCP-024-01 completed the current notice target review for `github.com/pmezard/go-difflib` / `github.com/pmezard/go-difflib/difflib`.
 - TASK-MCP-024-02 created `docs/third-party-notices.md` and linked it from `docs/doc-policy.md`.
-- Notice policy distinguishes `go.mod` / `go.sum` module metadata from source / binary redistribution notice obligations.
+- Notice policy distinguishes `go.mod` / `go.sum` module metadata from redistribution notice obligations and keeps individual entries lightweight by pointing to upstream/module license text.
 - Scope remained limited to lightweight notice documentation; no SBOM automation, vendoring, dependency replacement, or full historical license audit was introduced.

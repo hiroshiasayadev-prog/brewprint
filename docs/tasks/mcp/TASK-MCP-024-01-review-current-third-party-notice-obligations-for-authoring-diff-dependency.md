@@ -41,4 +41,4 @@ Confirm the current third-party dependency notice scope created by the authoring
 ## Evidence
 
 - Current dependency notice target: `github.com/pmezard/go-difflib` / `github.com/pmezard/go-difflib/difflib`.
-- Notice metadata needed downstream: module path, imported package, purpose, license family, copyright notice, source redistribution expectation, binary redistribution expectation, endorsement restriction, and upstream license pointer.
+- Notice metadata needed downstream: module path, imported package, purpose, license family, notice requirement summary, and upstream license pointer.

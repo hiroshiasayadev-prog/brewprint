@@ -20,7 +20,7 @@ Add the lightweight third-party notices document and link it from the documentat
 ## Steps
 
 - Create `docs/third-party-notices.md` as the repository location for third-party dependency notices.
-- Add the `github.com/pmezard/go-difflib` notice entry with module path, purpose, license family, copyright notice, and redistribution notice expectations.
+- Add the `github.com/pmezard/go-difflib` notice entry with module path, purpose, license family, notice requirement summary, and upstream license pointer.
 - Link `docs/third-party-notices.md` from `docs/doc-policy.md`.
 - Update close evidence for this work item and REQ-MCP-029.
 
@@ -33,7 +33,7 @@ Add the lightweight third-party notices document and link it from the documentat
 ## Work
 
 - Created `docs/third-party-notices.md` as the repository notice-management location.
-- Added the `github.com/pmezard/go-difflib v1.0.0` notice entry with module path, imported package, purpose, license family, copyright notice, redistribution expectations, endorsement restriction, and upstream license pointer.
+- Added the `github.com/pmezard/go-difflib v1.0.0` notice entry with module path, imported package, purpose, license family, notice requirement summary, and upstream license pointer.
 - Linked `docs/third-party-notices.md` from `docs/doc-policy.md` under a lightweight Third-party notices section.
 
 ## Verification

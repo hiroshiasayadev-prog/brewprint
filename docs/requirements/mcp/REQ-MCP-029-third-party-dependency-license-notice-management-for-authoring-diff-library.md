@@ -38,7 +38,7 @@ The project has a documented, repeatable way to manage third-party dependency li
 Acceptance criteria:
 
 - A repository location or policy is defined for third-party license notices, for example `THIRD_PARTY_NOTICES.md`, `NOTICE`, `docs/licenses/`, or an explicitly documented equivalent.
-- `github.com/pmezard/go-difflib/difflib` is listed with its module path, license family, copyright notice, and required disclaimer text or pointer to vendored/module license text.
+- `github.com/pmezard/go-difflib/difflib` is listed with its module path, license family, notice requirement summary, and pointer to upstream or module license text.
 - The policy distinguishes Go module dependency metadata (`go.mod` / `go.sum`) from redistribution notice obligations.
 - The policy covers both source distribution and binary distribution expectations at a minimum level.
 - The policy avoids inventing endorsement language using contributor names.
@@ -59,6 +59,6 @@ This requirement belongs to the MCP/project maintenance boundary because the imm
 ## Close Evidence
 
 - WORK-MCP-024 added `docs/third-party-notices.md` as the repository location for third-party dependency license notices.
-- `docs/third-party-notices.md` lists `github.com/pmezard/go-difflib v1.0.0` / `github.com/pmezard/go-difflib/difflib` with module path, purpose, BSD 3-Clause style license family, copyright notice, source and binary redistribution expectations, endorsement restriction, and upstream license pointer.
+- `docs/third-party-notices.md` lists `github.com/pmezard/go-difflib v1.0.0` / `github.com/pmezard/go-difflib/difflib` with module path, purpose, BSD 3-Clause style license family, notice requirement summary, and upstream license pointer.
 - `docs/doc-policy.md` links to `docs/third-party-notices.md` and distinguishes `go.mod` / `go.sum` module metadata from redistribution notice obligations.
 - The work stayed within the explicitly excluded scope: no dependency replacement, full legal review, project license change, SBOM automation, or vendoring was introduced.
