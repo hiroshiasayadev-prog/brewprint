@@ -221,6 +221,8 @@ const (
 	DiagnosticRecordNotFound                        DiagnosticCategory = "record_not_found"
 	DiagnosticDuplicateRequestedIDIgnored           DiagnosticCategory = "duplicate_requested_id_ignored"
 	DiagnosticExactIDSequenceGap                    DiagnosticCategory = "exact_id_sequence_gap"
+	DiagnosticMissingRequiredMetadataBatch          DiagnosticCategory = "missing_required_metadata_batch"
+	DiagnosticReciprocalFollowUpModeRequired        DiagnosticCategory = "reciprocal_follow_up_mode_required"
 )
 
 type DiagnosticSeverity string
@@ -247,10 +249,16 @@ type Diagnostic struct {
 	FirstIndex        *int               `json:"first_index,omitempty"`
 	DuplicateIndexes  []int              `json:"duplicate_indexes,omitempty"`
 	CandidateHeadings []CandidateHeading `json:"candidate_headings,omitempty"`
-	ActualHeading     string             `json:"-"`
-	StrippedHeading   string             `json:"-"`
-	StrippedLevel     int                `json:"-"`
-	ValuePresent      bool               `json:"-"`
+	// Authoring repair guidance fields (REQ-MCP-024 / REQ-MCP-028)
+	AllowedValues    []string       `json:"allowed_values,omitempty"`
+	RequiredFields   []string       `json:"required_fields,omitempty"`
+	TargetKind       string         `json:"target_kind,omitempty"`
+	RepairSuggestion map[string]any `json:"repair_suggestion,omitempty"`
+	// Internal-only fields (not serialized via json tags; handled by MarshalJSON)
+	ActualHeading string `json:"-"`
+	StrippedHeading string `json:"-"`
+	StrippedLevel   int    `json:"-"`
+	ValuePresent    bool   `json:"-"`
 }
 
 func (d Diagnostic) MarshalJSON() ([]byte, error) {
@@ -273,6 +281,10 @@ func (d Diagnostic) MarshalJSON() ([]byte, error) {
 		FirstIndex        *int               `json:"first_index,omitempty"`
 		DuplicateIndexes  []int              `json:"duplicate_indexes,omitempty"`
 		CandidateHeadings []CandidateHeading `json:"candidate_headings,omitempty"`
+		AllowedValues     []string           `json:"allowed_values,omitempty"`
+		RequiredFields    []string           `json:"required_fields,omitempty"`
+		TargetKind        string             `json:"target_kind,omitempty"`
+		RepairSuggestion  map[string]any     `json:"repair_suggestion,omitempty"`
 	}
 	var value *string
 	if d.Value != "" || d.ValuePresent {
@@ -302,6 +314,10 @@ func (d Diagnostic) MarshalJSON() ([]byte, error) {
 		FirstIndex:        d.FirstIndex,
 		DuplicateIndexes:  d.DuplicateIndexes,
 		CandidateHeadings: d.CandidateHeadings,
+		AllowedValues:     d.AllowedValues,
+		RequiredFields:    d.RequiredFields,
+		TargetKind:        d.TargetKind,
+		RepairSuggestion:  d.RepairSuggestion,
 	})
 }
 

@@ -1,7 +1,7 @@
 # REQ-MCP-024: authoring dry-run repair guidance completeness
 
 - **id**: REQ-MCP-024
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-05
 - **source_refs**:
   - REQ-MCP-023

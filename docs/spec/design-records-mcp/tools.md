@@ -724,23 +724,27 @@ MVP diagnostic category は `schema.md` の定義に従う。
 - `empty_required_section`
 - `section_heading_case_mismatch`
 - `invalid_metadata_value`
+- `missing_required_metadata_batch`
 - `invalid_status_for_kind`
 - `spec_status_mismatch`
 - `missing_depends_on_target`
 - `missing_supersedes_target`
 - `invalid_migrated_to_spec`
 - `missing_record_path`
+- `no_op_update`
+- `reciprocal_follow_up_mode_required`
 
 Canonical reference / investigation / workflow validation の concrete category と severity は以下とする。
 
 | category | severity | field / condition |
 |---|---|---|
 | `missing_required_metadata` | `error` | workflow artifact の required metadata field が存在しない |
+| `missing_required_metadata_batch` | `error` | authoring create 時に複数の required metadata field が欠落している。`required_fields` に欠落フィールド名一覧、`target_kind` に対象 kind を含める |
 | `empty_required_metadata` | `error` | workflow artifact の required scalar metadata field が empty、または required list metadata field に empty item が含まれる |
 | `missing_required_section` | `error` | workflow artifact が gated status にあるとき、required narrative section heading が存在しない |
 | `empty_required_section` | `error` | workflow artifact が gated status にあるとき、required narrative section heading は存在するが section body が empty または whitespace-only である |
 | `section_heading_case_mismatch` | `info` | workflow artifact の target-kind-specific validation-required narrative section heading と case-only で一致する non-canonical heading が存在する |
-| `invalid_metadata_value` | `error` | workflow artifact の required metadata field が non-empty だが value contract を満たさない。例: `date` が strict `YYYY-MM-DD` format ではない |
+| `invalid_metadata_value` | `error` | workflow artifact の required metadata field が non-empty だが value contract を満たさない。例: `date` が strict `YYYY-MM-DD` format ではない、または status field の値が対象 kind の allowed set に含まれない。後者の場合は `allowed_values` に許容値一覧を含め、`repair_suggestion` に最小修正の metadata patch を含めてよい |
 | `invalid_semantic_ref_declaration` | `error` | spec front matter の `semantic_refs` entry または `sections` key が active `spec:` grammar に従わない |
 | `missing_section_target` | `error` | spec front matter の `sections` value と一致する Markdown heading が存在しない |
 | `ambiguous_section_target` | `error` | spec front matter の `sections` value が同一 document 内の複数 heading に一致し、section target を単一解決できない |
@@ -806,6 +810,62 @@ Coverage mapping、semantic realization relation、`internal-design:` / `coverag
 
 `missing_record_path` は、filesystem scan または path normalization により record 候補 path を検出したが、実際の read/stat に失敗した場合に出す。
 例として、scan 後に file が削除された場合、permission denied、symlink target missing、path normalization 後の path が存在しない場合を含む。
+
+`no_op_update` は `propose_record_update` 時に提案内容がファイルの現在の内容と byte 単位で一致した場合に出す。Severity は `info`。`proposal_created: false` を伴い、retained proposal は作成されない。`record_id` と `path` を含める。
+
+`reciprocal_follow_up_mode_required` は `propose_record_create` を `reciprocal_update_mode: "report_required_follow_up"` で呼び出し、かつ必須の reciprocal follow-up update が存在するときに出す。Severity は `warning`。`include_required` モードが accept に必要であることを `message` で明示する。Repair guidance として `repair_suggestion` に `{"reciprocal_update_mode": "include_required"}` を含めてよい。
+
+Authoring diagnostic additional fields:
+
+| field | applicable categories | meaning |
+|---|---|---|
+| `allowed_values` | `invalid_metadata_value` (status) | 対象 kind で許容される status 値の一覧 |
+| `required_fields` | `missing_required_metadata_batch` | 欠落している required field 名の一覧 |
+| `target_kind` | `missing_required_metadata_batch` | フィールド要件が定義されている record kind |
+| `repair_suggestion` | `invalid_metadata_value`, `reciprocal_follow_up_mode_required` | 最小修正を示す advisory metadata patch。実装が決定論的に導出できる場合のみ含める。Caller は自動適用せず、必ず確認してから使用する |
+
+`repair_suggestion` の value は最小修正を示す plain object（例: `{"status": "not_started"}`）とする。非決定論的な修正（ユーザーのビジネス意図が必要なもの）には含めない。`repair_suggestion` は advisory であり、validation や accept guard を迂回しない。
+
+`missing_required_metadata_batch` の diagnostic 例:
+
+```json
+{
+  "category": "missing_required_metadata_batch",
+  "severity": "error",
+  "message": "fields is missing required metadata fields for kind task: work_item, estimate, outputs",
+  "required_fields": ["work_item", "estimate", "outputs"],
+  "target_kind": "task"
+}
+```
+
+`invalid_metadata_value` (status) with `allowed_values` の diagnostic 例:
+
+```json
+{
+  "category": "invalid_metadata_value",
+  "severity": "error",
+  "field": "status",
+  "value": "todo",
+  "message": "status \"todo\" is not valid for kind task",
+  "allowed_values": ["not_started", "in_progress", "blocked", "done"],
+  "repair_suggestion": {
+    "status": "not_started"
+  }
+}
+```
+
+`reciprocal_follow_up_mode_required` の diagnostic 例:
+
+```json
+{
+  "category": "reciprocal_follow_up_mode_required",
+  "severity": "warning",
+  "message": "required reciprocal follow-up updates are present; use reciprocal_update_mode: \"include_required\" for a safe accept",
+  "repair_suggestion": {
+    "reciprocal_update_mode": "include_required"
+  }
+}
+```
 
 ## `suggest_next_record`
 

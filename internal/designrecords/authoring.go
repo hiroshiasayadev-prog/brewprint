@@ -526,6 +526,16 @@ func prepareCreate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 		return authoringPreparation{}, fmt.Errorf("record %s already exists", resolved)
 	}
 
+	// Batch required-field validation (REQ-MCP-028): report all missing fields at once.
+	if batchDiag := validateCreateFieldsBatch(req.Kind, req.Fields); batchDiag != nil {
+		return authoringPreparation{diagnostics: []Diagnostic{*batchDiag}}, nil
+	}
+
+	// Status value validation (REQ-MCP-024): emit allowed_values when status is invalid.
+	if statusDiag := validateCreateStatusForCreate(req.Kind, req.Fields); statusDiag != nil {
+		return authoringPreparation{diagnostics: []Diagnostic{*statusDiag}}, nil
+	}
+
 	content := ""
 	if body != nil {
 		var renderErr error
@@ -546,12 +556,13 @@ func prepareCreate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 		target: AuthoringTarget{RequestedID: req.ID, ResolvedID: resolved, Kind: req.Kind, Domain: domain, ParentID: req.ParentID, Path: path},
 		files:  []ProposedFile{file},
 	}
-	reciprocalFiles, followUps, err := requiredReciprocalUpdates(ctx, cfg, idx, req.Kind, resolved, req.Fields, req.ParentID, mode)
+	reciprocalFiles, followUps, reciprocalDiags, err := requiredReciprocalUpdates(ctx, cfg, idx, req.Kind, resolved, req.Fields, req.ParentID, mode)
 	if err != nil {
 		return authoringPreparation{}, err
 	}
 	prep.files = append(prep.files, reciprocalFiles...)
 	prep.requiredFollowUpUpdates = append(prep.requiredFollowUpUpdates, followUps...)
+	prep.diagnostics = append(prep.diagnostics, reciprocalDiags...)
 	if d := exactIDGapWarning(idx, req.Kind, req.ID, resolved, domain, req.ParentID); d != nil {
 		prep.diagnostics = append(prep.diagnostics, *d)
 	}
@@ -887,34 +898,157 @@ func normalizeStructuredCreateContentBody(body string) string {
 	return strings.TrimSpace(strings.ReplaceAll(body, "\r\n", "\n")) + "\n"
 }
 
-func requiredReciprocalUpdates(ctx context.Context, cfg Config, idx *Index, kind RecordKind, id string, fields map[string]any, parentID, mode string) ([]ProposedFile, []RequiredFollowUpUpdate, error) {
+// requiredCreateFieldNames returns the field names that must be present in
+// fields for a create request of the given kind. "id" is excluded because it
+// is auto-managed for placeholder IDs.
+func requiredCreateFieldNames(kind RecordKind) []string {
+	switch kind {
+	case RecordKindDecision:
+		return []string{"status", "date", "depends_on", "supersedes", "migrated_to_spec"}
+	case RecordKindRequirement:
+		return []string{"status", "date", "source_refs", "work_items"}
+	case RecordKindWorkItem:
+		return []string{"status", "date", "source_requirement", "impact_refs", "tasks"}
+	case RecordKindTask:
+		return []string{"status", "date", "work_item", "source_requirement", "estimate", "depends_on", "outputs"}
+	default:
+		return nil
+	}
+}
+
+// allowedStatusValuesForKind returns the status strings allowed for the given
+// kind at create time. Returns nil for kinds with no restriction enforced here.
+func allowedStatusValuesForKind(kind RecordKind) []string {
+	switch kind {
+	case RecordKindDecision:
+		return []string{
+			string(RecordStatusProposed),
+			string(RecordStatusAccepted),
+			string(RecordStatusSuperseded),
+		}
+	case RecordKindRequirement:
+		return []string{
+			string(RecordStatusCaptured),
+			string(RecordStatusDecisionNeeded),
+			string(RecordStatusAccepted),
+			string(RecordStatusDeferred),
+			string(RecordStatusRejected),
+		}
+	case RecordKindWorkItem:
+		return []string{
+			string(RecordStatusNotStarted),
+			string(RecordStatusInProgress),
+			string(RecordStatusBlocked),
+			string(RecordStatusDone),
+		}
+	case RecordKindTask:
+		return []string{
+			string(RecordStatusNotStarted),
+			string(RecordStatusInProgress),
+			string(RecordStatusBlocked),
+			string(RecordStatusDone),
+		}
+	default:
+		return nil
+	}
+}
+
+// validateCreateFieldsBatch checks that all required fields for the given kind
+// are present in fields. Returns a single batch diagnostic listing all missing
+// fields, or nil when all required fields are present.
+func validateCreateFieldsBatch(kind RecordKind, fields map[string]any) *Diagnostic {
+	required := requiredCreateFieldNames(kind)
+	var missing []string
+	for _, name := range required {
+		if _, ok := fields[name]; !ok {
+			missing = append(missing, name)
+		}
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	msg := fmt.Sprintf("fields is missing required metadata fields for kind %s: %s", kind, strings.Join(missing, ", "))
+	d := Diagnostic{
+		Category:       DiagnosticMissingRequiredMetadataBatch,
+		Severity:       DiagnosticSeverityError,
+		Message:        msg,
+		RequiredFields: missing,
+		TargetKind:     string(kind),
+	}
+	return &d
+}
+
+// validateCreateStatusForCreate checks the status field value against the
+// allowed set for the kind at create time. Returns an invalid_metadata_value
+// diagnostic with allowed_values when the value is invalid, or nil when valid
+// or when the status key is absent (absence is caught by batch validation).
+func validateCreateStatusForCreate(kind RecordKind, fields map[string]any) *Diagnostic {
+	statusVal, ok := fields["status"]
+	if !ok {
+		return nil // absent; caught by batch validation
+	}
+	status := RecordStatus(scalarField(fields, "status"))
+	if statusAllowedForKind(kind, status) {
+		return nil
+	}
+	allowed := allowedStatusValuesForKind(kind)
+	value := string(statusVal.(string))
+	d := Diagnostic{
+		Category:     DiagnosticInvalidMetadataValue,
+		Severity:     DiagnosticSeverityError,
+		Field:        "status",
+		Value:        value,
+		ValuePresent: true,
+		Message:      fmt.Sprintf("status %q is not valid for kind %s", value, kind),
+		AllowedValues: allowed,
+	}
+	if len(allowed) > 0 {
+		d.RepairSuggestion = map[string]any{"status": allowed[0]}
+	}
+	return &d
+}
+
+func requiredReciprocalUpdates(ctx context.Context, cfg Config, idx *Index, kind RecordKind, id string, fields map[string]any, parentID, mode string) ([]ProposedFile, []RequiredFollowUpUpdate, []Diagnostic, error) {
 	switch kind {
 	case RecordKindWorkItem:
 		reqID := scalarField(fields, "source_requirement")
 		if reqID == "" {
-			return nil, nil, nil
+			return nil, nil, nil, nil
 		}
 		parent := findRecordByIDKind(idx, reqID, RecordKindRequirement)
 		if parent == nil || parent.Requirement == nil || containsString(parent.Requirement.WorkItems, id) {
-			return nil, nil, nil
+			return nil, nil, nil, nil
 		}
 		followUp := RequiredFollowUpUpdate{RecordID: parent.ID, Kind: RecordKindRequirement, Field: "work_items", Value: id, Message: "add new work item to source requirement work_items"}
 		if mode == "report_required_follow_up" {
-			return nil, []RequiredFollowUpUpdate{followUp}, nil
+			diag := reciprocalFollowUpModeRequiredDiagnostic()
+			return nil, []RequiredFollowUpUpdate{followUp}, []Diagnostic{diag}, nil
 		}
-		return []ProposedFile{reciprocalMetadataFile(cfg, *parent, append(parent.Requirement.WorkItems, id))}, nil, nil
+		return []ProposedFile{reciprocalMetadataFile(cfg, *parent, append(parent.Requirement.WorkItems, id))}, nil, nil, nil
 	case RecordKindTask:
 		parent := findRecordByIDKind(idx, parentID, RecordKindWorkItem)
 		if parent == nil || parent.WorkItem == nil || containsString(parent.WorkItem.Tasks, id) {
-			return nil, nil, nil
+			return nil, nil, nil, nil
 		}
 		followUp := RequiredFollowUpUpdate{RecordID: parent.ID, Kind: RecordKindWorkItem, Field: "tasks", Value: id, Message: "add new task to parent work item tasks"}
 		if mode == "report_required_follow_up" {
-			return nil, []RequiredFollowUpUpdate{followUp}, nil
+			diag := reciprocalFollowUpModeRequiredDiagnostic()
+			return nil, []RequiredFollowUpUpdate{followUp}, []Diagnostic{diag}, nil
 		}
-		return []ProposedFile{reciprocalMetadataFile(cfg, *parent, append(parent.WorkItem.Tasks, id))}, nil, nil
+		return []ProposedFile{reciprocalMetadataFile(cfg, *parent, append(parent.WorkItem.Tasks, id))}, nil, nil, nil
 	default:
-		return nil, nil, nil
+		return nil, nil, nil, nil
+	}
+}
+
+func reciprocalFollowUpModeRequiredDiagnostic() Diagnostic {
+	return Diagnostic{
+		Category: DiagnosticReciprocalFollowUpModeRequired,
+		Severity: DiagnosticSeverityWarning,
+		Message:  `required reciprocal follow-up updates are present; use reciprocal_update_mode: "include_required" for a safe accept`,
+		RepairSuggestion: map[string]any{
+			"reciprocal_update_mode": "include_required",
+		},
 	}
 }
 

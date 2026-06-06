@@ -1,7 +1,7 @@
 # TASK-MCP-025-03: Implement structured diagnostics, batch field validation, and regression tests
 
 - **id**: TASK-MCP-025-03
-- **status**: not_started
+- **status**: done
 - **date**: 2026-06-07
 - **work_item**: WORK-MCP-025
 - **source_requirement**: REQ-MCP-024
@@ -46,3 +46,18 @@ Implement the structured create diagnostic behavior required by REQ-MCP-024 and 
 
 - Run targeted tests, then full package tests, then `go test ./...`.
 - Confirm no regression in existing create/update/validation paths.
+
+## Evidence
+
+Verdict: PASS.
+
+Files changed:
+
+- `internal/designrecords/types.go`: added `AllowedValues []string`, `RequiredFields []string`, `TargetKind string`, `RepairSuggestion map[string]any` to `Diagnostic` struct and `diagnosticJSON`; updated `MarshalJSON`.
+- `internal/designrecords/authoring.go`: added `requiredCreateFieldNames`, `allowedStatusValuesForKind`, `validateCreateFieldsBatch`, `validateCreateStatusForCreate`, `reciprocalFollowUpModeRequiredDiagnostic`; changed `requiredReciprocalUpdates` signature from 3 to 4 return values (added `[]Diagnostic`); updated `prepareCreate` to call batch validation and status validation before rendering, and to handle 4-value return from `requiredReciprocalUpdates`.
+- `internal/designrecords/authoring_test.go`: fixed existing fixtures from `implementation_pending` / `todo` to `not_started`; added `WORK_missing_multiple_required_fields_batch_diagnostic` and `WORK_single_missing_required_field_batch_diagnostic` subtests; added `TestProposeRecordCreateStatusDiagnostic` (3 subtests: work_item, task, requirement) and `TestProposeRecordCreateReciprocalFollowUpMode`.
+
+Test results:
+
+- `go test ./internal/designrecords -run "TestProposeRecordCreateStatusDiagnostic|TestProposeRecordCreateReciprocalFollowUpMode|TestExactIDSequenceGapWarning" -v`: passed (17 subtests).
+- `go test ./...`: passed (all packages).

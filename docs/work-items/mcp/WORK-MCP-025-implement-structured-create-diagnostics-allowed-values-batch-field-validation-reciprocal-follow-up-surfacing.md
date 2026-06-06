@@ -1,7 +1,7 @@
 # WORK-MCP-025: Implement structured create diagnostics: allowed_values, batch field validation, reciprocal follow-up surfacing
 
 - **id**: WORK-MCP-025
-- **status**: not_started
+- **status**: done
 - **date**: 2026-06-07
 - **source_requirement**: REQ-MCP-024
 - **impact_refs**:
@@ -67,3 +67,17 @@ TASK-MCP-025-01 then TASK-MCP-025-02 then TASK-MCP-025-03 then TASK-MCP-025-04
 - All regression tests pass.
 - Runtime smoke confirms new behavior end-to-end.
 - REQ-MCP-024, REQ-MCP-028, this work item, and all tasks are synchronized to final statuses.
+
+## Evidence
+
+Verdict: PASS. All completion conditions met.
+
+Files changed:
+
+- `internal/designrecords/types.go`: added `AllowedValues`, `RequiredFields`, `TargetKind`, `RepairSuggestion` fields to `Diagnostic` struct and `diagnosticJSON`; updated `MarshalJSON`.
+- `internal/designrecords/authoring.go`: added helper functions `requiredCreateFieldNames`, `allowedStatusValuesForKind`, `validateCreateFieldsBatch`, `validateCreateStatusForCreate`, `reciprocalFollowUpModeRequiredDiagnostic`; changed `requiredReciprocalUpdates` to return 4 values (added `[]Diagnostic`); updated `prepareCreate` to call batch field validation and status validation before rendering and to handle 4-value return.
+- `internal/designrecords/authoring_test.go`: fixed test fixtures from `implementation_pending`/`todo` to `not_started`; added `WORK_missing_multiple_required_fields_batch_diagnostic` and `WORK_single_missing_required_field_batch_diagnostic` subtests; added `TestProposeRecordCreateStatusDiagnostic` and `TestProposeRecordCreateReciprocalFollowUpMode`.
+- `docs/spec/design-records-mcp/tools.md`: added `missing_required_metadata_batch`, `reciprocal_follow_up_mode_required`, `no_op_update` diagnostic categories; added authoring diagnostic additional fields table; added JSON examples.
+- `tmp.py`: added smoke cases [4] (batch missing-field) and [5] (invalid status / allowed_values).
+
+`go test ./...`: passed (all packages). Runtime smoke: all 5 cases PASS.

@@ -1,7 +1,7 @@
 # REQ-MCP-028: authoring create batch field validation and reciprocal follow-up surfacing
 
 - **id**: REQ-MCP-028
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-07
 - **source_refs**:
   - REQ-MCP-023

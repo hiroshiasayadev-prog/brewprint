@@ -1,10 +1,14 @@
-"""REQ-MCP-027 runtime smoke — accurate update diffs and no-op detection.
+"""REQ-MCP-027 / REQ-MCP-024 / REQ-MCP-028 runtime smoke.
 
 Uses a temp root (copy of docs/) so the real repository is never modified.
 Smoke covers:
   [1] Real metadata update  →  bounded git-style modify diff
   [2] No-op metadata update →  proposal_created:false, no_op_update diagnostic
   [3] Accept real update in temp root  →  written:true
+  [4] REQ-MCP-028: propose_record_create with missing required fields
+      → proposal_created:false, missing_required_metadata_batch diagnostic
+  [5] REQ-MCP-024: propose_record_create with invalid status
+      → proposal_created:false, invalid_metadata_value with allowed_values
 """
 
 import json
@@ -254,10 +258,81 @@ def main():
             proposal_ids_to_discard.remove(real_proposal_id)
             print("[3] PASS")
 
+            # ── [4] REQ-MCP-028: batch missing-field diagnostic ─────────────
+            print("\n== [4] REQ-MCP-028: missing required fields → missing_required_metadata_batch ==")
+            batch_payload = call_tool(proc, 5, "propose_record_create", {
+                "kind": "work_item",
+                "id": "WORK-MCP-new",
+                "domain": "MCP",
+                "title": "Batch validation smoke",
+                # Deliberately omit source_requirement, impact_refs, tasks, status — provide only date
+                "fields": {"date": "2026-06-07"},
+            })
+            print(json.dumps({
+                "proposal_created": batch_payload.get("proposal_created"),
+                "diagnostics": batch_payload.get("diagnostics"),
+            }, ensure_ascii=False, indent=2))
+
+            if batch_payload.get("proposal_created"):
+                raise AssertionError("[4] proposal must NOT be created when required fields are absent")
+            batch_diags = batch_payload.get("diagnostics") or []
+            batch_d = next((d for d in batch_diags if d.get("category") == "missing_required_metadata_batch"), None)
+            if batch_d is None:
+                raise AssertionError(f"[4] missing missing_required_metadata_batch diagnostic: {batch_diags}")
+            if batch_d.get("severity") != "error":
+                raise AssertionError(f"[4] expected error severity on batch diagnostic: {batch_d}")
+            if not batch_d.get("required_fields"):
+                raise AssertionError(f"[4] required_fields must be non-empty: {batch_d}")
+            for expected_field in ("status", "source_requirement"):
+                if expected_field not in batch_d["required_fields"]:
+                    raise AssertionError(f"[4] expected {expected_field!r} in required_fields: {batch_d['required_fields']}")
+            print("[4] PASS")
+
+            # ── [5] REQ-MCP-024: invalid status → allowed_values diagnostic ──
+            print("\n== [5] REQ-MCP-024: invalid status → invalid_metadata_value with allowed_values ==")
+            status_payload = call_tool(proc, 6, "propose_record_create", {
+                "kind": "work_item",
+                "id": "WORK-MCP-new",
+                "domain": "MCP",
+                "title": "Status validation smoke",
+                "fields": {
+                    "status": "implementation_pending",
+                    "date": "2026-06-07",
+                    "source_requirement": "REQ-MCP-001",
+                    "impact_refs": [],
+                    "tasks": [],
+                },
+            })
+            print(json.dumps({
+                "proposal_created": status_payload.get("proposal_created"),
+                "diagnostics": status_payload.get("diagnostics"),
+            }, ensure_ascii=False, indent=2))
+
+            if status_payload.get("proposal_created"):
+                raise AssertionError("[5] proposal must NOT be created for invalid status")
+            status_diags = status_payload.get("diagnostics") or []
+            status_d = next((d for d in status_diags if d.get("category") == "invalid_metadata_value"), None)
+            if status_d is None:
+                raise AssertionError(f"[5] missing invalid_metadata_value diagnostic: {status_diags}")
+            if status_d.get("severity") != "error":
+                raise AssertionError(f"[5] expected error severity: {status_d}")
+            if not status_d.get("allowed_values"):
+                raise AssertionError(f"[5] expected non-empty allowed_values: {status_d}")
+            if status_d.get("field") != "status":
+                raise AssertionError(f"[5] expected field=status: {status_d}")
+            if not status_d.get("repair_suggestion"):
+                raise AssertionError(f"[5] expected repair_suggestion: {status_d}")
+            suggested_status = status_d["repair_suggestion"].get("status")
+            if suggested_status not in status_d["allowed_values"]:
+                raise AssertionError(
+                    f"[5] repair_suggestion.status={suggested_status!r} not in allowed_values {status_d['allowed_values']}"
+                )
+            print("[5] PASS")
+
             # ── discard remaining proposals ──────────────────────────────────
             if proposal_ids_to_discard:
                 print(f"\n== discard remaining proposals ==")
-                for i, pid in enumerate(proposal_ids_to_discard, start=5):
+                for i, pid in enumerate(proposal_ids_to_discard, start=7):
                     d = call_tool(proc, i, "discard_proposed_write", {"proposal_id": pid})
                     print(json.dumps({
                         "proposal_id": pid,

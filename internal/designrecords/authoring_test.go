@@ -1367,7 +1367,7 @@ func TestReplaceNamedSectionSpacingLastSection(t *testing.T) {
 func TestExactIDSequenceGapWarning(t *testing.T) {
 	workFields := func(sourceReq string) map[string]any {
 		return map[string]any{
-			"status":             "implementation_pending",
+			"status":             "not_started",
 			"date":               "2026-06-03",
 			"source_requirement": sourceReq,
 			"impact_refs":        []any{},
@@ -1384,7 +1384,7 @@ func TestExactIDSequenceGapWarning(t *testing.T) {
 	}
 	taskFields := func(workItem string) map[string]any {
 		return map[string]any{
-			"status":             "todo",
+			"status":             "not_started",
 			"date":               "2026-06-03",
 			"work_item":          workItem,
 			"source_requirement": "REQ-MCP-001",
@@ -1476,7 +1476,7 @@ func TestExactIDSequenceGapWarning(t *testing.T) {
 			Domain: "DATA",
 			Title:  "First data work",
 			Fields: map[string]any{
-				"status":             "implementation_pending",
+				"status":             "not_started",
 				"date":               "2026-06-03",
 				"source_requirement": "REQ-DATA-001",
 				"impact_refs":        []any{},
@@ -1503,7 +1503,7 @@ func TestExactIDSequenceGapWarning(t *testing.T) {
 			Domain: "DATA",
 			Title:  "Skip data work",
 			Fields: map[string]any{
-				"status":             "implementation_pending",
+				"status":             "not_started",
 				"date":               "2026-06-03",
 				"source_requirement": "REQ-DATA-001",
 				"impact_refs":        []any{},
@@ -1625,6 +1625,85 @@ func TestExactIDSequenceGapWarning(t *testing.T) {
 		}
 		if hasDiagnosticCategory(resp.Diagnostics, DiagnosticExactIDSequenceGap) {
 			t.Fatalf("WORK-new must not produce exact_id_sequence_gap: %#v", resp.Diagnostics)
+		}
+	})
+
+	// REQ-MCP-028: batch missing-field validation — when multiple required fields
+	// are absent, a single missing_required_metadata_batch diagnostic lists all
+	// of them instead of failing on the first.
+	t.Run("WORK_missing_multiple_required_fields_batch_diagnostic", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// Provide only "date" — source_requirement, impact_refs, tasks, status all absent.
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindWorkItem,
+			ID:     "WORK-MCP-new",
+			Domain: "MCP",
+			Title:  "Incomplete work item",
+			Fields: map[string]any{"date": "2026-06-07"},
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if resp.ProposalCreated {
+			t.Fatalf("proposal must not be created when required fields are absent: %#v", resp)
+		}
+		d := diagnosticByCategory(resp.Diagnostics, DiagnosticMissingRequiredMetadataBatch)
+		if d == nil {
+			t.Fatalf("expected missing_required_metadata_batch diagnostic; got: %#v", resp.Diagnostics)
+		}
+		if d.Severity != DiagnosticSeverityError {
+			t.Fatalf("expected error severity, got %q", d.Severity)
+		}
+		if len(d.RequiredFields) == 0 {
+			t.Fatalf("required_fields must be non-empty: %#v", d)
+		}
+		if d.TargetKind != string(RecordKindWorkItem) {
+			t.Fatalf("expected target_kind=%q, got %q", RecordKindWorkItem, d.TargetKind)
+		}
+		// All missing fields must appear in required_fields.
+		for _, expected := range []string{"status", "source_requirement", "impact_refs", "tasks"} {
+			found := false
+			for _, f := range d.RequiredFields {
+				if f == expected {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Fatalf("expected %q in required_fields %v", expected, d.RequiredFields)
+			}
+		}
+	})
+
+	// REQ-MCP-028: when only one required field is missing, the batch diagnostic
+	// still emits a missing_required_metadata_batch (not a plain error).
+	t.Run("WORK_single_missing_required_field_batch_diagnostic", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindWorkItem,
+			ID:     "WORK-MCP-new",
+			Domain: "MCP",
+			Title:  "Almost complete work item",
+			Fields: map[string]any{
+				"status":      "not_started",
+				"date":        "2026-06-07",
+				"impact_refs": []any{},
+				"tasks":       []any{},
+				// "source_requirement" intentionally absent
+			},
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if resp.ProposalCreated {
+			t.Fatalf("proposal must not be created when source_requirement is absent: %#v", resp)
+		}
+		d := diagnosticByCategory(resp.Diagnostics, DiagnosticMissingRequiredMetadataBatch)
+		if d == nil {
+			t.Fatalf("expected missing_required_metadata_batch diagnostic; got: %#v", resp.Diagnostics)
+		}
+		if len(d.RequiredFields) != 1 || d.RequiredFields[0] != "source_requirement" {
+			t.Fatalf("expected required_fields=[source_requirement], got: %v", d.RequiredFields)
 		}
 	})
 
@@ -2042,4 +2121,169 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 			t.Fatalf("expected warning-severity diagnostic, got: %#v", resp.Diagnostics)
 		}
 	})
+}
+
+// TestProposeRecordCreateStatusDiagnostic verifies REQ-MCP-024: when an invalid
+// status value is supplied for a create request, the response emits an
+// invalid_metadata_value diagnostic with allowed_values and repair_suggestion.
+func TestProposeRecordCreateStatusDiagnostic(t *testing.T) {
+	type createCase struct {
+		name          string
+		kind          RecordKind
+		id            string
+		domain        string
+		parentID      string
+		title         string
+		invalidStatus string
+		fields        map[string]any
+	}
+	tests := []createCase{
+		{
+			name:          "work_item_invalid_status",
+			kind:          RecordKindWorkItem,
+			id:            "WORK-MCP-new",
+			domain:        "MCP",
+			title:         "Status test work",
+			invalidStatus: "implementation_pending",
+			fields: map[string]any{
+				"status":             "implementation_pending",
+				"date":               "2026-06-07",
+				"source_requirement": "REQ-MCP-001",
+				"impact_refs":        []any{},
+				"tasks":              []any{},
+			},
+		},
+		{
+			name:          "task_invalid_status_todo",
+			kind:          RecordKindTask,
+			id:            "TASK-MCP-001-new",
+			parentID:      "WORK-MCP-001",
+			title:         "Status test task",
+			invalidStatus: "todo",
+			fields: map[string]any{
+				"status":             "todo",
+				"date":               "2026-06-07",
+				"work_item":          "WORK-MCP-001",
+				"source_requirement": "REQ-MCP-001",
+				"estimate":           "0.5d",
+				"depends_on":         []any{},
+				"outputs":            []any{},
+			},
+		},
+		{
+			name:          "requirement_invalid_status",
+			kind:          RecordKindRequirement,
+			id:            "REQ-MCP-new",
+			domain:        "MCP",
+			title:         "Status test requirement",
+			invalidStatus: "not_started",
+			fields: map[string]any{
+				"status":      "not_started",
+				"date":        "2026-06-07",
+				"source_refs": []any{},
+				"work_items":  []any{},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			fx := newAuthoringFixture(t)
+			resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+				Kind:     tc.kind,
+				ID:       tc.id,
+				Domain:   tc.domain,
+				ParentID: tc.parentID,
+				Title:    tc.title,
+				Fields:   tc.fields,
+			})
+			if err != nil {
+				t.Fatalf("ProposeRecordCreate: %v", err)
+			}
+			if resp.ProposalCreated {
+				t.Fatalf("proposal must not be created for invalid status: %#v", resp)
+			}
+			d := diagnosticByCategory(resp.Diagnostics, DiagnosticInvalidMetadataValue)
+			if d == nil {
+				t.Fatalf("expected invalid_metadata_value diagnostic; got: %#v", resp.Diagnostics)
+			}
+			if d.Severity != DiagnosticSeverityError {
+				t.Fatalf("expected error severity, got %q", d.Severity)
+			}
+			if d.Field != "status" {
+				t.Fatalf("expected field=status, got %q", d.Field)
+			}
+			if d.Value != tc.invalidStatus {
+				t.Fatalf("expected value=%q, got %q", tc.invalidStatus, d.Value)
+			}
+			if len(d.AllowedValues) == 0 {
+				t.Fatalf("expected non-empty allowed_values: %#v", d)
+			}
+			if d.RepairSuggestion == nil {
+				t.Fatalf("expected repair_suggestion to be set: %#v", d)
+			}
+			// repair_suggestion must propose a status from allowed_values.
+			suggested, ok := d.RepairSuggestion["status"]
+			if !ok {
+				t.Fatalf("repair_suggestion must include status key: %v", d.RepairSuggestion)
+			}
+			suggestedStr, _ := suggested.(string)
+			found := false
+			for _, av := range d.AllowedValues {
+				if av == suggestedStr {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Fatalf("repair_suggestion.status=%q not in allowed_values %v", suggestedStr, d.AllowedValues)
+			}
+		})
+	}
+}
+
+// TestProposeRecordCreateReciprocalFollowUpMode verifies that when
+// reciprocal_update_mode is "report_required_follow_up" and a reciprocal
+// update is needed, the proposal is created and a
+// reciprocal_follow_up_mode_required diagnostic is emitted rather than
+// including the reciprocal update in the proposal files.
+func TestProposeRecordCreateReciprocalFollowUpMode(t *testing.T) {
+	fx := newAuthoringFixture(t)
+	mode := "report_required_follow_up"
+	// Creating a new WORK item whose source_requirement (REQ-MCP-001) exists
+	// and whose reciprocal update would patch REQ-MCP-001.work_items.
+	resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+		Kind:                RecordKindWorkItem,
+		ID:                  "WORK-MCP-new",
+		Domain:              "MCP",
+		Title:               "Follow-up mode work item",
+		ReciprocalUpdateMode: mode,
+		Fields: map[string]any{
+			"status":             "not_started",
+			"date":               "2026-06-07",
+			"source_requirement": "REQ-MCP-001",
+			"impact_refs":        []any{},
+			"tasks":              []any{},
+		},
+	})
+	if err != nil {
+		t.Fatalf("ProposeRecordCreate: %v", err)
+	}
+	if !resp.ProposalCreated {
+		t.Fatalf("proposal must be created in report_required_follow_up mode: %#v", resp)
+	}
+	d := diagnosticByCategory(resp.Diagnostics, DiagnosticReciprocalFollowUpModeRequired)
+	if d == nil {
+		t.Fatalf("expected reciprocal_follow_up_mode_required diagnostic; got: %#v", resp.Diagnostics)
+	}
+	if d.Severity != DiagnosticSeverityWarning {
+		t.Fatalf("expected warning severity on reciprocal_follow_up_mode_required, got %q", d.Severity)
+	}
+	// repair_suggestion must point to include_required.
+	if d.RepairSuggestion == nil {
+		t.Fatalf("expected repair_suggestion on reciprocal_follow_up_mode_required: %#v", d)
+	}
+	if mode, _ := d.RepairSuggestion["reciprocal_update_mode"].(string); mode != "include_required" {
+		t.Fatalf("expected repair_suggestion.reciprocal_update_mode=include_required, got %q", mode)
+	}
 }
