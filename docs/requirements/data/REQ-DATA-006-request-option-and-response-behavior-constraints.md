@@ -1,7 +1,7 @@
 # REQ-DATA-006: Request option and response behavior constraints
 
 - **id**: REQ-DATA-006
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-01
 - **source_refs**:
   - REQ-DATA-002
@@ -22,6 +22,8 @@ This requirement owns the `numeric / default behavior` candidate bucket from `TA
 `TASK-DATA-009-03` classified this bucket as behavior-oriented debt: numeric ranges, defaults, omitted-value behavior, unknown-value behavior, fallback branches, and cross-response grouping. Existing helper-shape, enum minimum, tagged-union, DAG TypeRef hint, and MCP identity work do not own that contract.
 
 `TASK-DATA-009-04` created this requirement as the successor owner rather than folding behavior constraints into remaining UC-002 cleanup planning.
+
+`WORK-DATA-013` accepted and completed this requirement by keeping the behavior contract in MCP tool specs and error documentation, cleaning up UC-002 YAML notes, and verifying the Go implementation behavior.
 
 ## Required Outcome
 

@@ -1,7 +1,7 @@
 # WORK-DATA-013: Define request option and response behavior constraints
 
 - **id**: WORK-DATA-013
-- **status**: blocked
+- **status**: done
 - **date**: 2026-06-01
 - **source_requirement**: REQ-DATA-006
 - **impact_refs**:
@@ -68,3 +68,25 @@ flowchart TD
 ## Completion Condition
 
 This work item can be marked `done` when request option and response behavior constraints are accepted, specified, implemented and verified if selected, or explicitly closed as no-action without mixing in unrelated DATA or MCP identity work.
+
+## Evidence
+
+Verdict: PASS.
+
+Close summary:
+
+- `TASK-DATA-013-01` completed the boundary decision for N-011, N-017, N-022, N-024, N-025, and N-028.
+- `TASK-DATA-013-02` updated the MCP tool specs and error documentation for request option and response behavior contracts.
+- `TASK-DATA-013-03` cleaned up the UC-002 YAML notes and regenerated UC-002 renders after YAML note updates.
+- `TASK-DATA-013-04` verified the Go implementation behavior against the accepted MCP request option contracts, patched the small `get_source` error-code divergences, and added/expanded targeted tests.
+
+Verification recorded by child tasks:
+
+- `go run ./cmd/brewprint validate --yaml-root docs/uc/002-brewprint-self-hosting/yaml` -> PASS.
+- `go run ./cmd/brewprint render --yaml-root docs/uc/002-brewprint-self-hosting/yaml --out docs/uc/002-brewprint-self-hosting/renders --clean` -> PASS (`rendered 46 file(s)`).
+- `go test ./internal/mcp ./internal/query` -> PASS.
+- `go test ./...` -> PASS.
+
+No DATA DSL numeric range/default/fallback syntax was introduced, and no unrelated MCP identity, selector matrix, tagged union, recursive structure, DAG TypeRef hint, or unrelated DATA work was reopened.
+
+Remaining follow-up: none for the checked request option and response behavior contracts.
