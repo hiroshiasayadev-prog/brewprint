@@ -43,7 +43,7 @@ brewprint は複数の独立したアプリケーション群を内包するパ�
 - 機械可読な namespace registry の formal schema・ファイル形式・物理配置への変換実装
 - 機械可読な namespace registry の formal schema・ファイル形式・物理配置
 - namespace-aware MCP API の実装仕様
-- 物理 directory レイアウトの移行計画
+- 物理 directory レイアウトの仕様・移行計画（`docs/spec/concepts/repository-layout/` を参照）
 
 ## 現在の配置と将来の運用配置
 
@@ -55,6 +55,8 @@ brewprint は複数の独立したアプリケーション群を内包するパ�
 - 将来: 各 app フォルダ直下に namespace 宣言ファイルを置く形式（app-local namespace declaration）
 
 この formal schema と配置の定義は本 spec のスコープ外であり、別途要件・仕様として扱う。
+
+**repository 自体の物理ディレクトリ構造**（app namespace-first layout）は `docs/spec/concepts/repository-layout/` で定義する。
 
 ## App namespace と domain namespace
 

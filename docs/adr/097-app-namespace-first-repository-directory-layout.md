@@ -4,7 +4,7 @@
 - **date**: 2026-06-08
 - **depends_on**: ADR-095, ADR-096
 - **supersedes**: 
-- **migrated_to_spec**: 
+- **migrated_to_spec**: docs/spec/concepts/repository-layout/index.md
 
 ## 背景
 
