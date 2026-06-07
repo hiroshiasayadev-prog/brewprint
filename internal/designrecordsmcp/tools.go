@@ -97,14 +97,15 @@ func Tools() []Tool {
 		},
 		{
 			Name:        "propose_record_update",
-			Description: "Create a retained no-write proposal for metadata block or named section replacement.",
+			Description: "Create a retained no-write proposal for one or more update operations. Supply either update (single-op) or operations (multi-op array); they are mutually exclusive.",
 			InputSchema: objectSchema(map[string]any{
 				"kind":          enumStringSchema("decision", "spec", "requirement", "work_item", "task"),
 				"id":            map[string]any{"type": "string"},
 				"update":        updateSchema(),
+				"operations":    operationsSchema(),
 				"body":          map[string]any{"type": "string"},
 				"body_cache_id": map[string]any{"type": "string"},
-			}, []string{"kind", "id", "update"}),
+			}, []string{"kind", "id"}),
 		},
 		{
 			Name:        "get_proposed_write",
@@ -163,6 +164,21 @@ func updateSchema() map[string]any {
 		"metadata":         map[string]any{"type": "object", "additionalProperties": true},
 		"section_selector": sectionSelectorSchema(),
 	}, []string{"type"})
+}
+
+func operationsSchema() map[string]any {
+	item := objectSchema(map[string]any{
+		"type":             enumStringSchema("metadata_block_replace", "metadata_fields_replace", "named_section_replace"),
+		"metadata":         map[string]any{"type": "object", "additionalProperties": true},
+		"section_selector": sectionSelectorSchema(),
+		"body":             map[string]any{"type": "string"},
+		"body_cache_id":    map[string]any{"type": "string"},
+	}, []string{"type"})
+	return map[string]any{
+		"type":     "array",
+		"items":    item,
+		"minItems": 1,
+	}
 }
 
 func sectionSelectorSchema() map[string]any {

@@ -342,8 +342,10 @@ const (
 	ErrorCodeBodyCacheNotFound            ErrorCode = "body_cache_not_found"
 	ErrorCodeBodyCacheExpired             ErrorCode = "body_cache_expired"
 	ErrorCodeProposalPreparationFailed    ErrorCode = "proposal_preparation_failed"
-	ErrorCodeSectionSelectorNoMatch       ErrorCode = "section_selector_no_match"
-	ErrorCodeSectionSelectorAmbiguous     ErrorCode = "section_selector_ambiguous"
+	ErrorCodeSectionSelectorNoMatch              ErrorCode = "section_selector_no_match"
+	ErrorCodeSectionSelectorAmbiguous            ErrorCode = "section_selector_ambiguous"
+	ErrorCodeConflictingOperations               ErrorCode = "conflicting_operations"
+	ErrorCodeMultipleSectionReplaceNotSupported  ErrorCode = "multiple_section_replace_not_supported"
 )
 
 type ToolError struct {

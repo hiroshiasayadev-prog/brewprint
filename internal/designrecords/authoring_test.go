@@ -2287,3 +2287,277 @@ func TestProposeRecordCreateReciprocalFollowUpMode(t *testing.T) {
 		t.Fatalf("expected repair_suggestion.reciprocal_update_mode=include_required, got %q", mode)
 	}
 }
+
+// ── multi-op (operations array) tests ──────────────────────────────────────
+
+func TestMultiOpUpdateNormalCase(t *testing.T) {
+	// Normal case: metadata_fields_replace + named_section_replace in one proposal.
+	// Fixture task has status=not_started and Evidence="old evidence".
+	// Combined proposal must set status=done AND replace Evidence in a single diff.
+	// Note: validation.OK may be false because Goal/Work/Done condition/Verification are
+	// also empty in the minimal fixture — that is expected. The key assertions are that
+	// the proposal is retained and that both changes appear in the unified diff.
+	fx := newAuthoringFixture(t)
+	evidenceBody := "2026-06-07: completed.\n"
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store,
+		ProposeRecordUpdateRequest{
+			Kind: RecordKindTask,
+			ID:   "TASK-MCP-001-01",
+			Operations: []UpdateOperation{
+				{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{"status": "done"}},
+				{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence", Match: "exact"}, Body: &evidenceBody},
+			},
+		},
+	)
+	if err != nil {
+		t.Fatalf("multi-op update: %v", err)
+	}
+	if !resp.ProposalCreated {
+		t.Fatalf("proposal not created: %#v", resp)
+	}
+	diff := resp.Diff.Text
+	assertGitModifyDiff(t, diff, resp.Target.Path)
+	// Both changes must appear in the single diff.
+	assertDiffContains(t, diff, "-- **status**: not_started")
+	assertDiffContains(t, diff, "+- **status**: done")
+	assertDiffContains(t, diff, "+2026-06-07: completed.")
+	assertDiffContains(t, diff, "-old evidence")
+	// Entire file must not be rendered as newly added.
+	assertDiffOmits(t, diff, "+# TASK-MCP-001-01: First task")
+}
+
+func TestMultiOpUpdateDoneStateEvidenceGatePassesWithCombinedOps(t *testing.T) {
+	// When status:done and Evidence replacement are in the same operations array,
+	// the Evidence-present gate must pass (no Evidence-related section diagnostic).
+	// Other done-state requirements (Goal, Work, Done condition, Verification) may
+	// still produce diagnostics from the minimal fixture — that is acceptable.
+	fx := newAuthoringFixture(t)
+	evidenceBody := "2026-06-07: done.\n"
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store,
+		ProposeRecordUpdateRequest{
+			Kind: RecordKindTask,
+			ID:   "TASK-MCP-001-01",
+			Operations: []UpdateOperation{
+				{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{"status": "done"}},
+				{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence", Match: "exact"}, Body: &evidenceBody},
+			},
+		},
+	)
+	if err != nil {
+		t.Fatalf("multi-op done-state: %v", err)
+	}
+	if !resp.ProposalCreated {
+		t.Fatalf("proposal not created: %#v", resp)
+	}
+	// Evidence section must not appear in any section diagnostic.
+	for _, d := range resp.Diagnostics {
+		if d.Section == "Evidence" {
+			t.Errorf("unexpected Evidence section diagnostic: %#v", d)
+		}
+	}
+}
+
+func TestMultiOpUpdateBackwardCompatSingleOp(t *testing.T) {
+	// Existing update:{} single-op form must continue to work.
+	fx := newAuthoringFixture(t)
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store,
+		ProposeRecordUpdateRequest{
+			Kind:   RecordKindTask,
+			ID:     "TASK-MCP-001-01",
+			Update: UpdateRequest{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{"status": "in_progress"}},
+		},
+	)
+	if err != nil {
+		t.Fatalf("single-op backward compat: %v", err)
+	}
+	if !resp.ProposalCreated {
+		t.Fatalf("proposal not created: %#v", resp)
+	}
+	assertDiffContains(t, resp.Diff.Text, "+- **status**: in_progress")
+}
+
+func TestMultiOpUpdateExclusivity(t *testing.T) {
+	// Supplying both update and operations must return invalid_request.
+	fx := newAuthoringFixture(t)
+	evidenceBody := "x\n"
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store,
+		ProposeRecordUpdateRequest{
+			Kind:   RecordKindTask,
+			ID:     "TASK-MCP-001-01",
+			Update: UpdateRequest{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{"status": "done"}},
+			Operations: []UpdateOperation{
+				{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}, Body: &evidenceBody},
+			},
+		},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.ProposalCreated {
+		t.Fatal("proposal must not be created when update and operations are both set")
+	}
+	assertHasDiagnosticCategory(t, resp.Diagnostics, string(ErrorCodeInvalidRequest))
+}
+
+func TestMultiOpUpdateEmptyOperations(t *testing.T) {
+	// Empty operations array must return invalid_request.
+	fx := newAuthoringFixture(t)
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store,
+		ProposeRecordUpdateRequest{
+			Kind:       RecordKindTask,
+			ID:         "TASK-MCP-001-01",
+			Operations: []UpdateOperation{},
+		},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.ProposalCreated {
+		t.Fatal("proposal must not be created for empty operations")
+	}
+	assertHasDiagnosticCategory(t, resp.Diagnostics, string(ErrorCodeInvalidRequest))
+}
+
+func TestMultiOpUpdateNeitherUpdateNorOperations(t *testing.T) {
+	// Neither update nor operations must return invalid_request.
+	fx := newAuthoringFixture(t)
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store,
+		ProposeRecordUpdateRequest{
+			Kind: RecordKindTask,
+			ID:   "TASK-MCP-001-01",
+		},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.ProposalCreated {
+		t.Fatal("proposal must not be created when neither update nor operations is set")
+	}
+	assertHasDiagnosticCategory(t, resp.Diagnostics, string(ErrorCodeInvalidRequest))
+}
+
+func TestMultiOpConflictDuplicateMetadataField(t *testing.T) {
+	// Two metadata_fields_replace ops targeting the same field must return conflicting_operations.
+	fx := newAuthoringFixture(t)
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store,
+		ProposeRecordUpdateRequest{
+			Kind: RecordKindTask,
+			ID:   "TASK-MCP-001-01",
+			Operations: []UpdateOperation{
+				{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{"status": "done"}},
+				{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{"status": "in_progress"}},
+			},
+		},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.ProposalCreated {
+		t.Fatal("proposal must not be created for conflicting metadata ops")
+	}
+	assertHasDiagnosticCategory(t, resp.Diagnostics, string(ErrorCodeConflictingOperations))
+}
+
+func TestMultiOpConflictMetadataBlockPlusFields(t *testing.T) {
+	// metadata_block_replace combined with metadata_fields_replace must return conflicting_operations.
+	fx := newAuthoringFixture(t)
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store,
+		ProposeRecordUpdateRequest{
+			Kind: RecordKindTask,
+			ID:   "TASK-MCP-001-01",
+			Operations: []UpdateOperation{
+				{Type: UpdateTypeMetadataBlockReplace, Metadata: map[string]any{
+					"id": "TASK-MCP-001-01", "status": "done", "date": "2026-06-01",
+					"work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001",
+					"estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"initial"},
+				}},
+				{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{"status": "done"}},
+			},
+		},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.ProposalCreated {
+		t.Fatal("proposal must not be created for metadata_block_replace + metadata_fields_replace conflict")
+	}
+	assertHasDiagnosticCategory(t, resp.Diagnostics, string(ErrorCodeConflictingOperations))
+}
+
+func TestMultiOpConflictMultipleSectionReplace(t *testing.T) {
+	// Two named_section_replace ops must return multiple_section_replace_not_supported.
+	fx := newAuthoringFixture(t)
+	b1, b2 := "x\n", "y\n"
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store,
+		ProposeRecordUpdateRequest{
+			Kind: RecordKindTask,
+			ID:   "TASK-MCP-001-01",
+			Operations: []UpdateOperation{
+				{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}, Body: &b1},
+				{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Goal"}, Body: &b2},
+			},
+		},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.ProposalCreated {
+		t.Fatal("proposal must not be created for multiple named_section_replace")
+	}
+	assertHasDiagnosticCategory(t, resp.Diagnostics, string(ErrorCodeMultipleSectionReplaceNotSupported))
+}
+
+func TestMultiOpUpdateNoOp(t *testing.T) {
+	// All ops are no-ops → proposal_created=false with no_op_update diagnostic.
+	fx := newAuthoringFixture(t)
+	// Fixture has status=not_started and Evidence="old evidence\n".
+	// Replaying the same values must produce no-op.
+	evidenceBody := "old evidence\n"
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store,
+		ProposeRecordUpdateRequest{
+			Kind: RecordKindTask,
+			ID:   "TASK-MCP-001-01",
+			Operations: []UpdateOperation{
+				{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{"status": "not_started"}},
+				{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence", Match: "exact"}, Body: &evidenceBody},
+			},
+		},
+	)
+	if err != nil {
+		t.Fatalf("multi-op no-op: %v", err)
+	}
+	if resp.ProposalCreated {
+		t.Fatal("proposal must not be created for no-op operations")
+	}
+	assertHasDiagnosticCategory(t, resp.Diagnostics, string(DiagnosticNoOpUpdate))
+}
+
+func TestMultiOpTopLevelBodyForbidden(t *testing.T) {
+	// Top-level body must not be combined with operations.
+	fx := newAuthoringFixture(t)
+	b := "x\n"
+	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store,
+		ProposeRecordUpdateRequest{
+			Kind: RecordKindTask,
+			ID:   "TASK-MCP-001-01",
+			Operations: []UpdateOperation{
+				{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{"status": "done"}},
+			},
+			Body: &b,
+		},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.ProposalCreated {
+		t.Fatal("proposal must not be created when top-level body is combined with operations")
+	}
+	assertHasDiagnosticCategory(t, resp.Diagnostics, string(ErrorCodeInvalidBodySource))
+}
+
+func assertHasDiagnosticCategory(t *testing.T, diagnostics []Diagnostic, category string) {
+	t.Helper()
+	if !hasDiagnosticCategory(diagnostics, DiagnosticCategory(category)) {
+		t.Errorf("expected diagnostic category %q; got: %#v", category, diagnostics)
+	}
+}

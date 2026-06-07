@@ -733,6 +733,8 @@ MVP diagnostic category は `schema.md` の定義に従う。
 - `missing_record_path`
 - `no_op_update`
 - `reciprocal_follow_up_mode_required`
+- `conflicting_operations`
+- `multiple_section_replace_not_supported`
 
 Canonical reference / investigation / workflow validation の concrete category と severity は以下とする。
 
@@ -814,6 +816,10 @@ Coverage mapping、semantic realization relation、`internal-design:` / `coverag
 `no_op_update` は `propose_record_update` 時に提案内容がファイルの現在の内容と byte 単位で一致した場合に出す。Severity は `info`。`proposal_created: false` を伴い、retained proposal は作成されない。`record_id` と `path` を含める。
 
 `reciprocal_follow_up_mode_required` は `propose_record_create` を `reciprocal_update_mode: "report_required_follow_up"` で呼び出し、かつ必須の reciprocal follow-up update が存在するときに出す。Severity は `warning`。`include_required` モードが accept に必要であることを `message` で明示する。Repair guidance として `repair_suggestion` に `{"reciprocal_update_mode": "include_required"}` を含めてよい。
+
+`conflicting_operations` は `propose_record_update` の `operations` 配列内に同一 metadata field を対象とする複数の metadata operation が含まれる場合に出す（`metadata_fields_replace` 同士の `metadata` key 重複、または `metadata_block_replace` と他の metadata operation の共存）。Severity は `error`。`proposal_created: false` を伴い、retained proposal は作成されない。
+
+`multiple_section_replace_not_supported` は `propose_record_update` の `operations` 配列内に 2 つ以上の `named_section_replace` operation が含まれる場合に出す。MVP 制約として、対象セクションが同一か否かに関わらず適用される。Severity は `error`。`proposal_created: false` を伴い、retained proposal は作成されない。
 
 Authoring diagnostic additional fields:
 
@@ -1289,7 +1295,7 @@ This example shows only the relevant response field. The full proposal response 
 
 ### Purpose
 
-`propose_record_update` creates a retained proposal for a whole metadata block replacement, a field-level metadata patch, or a whole named Markdown section replacement.
+`propose_record_update` creates a retained proposal for a single-operation update (whole metadata block replacement, field-level metadata patch, or named Markdown section replacement) or an atomic multi-operation update combining multiple supported operations into one retained proposal for the same record.
 It does not write repository files.
 
 If the requested update operation is a no-op after operation semantics are applied, `propose_record_update` MUST NOT create a retained proposal.
@@ -1354,13 +1360,36 @@ Metadata field replacement:
 }
 ```
 
+Operations array:
+
+```json
+{
+  "kind": "task",
+  "id": "TASK-MCP-008-04",
+  "operations": [
+    {
+      "type": "metadata_fields_replace",
+      "metadata": { "status": "done" }
+    },
+    {
+      "type": "named_section_replace",
+      "section_selector": { "heading": "Evidence", "match": "exact" },
+      "body": "2026-06-07: Implementation verified.\n"
+    }
+  ]
+}
+```
+
 | field | required | type | meaning |
 |---|---:|---|---|
 | `kind` | yes | string | update target kind |
 | `id` | yes | string | exact existing record ID. `new` placeholder is invalid |
-| `update` | yes | object | update operation object |
-| `body` | conditional | string | replacement Markdown body for `named_section_replace` |
-| `body_cache_id` | conditional | string | cached replacement body for `named_section_replace` |
+| `update` | conditional | object | single update operation object; mutually exclusive with `operations` |
+| `operations` | conditional | array | atomic multi-operation list; mutually exclusive with `update` |
+| `body` | conditional | string | replacement Markdown body for `named_section_replace` when using `update` |
+| `body_cache_id` | conditional | string | cached replacement body for `named_section_replace` when using `update` |
+
+Exactly one of `update` or `operations` must be present.
 
 `update.type` values:
 
@@ -1479,6 +1508,65 @@ Spec metadata block replacement example:
   }
 }
 ```
+
+#### Operations array
+
+`operations` is a list of update operation objects applied atomically to the same record in a single retained proposal.
+`update` and `operations` are mutually exclusive. Supplying both MUST return `invalid_request` and MUST NOT create a proposal.
+An empty `operations` array MUST return `invalid_request` and MUST NOT create a proposal.
+A single-element `operations` array is valid and applies the same semantics as the corresponding single `update` operation.
+
+Each element in `operations` is an operation object with the following fields:
+
+| field | required | type | meaning |
+|---|---:|---|---|
+| `type` | yes | string | operation type; same values as `update.type` |
+| `metadata` | conditional | object | required for `metadata_block_replace` and `metadata_fields_replace` |
+| `section_selector` | conditional | object | required for `named_section_replace` |
+| `body` | conditional | string | replacement body for `named_section_replace`; mutually exclusive with `body_cache_id` |
+| `body_cache_id` | conditional | string | cached replacement body for `named_section_replace`; mutually exclusive with `body` |
+
+Each operation in `operations` applies the full semantics of the corresponding single-operation type.
+For `named_section_replace` operations, this includes section selector resolution, case-only fallback matching, and heading-safe replacement body normalization, as specified in `#### Named section replacement`.
+For `metadata_fields_replace` operations, this includes reading the existing metadata, applying the patch, and validating the merged result, as specified in `#### Metadata field replacement`.
+
+Per-type body source rules apply to each operation element identically to the single `update` operation:
+- `body` and `body_cache_id` MUST be omitted for `metadata_block_replace` and `metadata_fields_replace` operations; supplying either MUST return `invalid_body_source` and MUST NOT create a proposal.
+- Exactly one of `body` or `body_cache_id` MUST be present for `named_section_replace` operations.
+- Supplying both `body` and `body_cache_id` in the same operation element MUST return `invalid_body_source` and MUST NOT create a proposal.
+
+For each `named_section_replace` operation that supplies an inline `body`, if proposal preparation fails after the body has been received (for example, due to conflict detection, a validation error, or a section selector resolution failure), the response SHOULD include a retryable `body_cache` entry for that body, following the shared Body source and body cache rules.
+Per-operation `body_cache_id` resolution uses the same `body_cache_not_found` and `body_cache_expired` behavior as single `update` requests.
+
+Top-level `body` and `body_cache_id` fields are applicable only to single `update` requests. Supplying either alongside `operations` MUST return `invalid_body_source` and MUST NOT create a proposal.
+
+**Operation ordering**
+
+Operations are applied in the following deterministic order regardless of their position in the array:
+
+1. `metadata_block_replace` and `metadata_fields_replace` operations, in the order they appear in the `operations` array.
+2. `named_section_replace` operations, in the order they appear in the `operations` array.
+
+**Conflict detection**
+
+Conflict detection runs before any operation is applied. A conflicting `operations` array MUST NOT create a proposal.
+
+- Two or more operations targeting the same metadata field MUST return `conflicting_operations` and MUST NOT create a proposal. For `metadata_fields_replace`, conflict is determined by comparing the `metadata` keys of the patch objects. A `metadata_block_replace` operation conflicts with any other metadata operation in the same array.
+- Two or more `named_section_replace` operations in a single `operations` array MUST return `multiple_section_replace_not_supported` and MUST NOT create a proposal, regardless of whether they target the same or different sections. This is an MVP constraint.
+
+**Validation**
+
+Validation is performed against the final record state after all operations are applied, not against any intermediate state.
+
+An `operations` array combining `metadata_fields_replace { status: done }` with a `named_section_replace` for `## Evidence` will pass done-state Evidence validation when the combined final state satisfies the required Evidence gate.
+
+**No-op detection**
+
+An `operations` request is a no-op when the combined result of all applied operations yields byte-equivalent persisted content to the current file. No retained proposal is created. The response has `proposal_created: false` and a `no_op_update` info diagnostic, identical to the single-operation no-op response.
+
+**Response shape**
+
+`operations` proposals use the same retained proposal response shape as single-operation proposals. `diff.text` covers all changes from all operations in a single unified diff for the target file. `diff.files` contains one entry for the target record with `change: modify`.
 
 ### Response
 

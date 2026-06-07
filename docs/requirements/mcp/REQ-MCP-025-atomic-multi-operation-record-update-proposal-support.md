@@ -1,7 +1,7 @@
 # REQ-MCP-025: atomic multi-operation record update proposal support
 
 - **id**: REQ-MCP-025
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-05
 - **source_refs**:
   - REQ-MCP-020
@@ -9,6 +9,7 @@
   - REQ-MCP-024
   - TASK-DATA-011-03
 - **work_items**:
+  - WORK-MCP-026
 
 ## Requirement
 

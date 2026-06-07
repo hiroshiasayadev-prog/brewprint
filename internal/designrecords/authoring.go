@@ -99,17 +99,26 @@ type ProposeRecordCreateRequest struct {
 }
 
 type ProposeRecordUpdateRequest struct {
-	Kind        RecordKind    `json:"kind"`
-	ID          string        `json:"id"`
-	Update      UpdateRequest `json:"update"`
-	Body        *string       `json:"body,omitempty"`
-	BodyCacheID string        `json:"body_cache_id,omitempty"`
+	Kind        RecordKind        `json:"kind"`
+	ID          string            `json:"id"`
+	Update      UpdateRequest     `json:"update"`
+	Operations  []UpdateOperation `json:"operations,omitempty"`
+	Body        *string           `json:"body,omitempty"`
+	BodyCacheID string            `json:"body_cache_id,omitempty"`
 }
 
 type UpdateRequest struct {
 	Type            string           `json:"type"`
 	Metadata        map[string]any   `json:"metadata,omitempty"`
 	SectionSelector *SectionSelector `json:"section_selector,omitempty"`
+}
+
+type UpdateOperation struct {
+	Type            string           `json:"type"`
+	Metadata        map[string]any   `json:"metadata,omitempty"`
+	SectionSelector *SectionSelector `json:"section_selector,omitempty"`
+	Body            *string          `json:"body,omitempty"`
+	BodyCacheID     string           `json:"body_cache_id,omitempty"`
 }
 
 type SectionSelector struct {
@@ -296,6 +305,28 @@ func ProposeRecordUpdate(ctx context.Context, cfg Config, idx *Index, store *Aut
 	if hasSequenceNewToken(req.ID, req.Kind) {
 		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "new placeholder is invalid for update operations")), nil
 	}
+
+	hasUpdate := req.Update.Type != ""
+	hasOperations := req.Operations != nil
+
+	if hasUpdate && hasOperations {
+		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "update and operations are mutually exclusive")), nil
+	}
+	if !hasUpdate && !hasOperations {
+		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "exactly one of update or operations must be present")), nil
+	}
+
+	if hasOperations {
+		if len(req.Operations) == 0 {
+			return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "operations must not be empty")), nil
+		}
+		if req.Body != nil || req.BodyCacheID != "" {
+			return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidBodySource, "body and body_cache_id must not be combined with operations")), nil
+		}
+		return proposeMultiOpUpdate(ctx, cfg, idx, store, req)
+	}
+
+	// Single-op path (existing behaviour)
 	bodyRequired := req.Update.Type == UpdateTypeNamedSectionReplace
 	bodyForbidden := req.Update.Type == UpdateTypeMetadataBlockReplace || req.Update.Type == UpdateTypeMetadataFieldsReplace
 	if bodyForbidden && (req.Body != nil || req.BodyCacheID != "") {
@@ -634,6 +665,203 @@ func prepareUpdate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 		files:       []ProposedFile{file},
 		diagnostics: diagnostics,
 	}, nil
+}
+
+func proposeMultiOpUpdate(ctx context.Context, cfg Config, idx *Index, store *AuthoringStore, req ProposeRecordUpdateRequest) (ProposeRecordResponse, error) {
+	ops := req.Operations
+	bodies := make([]*string, len(ops))
+	var firstBodyCache *BodyCacheEntry
+
+	for i, op := range ops {
+		bodyRequired := op.Type == UpdateTypeNamedSectionReplace
+		bodyForbidden := op.Type == UpdateTypeMetadataBlockReplace || op.Type == UpdateTypeMetadataFieldsReplace
+		if bodyForbidden && (op.Body != nil || op.BodyCacheID != "") {
+			return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidBodySource,
+				fmt.Sprintf("operations[%d] type %s must not include body or body_cache_id", i, op.Type))), nil
+		}
+		body, bc, diags, ok := resolveBodySource(store, op.Body, op.BodyCacheID, bodyRequired)
+		if !ok {
+			return failedProposalResponse(nil, nil, diags...), nil
+		}
+		bodies[i] = body
+		if bc != nil && firstBodyCache == nil {
+			firstBodyCache = bc
+		}
+	}
+
+	prep, err := prepareMultiOpUpdate(ctx, cfg, idx, req, bodies)
+	if err != nil {
+		return failedProposalResponse(firstBodyCache, nil, authoringDiagnostic(ErrorCodeInvalidRequest, err.Error())), nil
+	}
+	if hasErrorDiagnostics(prep.diagnostics) {
+		return failedProposalResponse(firstBodyCache, nil, prep.diagnostics...), nil
+	}
+	if isNoOpUpdate(prep.files) {
+		return noOpUpdateResponse(ctx, idx, prep)
+	}
+	return persistProposal(ctx, cfg, idx, store, ProposalOperationUpdate, prep, firstBodyCache)
+}
+
+func prepareMultiOpUpdate(ctx context.Context, cfg Config, idx *Index, req ProposeRecordUpdateRequest, bodies []*string) (authoringPreparation, error) {
+	if req.ID == "" {
+		return authoringPreparation{}, fmt.Errorf("id is required")
+	}
+	record := findRecordByIDKind(idx, req.ID, req.Kind)
+	if record == nil {
+		return authoringPreparation{}, fmt.Errorf("record %s was not found", req.ID)
+	}
+	raw, err := readRepoFile(cfg, record.Path)
+	if err != nil {
+		return authoringPreparation{}, err
+	}
+
+	// Conflict detection before any application
+	conflictDiags := detectOperationConflicts(req.Operations)
+	if hasErrorDiagnostics(conflictDiags) {
+		return authoringPreparation{diagnostics: conflictDiags}, nil
+	}
+
+	current := raw
+	var allDiagnostics []Diagnostic
+
+	// Pass 1: metadata operations (in array order)
+	for i, op := range req.Operations {
+		_ = i
+		switch op.Type {
+		case UpdateTypeMetadataBlockReplace:
+			var updated string
+			var diags []Diagnostic
+			updated, diags, err = replaceMetadataBlock(*record, current, op.Metadata)
+			if err != nil {
+				return authoringPreparation{}, err
+			}
+			current = updated
+			allDiagnostics = append(allDiagnostics, diags...)
+		case UpdateTypeMetadataFieldsReplace:
+			if op.Metadata == nil {
+				return authoringPreparation{}, fmt.Errorf("metadata is required for metadata_fields_replace")
+			}
+			var base map[string]any
+			base, err = currentMetadataAsMap(*record, current)
+			if err != nil {
+				return authoringPreparation{}, err
+			}
+			var updated string
+			var diags []Diagnostic
+			updated, diags, err = replaceMetadataBlock(*record, current, patchMetadataFields(base, op.Metadata))
+			if err != nil {
+				return authoringPreparation{}, err
+			}
+			current = updated
+			allDiagnostics = append(allDiagnostics, diags...)
+		}
+	}
+
+	// Pass 2: section operations (in array order)
+	for i, op := range req.Operations {
+		if op.Type != UpdateTypeNamedSectionReplace {
+			continue
+		}
+		if op.SectionSelector == nil {
+			return authoringPreparation{}, fmt.Errorf("section_selector is required for named_section_replace")
+		}
+		if bodies[i] == nil {
+			return authoringPreparation{}, fmt.Errorf("body is required for named_section_replace")
+		}
+		var updated string
+		var diags []Diagnostic
+		updated, diags, err = replaceNamedSection(current, *op.SectionSelector, *bodies[i], req.Kind)
+		if err != nil {
+			return authoringPreparation{}, err
+		}
+		current = updated
+		allDiagnostics = append(allDiagnostics, diags...)
+	}
+
+	if hasErrorDiagnostics(allDiagnostics) {
+		return authoringPreparation{diagnostics: allDiagnostics}, nil
+	}
+
+	file := ProposedFile{
+		Path:        record.Path,
+		Change:      "modify",
+		RecordID:    record.ID,
+		RecordKind:  record.Kind,
+		BaseContent: raw,
+		BaseHash:    contentHash(raw),
+		BaseID:      record.ID,
+		BaseKind:    record.Kind,
+		Content:     ensureTrailingNewline(current),
+	}
+	return authoringPreparation{
+		target: AuthoringTarget{
+			RequestedID: req.ID,
+			ResolvedID:  record.ID,
+			Kind:        record.Kind,
+			Domain:      workflowDomain(record.ID),
+			Path:        record.Path,
+		},
+		files:       []ProposedFile{file},
+		diagnostics: allDiagnostics,
+	}, nil
+}
+
+func detectOperationConflicts(ops []UpdateOperation) []Diagnostic {
+	var diagnostics []Diagnostic
+
+	// MVP constraint: at most one named_section_replace
+	sectionCount := 0
+	for _, op := range ops {
+		if op.Type == UpdateTypeNamedSectionReplace {
+			sectionCount++
+		}
+	}
+	if sectionCount > 1 {
+		diagnostics = append(diagnostics, authoringDiagnostic(ErrorCodeMultipleSectionReplaceNotSupported,
+			"operations contains more than one named_section_replace; at most one is supported per operations array"))
+		return diagnostics
+	}
+
+	// metadata_block_replace conflicts with any other metadata operation
+	metadataBlockCount := 0
+	metadataFieldsCount := 0
+	for _, op := range ops {
+		switch op.Type {
+		case UpdateTypeMetadataBlockReplace:
+			metadataBlockCount++
+		case UpdateTypeMetadataFieldsReplace:
+			metadataFieldsCount++
+		}
+	}
+	if metadataBlockCount > 1 {
+		diagnostics = append(diagnostics, authoringDiagnostic(ErrorCodeConflictingOperations,
+			"operations contains more than one metadata_block_replace"))
+	}
+	if metadataBlockCount > 0 && metadataFieldsCount > 0 {
+		diagnostics = append(diagnostics, authoringDiagnostic(ErrorCodeConflictingOperations,
+			"operations combines metadata_block_replace with metadata_fields_replace"))
+	}
+	if hasErrorDiagnostics(diagnostics) {
+		return diagnostics
+	}
+
+	// metadata_fields_replace: duplicate field keys across ops
+	fieldCount := make(map[string]int)
+	for _, op := range ops {
+		if op.Type == UpdateTypeMetadataFieldsReplace && op.Metadata != nil {
+			for k := range op.Metadata {
+				fieldCount[k]++
+			}
+		}
+	}
+	for k, count := range fieldCount {
+		if count > 1 {
+			diagnostics = append(diagnostics, authoringDiagnostic(ErrorCodeConflictingOperations,
+				fmt.Sprintf("operations contains conflicting metadata_fields_replace operations targeting field %q", k)))
+		}
+	}
+
+	return diagnostics
 }
 
 func validateCreateKind(kind RecordKind) error {
