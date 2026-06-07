@@ -1,7 +1,7 @@
 # TASK-DATA-015-04: Clean up UC-002 recursive and untagged-like surfaces
 
 - **id**: TASK-DATA-015-04
-- **status**: not_started
+- **status**: done
 - **date**: 2026-06-07
 - **work_item**: WORK-DATA-015
 - **source_requirement**: REQ-DATA-008
@@ -50,5 +50,11 @@ Apply the accepted recursive / untagged-union boundary to UC-002 surfaces after 
 - If YAML is changed, run focused validate / render checks in the later implementation or cleanup task.
 
 ## Evidence
-
-Not started.
+- N-044 migrated `object_ref.parent` from `any + note` to recursive named model reference `object_ref` in `docs/uc/002-brewprint-self-hosting/yaml/mcp/model/object_ref.yaml`.
+- N-009 migrated `diagnostic.related` from opaque `any + note` to `list<diagnostic_related>` in `docs/uc/002-brewprint-self-hosting/yaml/mcp/model/diagnostic.yaml`.
+- Added `docs/uc/002-brewprint-self-hosting/yaml/mcp/model/diagnostic_related.yaml` as a `kind: tagged_union` envelope with discriminator `kind` and `source_location` / `object_ref` variants.
+- No untagged union / general `oneOf` / `anyOf` / scalar union support was introduced, and ADR-073 was not broadened.
+- Validation command: `go run ./cmd/brewprint validate --yaml-root docs/uc/002-brewprint-self-hosting/yaml --format json` -> passed with `error_count: 0`, `warning_count: 0`.
+- Render command: `go run ./cmd/brewprint render --yaml-root docs/uc/002-brewprint-self-hosting/yaml --out docs/uc/002-brewprint-self-hosting/render --clean` -> passed, rendered 47 files.
+- Focused tests: `go test ./internal/resolve ./internal/render/model ./cmd/brewprint` -> passed for all three packages.
+- Render output changed under `docs/uc/002-brewprint-self-hosting/render`: current renderer output is grouped under `render/mcp/`; generated model pages include `model-object_ref.md`, `model-diagnostic.md`, and new `model-diagnostic_related.md`. The render run also deleted the stale tracked `render/yaml/` pages.

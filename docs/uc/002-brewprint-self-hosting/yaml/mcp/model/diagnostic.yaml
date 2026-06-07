@@ -18,6 +18,6 @@ nodes:
         type: source_location
         note: "関連source。任意"
       - name: related
-        type: any
-        note: "関連SourceLocationまたはObjectRef配列。v1 modelではunion listを表せないためany"
+        type: list<diagnostic_related>
+        note: "関連SourceLocationまたはObjectRefのtagged union envelope配列。任意。"
     note: "tool実行は成立したが注意すべき情報。"
