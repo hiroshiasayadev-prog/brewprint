@@ -18,7 +18,7 @@ nodes:
         note: "必須。language: yaml と text を持つobject。language literal制約はnoteで保持する。"
       - name: fallback
         type: str
-        note: "任意。fallbackした場合はfile。enum制約はnoteで保持する。"
+        note: "任意。fallbackした場合はfile。fallback response contractはMCP tool specを正本とする。"
       - name: diagnostics
         type: diagnostic_list
         note: "必須。fallback時のsource_range_unavailable等を含む。"
@@ -27,6 +27,7 @@ nodes:
       docs/spec/mcp/tools/get-source.md §3 のOutputに対応する。
       `snippet` は `{ language: "yaml", text: "..." }` を持つ。language literal制約はnoteで保持する。
       Raw YAML ASTではなく、ResolvedProject上のsemantic objectに紐づくsource補助情報として扱う。
+      `fallback` marker と fallback時diagnosticはMCP tool specを正本とし、このYAMLでは要約だけを保持する。
 
   - id: get_source_snippet
     type: model

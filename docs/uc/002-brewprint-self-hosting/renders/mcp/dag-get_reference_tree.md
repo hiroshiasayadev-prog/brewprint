@@ -8,21 +8,21 @@ tool名はtreeだが、返却形式はnodes[] / edges[] からなるbounded refe
 ```mermaid
 flowchart TD
   subgraph params
-    request([request])
+    request([request: get_reference_tree_request])
   end
 
   _start([Start]) ==> validate_request[validate_request]
   request --> validate_request
-  validate_request --> validated_request([validated_request])
+  validate_request --> validated_request([validated_request: get_reference_tree_request])
 
   validate_request ==> query_service[query_service]
   validated_request --> query_service
   resolved_project_store[(resolved_project_store)] -- "read" --> query_service
-  query_service --> query_result([query_result])
+  query_service --> query_result([query_result: any])
 
   query_service ==> build_response[build_response]
   query_result --> build_response
-  build_response --> response
+  build_response --> response([response: get_reference_tree_response])
   build_response ==> _end([End])
 
   classDef taskNode     fill:#4A90D9,stroke:#2C5F8A,color:#fff

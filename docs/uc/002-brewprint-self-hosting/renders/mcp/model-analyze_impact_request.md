@@ -26,6 +26,6 @@ change fieldはanalyze_impact_changeモデルに移行した。change_contract /
 |---|---|---|
 | selector | object_selector | 必須。影響分析対象のObject selector。 |
 | change | analyze_impact_change | 必須。kindをdiscriminatorとする変更種別object。rename/remove/change_type/addは構造化済み。change_contract / change_transition_targetは後続migration対象。 |
-| scope_modules | any | 任意。分析範囲を絞るmodule list。文字列配列だが専用list modelを作らずanyで暫定表現する。 |
+| scope_modules | string_list | 任意。分析範囲を絞るmodule list。 |
 | max_impacts | int | 任意。impact返却上限。省略時200。 |
 

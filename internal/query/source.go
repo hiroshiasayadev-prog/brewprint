@@ -18,7 +18,7 @@ type sourceBlock struct {
 
 func (s *Service) GetSource(req GetSourceRequest) (GetSourceResponse, error) {
 	if req.Fallback != "" && req.Fallback != "file" && req.Fallback != "error" {
-		return GetSourceResponse{}, fmt.Errorf("unsupported fallback: %s", req.Fallback)
+		return GetSourceResponse{}, fmt.Errorf("invalid fallback: %s", req.Fallback)
 	}
 
 	object, fileID, block, err := s.sourceForSelector(req.Selector)
@@ -29,7 +29,7 @@ func (s *Service) GetSource(req GetSourceRequest) (GetSourceResponse, error) {
 		return sourceResponse(object, fileID, block, "", nil), nil
 	}
 	if req.Fallback == "error" {
-		return GetSourceResponse{}, fmt.Errorf("source range not found: %s", object.ID)
+		return GetSourceResponse{}, fmt.Errorf("%s: %s", sourceRangeUnavailable, object.ID)
 	}
 	fileBlock, err := s.fullFileSource(fileID)
 	if err != nil {

@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/mcp/tools/get-references.md
 status: draft
-last_updated: 2026-04-30
+last_updated: 2026-06-07
 summary: >
   get_references toolの仕様を定義する。
   対象objectの直接referenceを返す。
@@ -35,6 +35,10 @@ MCP v1ではdirect referencesのみを返す。
 | `selector` | ✓ | Object selector |
 | `direction` | 任意 | `out` / `in` / `both`。省略時は `out` |
 | `kinds` | 任意 | reference kind filter。省略時は全kind |
+
+`direction` が省略された場合、toolは `out` を使用し、response の `direction` には実際に使用した `out` を返す。
+`direction` が `out` / `in` / `both` 以外の場合は `unsupported_direction` tool error とする。
+この default は MCP tool contract の実行時挙動であり、DATA DSL の default 構文としては扱わない。
 
 ## 3. Output
 

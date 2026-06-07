@@ -18,7 +18,7 @@ MCP v1ではdirect referencesのみを返し、transitive traversalは `get_refe
 | field | type | note |
 |---|---|---|
 | object | object_ref | 必須。query対象object。 |
-| direction | str | 必須。実際に使ったdirection。out / in / both。 |
+| direction | reference_query_direction | 必須。実際に使ったdirection。 |
 | depth | int | 必須。get_referencesでは常に1を返す。 |
 | references | reference_list | 必須。対象objectの直接reference一覧。 |
 | diagnostics | diagnostic_list | 必須。Diagnostic list。 |

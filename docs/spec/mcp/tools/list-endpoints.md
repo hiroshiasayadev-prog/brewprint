@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/mcp/tools/list-endpoints.md
 status: draft
-last_updated: 2026-04-30
+last_updated: 2026-06-07
 summary: >
   list_endpoints toolの仕様を定義する。
   API Table view YAMLに基づくendpoint一覧を返す。
@@ -30,9 +30,16 @@ depends_on:
 |---|---:|---|
 | `api_table_id` | 任意 | API Table view ID。省略時はproject内の全API Tableを返す |
 
-API Tableが複数存在し、`api_table_id` が省略された場合は、全API Tableを `tables[]` に分けて返す。
+`api_table_id` が指定された場合、toolはそのAPI Table viewだけを対象にし、response の `tables[]` に対象API Tableを1件だけ入れて返す。
+`api_table_id` が省略された場合、toolはproject内の全API Table viewを対象にし、response の `tables[]` に全API Tableを入れて返す。
+この response shape は MCP tool contract の実行時挙動であり、DATA DSL の default / union 構文としては扱わない。
 
 ## 3. Output
+
+`list_endpoints` response は常に `tables[]` を返す。
+`api_table_id` が指定された場合、`tables[]` には対象API Tableを1件だけ入れる。
+`api_table_id` が省略された場合、`tables[]` にはproject内の全API Tableを入れる。
+top-level single table response は MCP v1 contract に含めない。
 
 ```json
 {

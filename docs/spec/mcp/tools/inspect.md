@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/mcp/tools/inspect.md
 status: draft
-last_updated: 2026-05-09
+last_updated: 2026-06-07
 summary: >
   inspect toolの仕様を定義する。
   対象objectの実装判断に必要な周辺文脈をkind別に返す。
@@ -53,7 +53,9 @@ depends_on:
 | `full` | source / members / references / diagnosticsを可能な範囲で最大限返す |
 
 MCP v1では、`detail` による厳密な返却差分は実装任意とする。
-ただし未知の値はerrorとする。
+`detail` が省略された場合、toolは `normal` を使用する。
+`detail` が `brief` / `normal` / `full` 以外の場合は `unsupported_detail` tool error とする。
+この default は MCP tool contract の実行時挙動であり、DATA DSL の default 構文としては扱わない。
 
 ## 3. Common output shape
 

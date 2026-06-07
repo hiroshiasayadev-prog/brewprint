@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/mcp/tools/get-source.md
 status: draft
-last_updated: 2026-04-30
+last_updated: 2026-06-07
 summary: >
   get_source toolの仕様を定義する。
   semantic objectに対応するYAML source snippetを返す。
@@ -48,8 +48,10 @@ depends_on:
 | `selector` | ✓ | Object selector |
 | `fallback` | 任意 | `file` / `error`。省略時は `file` と同等 |
 
-`fallback=file` または省略時は、object単位のrangeが特定できない場合に、同じFileIDのYAML全体を返し、`diagnostics[]` に `source_range_unavailable` warningを入れる。
-`fallback=error` の場合は、object単位のrangeが特定できないとtool errorを返す。
+`fallback=file` または省略時は、object単位のrangeが特定できない場合に、同じFileIDのYAML全体を返し、`fallback: "file"` と `diagnostics[]` の `source_range_unavailable` warningを入れる。
+`fallback=error` の場合は、object単位のrangeが特定できないと `source_range_unavailable` tool error を返し、file fallback response は返さない。
+`fallback` が `file` / `error` 以外の場合は `invalid_args` tool error とする。
+この default と fallback branch は MCP tool contract の実行時挙動であり、DATA DSL の default / fallback 構文としては扱わない。
 
 ## 3. Output
 
@@ -83,7 +85,7 @@ depends_on:
 | `object` | ✓ | 対象ObjectRef |
 | `source` | ✓ | SourceLocation。line / columnが取得できない場合は `file` のみでもよい |
 | `snippet` | ✓ | `language: yaml` と snippet text |
-| `fallback` | 任意 | fallbackした場合は `file` |
+| `fallback` | 任意 | fallbackした場合は `file`。`fallback=error` では fallback response を返さない |
 | `diagnostics` | ✓ | Diagnostic list |
 
 ## 4. Selector support

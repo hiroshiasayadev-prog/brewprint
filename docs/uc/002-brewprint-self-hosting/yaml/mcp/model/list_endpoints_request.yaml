@@ -13,4 +13,5 @@ nodes:
       MCP tool `list_endpoints` のrequest model。
       docs/spec/mcp/tools/list-endpoints.md §2 のInputに対応する。
       API Tableが複数存在し、api_table_idが省略された場合は、全API Tableをresponse.tables[]に分けて返す。
+      api_table_id省略時のtables[] groupingはMCP tool specを正本とし、このYAMLでは要約だけを保持する。
       このtool自体はMCP toolでありHTTP endpointではないため、対応taskに endpoint: true は付けない。

@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/mcp/tools/get-reference-tree.md
 status: draft
-last_updated: 2026-04-30
+last_updated: 2026-06-07
 summary: >
   get_reference_tree toolの仕様を定義する。
   対象objectからreferenceをBFSでtraversalし、bounded graphとして返却する。
@@ -64,8 +64,10 @@ tool名は `tree` だが、返却形式は純粋な木ではなく、`nodes[]` /
 | `max_nodes` | 任意 | node返却上限。省略時 `200` |
 | `max_edges` | 任意 | edge返却上限。省略時 `500` |
 
-`depth < 0` または `depth > 4` は `invalid_depth` error とする。
+`depth < 0` または `depth > 4` は `invalid_depth` tool error とする。
+`depth` の範囲は MCP tool contract の実行時制約であり、DATA DSL の汎用 numeric range 構文としては扱わない。
 `direction` は探索範囲を暗黙化しないため必須とする。
+`direction` が `out` / `in` / `both` 以外の場合は `unsupported_direction` tool error とする。
 
 `kinds` を指定した場合、指定されたreference kindのみを traversal 経路として辿り、`edges[]` に含める。
 指定外kindでしか到達できないobjectには到達しない。

@@ -14,7 +14,7 @@ nodes:
         note: "必須。out / in / both。"
       - name: depth
         type: int
-        note: "必須。0..4。範囲外はinvalid_depth error。"
+        note: "必須。0..4。範囲外は MCP tool contract により invalid_depth error。"
       - name: kinds
         type: string_list
         note: "任意。traversal / return対象のreference kind filter文字列配列。"
@@ -30,4 +30,4 @@ nodes:
       directionは探索範囲を暗黙化しないため必須。
       `kinds` は docs/spec/mcp/schema.md §2.2 のReference.kind filter。
       directionのclosed vocabularyはenum modelで表現する。
-      depthの範囲制約はbrewprint v1 modelでは型として表せないためnoteで保持する。
+      depthの範囲制約と範囲外errorはMCP tool specを正本とし、このYAMLでは要約だけを保持する。

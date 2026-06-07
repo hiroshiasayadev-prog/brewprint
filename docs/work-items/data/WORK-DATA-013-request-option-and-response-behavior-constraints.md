@@ -12,6 +12,10 @@
   - TASK-DATA-009-03
   - TASK-DATA-009-04
 - **tasks**:
+  - TASK-DATA-013-01
+  - TASK-DATA-013-02
+  - TASK-DATA-013-03
+  - TASK-DATA-013-04
 
 ## Goal
 

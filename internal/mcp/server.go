@@ -277,6 +277,12 @@ func argsMap(args []byte) map[string]any {
 
 func errorCode(err error) string {
 	message := err.Error()
+	if strings.Contains(message, "source_range_unavailable") {
+		return "source_range_unavailable"
+	}
+	if strings.Contains(message, "invalid fallback") {
+		return "invalid_args"
+	}
 	if strings.Contains(message, "not found") {
 		return "not_found"
 	}

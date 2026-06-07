@@ -129,12 +129,39 @@ func TestServerCallTool(t *testing.T) {
 		}
 	})
 
+	t.Run("get_source_fallback_file_when_omitted", func(t *testing.T) {
+		localServer := newUC001ServerWithHiddenSourceRange(t, "auth/task/login.yaml")
+		envelope := call(t, localServer, "get_source", `{"selector":{"id":"auth.task.login"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_source fallback=file omitted error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		if result["fallback"] != "file" {
+			t.Fatalf("get_source fallback = %#v, want file: %#v", result["fallback"], result)
+		}
+		diagnostics := result["diagnostics"].([]any)
+		if len(diagnostics) != 1 || diagnostics[0].(map[string]any)["code"] != "source_range_unavailable" {
+			t.Fatalf("get_source diagnostics = %#v", diagnostics)
+		}
+	})
+
+	t.Run("get_source_fallback_error_when_range_unavailable", func(t *testing.T) {
+		localServer := newUC001ServerWithHiddenSourceRange(t, "auth/task/login.yaml")
+		envelope := call(t, localServer, "get_source", `{"selector":{"id":"auth.task.login"},"fallback":"error"}`)
+		if envelope.Error == nil || envelope.Error.Code != "source_range_unavailable" {
+			t.Fatalf("get_source fallback=error envelope = %#v", envelope)
+		}
+	})
+
 	t.Run("get_references", func(t *testing.T) {
 		envelope := call(t, server, "get_references", `{"selector":{"id":"auth.task.login"},"kinds":["reads"]}`)
 		if envelope.Error != nil {
 			t.Fatalf("get_references error: %#v", envelope.Error)
 		}
 		result := resultMap(t, envelope)
+		if result["direction"] != "out" {
+			t.Fatalf("get_references direction = %#v, want out", result["direction"])
+		}
 		refs := result["references"].([]any)
 		if len(refs) != 2 {
 			t.Fatalf("references len = %d, want 2: %#v", len(refs), refs)
@@ -420,6 +447,18 @@ func TestServerCallTool(t *testing.T) {
 			t.Fatalf("tables len = %d, want 1: %#v", len(tables), tables)
 		}
 	})
+
+	t.Run("list_endpoints_omitted_groups_tables", func(t *testing.T) {
+		envelope := call(t, server, "list_endpoints", `{}`)
+		if envelope.Error != nil {
+			t.Fatalf("list_endpoints omitted error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		tables := result["tables"].([]any)
+		if len(tables) == 0 {
+			t.Fatalf("tables empty: %#v", result)
+		}
+	})
 }
 
 func TestServerCallToolErrors(t *testing.T) {
@@ -453,6 +492,41 @@ func TestServerCallToolErrors(t *testing.T) {
 		}
 	})
 
+	t.Run("invalid_depth_negative", func(t *testing.T) {
+		envelope := call(t, server, "get_reference_tree", `{"selector":{"id":"auth.task.login"},"direction":"out","depth":-1}`)
+		if envelope.Error == nil || envelope.Error.Code != "invalid_depth" {
+			t.Fatalf("invalid negative depth envelope = %#v", envelope)
+		}
+	})
+
+	t.Run("unsupported_reference_tree_direction", func(t *testing.T) {
+		envelope := call(t, server, "get_reference_tree", `{"selector":{"id":"auth.task.login"},"direction":"sideways","depth":1}`)
+		if envelope.Error == nil || envelope.Error.Code != "unsupported_direction" {
+			t.Fatalf("unsupported reference tree direction envelope = %#v", envelope)
+		}
+	})
+
+	t.Run("unsupported_references_direction", func(t *testing.T) {
+		envelope := call(t, server, "get_references", `{"selector":{"id":"auth.task.login"},"direction":"sideways"}`)
+		if envelope.Error == nil || envelope.Error.Code != "unsupported_direction" {
+			t.Fatalf("unsupported references direction envelope = %#v", envelope)
+		}
+	})
+
+	t.Run("invalid_source_fallback", func(t *testing.T) {
+		envelope := call(t, server, "get_source", `{"selector":{"id":"auth.task.login"},"fallback":"none"}`)
+		if envelope.Error == nil || envelope.Error.Code != "invalid_args" {
+			t.Fatalf("invalid source fallback envelope = %#v", envelope)
+		}
+	})
+
+	t.Run("unsupported_inspect_detail", func(t *testing.T) {
+		envelope := call(t, server, "inspect", `{"selector":{"id":"auth.task.login"},"detail":"verbose"}`)
+		if envelope.Error == nil || envelope.Error.Code != "unsupported_detail" {
+			t.Fatalf("unsupported inspect detail envelope = %#v", envelope)
+		}
+	})
+
 	t.Run("invalid_change_payload", func(t *testing.T) {
 		envelope := call(t, server, "analyze_impact", `{"selector":{"id":"auth.task.login"},"change":{"kind":"rename"}}`)
 		if envelope.Error == nil || envelope.Error.Code != "invalid_change_payload" {
@@ -482,6 +556,26 @@ func resultMap(t *testing.T, envelope Envelope) map[string]any {
 		t.Fatalf("unmarshal result map: %v", err)
 	}
 	return out
+}
+
+func newUC001ServerWithHiddenSourceRange(t *testing.T, fileID string) *Server {
+	t.Helper()
+	yamlRoot := filepath.FromSlash("../../docs/uc/001-ec-checkout-flow/yaml")
+	loader := source.Loader{}
+	raw, err := loader.Load(yamlRoot)
+	if err != nil {
+		t.Fatalf("load yaml root: %v", err)
+	}
+	project, diagnostics := resolve.Build(raw)
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Severity == semantic.SeverityError {
+			t.Fatalf("semantic diagnostic: %s: %s", diagnostic.FileID, diagnostic.Message)
+		}
+	}
+	file := project.SourceFilesByID[semantic.FileID(fileID)]
+	file.Content = "# source range intentionally unavailable for test\n"
+	project.SourceFilesByID[semantic.FileID(fileID)] = file
+	return NewServer(query.NewService(project))
 }
 
 func hasImpactMap(impacts []any, kind, objectID string) bool {
