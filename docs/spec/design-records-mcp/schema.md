@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/schema.md
 status: draft
-last_updated: 2026-06-05
+last_updated: 2026-06-08
 summary: >
   Design Records MCP MVP が読む design record / workflow artifact metadata schema、
   record model、authoring guidance source model、authoring transaction schema concept、
@@ -42,9 +42,9 @@ MVP で読む source は以下である。
 |---|---|
 | ADR 箇条書きmetadata | decision record の `status` / `date` / `depends_on` / `supersedes` / `migrated_to_spec` |
 | investigation 箇条書きmetadata | investigation record の `status` / `date` / `trigger` / `scope` / `non_scope` / `source_refs` / `follow_up_candidates` / optional related metadata / `follow_up_results` |
-| requirement 箇条書きmetadata | requirement record の `id` / `status` / `date` / `source_refs` / `work_items` |
-| work item 箇条書きmetadata | work item record の `id` / `status` / `date` / `source_requirement` / `impact_refs` / `tasks` |
-| task 箇条書きmetadata | task record の `id` / `status` / `date` / `work_item` / `source_requirement` / `estimate` / `depends_on` / `outputs` |
+| requirement 箇条書きmetadata | requirement record の `id` / `status` / `date` / `source_refs` / `work_items` / optional `subdomain` |
+| work item 箇条書きmetadata | work item record の `id` / `status` / `date` / `source_requirement` / `impact_refs` / `tasks` / optional `subdomain` |
+| task 箇条書きmetadata | task record の `id` / `status` / `date` / `work_item` / `source_requirement` / `estimate` / `depends_on` / `outputs` / optional `subdomain` |
 | spec YAML front matter | spec record の `scope` / `status` / `design_record` metadata。top-level `depends_on` は doc-policy 用出自 path list として読むが、record dependency には使わない |
 | Markdown H1 | `title` 抽出 |
 | file path | record path / filename ID validation |
@@ -170,14 +170,19 @@ TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>
 Requirement の認識 field:
 
 - required: `id`, `status`, `date`, `source_refs`, `work_items`
+- optional: `subdomain`
 
 Work item の認識 field:
 
 - required: `id`, `status`, `date`, `source_requirement`, `impact_refs`, `tasks`
+- optional: `subdomain`
 
 Task の認識 field:
 
 - required: `id`, `status`, `date`, `work_item`, `source_requirement`, `estimate`, `depends_on`, `outputs`
+- optional: `subdomain`
+
+`subdomain` は domain namespace 内の concept area グルーピングを表す optional string field である。artifact ID には含まれない。有効値は同 domain 内の既存 records から動的に導出する（事前定義カタログなし）。詳細は namespace-model spec の Subdomain model セクションを参照。
 
 Workflow artifact の required metadata は presence validation の対象とする。
 
@@ -385,9 +390,9 @@ Kind-specific details:
 | `decision` | `depends_on`, `supersedes`, `migrated_to_spec` |
 | `spec` | `depends_on` |
 | `investigation` | `trigger`, `scope`, `non_scope`, `source_refs`, `follow_up_candidates`, optional `supersedes`, `related_*`, `follow_up_results` |
-| `requirement` | `source_refs`, `work_items` |
-| `work_item` | `source_requirement`, `impact_refs`, `tasks` |
-| `task` | `work_item`, `source_requirement`, `estimate`, `depends_on`, `outputs` |
+| `requirement` | `source_refs`, `work_items`, optional `subdomain` |
+| `work_item` | `source_requirement`, `impact_refs`, `tasks`, optional `subdomain` |
+| `task` | `work_item`, `source_requirement`, `estimate`, `depends_on`, `outputs`, optional `subdomain` |
 
 `headings` と requested raw `body` は `get_record` の取得内容として common response に追加でき、`get_records` の `retrieval_status: "found"` item でも同一 record representation を再利用する。
 

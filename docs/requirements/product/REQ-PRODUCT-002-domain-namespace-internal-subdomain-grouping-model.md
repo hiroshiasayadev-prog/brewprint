@@ -31,7 +31,7 @@
 ## Required Outcome
 - domain namespace 内の subdomain を定義するモデルが存在する
 - subdomain は artifact ID に強制エンコードされない形での表現を許容する
-  - 具体的には YAML metadata の `subdomain:` フィールド（key-value label 形式）
+  - 具体的には record metadata の `subdomain` フィールド（workflow artifact では H1 直下の箇条書き metadata `- **subdomain**: VALUE` 形式）
   - v2 artifact ID grammar（`<APP>-<KIND>-<DOMAIN>-<INDEX>`）にも subdomain セグメントを追加しない
 - index はドメインごとにフラットなシーケンスを維持する。subdomain ごとにリセットしない
 - subdomain の有効値は事前定義カタログを持たず、既存 records から動的に導出する

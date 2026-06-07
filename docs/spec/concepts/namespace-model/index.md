@@ -14,11 +14,11 @@ semantic_refs:
   - spec:namespace-model
 sections:
   spec:namespace-model.app-namespaces: App namespace definitions
-  spec:namespace-model.drmcp: DRMCP architecture and domain namespaces
-  spec:namespace-model.bpdsl: BPDSL architecture and domain namespaces
-  spec:namespace-model.product: PRODUCT namespace definition
+  spec:namespace-model.drmcp: DRMCP
+  spec:namespace-model.bpdsl: BPDSL
+  spec:namespace-model.product: PRODUCT
   spec:namespace-model.domain-catalog: Domain namespace catalog
-  spec:namespace-model.subdomain-model: Subdomain grouping model
+  spec:namespace-model.subdomain-model: Subdomain model
   spec:namespace-model.v2-grammar: v2 artifact ID grammar and mapping rule
   spec:namespace-model.existing-artifacts: Existing artifact ownership
 ---
@@ -190,10 +190,10 @@ domain namespace 内の artifact が大量になったとき、**subdomain** は
 
 ### 定義と表現
 
-subdomain は artifact ID に含まれない。YAML metadata の `subdomain:` フィールド（key-value label 形式）として表現する。
+subdomain は artifact ID に含まれない。record metadata の `subdomain` フィールドとして表現する。Design Records workflow artifact（requirement / work_item / task）では H1 直下の箇条書き metadata に記載する。
 
-```yaml
-subdomain: AUTHORING
+```
+- **subdomain**: AUTHORING
 ```
 
 - **index はドメインごとフラット**: subdomain ごとに sequence をリセットしない
