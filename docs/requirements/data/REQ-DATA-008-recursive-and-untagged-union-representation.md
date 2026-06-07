@@ -1,7 +1,7 @@
 # REQ-DATA-008: Recursive and untagged-union representation
 
 - **id**: REQ-DATA-008
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-01
 - **source_refs**:
   - REQ-DATA-002
@@ -23,6 +23,15 @@ This requirement owns the `recursive / union structure` candidate bucket from `T
 
 `TASK-DATA-009-04` created this requirement as the distinct owner for recursive and untagged-union representation.
 
+Accepted resolution on 2026-06-08:
+
+- Recursive structures are represented through named model TypeRef references only.
+- Inline recursive shapes are not introduced.
+- Untagged union / general `oneOf` / `anyOf` / scalar union support is not introduced.
+- Untagged-like machine-readable surfaces use tagged union envelope models.
+- UC-002 N-044 was migrated to `object_ref.parent: object_ref`.
+- UC-002 N-009 was migrated to `diagnostic.related: list<diagnostic_related>` using a tagged union envelope.
+
 ## Required Outcome
 
 - Decide whether and how recursive references and untagged union shapes are represented in brewprint data models.
@@ -40,4 +49,13 @@ This requirement owns the `recursive / union structure` candidate bucket from `T
 
 ## Boundary
 
-This requirement captures recursive and untagged-union representation needs. It does not decide the final schema, implementation sequence, or UC-002 migration set; those are owned by `WORK-DATA-015` and later task artifacts.
+This requirement is accepted.
+
+Final boundary:
+
+- Recursive named model references are supported.
+- Inline recursive shapes remain unsupported.
+- Untagged union / general `oneOf` / `anyOf` / scalar union support remains unsupported.
+- Tagged union envelope models are the selected replacement pattern for untagged-like machine-readable surfaces.
+
+The accepted schema and UC-002 cleanup are owned by `WORK-DATA-015` and its completed tasks.

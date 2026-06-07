@@ -1,7 +1,7 @@
 # WORK-DATA-015: Define recursive and untagged-union representation
 
 - **id**: WORK-DATA-015
-- **status**: in_progress
+- **status**: done
 - **date**: 2026-06-01
 - **source_requirement**: REQ-DATA-008
 - **impact_refs**:
@@ -75,8 +75,57 @@ flowchart TD
   T4 --> T5
 ```
 
-`TASK-DATA-015-01` and `TASK-DATA-015-02` are complete. `TASK-DATA-015-03` through `TASK-DATA-015-06` remain the active follow-up plan.
+`TASK-DATA-015-01` through `TASK-DATA-015-06` are complete.
 
 ## Completion Condition
 
-This work item can be marked `done` when recursive and untagged-union representation is accepted, specified, implemented and verified if selected, or explicitly closed as no-action without silently expanding tagged-union, helper-shape, or MCP identity work.
+This work item is done.
+
+Completion evidence:
+
+- Recursive named model reference support was accepted in `TASK-DATA-015-01`.
+- `docs/spec/type-ref.md` was updated in `TASK-DATA-015-02`.
+- Runtime behavior was investigated in `TASK-DATA-015-03` and classified as already-supported.
+- UC-002 N-044 was migrated from `any` to recursive named model reference `object_ref` in `TASK-DATA-015-04`.
+- UC-002 N-009 was migrated from `any` to `list<diagnostic_related>` using a tagged union envelope in `TASK-DATA-015-04`.
+- `TASK-DATA-015-06` reviewed the spec and task split after cleanup.
+- `TASK-DATA-015-05` verified the completed work and recommended closing this work item.
+
+Boundary preserved:
+
+- No untagged union / general `oneOf` / `anyOf` / scalar union support was introduced.
+- ADR-073 remains limited to tagged / discriminated union support.
+- No M15 or completed DATA work item was reopened.
+
+Verification recorded in task evidence:
+
+- UC-002 YAML validation passed with `error_count: 0` and `warning_count: 0`.
+- UC-002 render passed and rendered 47 files.
+- `go test ./internal/resolve ./internal/render/model ./cmd/brewprint` passed.
+- MCP `validate_records` passed for the affected task / work item records.
+
+## Evidence
+
+Completed on 2026-06-08.
+
+`WORK-DATA-015` closes `REQ-DATA-008` by accepting recursive named model references and rejecting general untagged union support.
+
+Selected outcomes:
+
+- Recursive structures are represented through named model TypeRef references only.
+- Inline recursive shapes are not introduced.
+- Untagged union / general `oneOf` / `anyOf` / scalar union support is not introduced.
+- Untagged-like machine-readable surfaces use tagged union envelope models.
+- Intentionally opaque surfaces may remain `any + note` / prose where schema is not required.
+
+Implemented UC-002 cleanup:
+
+- `object_ref.parent` now uses `type: object_ref`.
+- `diagnostic.related` now uses `type: list<diagnostic_related>`.
+- `diagnostic_related` is a tagged union envelope with `kind` discriminator and `source_location` / `object_ref` variants.
+
+Close verification:
+
+- All tasks `TASK-DATA-015-01` through `TASK-DATA-015-06` are done.
+- `TASK-DATA-015-05` records the final verification summary.
+- `REQ-DATA-008` can be updated from `captured` to `accepted`.
