@@ -1,11 +1,12 @@
 # REQ-PRODUCT-002: Domain namespace internal subdomain grouping model
 
 - **id**: REQ-PRODUCT-002
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-07
 - **source_refs**:
   - REQ-PRODUCT-001
 - **work_items**:
+  - WORK-PRODUCT-002
 
 ## Requirement
 
