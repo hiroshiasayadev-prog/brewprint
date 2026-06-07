@@ -1,11 +1,12 @@
 ---
 scope: docs/spec/concepts/namespace-model/index.md
 status: draft
-last_updated: 2026-06-07
+last_updated: 2026-06-08
 summary: >
   brewprint が持つ app namespace と domain namespace の分離モデルを定義する。
   各 app namespace のアーキテクチャ概観と domain namespace 割り当てを記述し、
   v2 artifact ID grammar と namespace catalog の前提条件を提供する。
+  また domain namespace 内の subdomain grouping model（key-value label 形式・動的カタログ）を定義する。
 depends_on:
   - docs/adr/095-yaml-dsl-design-records-mcp.md
   - docs/adr/096-artifact-product-namespace-per-app-migration.md
@@ -17,6 +18,7 @@ sections:
   spec:namespace-model.bpdsl: BPDSL architecture and domain namespaces
   spec:namespace-model.product: PRODUCT namespace definition
   spec:namespace-model.domain-catalog: Domain namespace catalog
+  spec:namespace-model.subdomain-model: Subdomain grouping model
   spec:namespace-model.v2-grammar: v2 artifact ID grammar and mapping rule
   spec:namespace-model.existing-artifacts: Existing artifact ownership
 ---
@@ -34,6 +36,7 @@ brewprint は複数の独立したアプリケーション群を内包するパ�
 - app namespace と domain namespace の定義
 - 各 app namespace のアーキテクチャ概観と domain namespace 割り当て
 - 既存 artifact の namespace 帰属方針
+- domain namespace 内の subdomain grouping model（key-value label 形式・動的カタログ・write-time advisory）
 
 所有しないもの:
 
@@ -41,7 +44,6 @@ brewprint は複数の独立したアプリケーション群を内包するパ�
 - 機械可読な namespace registry の formal schema・ファイル形式・物理配置
 - namespace-aware MCP API の実装仕様
 - 物理 directory レイアウトの移行計画
-- subdomain モデルの定義（REQ-PRODUCT-002 で追跡）
 
 ## 現在の配置と将来の運用配置
 
@@ -110,7 +112,7 @@ graph TD
 |---|---|---|
 | `MCP` | MCP ツール API・authoring transaction・schema・validation の全体 | REQ-MCP-\* / WORK-MCP-\* |
 
-現時点では `MCP` 単一の domain namespace として運用する。artifact 数の増加に伴い、将来 `AUTHORING` / `SCHEMA` / `TOOLS` 等の subdomain への分割を検討する（REQ-PRODUCT-002）。
+現時点では `MCP` 単一の domain namespace として運用する。domain 内の subdomain grouping は [Subdomain model](#subdomain-model) を参照。
 
 ## BPDSL
 
@@ -182,6 +184,37 @@ canonical domain namespace には属さないが、既存 artifact のプレフ�
 |---|---|---|
 | `SELFHOST` | REQ-SELFHOST-\* / WORK-SELFHOST-\* | cross-app 検証活動。特定 app の domain ではなく、任意 app に適用できる dogfooding / verification の試み。将来 DRMCP 等にも適用予定 |
 
+## Subdomain model
+
+domain namespace 内の artifact が大量になったとき、**subdomain** は concept area によるグルーピングを提供する。
+
+### 定義と表現
+
+subdomain は artifact ID に含まれない。YAML metadata の `subdomain:` フィールド（key-value label 形式）として表現する。
+
+```yaml
+subdomain: AUTHORING
+```
+
+- **index はドメインごとフラット**: subdomain ごとに sequence をリセットしない
+- **事前定義カタログなし**: 有効値は既存 records の `subdomain:` フィールドから動的に導出する。「domain 内に存在する `subdomain` 値の集合」がカタログを構成する
+- **全 domain への適用は強制しない**: subdomain が不要な domain はフィールドを持たなくてよい
+
+### Write-time advisory
+
+propose 系ツールが `subdomain` フィールドに新規値を検出した場合、同 domain 内の既存 subdomain 値を列挙して author に提示する（block なし、類似値アルゴリズムなし、author が最終判断）。
+
+### DRMCP MCP domain の例
+
+既存 REQ-MCP-001〜032 は ADR-096 上 PRODUCT-owned のままだが、namespace mapping 上の実質的帰属 / logical projection として DRMCP MCP domain に対応し、以下の subdomain が識別される。
+
+| subdomain | 対象 concern area |
+|---|---|
+| `TOOLS` | read/retrieval ツール（list_records / get_record / get_records 等） |
+| `SCHEMA` | データモデル・metadata schema・validation ルール |
+| `AUTHORING` | authoring transaction（propose/accept/discard）および authoring guidance |
+| `UI` | record browser UI |
+
 ## v2 artifact ID grammar and mapping rule
 
 ### Grammar
@@ -196,7 +229,7 @@ canonical domain namespace には属さないが、既存 artifact のプレフ�
 
 例: `DRMCP-REQ-MCP-033`, `BPDSL-WORK-DATA-016`, `PRODUCT-REQ-NAMESPACE-003`
 
-> **Note**: ここで示す domain namespace トークン（`MCP`, `DATA`, `NAMESPACE` 等）は例示である。各 app namespace の domain namespace 詳細分類、および将来の subdomain モデルは REQ-PRODUCT-002 で定義する。
+> **Note**: ここで示す domain namespace トークン（`MCP`, `DATA`, `NAMESPACE` 等）は例示である。subdomain は v2 ID grammar のセグメントに含まれない。subdomain grouping の定義は [Subdomain model](#subdomain-model) を参照。
 
 **TASK:**
 
