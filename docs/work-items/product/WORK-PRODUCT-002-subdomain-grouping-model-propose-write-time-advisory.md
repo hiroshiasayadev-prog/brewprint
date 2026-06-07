@@ -1,7 +1,7 @@
 # WORK-PRODUCT-002: Subdomain grouping model の仕様化と propose ツール write-time advisory 実装
 
 - **id**: WORK-PRODUCT-002
-- **status**: not_started
+- **status**: done
 - **date**: 2026-06-07
 - **source_requirement**: REQ-PRODUCT-002
 - **impact_refs**:
@@ -46,3 +46,15 @@ flowchart TD
 - design-records-mcp schema spec に `subdomain:` フィールドが定義されている
 - propose 系ツールが新規 subdomain 値を検出した場合に既存値を列挙する advisory を返す
 - REQ-PRODUCT-002 に本 WORK が反映されている
+
+## Evidence
+
+TASK-01（namespace-model spec 更新）、TASK-02（schema spec 更新）、TASK-03（Go 実装）をすべて完了し、Completion Condition をすべて満たすことを確認した。
+
+| タスク | 成果物 | commit |
+|---|---|---|
+| TASK-01: namespace-model spec に `## Subdomain model` セクション追加 | `docs/spec/concepts/namespace-model/index.md` | c26de9a |
+| TASK-02: schema spec に `subdomain` フィールド定義追加（record source table / workflow artifact bullet metadata / field definitions） | `docs/spec/design-records-mcp/schema.md` | 54ac722 |
+| TASK-03: Go 実装（`types.go` Subdomain フィールド・`DiagnosticNewSubdomainValue` 追加、`parser.go` subdomain 解析追加、`authoring.go` write-time advisory 実装） | `internal/designrecords/` 配下 3 ファイル | 35888cb |
+
+REQ-PRODUCT-002 は `accepted` に更新済み。spec review ゲートを 2 回経由（TASK-01・TASK-02 後）し、各レビュー指摘（Record model top-level 行削除・sections frontmatter 修正・Record source table subdomain 追加・bullet metadata 形式修正）を反映してから次のタスクに進んだ。
