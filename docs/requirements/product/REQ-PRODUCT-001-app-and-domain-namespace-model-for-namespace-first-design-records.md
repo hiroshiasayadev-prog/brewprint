@@ -1,7 +1,7 @@
 # REQ-PRODUCT-001: App and domain namespace model for namespace-first design records
 
 - **id**: REQ-PRODUCT-001
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-07
 - **source_refs**:
   - REQ-MCP-013
