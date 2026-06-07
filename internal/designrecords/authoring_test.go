@@ -2288,6 +2288,139 @@ func TestProposeRecordCreateReciprocalFollowUpMode(t *testing.T) {
 	}
 }
 
+// TestProposeRecordCreateReciprocalUpdateIncludedDiagnostic verifies that when
+// propose_record_create uses the default include_required mode and a reciprocal
+// update is needed, a reciprocal_update_included info diagnostic is emitted and
+// required_follow_up_updates remains empty.
+func TestProposeRecordCreateReciprocalUpdateIncludedDiagnostic(t *testing.T) {
+	t.Run("task_create_default_mode_emits_info_diagnostic", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// fixture: WORK-MCP-001 has tasks: [TASK-MCP-001-01]
+		// Creating TASK-MCP-001-new should append TASK-MCP-001-02 to WORK-MCP-001.tasks
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-new",
+			Domain:   "MCP",
+			ParentID: "WORK-MCP-001",
+			Title:    "Second task",
+			Fields: map[string]any{
+				"status":             "not_started",
+				"date":               "2026-06-07",
+				"work_item":          "WORK-MCP-001",
+				"source_requirement": "REQ-MCP-001",
+				"estimate":           "1d",
+				"depends_on":         []any{},
+				"outputs":            []any{},
+			},
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal must be created: %#v", resp)
+		}
+		// info diagnostic must be present
+		d := diagnosticByCategory(resp.Diagnostics, DiagnosticReciprocalUpdateIncluded)
+		if d == nil {
+			t.Fatalf("expected reciprocal_update_included diagnostic; got: %#v", resp.Diagnostics)
+		}
+		if d.Severity != DiagnosticSeverityInfo {
+			t.Fatalf("expected info severity, got %q", d.Severity)
+		}
+		if d.RecordID != "WORK-MCP-001" {
+			t.Fatalf("expected RecordID=WORK-MCP-001, got %q", d.RecordID)
+		}
+		if d.Field != "tasks" {
+			t.Fatalf("expected Field=tasks, got %q", d.Field)
+		}
+		if d.Value != "TASK-MCP-001-02" {
+			t.Fatalf("expected Value=TASK-MCP-001-02, got %q", d.Value)
+		}
+		// required_follow_up_updates must be empty
+		if len(resp.RequiredFollowUpUpdates) != 0 {
+			t.Fatalf("expected no required_follow_up_updates, got: %#v", resp.RequiredFollowUpUpdates)
+		}
+		// diff must include both new task file and parent work item modify
+		if len(resp.Diff.Files) != 2 {
+			t.Fatalf("expected 2 diff files (task create + work item modify), got %d: %#v", len(resp.Diff.Files), resp.Diff.Files)
+		}
+	})
+
+	t.Run("work_item_create_default_mode_emits_info_diagnostic", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		// fixture: REQ-MCP-001 has work_items: [WORK-MCP-001]
+		// Creating WORK-MCP-new should append new ID to REQ-MCP-001.work_items
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:   RecordKindWorkItem,
+			ID:     "WORK-MCP-new",
+			Domain: "MCP",
+			Title:  "New work item",
+			Fields: map[string]any{
+				"status":             "not_started",
+				"date":               "2026-06-07",
+				"source_requirement": "REQ-MCP-001",
+				"impact_refs":        []any{},
+				"tasks":              []any{},
+			},
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal must be created: %#v", resp)
+		}
+		d := diagnosticByCategory(resp.Diagnostics, DiagnosticReciprocalUpdateIncluded)
+		if d == nil {
+			t.Fatalf("expected reciprocal_update_included diagnostic; got: %#v", resp.Diagnostics)
+		}
+		if d.Severity != DiagnosticSeverityInfo {
+			t.Fatalf("expected info severity, got %q", d.Severity)
+		}
+		if d.RecordID != "REQ-MCP-001" {
+			t.Fatalf("expected RecordID=REQ-MCP-001, got %q", d.RecordID)
+		}
+		if d.Field != "work_items" {
+			t.Fatalf("expected Field=work_items, got %q", d.Field)
+		}
+		if len(resp.RequiredFollowUpUpdates) != 0 {
+			t.Fatalf("expected no required_follow_up_updates, got: %#v", resp.RequiredFollowUpUpdates)
+		}
+	})
+
+	t.Run("report_required_follow_up_mode_does_not_emit_included_diagnostic", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:                 RecordKindTask,
+			ID:                   "TASK-MCP-001-new",
+			Domain:               "MCP",
+			ParentID:             "WORK-MCP-001",
+			Title:                "Second task report mode",
+			ReciprocalUpdateMode: "report_required_follow_up",
+			Fields: map[string]any{
+				"status":             "not_started",
+				"date":               "2026-06-07",
+				"work_item":          "WORK-MCP-001",
+				"source_requirement": "REQ-MCP-001",
+				"estimate":           "1d",
+				"depends_on":         []any{},
+				"outputs":            []any{},
+			},
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal must be created: %#v", resp)
+		}
+		if hasDiagnosticCategory(resp.Diagnostics, DiagnosticReciprocalUpdateIncluded) {
+			t.Fatalf("report_required_follow_up mode must not emit reciprocal_update_included: %#v", resp.Diagnostics)
+		}
+		if len(resp.RequiredFollowUpUpdates) == 0 {
+			t.Fatalf("expected required_follow_up_updates in report mode, got none")
+		}
+	})
+}
+
 // ── multi-op (operations array) tests ──────────────────────────────────────
 
 func TestMultiOpUpdateNormalCase(t *testing.T) {

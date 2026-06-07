@@ -1226,12 +1226,13 @@ Task parent relation must be written from explicit metadata, not inferred from I
 
 | value | meaning |
 |---|---|
-| `include_required` | Default. Include required reciprocal workflow metadata updates in the same proposal when needed to keep relation validation valid |
+| `include_required` | Default. Include required reciprocal workflow metadata updates in the same proposal when needed to keep relation validation valid. Emits a `reciprocal_update_included` info diagnostic for each included reciprocal update. `required_follow_up_updates` remains empty. |
 | `report_required_follow_up` | Do not include reciprocal file updates; return explicit required follow-up updates and reject acceptance until they are represented by an accepted proposal or current index state |
 
 `include_required` may create a multi-file proposal for workflow relation validity.
 This is allowed only for required reciprocal metadata updates such as adding a new work item to `REQ.work_items` or a new task to `WORK.tasks`.
 It is not a general-purpose multi-record atomic transaction with rollback semantics, and arbitrary unrelated record bundling remains outside MVP.
+Unsafe or ambiguous cases (missing parent, ambiguous parent resolution) remain blocking or report-only and are not silently repaired.
 
 ### Response
 
@@ -1269,6 +1270,27 @@ It is not a general-purpose multi-record atomic transaction with rollback semant
   },
   "diagnostics": [],
   "note": "No repository files have been written. Call accept_proposed_write with this proposal_id to apply the diff."
+}
+```
+
+When `reciprocal_update_mode: "include_required"` (the default) applies a reciprocal update, the `diagnostics` array includes a `reciprocal_update_included` info diagnostic identifying the parent record and field that will be updated atomically.
+The `diff.files` array includes both the new record create entry and the parent record modify entry.
+`required_follow_up_updates` is empty in this case.
+
+`reciprocal_update_included` diagnostic example (task create):
+
+```json
+{
+  "diagnostics": [
+    {
+      "category": "reciprocal_update_included",
+      "severity": "info",
+      "record_id": "WORK-MCP-008",
+      "field": "tasks",
+      "value": "TASK-MCP-008-04",
+      "message": "reciprocal update included: WORK-MCP-008.tasks will receive TASK-MCP-008-04"
+    }
+  ]
 }
 ```
 

@@ -223,6 +223,7 @@ const (
 	DiagnosticExactIDSequenceGap                    DiagnosticCategory = "exact_id_sequence_gap"
 	DiagnosticMissingRequiredMetadataBatch          DiagnosticCategory = "missing_required_metadata_batch"
 	DiagnosticReciprocalFollowUpModeRequired        DiagnosticCategory = "reciprocal_follow_up_mode_required"
+	DiagnosticReciprocalUpdateIncluded              DiagnosticCategory = "reciprocal_update_included"
 )
 
 type DiagnosticSeverity string

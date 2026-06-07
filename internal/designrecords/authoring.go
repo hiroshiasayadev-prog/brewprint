@@ -1252,7 +1252,8 @@ func requiredReciprocalUpdates(ctx context.Context, cfg Config, idx *Index, kind
 			diag := reciprocalFollowUpModeRequiredDiagnostic()
 			return nil, []RequiredFollowUpUpdate{followUp}, []Diagnostic{diag}, nil
 		}
-		return []ProposedFile{reciprocalMetadataFile(cfg, *parent, append(parent.Requirement.WorkItems, id))}, nil, nil, nil
+		inclDiag := reciprocalUpdateIncludedDiagnostic(parent.ID, RecordKindRequirement, "work_items", id)
+		return []ProposedFile{reciprocalMetadataFile(cfg, *parent, append(parent.Requirement.WorkItems, id))}, nil, []Diagnostic{inclDiag}, nil
 	case RecordKindTask:
 		parent := findRecordByIDKind(idx, parentID, RecordKindWorkItem)
 		if parent == nil || parent.WorkItem == nil || containsString(parent.WorkItem.Tasks, id) {
@@ -1263,7 +1264,8 @@ func requiredReciprocalUpdates(ctx context.Context, cfg Config, idx *Index, kind
 			diag := reciprocalFollowUpModeRequiredDiagnostic()
 			return nil, []RequiredFollowUpUpdate{followUp}, []Diagnostic{diag}, nil
 		}
-		return []ProposedFile{reciprocalMetadataFile(cfg, *parent, append(parent.WorkItem.Tasks, id))}, nil, nil, nil
+		inclDiag := reciprocalUpdateIncludedDiagnostic(parent.ID, RecordKindWorkItem, "tasks", id)
+		return []ProposedFile{reciprocalMetadataFile(cfg, *parent, append(parent.WorkItem.Tasks, id))}, nil, []Diagnostic{inclDiag}, nil
 	default:
 		return nil, nil, nil, nil
 	}
@@ -1277,6 +1279,17 @@ func reciprocalFollowUpModeRequiredDiagnostic() Diagnostic {
 		RepairSuggestion: map[string]any{
 			"reciprocal_update_mode": "include_required",
 		},
+	}
+}
+
+func reciprocalUpdateIncludedDiagnostic(recordID string, kind RecordKind, field, value string) Diagnostic {
+	return Diagnostic{
+		Category: DiagnosticReciprocalUpdateIncluded,
+		Severity: DiagnosticSeverityInfo,
+		RecordID: recordID,
+		Field:    field,
+		Value:    value,
+		Message:  fmt.Sprintf("reciprocal update included: %s.%s will receive %s", recordID, field, value),
 	}
 }
 
