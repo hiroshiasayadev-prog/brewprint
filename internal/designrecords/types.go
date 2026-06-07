@@ -94,12 +94,14 @@ type InvestigationDetail struct {
 type RequirementDetail struct {
 	SourceRefs []string `json:"source_refs"`
 	WorkItems  []string `json:"work_items"`
+	Subdomain  *string  `json:"subdomain,omitempty"`
 }
 
 type WorkItemDetail struct {
 	SourceRequirement string   `json:"source_requirement"`
 	ImpactRefs        []string `json:"impact_refs"`
 	Tasks             []string `json:"tasks"`
+	Subdomain         *string  `json:"subdomain,omitempty"`
 }
 
 type TaskDetail struct {
@@ -108,6 +110,7 @@ type TaskDetail struct {
 	Estimate          string   `json:"estimate"`
 	DependsOn         []string `json:"depends_on"`
 	Outputs           []string `json:"outputs"`
+	Subdomain         *string  `json:"subdomain,omitempty"`
 }
 
 type WorkflowMetadata struct {
@@ -224,6 +227,7 @@ const (
 	DiagnosticMissingRequiredMetadataBatch          DiagnosticCategory = "missing_required_metadata_batch"
 	DiagnosticReciprocalFollowUpModeRequired        DiagnosticCategory = "reciprocal_follow_up_mode_required"
 	DiagnosticReciprocalUpdateIncluded              DiagnosticCategory = "reciprocal_update_included"
+	DiagnosticNewSubdomainValue                     DiagnosticCategory = "new_subdomain_value"
 )
 
 type DiagnosticSeverity string

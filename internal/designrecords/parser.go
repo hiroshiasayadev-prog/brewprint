@@ -72,6 +72,7 @@ type requirementMetadata struct {
 	Status     string
 	SourceRefs []string
 	WorkItems  []string
+	Subdomain  string
 	Workflow   WorkflowMetadata
 }
 
@@ -81,6 +82,7 @@ type workItemMetadata struct {
 	SourceRequirement string
 	ImpactRefs        []string
 	Tasks             []string
+	Subdomain         string
 	Workflow          WorkflowMetadata
 }
 
@@ -92,6 +94,7 @@ type taskMetadata struct {
 	Estimate          string
 	DependsOn         []string
 	Outputs           []string
+	Subdomain         string
 	Workflow          WorkflowMetadata
 }
 
@@ -515,6 +518,7 @@ func parseWorkflowRecord(path, raw string, lines []string, kind RecordKind) (*Re
 		requirement = &RequirementDetail{
 			SourceRefs: metadata.SourceRefs,
 			WorkItems:  metadata.WorkItems,
+			Subdomain:  optionalString(metadata.Subdomain),
 		}
 	case RecordKindWorkItem:
 		metadata := parseWorkItemMetadata(lines)
@@ -525,6 +529,7 @@ func parseWorkflowRecord(path, raw string, lines []string, kind RecordKind) (*Re
 			SourceRequirement: metadata.SourceRequirement,
 			ImpactRefs:        metadata.ImpactRefs,
 			Tasks:             metadata.Tasks,
+			Subdomain:         optionalString(metadata.Subdomain),
 		}
 	case RecordKindTask:
 		metadata := parseTaskMetadata(lines)
@@ -537,6 +542,7 @@ func parseWorkflowRecord(path, raw string, lines []string, kind RecordKind) (*Re
 			Estimate:          metadata.Estimate,
 			DependsOn:         metadata.DependsOn,
 			Outputs:           metadata.Outputs,
+			Subdomain:         optionalString(metadata.Subdomain),
 		}
 	}
 
@@ -637,6 +643,8 @@ func parseRequirementMetadata(lines []string) requirementMetadata {
 			values, emptyItems := metadataListValue(block, i, value)
 			metadata.Workflow.setList(key, value, emptyItems)
 			metadata.WorkItems = values
+		case "subdomain":
+			metadata.Subdomain = value
 		}
 	}
 	return metadata
@@ -670,6 +678,8 @@ func parseWorkItemMetadata(lines []string) workItemMetadata {
 			values, emptyItems := metadataListValue(block, i, value)
 			metadata.Workflow.setList(key, value, emptyItems)
 			metadata.Tasks = values
+		case "subdomain":
+			metadata.Subdomain = value
 		}
 	}
 	return metadata
@@ -709,6 +719,8 @@ func parseTaskMetadata(lines []string) taskMetadata {
 			values, emptyItems := metadataListValue(block, i, value)
 			metadata.Workflow.setList(key, value, emptyItems)
 			metadata.Outputs = values
+		case "subdomain":
+			metadata.Subdomain = value
 		}
 	}
 	return metadata
@@ -720,6 +732,13 @@ func parseMetadataLine(line string) (string, string, bool) {
 		return "", "", false
 	}
 	return match[1], strings.TrimSpace(match[2]), true
+}
+
+func optionalString(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 func newWorkflowMetadata() WorkflowMetadata {

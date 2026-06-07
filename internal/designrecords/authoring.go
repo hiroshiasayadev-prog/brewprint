@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -301,6 +302,9 @@ func ProposeRecordCreate(ctx context.Context, cfg Config, idx *Index, store *Aut
 		}
 		return failedProposalResponse(bodyCache, nil, prep.diagnostics...), nil
 	}
+	if subdomain, ok := req.Fields["subdomain"].(string); ok && subdomain != "" {
+		prep.diagnostics = append(prep.diagnostics, subdomainAdvisoryDiagnostics(idx, prep.target.ResolvedID, subdomain)...)
+	}
 	return persistProposal(ctx, cfg, idx, store, ProposalOperationCreate, prep, bodyCache, diffMode)
 }
 
@@ -370,6 +374,11 @@ func ProposeRecordUpdate(ctx context.Context, cfg Config, idx *Index, store *Aut
 	}
 	if isNoOpUpdate(prep.files) {
 		return noOpUpdateResponse(ctx, idx, prep)
+	}
+	if req.Update.Type == UpdateTypeMetadataFieldsReplace || req.Update.Type == UpdateTypeMetadataBlockReplace {
+		if subdomain, ok := req.Update.Metadata["subdomain"].(string); ok && subdomain != "" {
+			prep.diagnostics = append(prep.diagnostics, subdomainAdvisoryDiagnostics(idx, prep.target.ResolvedID, subdomain)...)
+		}
 	}
 	return persistProposal(ctx, cfg, idx, store, ProposalOperationUpdate, prep, bodyCache, diffMode)
 }
@@ -2346,6 +2355,63 @@ func nextTaskID(idx *Index, domain, workSeq string) string {
 		}
 	}
 	return fmt.Sprintf("TASK-%s-%s-%02d", domain, workSeq, maxNum+1)
+}
+
+func collectSubdomainValues(idx *Index, domain string) []string {
+	seen := map[string]bool{}
+	var values []string
+	for _, r := range idx.Records {
+		if workflowDomain(r.ID) != domain {
+			continue
+		}
+		var sub *string
+		switch {
+		case r.Requirement != nil:
+			sub = r.Requirement.Subdomain
+		case r.WorkItem != nil:
+			sub = r.WorkItem.Subdomain
+		case r.Task != nil:
+			sub = r.Task.Subdomain
+		}
+		if sub != nil && *sub != "" && !seen[*sub] {
+			seen[*sub] = true
+			values = append(values, *sub)
+		}
+	}
+	sort.Strings(values)
+	return values
+}
+
+func subdomainAdvisoryDiagnostics(idx *Index, id, subdomain string) []Diagnostic {
+	domain := workflowDomain(id)
+	if domain == "" || subdomain == "" {
+		return nil
+	}
+	existing := collectSubdomainValues(idx, domain)
+	for _, v := range existing {
+		if v == subdomain {
+			return nil
+		}
+	}
+	msg := fmt.Sprintf("subdomain value %q is new in domain %s", subdomain, domain)
+	if len(existing) > 0 {
+		quoted := make([]string, len(existing))
+		for i, v := range existing {
+			quoted[i] = fmt.Sprintf("%q", v)
+		}
+		msg += fmt.Sprintf(". Existing values: %s", strings.Join(quoted, ", "))
+	} else {
+		msg += ". No existing subdomain values in this domain."
+	}
+	return []Diagnostic{{
+		Category:      DiagnosticNewSubdomainValue,
+		Severity:      DiagnosticSeverityInfo,
+		Field:         "subdomain",
+		Value:         subdomain,
+		ValuePresent:  true,
+		Message:       msg,
+		AllowedValues: existing,
+	}}
 }
 
 func workflowDomain(id string) string {
