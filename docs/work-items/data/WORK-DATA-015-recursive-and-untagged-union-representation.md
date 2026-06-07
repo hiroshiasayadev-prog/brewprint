@@ -1,7 +1,7 @@
 # WORK-DATA-015: Define recursive and untagged-union representation
 
 - **id**: WORK-DATA-015
-- **status**: blocked
+- **status**: in_progress
 - **date**: 2026-06-01
 - **source_requirement**: REQ-DATA-008
 - **impact_refs**:
@@ -12,6 +12,12 @@
   - TASK-DATA-009-03
   - TASK-DATA-009-04
 - **tasks**:
+  - TASK-DATA-015-01
+  - TASK-DATA-015-02
+  - TASK-DATA-015-03
+  - TASK-DATA-015-04
+  - TASK-DATA-015-05
+  - TASK-DATA-015-06
 
 ## Goal
 
@@ -50,18 +56,26 @@ This work item owns the `recursive / union structure` bucket: N-009 and N-044.
 
 ## Task Flow
 
-No task artifacts are created at initial capture time.
-
-Expected later split:
+Current task split:
 
 ```mermaid
 flowchart TD
-  T1["Contract boundary decision"]
-  T2["ADR-073 relation decision if needed"]
-  T3["Spec / implementation / fixture tasks if selected later"]
-  T4["Verification and close"]
-  T1 --> T2 --> T3 --> T4
+  T1["TASK-DATA-015-01 contract boundary decision"]
+  T2["TASK-DATA-015-02 TypeRef spec update"]
+  T6["TASK-DATA-015-06 review spec and task split"]
+  T3["TASK-DATA-015-03 investigate recursive named reference runtime behavior"]
+  T4["TASK-DATA-015-04 clean up UC-002 recursive and untagged-like surfaces"]
+  T5["TASK-DATA-015-05 verify and close"]
+  T1 --> T2
+  T2 --> T6
+  T2 --> T3
+  T6 --> T4
+  T3 --> T4
+  T3 --> T5
+  T4 --> T5
 ```
+
+`TASK-DATA-015-01` and `TASK-DATA-015-02` are complete. `TASK-DATA-015-03` through `TASK-DATA-015-06` remain the active follow-up plan.
 
 ## Completion Condition
 

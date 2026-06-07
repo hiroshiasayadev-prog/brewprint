@@ -1,11 +1,12 @@
 ---
 scope: docs/spec/type-ref.md
 status: confirmed
-last_updated: 2026-06-02
+last_updated: 2026-06-07
 summary: >
   brewprint v1.1 TypeRef構文と型互換性の基礎定義。
   primitive / named model / inline list / inline dict、named list/dict model の正規化、
-  enum / tagged union model compatibility、および container TypeRef safety / warning 境界を定義する。
+  enum / tagged union model compatibility、recursive named model reference、および
+  container TypeRef safety / warning 境界を定義する。
 depends_on:
   - docs/adr/021-model-field-structure.md
   - docs/adr/060-flow-wiring-type-compatibility.md
@@ -57,6 +58,9 @@ TypeRef は以下のいずれかである。
 | named model | `user`, `order`, `catalog.product` | model ID または model QID への参照 |
 | inline list | `list<user>` | 要素型 `user` の list |
 | inline dict | `dict<config>` | value型 `config` の dict。key は常に `str` |
+
+TypeRef に inline `union<...>` / `oneOf<...>` / `anyOf<...>` / `str | int` のような scalar union 構文は存在しない。
+Untagged union / general oneOf を表現したい場合も TypeRef variant は増やさず、machine-readable schema が必要な箇所では tagged union envelope model を named model として参照する。
 
 ```yaml
 params:
@@ -147,6 +151,21 @@ nodes:
 ```
 
 この例では、`returns.model: preview_response` と `fields[].type: list<preview_item>` は同一 file 内の helper model に解決する。
+
+Named model TypeRef は再帰参照を許容する。再帰構造を表す場合も、field は既存の named model TypeRef を参照し、inline recursive shape は導入しない。resolver / renderer は再帰先の model を無制限に展開せず、named reference として扱う。
+
+```yaml
+nodes:
+  - id: object_ref
+    type: model
+    kind: struct
+    fields:
+      - name: parent
+        type: object_ref
+        optional: true
+```
+
+この例では、`object_ref.parent` は同じ named model への recursive reference である。これは valid な named model TypeRef 参照であり、inline struct の自己埋め込みではない。
 
 ```yaml
 params:
@@ -323,7 +342,7 @@ mcp_diagnostic_severity -> any                      OK
 
 ## 9. tagged union model TypeRef compatibility
 
-tagged union model は、既存 TypeRef の named model 参照として扱う。TypeRef に inline `union<...>` / `tagged_union<...>` / scalar union 構文は存在しない。
+tagged union model は、既存 TypeRef の named model 参照として扱う。TypeRef に inline `union<...>` / `tagged_union<...>` / `oneOf<...>` / `anyOf<...>` / scalar union 構文は存在しない。
 
 ```yaml
 nodes:
@@ -361,7 +380,26 @@ analyze_impact_change -> str                    NG
 
 tagged union variant field の `type` は通常の TypeRef として扱う。構文が壊れている場合は `invalid_type_ref`、named model が未解決の場合は `unresolved_field_type` を使う。
 
-> 由来: ADR-073 §6, §8
+Untagged union / general oneOf は model kind としても TypeRef 構文としても導入しない。`SourceLocation | ObjectRef` のような shape 推論 union が必要に見える箇所は、machine-readable schema が必要なら tagged union envelope model に切り出す。意図的に opaque な箇所は `any + note` / prose に留める。
+
+```yaml
+nodes:
+  - id: diagnostic_related
+    type: model
+    kind: tagged_union
+    discriminator: kind
+    variants:
+      - tag: source_location
+        fields:
+          - name: location
+            type: source_location
+      - tag: object_ref
+        fields:
+          - name: object
+            type: object_ref
+```
+
+> 由来: ADR-073 §6, §8; TASK-DATA-015-01
 
 ---
 
