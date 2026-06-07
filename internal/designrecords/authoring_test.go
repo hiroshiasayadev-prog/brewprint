@@ -250,12 +250,13 @@ func TestAuthoringCreateInputContractNormalization(t *testing.T) {
 	fields := map[string]any{"status": "captured", "date": "2026-06-02", "source_refs": []any{}, "work_items": []any{}}
 
 	fieldsAndBody, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
-		Kind:   RecordKindRequirement,
-		ID:     "REQ-MCP-050",
-		Domain: "mcp",
-		Title:  "Fields and body",
-		Fields: fields,
-		Body:   &sectionBody,
+		Kind:     RecordKindRequirement,
+		ID:       "REQ-MCP-050",
+		Domain:   "mcp",
+		Title:    "Fields and body",
+		Fields:   fields,
+		Body:     &sectionBody,
+		DiffMode: "patch",
 	})
 	if err != nil {
 		t.Fatalf("fields plus body: %v", err)
@@ -295,11 +296,12 @@ func TestAuthoringCreateInputContractNormalization(t *testing.T) {
 	}
 
 	withoutFieldsID, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
-		Kind:   RecordKindRequirement,
-		ID:     "REQ-MCP-052",
-		Domain: "mcp",
-		Title:  "No fields id",
-		Fields: fields,
+		Kind:     RecordKindRequirement,
+		ID:       "REQ-MCP-052",
+		Domain:   "mcp",
+		Title:    "No fields id",
+		Fields:   fields,
+		DiffMode: "patch",
 	})
 	if err != nil {
 		t.Fatalf("without fields.id: %v", err)
@@ -354,12 +356,13 @@ func TestAuthoringCreateInputContractNormalization(t *testing.T) {
 	}
 
 	placeholderBody, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
-		Kind:   RecordKindRequirement,
-		ID:     "REQ-MCP-new",
-		Domain: "MCP",
-		Title:  "Placeholder body",
-		Fields: fields,
-		Body:   &sectionBody,
+		Kind:     RecordKindRequirement,
+		ID:       "REQ-MCP-new",
+		Domain:   "MCP",
+		Title:    "Placeholder body",
+		Fields:   fields,
+		Body:     &sectionBody,
+		DiffMode: "patch",
 	})
 	if err != nil {
 		t.Fatalf("placeholder fields plus body: %v", err)
@@ -451,6 +454,7 @@ func TestAuthoringCreateInputContractNormalization(t *testing.T) {
 		Title:       "Fields and cache retry",
 		Fields:      fields,
 		BodyCacheID: fieldsAndBody.BodyCache.BodyCacheID,
+		DiffMode:    "patch",
 	})
 	if err != nil {
 		t.Fatalf("fields plus cache retry: %v", err)
@@ -515,6 +519,7 @@ func TestAuthoringTaskCreateRequiresExplicitParentMetadataAndReciprocalUpdate(t 
 		ParentID: "WORK-MCP-001",
 		Title:    "Second task",
 		Fields:   map[string]any{"status": "not_started", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "0.5d", "depends_on": []any{}, "outputs": []any{"task"}},
+		DiffMode: "patch",
 	})
 	if err != nil {
 		t.Fatalf("task reciprocal: %v", err)
@@ -635,6 +640,7 @@ func TestAuthoringMetadataReplacement(t *testing.T) {
 		Update: UpdateRequest{Type: UpdateTypeMetadataBlockReplace, Metadata: map[string]any{
 			"id": "TASK-MCP-001-01", "status": "in_progress", "date": "2026-06-02", "work_item": "WORK-MCP-001", "source_requirement": "REQ-MCP-001", "estimate": "1d", "depends_on": []any{}, "outputs": []any{"updated"},
 		}},
+		DiffMode: "patch",
 	})
 	if err != nil {
 		t.Fatalf("task metadata replace: %v", err)
@@ -653,6 +659,7 @@ func TestAuthoringMetadataReplacement(t *testing.T) {
 				"id": "SPEC-test", "kind": "spec", "status": "draft", "depends_on": []any{"ADR-001"},
 			},
 		}},
+		DiffMode: "patch",
 	})
 	if err != nil {
 		t.Fatalf("spec metadata replace: %v", err)
@@ -705,6 +712,7 @@ func TestAuthoringMetadataFieldsReplace(t *testing.T) {
 		Update: UpdateRequest{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{
 			"status": "done",
 		}},
+		DiffMode: "patch",
 	})
 	if err != nil {
 		t.Fatalf("metadata_fields_replace status-only: %v", err)
@@ -1759,7 +1767,8 @@ func proposeTaskSection(t *testing.T, fx authoringFixture, body string) ProposeR
 			Type:            UpdateTypeNamedSectionReplace,
 			SectionSelector: &SectionSelector{Heading: "Evidence"},
 		},
-		Body: &body,
+		Body:     &body,
+		DiffMode: "patch",
 	})
 	if err != nil {
 		t.Fatalf("ProposeRecordUpdate: %v", err)
@@ -1779,7 +1788,8 @@ func proposeNamedSectionForAuthoringFixture(t *testing.T, fx authoringFixture, k
 			Type:            UpdateTypeNamedSectionReplace,
 			SectionSelector: &selector,
 		},
-		Body: &body,
+		Body:     &body,
+		DiffMode: "patch",
 	})
 }
 
@@ -1890,10 +1900,11 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 		fx := newAuthoringFixture(t)
 		body := "## Evidence\n\nRuntime smoke passed.\n"
 		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
-			Kind:   RecordKindTask,
-			ID:     "TASK-MCP-001-01",
-			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
-			Body:   &body,
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-01",
+			Update:   UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:     &body,
+			DiffMode: "patch",
 		})
 		if err != nil {
 			t.Fatalf("ProposeRecordUpdate: %v", err)
@@ -1927,10 +1938,11 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 		fx := newAuthoringFixture(t)
 		body := "## Evidence\n\nRuntime smoke passed.\n"
 		first, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
-			Kind:   RecordKindTask,
-			ID:     "TASK-MCP-001-01",
-			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
-			Body:   &body,
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-01",
+			Update:   UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:     &body,
+			DiffMode: "patch",
 		})
 		if err != nil {
 			t.Fatalf("ProposeRecordUpdate (direct): %v", err)
@@ -1943,6 +1955,7 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 			ID:          "TASK-MCP-001-01",
 			Update:      UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
 			BodyCacheID: first.BodyCache.BodyCacheID,
+			DiffMode:    "patch",
 		})
 		if err != nil {
 			t.Fatalf("ProposeRecordUpdate (cached): %v", err)
@@ -1962,10 +1975,11 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 		fx := newAuthoringFixture(t)
 		body := "## Evidence\n\n## Evidence\n\nSecond evidence.\n"
 		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
-			Kind:   RecordKindTask,
-			ID:     "TASK-MCP-001-01",
-			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
-			Body:   &body,
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-01",
+			Update:   UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:     &body,
+			DiffMode: "patch",
 		})
 		if err != nil {
 			t.Fatalf("ProposeRecordUpdate: %v", err)
@@ -1986,10 +2000,11 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 		fx := newAuthoringFixture(t)
 		body := "## Evidence\n\n### Sub\n\nSubcontent.\n"
 		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
-			Kind:   RecordKindTask,
-			ID:     "TASK-MCP-001-01",
-			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
-			Body:   &body,
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-01",
+			Update:   UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:     &body,
+			DiffMode: "patch",
 		})
 		if err != nil {
 			t.Fatalf("ProposeRecordUpdate: %v", err)
@@ -2009,10 +2024,11 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 		fx := newAuthoringFixture(t)
 		body := "### Evidence\n\nContent.\n"
 		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
-			Kind:   RecordKindTask,
-			ID:     "TASK-MCP-001-01",
-			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
-			Body:   &body,
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-01",
+			Update:   UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:     &body,
+			DiffMode: "patch",
 		})
 		if err != nil {
 			t.Fatalf("ProposeRecordUpdate: %v", err)
@@ -2034,10 +2050,11 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 		fx := newAuthoringFixture(t)
 		body := "## Notes\n\nContent.\n"
 		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
-			Kind:   RecordKindTask,
-			ID:     "TASK-MCP-001-01",
-			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
-			Body:   &body,
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-01",
+			Update:   UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:     &body,
+			DiffMode: "patch",
 		})
 		if err != nil {
 			t.Fatalf("ProposeRecordUpdate: %v", err)
@@ -2058,10 +2075,11 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 		// No level in selector; resolves to ## Evidence (level 2). Body matches level 2 → strip.
 		body := "## Evidence\n\nContent.\n"
 		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
-			Kind:   RecordKindTask,
-			ID:     "TASK-MCP-001-01",
-			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
-			Body:   &body,
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-01",
+			Update:   UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:     &body,
+			DiffMode: "patch",
 		})
 		if err != nil {
 			t.Fatalf("ProposeRecordUpdate: %v", err)
@@ -2082,10 +2100,11 @@ func TestReplaceNamedSectionBodyHeadingStripping(t *testing.T) {
 		// No level in selector; resolves to ## Evidence (level 2). Body has level 3 → no strip.
 		body := "### Evidence\n\nContent.\n"
 		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
-			Kind:   RecordKindTask,
-			ID:     "TASK-MCP-001-01",
-			Update: UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
-			Body:   &body,
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-01",
+			Update:   UpdateRequest{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence"}},
+			Body:     &body,
+			DiffMode: "patch",
 		})
 		if err != nil {
 			t.Fatalf("ProposeRecordUpdate: %v", err)
@@ -2440,6 +2459,7 @@ func TestMultiOpUpdateNormalCase(t *testing.T) {
 				{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{"status": "done"}},
 				{Type: UpdateTypeNamedSectionReplace, SectionSelector: &SectionSelector{Heading: "Evidence", Match: "exact"}, Body: &evidenceBody},
 			},
+			DiffMode: "patch",
 		},
 	)
 	if err != nil {
@@ -2495,9 +2515,10 @@ func TestMultiOpUpdateBackwardCompatSingleOp(t *testing.T) {
 	fx := newAuthoringFixture(t)
 	resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store,
 		ProposeRecordUpdateRequest{
-			Kind:   RecordKindTask,
-			ID:     "TASK-MCP-001-01",
-			Update: UpdateRequest{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{"status": "in_progress"}},
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-01",
+			Update:   UpdateRequest{Type: UpdateTypeMetadataFieldsReplace, Metadata: map[string]any{"status": "in_progress"}},
+			DiffMode: "patch",
 		},
 	)
 	if err != nil {
@@ -2693,4 +2714,254 @@ func assertHasDiagnosticCategory(t *testing.T, diagnostics []Diagnostic, categor
 	if !hasDiagnosticCategory(diagnostics, DiagnosticCategory(category)) {
 		t.Errorf("expected diagnostic category %q; got: %#v", category, diagnostics)
 	}
+}
+
+// TestDiffModeRequestParameter verifies that diff_mode omitted/patch/none/invalid
+// behaves correctly for both ProposeRecordCreate and ProposeRecordUpdate.
+func TestDiffModeRequestParameter(t *testing.T) {
+	taskFields := map[string]any{
+		"status":             "not_started",
+		"date":               "2026-06-01",
+		"work_item":          "WORK-MCP-001",
+		"source_requirement": "REQ-MCP-001",
+		"estimate":           "0.5d",
+		"depends_on":         []any{},
+		"outputs":            []any{},
+	}
+
+	// ---- create: default (omitted) → summary ----
+	t.Run("create_default_is_summary", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-new",
+			Domain:   "MCP",
+			ParentID: "WORK-MCP-001",
+			Title:    "Diff mode default task",
+			Fields:   taskFields,
+			// DiffMode omitted → summary
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal was not created: %#v", resp)
+		}
+		if resp.Diff == nil {
+			t.Fatal("diff must not be nil in summary mode")
+		}
+		if resp.Diff.Text != "" {
+			t.Errorf("summary mode: diff.text must be empty; got %q", resp.Diff.Text)
+		}
+		if len(resp.Diff.Files) == 0 {
+			t.Errorf("summary mode: diff.files must be non-empty")
+		}
+		if resp.Diff.Omitted {
+			t.Errorf("summary mode: diff.omitted must be false")
+		}
+	})
+
+	// ---- create: patch → full diff ----
+	t.Run("create_patch_includes_diff_text", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-new",
+			Domain:   "MCP",
+			ParentID: "WORK-MCP-001",
+			Title:    "Diff mode patch task",
+			Fields:   taskFields,
+			DiffMode: "patch",
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal was not created: %#v", resp)
+		}
+		if resp.Diff == nil || resp.Diff.Text == "" {
+			t.Errorf("patch mode: diff.text must be non-empty")
+		}
+		if len(resp.Diff.Files) == 0 {
+			t.Errorf("patch mode: diff.files must be non-empty")
+		}
+		if resp.Diff.Omitted {
+			t.Errorf("patch mode: diff.omitted must be false")
+		}
+	})
+
+	// ---- create: none → omitted ----
+	t.Run("create_none_omits_diff", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-new",
+			Domain:   "MCP",
+			ParentID: "WORK-MCP-001",
+			Title:    "Diff mode none task",
+			Fields:   taskFields,
+			DiffMode: "none",
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordCreate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal was not created: %#v", resp)
+		}
+		if resp.Diff == nil {
+			t.Fatal("diff object must be present even in none mode")
+		}
+		if !resp.Diff.Omitted {
+			t.Errorf("none mode: diff.omitted must be true")
+		}
+		if resp.Diff.Text != "" {
+			t.Errorf("none mode: diff.text must be empty; got %q", resp.Diff.Text)
+		}
+		if len(resp.Diff.Files) != 0 {
+			t.Errorf("none mode: diff.files must be empty; got %v", resp.Diff.Files)
+		}
+	})
+
+	// ---- create: invalid value → invalid_request diagnostic ----
+	t.Run("create_invalid_diff_mode", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		resp, err := ProposeRecordCreate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordCreateRequest{
+			Kind:     RecordKindTask,
+			ID:       "TASK-MCP-001-new",
+			Domain:   "MCP",
+			ParentID: "WORK-MCP-001",
+			Title:    "Invalid diff mode task",
+			Fields:   taskFields,
+			DiffMode: "invalid_value",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if resp.ProposalCreated {
+			t.Fatal("proposal must not be created for invalid diff_mode")
+		}
+		assertHasDiagnosticCategory(t, resp.Diagnostics, string(ErrorCodeInvalidRequest))
+	})
+
+	// ---- update: default (omitted) → summary ----
+	t.Run("update_default_is_summary", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		body := "updated evidence\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind: RecordKindTask,
+			ID:   "TASK-MCP-001-01",
+			Update: UpdateRequest{
+				Type:            UpdateTypeNamedSectionReplace,
+				SectionSelector: &SectionSelector{Heading: "Evidence"},
+			},
+			Body: &body,
+			// DiffMode omitted → summary
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal was not created: %#v", resp)
+		}
+		if resp.Diff == nil {
+			t.Fatal("diff must not be nil in summary mode")
+		}
+		if resp.Diff.Text != "" {
+			t.Errorf("summary mode: diff.text must be empty; got %q", resp.Diff.Text)
+		}
+		if len(resp.Diff.Files) == 0 {
+			t.Errorf("summary mode: diff.files must be non-empty")
+		}
+		if resp.Diff.Omitted {
+			t.Errorf("summary mode: diff.omitted must be false")
+		}
+	})
+
+	// ---- update: patch → full diff ----
+	t.Run("update_patch_includes_diff_text", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		body := "patched evidence\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind: RecordKindTask,
+			ID:   "TASK-MCP-001-01",
+			Update: UpdateRequest{
+				Type:            UpdateTypeNamedSectionReplace,
+				SectionSelector: &SectionSelector{Heading: "Evidence"},
+			},
+			Body:     &body,
+			DiffMode: "patch",
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal was not created: %#v", resp)
+		}
+		if resp.Diff == nil || resp.Diff.Text == "" {
+			t.Errorf("patch mode: diff.text must be non-empty")
+		}
+		if len(resp.Diff.Files) == 0 {
+			t.Errorf("patch mode: diff.files must be non-empty")
+		}
+		if resp.Diff.Omitted {
+			t.Errorf("patch mode: diff.omitted must be false")
+		}
+	})
+
+	// ---- update: none → omitted ----
+	t.Run("update_none_omits_diff", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		body := "none evidence\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind: RecordKindTask,
+			ID:   "TASK-MCP-001-01",
+			Update: UpdateRequest{
+				Type:            UpdateTypeNamedSectionReplace,
+				SectionSelector: &SectionSelector{Heading: "Evidence"},
+			},
+			Body:     &body,
+			DiffMode: "none",
+		})
+		if err != nil {
+			t.Fatalf("ProposeRecordUpdate: %v", err)
+		}
+		if !resp.ProposalCreated {
+			t.Fatalf("proposal was not created: %#v", resp)
+		}
+		if resp.Diff == nil {
+			t.Fatal("diff object must be present even in none mode")
+		}
+		if !resp.Diff.Omitted {
+			t.Errorf("none mode: diff.omitted must be true")
+		}
+		if resp.Diff.Text != "" {
+			t.Errorf("none mode: diff.text must be empty; got %q", resp.Diff.Text)
+		}
+		if len(resp.Diff.Files) != 0 {
+			t.Errorf("none mode: diff.files must be empty; got %v", resp.Diff.Files)
+		}
+	})
+
+	// ---- update: invalid value → invalid_request diagnostic ----
+	t.Run("update_invalid_diff_mode", func(t *testing.T) {
+		fx := newAuthoringFixture(t)
+		body := "evidence\n"
+		resp, err := ProposeRecordUpdate(context.Background(), fx.cfg, fx.idx, fx.store, ProposeRecordUpdateRequest{
+			Kind: RecordKindTask,
+			ID:   "TASK-MCP-001-01",
+			Update: UpdateRequest{
+				Type:            UpdateTypeNamedSectionReplace,
+				SectionSelector: &SectionSelector{Heading: "Evidence"},
+			},
+			Body:     &body,
+			DiffMode: "bogus",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if resp.ProposalCreated {
+			t.Fatal("proposal must not be created for invalid diff_mode")
+		}
+		assertHasDiagnosticCategory(t, resp.Diagnostics, string(ErrorCodeInvalidRequest))
+	})
 }

@@ -939,7 +939,7 @@ Tool input は record kind、record ID または `new` placeholder ID、domain�
 
 Authoring write は propose -> accept flow とする。
 
-1. `propose_record_create` または `propose_record_update` は、変更案を作成し、proposal ID、resolved target、previewable diff、validation result、expiry、diagnostics、note を返す。
+1. `propose_record_create` または `propose_record_update` は、変更案を作成し、proposal ID、resolved target、diff response object、validation result、expiry、diagnostics、note を返す。
 2. Proposal creation は repository file を変更してはならない。
 3. `get_proposed_write` は retained proposal の内容と lifecycle state を返す。
 4. `discard_proposed_write` は proposal を discard し、以後 accept できない状態にする。
@@ -974,7 +974,7 @@ Proposal response は少なくとも以下を返す。
 | `target` | yes | requested / resolved target identity object |
 | `expires_at` | yes | proposal expiry timestamp |
 | `retention_days` | yes | `3` |
-| `diff` | yes | previewable diff object |
+| `diff` | yes | diff response object (shape depends on diff_mode) |
 | `validation` | yes | validation result object |
 | `diagnostics` | yes | request / proposal diagnostic list |
 | `note` | yes | repository file がまだ書かれていないことと、適用には accept が必要であることを明示する note |
@@ -990,13 +990,14 @@ Proposal response は少なくとも以下を返す。
 | `parent_id` | no | task create など parent-aware resolution に使われた parent ID |
 | `path` | yes | resolved repository-relative path。Transparency output only; request primary input ではない |
 
-`diff` は少なくとも以下を返す。
+`diff` object のフィールドは `diff_mode` によって変わる（詳細は [diff_mode](#diff_mode) を参照）。
 
-| field | required | meaning |
+| field | present in | meaning |
 |---|---:|---|
-| `format` | yes | MVP では `unified` |
-| `text` | yes | previewable unified diff text |
-| `files` | yes | changed file summary list |
+| `format` | `patch`, `summary` | MVP では `unified` |
+| `text` | `patch` のみ | previewable unified diff text |
+| `files` | `patch`, `summary` | changed file summary list |
+| `omitted` | `none` のみ | `true`。diff 情報が意図的に省略されたことを明示する |
 
 `diff.files[]` は `path`、`change` (`create` / `modify`)、および必要に応じて `record_id` / `record_kind` を含む。
 Workflow reciprocal metadata update を含む proposal では、`files[]` は複数 entry になりうる。
@@ -1093,6 +1094,29 @@ This contract does not suppress diagnostics for affected related records; it onl
 
 > 由来: REQ-MCP-012, TASK-MCP-011-01
 
+### diff_mode
+
+`propose_record_create` と `propose_record_update` は `diff_mode` オプションリクエストパラメータを受け付ける。
+
+`diff_mode` は proposal response の `diff` フィールドの返却形式を制御する。
+Proposal の内部保持 diff・accept 動作・validation・diagnostics は `diff_mode` の値に依存しない。
+
+| value | meaning |
+|---|---|
+| `summary` | Default。`diff.files` を返し、`diff.text` を省略する |
+| `patch` | 完全な unified diff を返す。`diff.text` を含む |
+| `none` | diff 情報を省略し、`diff: {"omitted": true}` を返す |
+
+`diff_mode` を省略した場合のデフォルトは `summary`。
+
+`summary` モードでは `diff.files[]` の各エントリ（`path`、`change`、`record_id`、`record_kind`）が per-file の concise operation summary となる。`diff.text` のような full unified diff テキストは含まない。
+
+Invalid な `diff_mode` 値は `invalid_request` を返し、proposal は作成されない。
+
+`get_proposed_write` は `diff_mode` をサポートしない。`get_proposed_write` は常に `patch` 相当（`diff.text` を含む完全 diff）を返す。
+
+> 由来: REQ-MCP-031
+
 ## `propose_record_create`
 
 ### Purpose
@@ -1143,6 +1167,7 @@ Investigation creation is outside this MVP authoring surface.
 | `body` | conditional | string | caller-supplied section-only content body。`fields` と組み合わせる場合のみ valid |
 | `body_cache_id` | conditional | string | cached section-only body lookup key for `fields + body` retry form |
 | `reciprocal_update_mode` | no | string | workflow reciprocal metadata handling mode |
+| `diff_mode` | no | string | proposal response の diff 返却形式。`summary` (default) / `patch` / `none` |
 
 `propose_record_create` has these content input combinations:
 
@@ -1274,7 +1299,7 @@ Unsafe or ambiguous cases (missing parent, ambiguous parent resolution) remain b
 ```
 
 When `reciprocal_update_mode: "include_required"` (the default) applies a reciprocal update, the `diagnostics` array includes a `reciprocal_update_included` info diagnostic identifying the parent record and field that will be updated atomically.
-The `diff.files` array includes both the new record create entry and the parent record modify entry.
+When `diff.files` is present, it includes both the new record create entry and the parent record modify entry.
 `required_follow_up_updates` is empty in this case.
 
 `reciprocal_update_included` diagnostic example (task create):
@@ -1410,6 +1435,7 @@ Operations array:
 | `operations` | conditional | array | atomic multi-operation list; mutually exclusive with `update` |
 | `body` | conditional | string | replacement Markdown body for `named_section_replace` when using `update` |
 | `body_cache_id` | conditional | string | cached replacement body for `named_section_replace` when using `update` |
+| `diff_mode` | no | string | proposal response の diff 返却形式。`summary` (default) / `patch` / `none` |
 
 Exactly one of `update` or `operations` must be present.
 
@@ -1588,17 +1614,17 @@ An `operations` request is a no-op when the combined result of all applied opera
 
 **Response shape**
 
-`operations` proposals use the same retained proposal response shape as single-operation proposals. `diff.text` covers all changes from all operations in a single unified diff for the target file. `diff.files` contains one entry for the target record with `change: modify`.
+`operations` proposals use the same retained proposal response shape as single-operation proposals. When `diff_mode` is `patch`, `diff.text` covers all changes from all operations in a single unified diff for the target file. When `diff_mode` is `summary` or `patch`, `diff.files` contains one entry for the target record with `change: modify`.
 
 ### Response
 
 When an update request produces changed content, `propose_record_update` returns the common retained proposal response fields.
-For retained update proposals, `target.resolved_id` is the existing record ID, and `diff.files[].change` is `modify`.
+For retained update proposals, `target.resolved_id` is the existing record ID. When `diff.files` is present, `diff.files[].change` is `modify`.
 
-For existing-file update proposals, `diff.text` MUST compare the current persisted file content with the proposed persisted content after the requested operation semantics are applied.
+When `diff_mode` is `patch`, for existing-file update proposals, `diff.text` MUST compare the current persisted file content with the proposed persisted content after the requested operation semantics are applied.
 It MUST NOT render the entire target record as newly added content unless the target file is actually new.
 
-Modify proposal `diff.text` MUST use a git-style unified diff suitable for proposal review.
+When `diff_mode` is `patch`, modify proposal `diff.text` MUST use a git-style unified diff suitable for proposal review.
 For each modified file, it MUST include:
 
 - `diff --git a/<path> b/<path>`
@@ -1704,7 +1730,7 @@ No-op metadata field replacement response example:
 }
 ```
 
-Named section replacement response uses the same proposal shape for real changes. `diff.files[].change` is `modify`, and `target.resolved_id` is the existing record ID.
+Named section replacement response uses the same proposal shape for real changes. `target.resolved_id` is the existing record ID. When `diff.files` is present, `diff.files[].change` is `modify`.
 
 ## `get_proposed_write`
 

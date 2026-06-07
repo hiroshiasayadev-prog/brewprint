@@ -93,6 +93,7 @@ func Tools() []Tool {
 				"body":                   map[string]any{"type": "string"},
 				"body_cache_id":          map[string]any{"type": "string"},
 				"reciprocal_update_mode": enumStringSchema("include_required", "report_required_follow_up"),
+				"diff_mode":              enumStringSchema("summary", "patch", "none"),
 			}, []string{"kind", "id", "title", "fields"}),
 		},
 		{
@@ -105,6 +106,7 @@ func Tools() []Tool {
 				"operations":    operationsSchema(),
 				"body":          map[string]any{"type": "string"},
 				"body_cache_id": map[string]any{"type": "string"},
+				"diff_mode":     enumStringSchema("summary", "patch", "none"),
 			}, []string{"kind", "id"}),
 		},
 		{

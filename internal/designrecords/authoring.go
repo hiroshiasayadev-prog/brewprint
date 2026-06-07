@@ -96,6 +96,7 @@ type ProposeRecordCreateRequest struct {
 	Body                 *string        `json:"body,omitempty"`
 	BodyCacheID          string         `json:"body_cache_id,omitempty"`
 	ReciprocalUpdateMode string         `json:"reciprocal_update_mode,omitempty"`
+	DiffMode             string         `json:"diff_mode,omitempty"`
 }
 
 type ProposeRecordUpdateRequest struct {
@@ -105,6 +106,7 @@ type ProposeRecordUpdateRequest struct {
 	Operations  []UpdateOperation `json:"operations,omitempty"`
 	Body        *string           `json:"body,omitempty"`
 	BodyCacheID string            `json:"body_cache_id,omitempty"`
+	DiffMode    string            `json:"diff_mode,omitempty"`
 }
 
 type UpdateRequest struct {
@@ -136,10 +138,19 @@ type AuthoringTarget struct {
 	Path        string     `json:"path"`
 }
 
+type DiffMode string
+
+const (
+	DiffModeSummary DiffMode = "summary"
+	DiffModePatch   DiffMode = "patch"
+	DiffModeNone    DiffMode = "none"
+)
+
 type Diff struct {
-	Format string     `json:"format"`
-	Files  []DiffFile `json:"files"`
-	Text   string     `json:"text"`
+	Format  string     `json:"format,omitempty"`
+	Files   []DiffFile `json:"files,omitempty"`
+	Text    string     `json:"text,omitempty"`
+	Omitted bool       `json:"omitted,omitempty"`
 }
 
 type DiffFile struct {
@@ -259,6 +270,10 @@ func ProposeRecordCreate(ctx context.Context, cfg Config, idx *Index, store *Aut
 	if err := validateCreateKind(req.Kind); err != nil {
 		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeUnsupportedKind, err.Error())), nil
 	}
+	diffMode, err := validateAndResolveDiffMode(req.DiffMode)
+	if err != nil {
+		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, err.Error())), nil
+	}
 	if req.Body != nil && req.BodyCacheID != "" {
 		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidBodySource, "body and body_cache_id are mutually exclusive")), nil
 	}
@@ -286,7 +301,7 @@ func ProposeRecordCreate(ctx context.Context, cfg Config, idx *Index, store *Aut
 		}
 		return failedProposalResponse(bodyCache, nil, prep.diagnostics...), nil
 	}
-	return persistProposal(ctx, cfg, idx, store, ProposalOperationCreate, prep, bodyCache)
+	return persistProposal(ctx, cfg, idx, store, ProposalOperationCreate, prep, bodyCache, diffMode)
 }
 
 func ProposeRecordUpdate(ctx context.Context, cfg Config, idx *Index, store *AuthoringStore, req ProposeRecordUpdateRequest) (ProposeRecordResponse, error) {
@@ -304,6 +319,10 @@ func ProposeRecordUpdate(ctx context.Context, cfg Config, idx *Index, store *Aut
 	}
 	if hasSequenceNewToken(req.ID, req.Kind) {
 		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, "new placeholder is invalid for update operations")), nil
+	}
+	diffMode, err := validateAndResolveDiffMode(req.DiffMode)
+	if err != nil {
+		return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidRequest, err.Error())), nil
 	}
 
 	hasUpdate := req.Update.Type != ""
@@ -323,7 +342,7 @@ func ProposeRecordUpdate(ctx context.Context, cfg Config, idx *Index, store *Aut
 		if req.Body != nil || req.BodyCacheID != "" {
 			return failedProposalResponse(nil, nil, authoringDiagnostic(ErrorCodeInvalidBodySource, "body and body_cache_id must not be combined with operations")), nil
 		}
-		return proposeMultiOpUpdate(ctx, cfg, idx, store, req)
+		return proposeMultiOpUpdate(ctx, cfg, idx, store, req, diffMode)
 	}
 
 	// Single-op path (existing behaviour)
@@ -336,12 +355,12 @@ func ProposeRecordUpdate(ctx context.Context, cfg Config, idx *Index, store *Aut
 	if !ok {
 		return failedProposalResponse(nil, nil, diagnostics...), nil
 	}
-	prep, err := prepareUpdate(ctx, cfg, idx, req, body)
-	if err != nil {
+	prep, err2 := prepareUpdate(ctx, cfg, idx, req, body)
+	if err2 != nil {
 		if body != nil {
 			bodyCache = store.cacheBody(*body)
 		}
-		return failedProposalResponse(bodyCache, nil, authoringDiagnostic(ErrorCodeInvalidRequest, err.Error())), nil
+		return failedProposalResponse(bodyCache, nil, authoringDiagnostic(ErrorCodeInvalidRequest, err2.Error())), nil
 	}
 	if hasErrorDiagnostics(prep.diagnostics) {
 		if body != nil {
@@ -352,7 +371,7 @@ func ProposeRecordUpdate(ctx context.Context, cfg Config, idx *Index, store *Aut
 	if isNoOpUpdate(prep.files) {
 		return noOpUpdateResponse(ctx, idx, prep)
 	}
-	return persistProposal(ctx, cfg, idx, store, ProposalOperationUpdate, prep, bodyCache)
+	return persistProposal(ctx, cfg, idx, store, ProposalOperationUpdate, prep, bodyCache, diffMode)
 }
 
 func GetProposedWrite(ctx context.Context, store *AuthoringStore, req GetProposedWriteRequest) (GetProposedWriteResponse, error) {
@@ -489,14 +508,14 @@ func DiscardProposedWrite(ctx context.Context, store *AuthoringStore, req Discar
 	return DiscardProposedWriteResponse{ProposalID: proposal.ProposalID, State: ProposalStateDiscarded, Discarded: true, Written: false, Diagnostics: []Diagnostic{}}, nil
 }
 
-func persistProposal(ctx context.Context, cfg Config, idx *Index, store *AuthoringStore, operation string, prep authoringPreparation, bodyCache *BodyCacheEntry) (ProposeRecordResponse, error) {
+func persistProposal(ctx context.Context, cfg Config, idx *Index, store *AuthoringStore, operation string, prep authoringPreparation, bodyCache *BodyCacheEntry, diffMode DiffMode) (ProposeRecordResponse, error) {
 	validation, err := validateProposedFiles(ctx, idx, prep.files)
 	if err != nil {
 		return ProposeRecordResponse{}, err
 	}
 	now := store.currentTime()
 	expiresAt := now.Add(authoringRetentionDays * 24 * time.Hour)
-	diff := buildDiff(prep.files)
+	fullDiff := buildDiff(prep.files)
 	proposal := &StoredProposal{
 		State:                   ProposalStateProposed,
 		Operation:               operation,
@@ -504,7 +523,7 @@ func persistProposal(ctx context.Context, cfg Config, idx *Index, store *Authori
 		Target:                  prep.target,
 		ExpiresAt:               expiresAt,
 		RetentionDays:           authoringRetentionDays,
-		Diff:                    diff,
+		Diff:                    fullDiff,
 		Validation:              validation,
 		Diagnostics:             cloneDiagnostics(prep.diagnostics),
 		Note:                    noWriteProposalNote,
@@ -514,6 +533,7 @@ func persistProposal(ctx context.Context, cfg Config, idx *Index, store *Authori
 	}
 	store.saveProposal(proposal)
 	target := proposal.Target
+	responseDiff := shapeDiff(fullDiff, diffMode)
 	return ProposeRecordResponse{
 		ProposalCreated:         true,
 		ProposalID:              proposal.ProposalID,
@@ -523,7 +543,7 @@ func persistProposal(ctx context.Context, cfg Config, idx *Index, store *Authori
 		Target:                  &target,
 		ExpiresAt:               &expiresAt,
 		RetentionDays:           proposal.RetentionDays,
-		Diff:                    &diff,
+		Diff:                    &responseDiff,
 		Validation:              proposal.Validation,
 		Diagnostics:             cloneDiagnostics(proposal.Diagnostics),
 		Note:                    proposal.Note,
@@ -667,7 +687,7 @@ func prepareUpdate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 	}, nil
 }
 
-func proposeMultiOpUpdate(ctx context.Context, cfg Config, idx *Index, store *AuthoringStore, req ProposeRecordUpdateRequest) (ProposeRecordResponse, error) {
+func proposeMultiOpUpdate(ctx context.Context, cfg Config, idx *Index, store *AuthoringStore, req ProposeRecordUpdateRequest, diffMode DiffMode) (ProposeRecordResponse, error) {
 	ops := req.Operations
 	bodies := make([]*string, len(ops))
 	var firstBodyCache *BodyCacheEntry
@@ -699,7 +719,7 @@ func proposeMultiOpUpdate(ctx context.Context, cfg Config, idx *Index, store *Au
 	if isNoOpUpdate(prep.files) {
 		return noOpUpdateResponse(ctx, idx, prep)
 	}
-	return persistProposal(ctx, cfg, idx, store, ProposalOperationUpdate, prep, firstBodyCache)
+	return persistProposal(ctx, cfg, idx, store, ProposalOperationUpdate, prep, firstBodyCache, diffMode)
 }
 
 func prepareMultiOpUpdate(ctx context.Context, cfg Config, idx *Index, req ProposeRecordUpdateRequest, bodies []*string) (authoringPreparation, error) {
@@ -1823,6 +1843,30 @@ func requiredFollowUpsSatisfied(idx *Index, followUps []RequiredFollowUpUpdate) 
 		}
 	}
 	return true
+}
+
+func validateAndResolveDiffMode(raw string) (DiffMode, error) {
+	switch DiffMode(raw) {
+	case "", DiffModeSummary:
+		return DiffModeSummary, nil
+	case DiffModePatch:
+		return DiffModePatch, nil
+	case DiffModeNone:
+		return DiffModeNone, nil
+	default:
+		return "", fmt.Errorf("invalid diff_mode %q: must be %q, %q, or %q", raw, DiffModeSummary, DiffModePatch, DiffModeNone)
+	}
+}
+
+func shapeDiff(full Diff, mode DiffMode) Diff {
+	switch mode {
+	case DiffModePatch:
+		return full
+	case DiffModeNone:
+		return Diff{Omitted: true}
+	default: // DiffModeSummary
+		return Diff{Format: full.Format, Files: full.Files}
+	}
 }
 
 func buildDiff(files []ProposedFile) Diff {
