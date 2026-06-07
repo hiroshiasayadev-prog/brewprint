@@ -21,7 +21,7 @@ nodes:
         note: "任意。省略時は全object種別を対象にする。"
       - name: kind
         type: str
-        note: "任意。task / model / api_table / transition / field 等。object種別ごとのkind filter。"
+        note: "任意。object-dependent kind filter。値集合とobject省略時の扱いは docs/spec/mcp/tools/list-objects.md §2 と docs/spec/mcp/schema.md §1.1 を正本とする。"
       - name: module
         type: str
         note: "任意。module path。例: order, payment.webhooks。"
@@ -31,4 +31,5 @@ nodes:
     note: |
       MCP tool `list_objects` のrequest model。
       docs/spec/mcp/tools/list-objects.md §2 のInputに対応する。
-      `kind` は object種別ごとのkind filterであり、object-dependent語彙は REQ-DATA-007 / WORK-DATA-014 スコープのためnoteで保持する。
+      `kind` は object-dependent filterであり、正本は docs/spec/mcp/tools/list-objects.md §2 と docs/spec/mcp/schema.md §1.1。
+      このYAMLはUC-002上のmodel表現であり、DATA DSLにdependent enumを導入するものではない。

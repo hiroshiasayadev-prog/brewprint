@@ -1,7 +1,7 @@
 # WORK-DATA-014: Define selector support matrix and object-dependent vocabulary
 
 - **id**: WORK-DATA-014
-- **status**: blocked
+- **status**: done
 - **date**: 2026-06-01
 - **source_requirement**: REQ-DATA-007
 - **impact_refs**:
@@ -12,6 +12,12 @@
   - TASK-DATA-009-03
   - TASK-DATA-009-04
 - **tasks**:
+  - TASK-DATA-014-01
+  - TASK-DATA-014-02
+  - TASK-DATA-014-03
+  - TASK-DATA-014-04
+  - TASK-DATA-014-05
+  - TASK-DATA-014-06
 
 ## Goal
 
@@ -48,19 +54,60 @@ This work item owns the `selector matrix / support matrix` bucket: N-020, N-031,
 
 ## Task Flow
 
-No task artifacts are created at initial capture time.
+Task artifacts:
 
-Expected later split:
+- `TASK-DATA-014-01`: contract boundary decision.
+- `TASK-DATA-014-02`: MCP selector matrix and object-dependent vocabulary spec update.
+- `TASK-DATA-014-03`: UC-002 selector support matrix YAML note cleanup.
+- `TASK-DATA-014-04`: runtime and implementation alignment verification.
+- `TASK-DATA-014-05`: MCP selector support matrix runtime alignment implementation.
+- `TASK-DATA-014-06`: work item close synchronization.
 
 ```mermaid
 flowchart TD
-  T1["Contract boundary decision"]
-  T2["Spec and diagnostic alignment"]
-  T3["Implementation and fixture tasks if selected later"]
-  T4["Verification and close"]
-  T1 --> T2 --> T3 --> T4
+  T1["TASK-DATA-014-01 Contract boundary decision"]
+  T2["TASK-DATA-014-02 Spec and diagnostic alignment"]
+  T3["TASK-DATA-014-03 UC-002 YAML note cleanup"]
+  T4["TASK-DATA-014-04 Runtime/implementation verification"]
+  T5["TASK-DATA-014-05 Runtime alignment implementation"]
+  T6["TASK-DATA-014-06 Close synchronization"]
+  T1 --> T2 --> T3 --> T4 --> T5 --> T6
 ```
 
 ## Completion Condition
 
-This work item can be marked `done` when selector support matrix and object-dependent vocabulary constraints are accepted, specified, implemented and verified if selected, or explicitly closed as no-action without mixing in unrelated DATA or MCP identity work.
+Status: done.
+
+The selector support matrix and object-dependent vocabulary constraints were accepted, specified, implemented, verified, and reviewed without mixing in unrelated DATA or MCP identity work.
+
+## Evidence
+
+Verdict: PASS.
+
+Close evidence:
+
+- `TASK-DATA-014-01` decided the contract boundary: selector support matrix and object-dependent kind vocabulary belong to MCP schema/tool/error contracts, not DATA DSL dependent enum support.
+- `TASK-DATA-014-02` updated MCP schema/tool/error specs for selector support matrix semantics, object-dependent kind vocabulary, unsupported selector behavior, and the `analyze_impact` exception.
+- `TASK-DATA-014-03` cleaned UC-002 YAML notes so selector-related YAML models point to the canonical MCP specs instead of owning broad prose notes.
+- `TASK-DATA-014-04` verified runtime / implementation alignment and identified follow-up implementation gaps.
+- `TASK-DATA-014-05` implemented MCP runtime alignment and passed final re-review after repair.
+- `TASK-DATA-014-06` synchronized this work item close.
+
+Final implementation/test evidence recorded by `TASK-DATA-014-05`:
+
+- `go test ./internal/query ./internal/mcp`: PASS.
+- `go test ./internal/designrecords ./internal/designrecordsmcp`: PASS.
+- `go test ./internal/mcp -run "TestServerCallTool" -v`: PASS.
+- Design Records MCP validation for `TASK-DATA-014-05`: OK.
+- Design Records MCP validation for `WORK-DATA-014`: OK.
+
+Final behavior coverage:
+
+- unsupported-but-resolvable selectors surface `unsupported_object` for selector tools where the matrix says `no`.
+- unresolved selectors remain `not_found`.
+- `analyze_impact` keeps the normal-response plus `unsupported_selector` diagnostic exception.
+- `field` / `model_field` alias handling is consistent while ObjectRef output remains `object: field`.
+- `list_objects` validates unknown object/kind and supports `model_field` alias filtering.
+- `file: node` and `file: state_file` reference aggregation is covered.
+
+Out-of-scope dirty files such as `tmp.py` remain intentionally outside this work item close.

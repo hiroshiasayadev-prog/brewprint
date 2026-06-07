@@ -51,9 +51,17 @@ MCP v1で定義するerror code:
 | `source_range_unavailable` | object単位のsource rangeを特定できない |
 | `internal_error` | 実装内部エラー |
 
-`analyze_impact` では、unsupported selector は tool error にしない。
-空 `impacts`、`coverage`、および `unsupported_selector` diagnostic を含む通常responseとして返す。
-一方、`change.kind` に対して必須payloadが欠けている場合や、kind と payload の組み合わせが不正な場合は `invalid_change_payload` を返す。
+Selector support behavior:
+
+- selectorの形が壊れている場合は `invalid_selector` を返す。
+- selectorが解決できない場合は `not_found` を返す。
+- selectorが複数候補に解決される場合は `ambiguous` を返す。
+- selector.kind と解決結果のkindが一致しない場合は `kind_mismatch` を返す。
+- selectorは解決できたが対象toolの selector support matrix で `no` の場合は、原則として `unsupported_object` を返す。
+- `analyze_impact` では、unsupported selector は tool error にしない。
+  空 `impacts`、`coverage`、および `unsupported_selector` diagnostic を含む通常responseとして返す。
+
+`change.kind` に対して必須payloadが欠けている場合や、kind と payload の組み合わせが不正な場合は `invalid_change_payload` を返す。
 
 Request option behavior:
 

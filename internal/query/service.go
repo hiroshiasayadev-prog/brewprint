@@ -179,7 +179,7 @@ func (s *Service) modelFieldBySelector(selector Selector) (*semantic.Model, sema
 	if selector.Object != "" && selector.Object != "field" {
 		return nil, semantic.ModelField{}, fmt.Errorf("unsupported selector object for field: %s", selector.Object)
 	}
-	if selector.Kind != "" && selector.Kind != "field" {
+	if selector.Kind != "" && !isFieldKind(selector.Kind) {
 		return nil, semantic.ModelField{}, fmt.Errorf("unsupported selector kind for field: %s", selector.Kind)
 	}
 	model := s.project.ModelsByQID[semantic.QualifiedID(modelID)]
@@ -214,7 +214,7 @@ func (s *Service) modelFieldByFullID(id string) (*semantic.Model, semantic.Model
 }
 
 func (s *Service) isFieldSelector(selector Selector) bool {
-	return selector.Object == "field" || selector.Kind == "field"
+	return selector.Object == "field" || isFieldKind(selector.Kind)
 }
 
 func (s *Service) fileBySelector(selector Selector) (semantic.FileID, error) {

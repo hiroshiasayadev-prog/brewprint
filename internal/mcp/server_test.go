@@ -52,6 +52,25 @@ func TestServerCallTool(t *testing.T) {
 		}
 	})
 
+	t.Run("list_objects_model_field_alias", func(t *testing.T) {
+		envelope := call(t, server, "list_objects", `{"kind":"model_field","module":"order"}`)
+		if envelope.Error != nil {
+			t.Fatalf("list_objects model_field alias error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		objects := result["objects"].([]any)
+		for _, item := range objects {
+			object := item.(map[string]any)
+			if object["id"] == "order.model.order.id" {
+				if object["object"] != "field" || object["kind"] != "field" {
+					t.Fatalf("model_field alias object = %#v", object)
+				}
+				return
+			}
+		}
+		t.Fatalf("order.model.order.id not found in %#v", objects)
+	})
+
 	t.Run("get_signature", func(t *testing.T) {
 		envelope := call(t, server, "get_signature", `{"selector":{"id":"auth.task.login"}}`)
 		if envelope.Error != nil {
@@ -105,6 +124,18 @@ func TestServerCallTool(t *testing.T) {
 		signature := result["signature"].(map[string]any)
 		if signature["name"] != "id" || signature["type"] != "str" || signature["pk"] != true {
 			t.Fatalf("field signature = %#v", signature)
+		}
+	})
+
+	t.Run("get_signature_model_field_alias", func(t *testing.T) {
+		envelope := call(t, server, "get_signature", `{"selector":{"object":"field","kind":"model_field","id":"order.model.order","local_id":"id"}}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_signature model_field alias error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		object := result["object"].(map[string]any)
+		if object["object"] != "field" || object["kind"] != "field" || object["id"] != "order.model.order.id" {
+			t.Fatalf("model_field alias object = %#v", object)
 		}
 	})
 
@@ -227,8 +258,35 @@ func TestServerCallTool(t *testing.T) {
 			t.Fatalf("file object = %#v", object)
 		}
 		refs := result["references"].([]any)
+		if len(refs) < 2 {
+			t.Fatalf("file references len = %d, want at least 2: %#v", len(refs), refs)
+		}
+		if !hasReferenceMap(refs, "scenario_state_file", "checkout_flow", "order/state.yaml") || !hasReferenceMap(refs, "scenario_state_file", "payment_webhook_flow", "order/state.yaml") {
+			t.Fatalf("state file scenario references missing: %#v", refs)
+		}
+	})
+
+	t.Run("get_references_node_file_limited", func(t *testing.T) {
+		envelope := call(t, server, "get_references", `{"selector":{"object":"file","kind":"node","id":"auth/task/login.yaml"},"direction":"out","kinds":["reads"]}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_references node file error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		refs := result["references"].([]any)
 		if len(refs) != 2 {
-			t.Fatalf("file references len = %d, want 2: %#v", len(refs), refs)
+			t.Fatalf("node file references len = %d, want 2: %#v", len(refs), refs)
+		}
+	})
+
+	t.Run("get_references_state_file_transition_owned", func(t *testing.T) {
+		envelope := call(t, server, "get_references", `{"selector":{"object":"file","kind":"state_file","id":"order/state.yaml"},"direction":"out","kinds":["transition_from","transition_event","transition_to","transition_action"]}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_references state file transitions error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		refs := result["references"].([]any)
+		if len(refs) < 10 {
+			t.Fatalf("state file transition-owned references too small: %d %#v", len(refs), refs)
 		}
 	})
 
@@ -249,6 +307,18 @@ func TestServerCallTool(t *testing.T) {
 		edges := result["edges"].([]any)
 		if len(nodes) != 5 || len(edges) != 4 {
 			t.Fatalf("reference tree nodes=%d edges=%d result=%#v", len(nodes), len(edges), result)
+		}
+	})
+
+	t.Run("get_reference_tree_node_file_limited", func(t *testing.T) {
+		envelope := call(t, server, "get_reference_tree", `{"selector":{"object":"file","kind":"node","id":"auth/task/login.yaml"},"direction":"out","depth":1,"kinds":["reads"]}`)
+		if envelope.Error != nil {
+			t.Fatalf("get_reference_tree node file error: %#v", envelope.Error)
+		}
+		result := resultMap(t, envelope)
+		edges := result["edges"].([]any)
+		if len(edges) != 2 {
+			t.Fatalf("node file tree edges len = %d, want 2: %#v", len(edges), edges)
 		}
 	})
 
@@ -485,6 +555,55 @@ func TestServerCallToolErrors(t *testing.T) {
 		}
 	})
 
+	t.Run("get_signature_file_unsupported_object", func(t *testing.T) {
+		envelope := call(t, server, "get_signature", `{"selector":{"object":"file","kind":"state_file","id":"order/state.yaml"}}`)
+		if envelope.Error == nil || envelope.Error.Code != "unsupported_object" {
+			t.Fatalf("get_signature file unsupported envelope = %#v", envelope)
+		}
+	})
+
+	t.Run("inspect_primitive_unsupported_object", func(t *testing.T) {
+		envelope := call(t, server, "inspect", `{"selector":{"object":"primitive","kind":"primitive","id":"str"}}`)
+		if envelope.Error == nil || envelope.Error.Code != "unsupported_object" {
+			t.Fatalf("inspect primitive unsupported envelope = %#v", envelope)
+		}
+	})
+
+	t.Run("get_references_file_api_table_unsupported_object", func(t *testing.T) {
+		envelope := call(t, server, "get_references", `{"selector":{"object":"file","kind":"api_table","id":"views/api_table.yaml"}}`)
+		if envelope.Error == nil || envelope.Error.Code != "unsupported_object" {
+			t.Fatalf("get_references file api_table unsupported envelope = %#v", envelope)
+		}
+	})
+
+	t.Run("get_reference_tree_view_api_table_unsupported_object", func(t *testing.T) {
+		envelope := call(t, server, "get_reference_tree", `{"selector":{"object":"view","kind":"api_table","id":"ec_api"},"direction":"out","depth":1}`)
+		if envelope.Error == nil || envelope.Error.Code != "unsupported_object" {
+			t.Fatalf("get_reference_tree view api_table unsupported envelope = %#v", envelope)
+		}
+	})
+
+	t.Run("unresolved_selector_still_not_found", func(t *testing.T) {
+		envelope := call(t, server, "get_signature", `{"selector":{"object":"file","kind":"state_file","id":"missing/state.yaml"}}`)
+		if envelope.Error == nil || envelope.Error.Code != "not_found" {
+			t.Fatalf("unresolved selector envelope = %#v", envelope)
+		}
+	})
+
+	t.Run("list_objects_unknown_kind_invalid_args", func(t *testing.T) {
+		envelope := call(t, server, "list_objects", `{"kind":"unknown_kind"}`)
+		if envelope.Error == nil || envelope.Error.Code != "invalid_args" {
+			t.Fatalf("list_objects unknown kind envelope = %#v", envelope)
+		}
+	})
+
+	t.Run("list_objects_unknown_object_invalid_args", func(t *testing.T) {
+		envelope := call(t, server, "list_objects", `{"object":"unknown_object"}`)
+		if envelope.Error == nil || envelope.Error.Code != "invalid_args" {
+			t.Fatalf("list_objects unknown object envelope = %#v", envelope)
+		}
+	})
+
 	t.Run("invalid_depth", func(t *testing.T) {
 		envelope := call(t, server, "get_reference_tree", `{"selector":{"id":"auth.task.login"},"direction":"out","depth":5}`)
 		if envelope.Error == nil || envelope.Error.Code != "invalid_depth" {
@@ -586,6 +705,24 @@ func hasImpactMap(impacts []any, kind, objectID string) bool {
 		}
 		object, ok := impact["object"].(map[string]any)
 		if ok && object["id"] == objectID {
+			return true
+		}
+	}
+	return false
+}
+
+func hasReferenceMap(refs []any, kind, fromID, toID string) bool {
+	for _, item := range refs {
+		ref, ok := item.(map[string]any)
+		if !ok || ref["kind"] != kind {
+			continue
+		}
+		from, ok := ref["from"].(map[string]any)
+		if !ok || from["id"] != fromID {
+			continue
+		}
+		to, ok := ref["to"].(map[string]any)
+		if ok && to["id"] == toID {
 			return true
 		}
 	}

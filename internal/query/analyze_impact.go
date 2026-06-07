@@ -72,7 +72,7 @@ func (s *Service) collectAnalyzeImpacts(req AnalyzeImpactRequest, targetKey sema
 	if taskImpacts, taskDiagnostics := s.collectTaskAnalyzeImpacts(req, targetKey, target); taskImpacts != nil || taskDiagnostics != nil {
 		impacts = append(impacts, taskImpacts...)
 		diagnostics = append(diagnostics, taskDiagnostics...)
-	} else if target.Object == "field" || req.Selector.Object == "field" || req.Selector.Kind == "field" {
+	} else if target.Object == "field" || req.Selector.Object == "field" || isFieldKind(req.Selector.Kind) {
 		fieldImpacts, fieldDiagnostics := s.collectFieldAnalyzeImpacts(req, target)
 		impacts = append(impacts, fieldImpacts...)
 		diagnostics = append(diagnostics, fieldDiagnostics...)
@@ -346,7 +346,7 @@ func hasQualifiedIDModule(id string, module string) bool {
 }
 
 func analyzeImpactFieldSelector(selector Selector) bool {
-	return selector.Object == "field" || selector.Kind == "field"
+	return selector.Object == "field" || isFieldKind(selector.Kind)
 }
 
 func unsupportedAnalyzeImpactSelector(selector Selector) bool {

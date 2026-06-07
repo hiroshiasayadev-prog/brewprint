@@ -11,7 +11,7 @@ nodes:
         note: "node / view / transition / asset / field / file / primitive"
       - name: kind
         type: str
-        note: "object種別。nodeならtask/model/store等。値集合はobjectごとに異なるためnoteで扱う"
+        note: "object-dependent kind。値集合の正本は docs/spec/mcp/schema.md §1.1 object-dependent kind vocabulary。nodeならtask/model/store等。"
       - name: id
         type: str
         note: "object ID。QualifiedIDまたはsynthetic ID"
@@ -35,4 +35,6 @@ nodes:
         note: "field等の親ObjectRef。再帰型をv1 modelで表しきれないためany"
     note: |
       MCP response内でsemantic objectを指す共通形式。
+      `object` と `kind` の組み合わせは docs/spec/mcp/schema.md §1.1 の object-dependent kind vocabulary を正本とする。
       parentは本来ObjectRefだが、v1 modelでは再帰structを直接表せないためanyで暫定表現する。
+      このYAMLはUC-002上のmodel表現であり、DATA DSLにdependent enumやrecursive ObjectRefを導入するものではない。

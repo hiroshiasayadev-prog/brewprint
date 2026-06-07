@@ -7,6 +7,9 @@ import (
 )
 
 func (s *Service) GetSignature(req GetSignatureRequest) (GetSignatureResponse, error) {
+	if err := s.ensureSelectorSupported(toolGetSignature, req.Selector); err != nil {
+		return GetSignatureResponse{}, err
+	}
 	if s.isScenarioSelector(req.Selector) {
 		scenario, err := s.scenarioBySelector(req.Selector)
 		if err != nil {

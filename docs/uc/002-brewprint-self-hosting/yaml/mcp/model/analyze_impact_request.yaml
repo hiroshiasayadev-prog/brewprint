@@ -30,3 +30,5 @@ nodes:
       - add: added_id必須
       kindとpayloadの不正な組み合わせは invalid_change_payload tool error。
       change fieldはanalyze_impact_changeモデルに移行した。change_contract / change_transition_targetは後続migration対象。
+      selector supportは docs/spec/mcp/schema.md §1.2 と docs/spec/mcp/tools/analyze-impact.md §13 を正本とする。
+      analyze_impact のunsupported selectorはtool errorではなく、通常response + unsupported_selector diagnostic。

@@ -78,7 +78,7 @@ nodes:
         note: "任意。node / view / transition / asset / field / file / primitive。"
       - name: kind
         type: str
-        note: "期待kind。指定時は解決結果との一致を検証する。任意"
+        note: "任意。期待kind。値集合はobject-dependentであり、正本は docs/spec/mcp/schema.md §1.1 object-dependent kind vocabulary。指定時は解決結果との一致を検証する。"
       - name: file
         type: str
         note: "FileID。file-local object指定時に使う。任意"
@@ -88,3 +88,5 @@ nodes:
     note: |
       MCP tool共通のselector。
       JSON schema上は全field任意だが、toolごとに有効な組み合わせが制約される。
+      selector field combination / object-dependent kind vocabulary / tool support matrix の正本は docs/spec/mcp/schema.md §1.1〜§1.2 と各 tool spec。
+      このYAMLはUC-002上のmodel表現であり、DATA DSLにdependent enumやselector matrix validationを導入するものではない。

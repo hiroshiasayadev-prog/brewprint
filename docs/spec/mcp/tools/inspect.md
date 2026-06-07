@@ -57,6 +57,10 @@ MCP v1では、`detail` による厳密な返却差分は実装任意とする�
 `detail` が `brief` / `normal` / `full` 以外の場合は `unsupported_detail` tool error とする。
 この default は MCP tool contract の実行時挙動であり、DATA DSL の default 構文としては扱わない。
 
+`selector` の object / kind 対応範囲は `docs/spec/mcp/schema.md` の selector support matrix を正本とする。
+`inspect` で matrix が `no` の selector を受け取った場合は、原則として `unsupported_object` tool error とする。
+`limited` の selector は同matrixと本toolの kind-specific section に従って、返却する `members` / `references` / `diagnostics` の情報量を限定してよい。
+
 ## 3. Common output shape
 
 ```json
@@ -756,7 +760,7 @@ Model fieldはsynthetic objectとしてinspectできる。
       "kind": "field_type",
       "direction": "out",
       "from": {
-        "object": "model_field",
+        "object": "field",
         "kind": "field",
         "id": "order.model.order.id",
         "qualified_id": "order.model.order",
@@ -769,7 +773,7 @@ Model fieldはsynthetic objectとしてinspectできる。
       "kind": "field_fk",
       "direction": "in",
       "from": {
-        "object": "model_field",
+        "object": "field",
         "kind": "field",
         "id": "order.model.order_item.order_id",
         "qualified_id": "order.model.order_item",
@@ -777,7 +781,7 @@ Model fieldはsynthetic objectとしてinspectできる。
         "file": "order/model/order_item.yaml"
       },
       "to": {
-        "object": "model_field",
+        "object": "field",
         "kind": "field",
         "id": "order.model.order.id",
         "qualified_id": "order.model.order",
@@ -788,7 +792,7 @@ Model fieldはsynthetic objectとしてinspectできる。
       "kind": "field_fk",
       "direction": "in",
       "from": {
-        "object": "model_field",
+        "object": "field",
         "kind": "field",
         "id": "payment.model.payment_event.order_id",
         "qualified_id": "payment.model.payment_event",
@@ -796,7 +800,7 @@ Model fieldはsynthetic objectとしてinspectできる。
         "file": "payment/model/payment_event.yaml"
       },
       "to": {
-        "object": "model_field",
+        "object": "field",
         "kind": "field",
         "id": "order.model.order.id",
         "qualified_id": "order.model.order",

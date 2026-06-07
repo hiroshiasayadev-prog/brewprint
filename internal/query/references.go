@@ -8,6 +8,9 @@ import (
 )
 
 func (s *Service) GetReferences(req GetReferencesRequest) (GetReferencesResponse, error) {
+	if err := s.ensureSelectorSupported(toolGetReferences, req.Selector); err != nil {
+		return GetReferencesResponse{}, err
+	}
 	key, object, err := s.referenceTarget(req.Selector)
 	if err != nil {
 		return GetReferencesResponse{}, err
@@ -23,6 +26,10 @@ func (s *Service) GetReferences(req GetReferencesRequest) (GetReferencesResponse
 	kindFilter := map[string]struct{}{}
 	for _, kind := range req.Kinds {
 		kindFilter[kind] = struct{}{}
+	}
+
+	if object.Object == "file" {
+		return s.getFileReferences(req, object, direction, kindFilter)
 	}
 
 	var refs []Reference
@@ -41,6 +48,68 @@ func (s *Service) GetReferences(req GetReferencesRequest) (GetReferencesResponse
 		References:  refs,
 		Diagnostics: []semantic.Diagnostic{},
 	}, nil
+}
+
+func (s *Service) getFileReferences(req GetReferencesRequest, object ObjectRef, direction string, kindFilter map[string]struct{}) (GetReferencesResponse, error) {
+	fileID := semantic.FileID(object.ID)
+	var refs []Reference
+	switch object.Kind {
+	case "node":
+		refs = s.nodeFileReferences(fileID, direction, kindFilter)
+	case "state_file":
+		refs = s.stateFileReferences(fileID, direction, kindFilter)
+	default:
+		return GetReferencesResponse{}, fmt.Errorf("unsupported object for references: file:%s", object.Kind)
+	}
+	sortReferences(refs)
+	return GetReferencesResponse{
+		Object:      object,
+		Direction:   direction,
+		Depth:       1,
+		References:  refs,
+		Diagnostics: []semantic.Diagnostic{},
+	}, nil
+}
+
+func (s *Service) nodeFileReferences(fileID semantic.FileID, direction string, kindFilter map[string]struct{}) []Reference {
+	var refs []Reference
+	for _, node := range s.project.NodesByFile[fileID] {
+		key := semantic.NodeObjectKey(node.GetQID())
+		if direction == string(semantic.ReferenceDirectionOut) || direction == string(semantic.ReferenceDirectionBoth) {
+			refs = append(refs, s.referencesFromIndex(filterNodeFileReferences(s.project.ReferencesBySource[key]), string(semantic.ReferenceDirectionOut), kindFilter)...)
+		}
+		if direction == string(semantic.ReferenceDirectionIn) || direction == string(semantic.ReferenceDirectionBoth) {
+			refs = append(refs, s.referencesFromIndex(filterNodeFileReferences(s.project.ReferencesByTarget[key]), string(semantic.ReferenceDirectionIn), kindFilter)...)
+		}
+	}
+	return refs
+}
+
+func filterNodeFileReferences(refs []semantic.Reference) []semantic.Reference {
+	out := make([]semantic.Reference, 0, len(refs))
+	for _, ref := range refs {
+		switch ref.Kind {
+		case semantic.ReferenceKindConsumesAsset, semantic.ReferenceKindScenarioStateFile, semantic.ReferenceKindScenarioStepTransition:
+			continue
+		default:
+			out = append(out, ref)
+		}
+	}
+	return out
+}
+
+func (s *Service) stateFileReferences(fileID semantic.FileID, direction string, kindFilter map[string]struct{}) []Reference {
+	keys := stateFileReferenceKeys(s.project, fileID)
+	var refs []Reference
+	for _, key := range keys {
+		if direction == string(semantic.ReferenceDirectionOut) || direction == string(semantic.ReferenceDirectionBoth) {
+			refs = append(refs, s.referencesFromIndex(s.project.ReferencesBySource[key], string(semantic.ReferenceDirectionOut), kindFilter)...)
+		}
+		if direction == string(semantic.ReferenceDirectionIn) || direction == string(semantic.ReferenceDirectionBoth) {
+			refs = append(refs, s.referencesFromIndex(s.project.ReferencesByTarget[key], string(semantic.ReferenceDirectionIn), kindFilter)...)
+		}
+	}
+	return refs
 }
 
 func (s *Service) referenceTarget(selector Selector) (semantic.ObjectKey, ObjectRef, error) {

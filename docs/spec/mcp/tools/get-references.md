@@ -40,6 +40,10 @@ MCP v1ではdirect referencesのみを返す。
 `direction` が `out` / `in` / `both` 以外の場合は `unsupported_direction` tool error とする。
 この default は MCP tool contract の実行時挙動であり、DATA DSL の default 構文としては扱わない。
 
+`selector` の object / kind 対応範囲は `docs/spec/mcp/schema.md` の selector support matrix を正本とする。
+`get_references` で matrix が `no` の selector を受け取った場合は、原則として `unsupported_object` tool error とする。
+`limited` の selector は同matrixと本toolの tool-specific section に従って、返却対象referenceを限定してよい。
+
 ## 3. Output
 
 ```json
@@ -90,5 +94,41 @@ MCP v1ではdirect referencesのみを返す。
 
 MCP v1では、`get_references` inputに `depth` を持たない。
 transitive reference traversal は、ADR-055に従い、別tool `get_reference_tree` ([get-reference-tree.md](./get-reference-tree.md)) で扱う。
+
+## 5. Selector support
+
+`get_references` の selector support は `docs/spec/mcp/schema.md` の selector support matrix を正本とする。
+
+Supported selectors:
+
+- `node: task`
+- `node: model`
+- `node: store`
+- `node: state`
+- `node: event`
+- `node: actor`
+- `view: sequence_diagram`
+- `transition`
+- `field` / `model_field`
+- `file: node` limited
+- `file: state_file`
+- `asset`
+- private sub node
+
+Unsupported selectors:
+
+- `primitive`
+- `view: api_table`
+- `view: er_diagram`
+- `file: sequence_diagram`
+- `file: api_table`
+- `file: er_diagram`
+- `file: render_index`
+
+`file: node` is limited. It returns references whose source or target is a node defined in that file. It does not return raw flow wiring, render output links, or references for non-node YAML entries in the file.
+
+`file: state_file` returns references owned by the state file, including transitions defined in that file and their `transition_from` / `transition_event` / `transition_to` / `transition_action` references when resolvable.
+
+For unsupported selectors, `get_references` returns an `unsupported_object` tool error.
 
 ---

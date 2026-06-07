@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/mcp/tools/get-signature.md
 status: draft
-last_updated: 2026-05-09
+last_updated: 2026-06-07
 summary: >
   get_signature toolの仕様を定義する。
   対象object単体の外形、signature、doc、diagnosticsを返す。
@@ -51,6 +51,10 @@ depends_on:
 | フィールド | 必須 | 内容 |
 |---|---:|---|
 | `selector` | ✓ | Object selector |
+
+`selector` の object / kind 対応範囲は `docs/spec/mcp/schema.md` の selector support matrix を正本とする。
+`get_signature` で matrix が `no` の selector を受け取った場合は、原則として `unsupported_object` tool error とする。
+`view: api_table` の route一覧取得は `list_endpoints` の責務であり、`get_signature` では扱わない。
 
 ## 3. Output envelope
 

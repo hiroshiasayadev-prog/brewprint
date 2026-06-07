@@ -31,3 +31,4 @@ nodes:
       `kinds` は docs/spec/mcp/schema.md §2.2 のReference.kind filter。
       directionのclosed vocabularyはenum modelで表現する。
       depthの範囲制約と範囲外errorはMCP tool specを正本とし、このYAMLでは要約だけを保持する。
+      selector supportは docs/spec/mcp/schema.md §1.2 と docs/spec/mcp/tools/get-reference-tree.md §7 を正本とする。

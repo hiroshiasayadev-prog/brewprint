@@ -31,6 +31,12 @@ func TestQueryServiceUC001(t *testing.T) {
 		}
 		assertHasObject(t, fields.Objects, "field", "field", "order.model.order.id")
 
+		modelFieldAlias, err := service.ListObjects(ListObjectsRequest{Kind: "model_field", Module: "order"})
+		if err != nil {
+			t.Fatalf("ListObjects model_field alias: %v", err)
+		}
+		assertHasObject(t, modelFieldAlias.Objects, "field", "field", "order.model.order.id")
+
 		views, err := service.ListObjects(ListObjectsRequest{Object: "view"})
 		if err != nil {
 			t.Fatalf("ListObjects views: %v", err)
@@ -337,6 +343,41 @@ func TestQueryServiceUC001(t *testing.T) {
 		}
 		assertHasReference(t, stateFileRefs.References, "scenario_state_file", "in", "checkout_flow", "order/state.yaml")
 		assertHasReference(t, stateFileRefs.References, "scenario_state_file", "in", "payment_webhook_flow", "order/state.yaml")
+
+		stateFileTransitionRefs, err := service.GetReferences(GetReferencesRequest{
+			Selector:  Selector{Object: "file", Kind: "state_file", ID: "order/state.yaml"},
+			Direction: "out",
+			Kinds:     []string{"transition_from", "transition_event", "transition_to", "transition_action"},
+		})
+		if err != nil {
+			t.Fatalf("GetReferences state file transition-owned refs: %v", err)
+		}
+		assertHasReference(t, stateFileTransitionRefs.References, "transition_from", "out", "order/state.yaml#checkout_screen:checkout_submitted", "order.state.checkout_screen")
+		assertHasReference(t, stateFileTransitionRefs.References, "transition_event", "out", "order/state.yaml#checkout_screen:checkout_submitted", "order.event.checkout_submitted")
+		assertHasReference(t, stateFileTransitionRefs.References, "transition_to", "out", "order/state.yaml#checkout_screen:checkout_submitted", "order.state.processing")
+		assertHasReference(t, stateFileTransitionRefs.References, "transition_action", "out", "order/state.yaml#checkout_screen:checkout_submitted", "order.task.checkout")
+
+		nodeFileRefs, err := service.GetReferences(GetReferencesRequest{
+			Selector:  Selector{Object: "file", Kind: "node", ID: "auth/task/login.yaml"},
+			Direction: "out",
+			Kinds:     []string{"reads"},
+		})
+		if err != nil {
+			t.Fatalf("GetReferences node file refs: %v", err)
+		}
+		assertHasReference(t, nodeFileRefs.References, "reads", "out", "auth.task.login", "auth.store.user_db")
+
+		nodeFileFlowRefs, err := service.GetReferences(GetReferencesRequest{
+			Selector:  Selector{Object: "file", Kind: "node", ID: "order/task/checkout.yaml"},
+			Direction: "in",
+			Kinds:     []string{"consumes_asset"},
+		})
+		if err != nil {
+			t.Fatalf("GetReferences node file flow refs: %v", err)
+		}
+		if len(nodeFileFlowRefs.References) != 0 {
+			t.Fatalf("node file refs included raw flow wiring: %#v", nodeFileFlowRefs.References)
+		}
 	})
 
 	t.Run("GetReferenceTree", func(t *testing.T) {
@@ -377,6 +418,21 @@ func TestQueryServiceUC001(t *testing.T) {
 		if !truncated.Truncated || len(truncated.TruncatedReasons) != 1 || truncated.TruncatedReasons[0] != "max_edges" {
 			t.Fatalf("truncated tree = %#v", truncated)
 		}
+
+		nodeFileTree, err := service.GetReferenceTree(GetReferenceTreeRequest{
+			Selector:  Selector{Object: "file", Kind: "node", ID: "auth/task/login.yaml"},
+			Direction: "out",
+			Depth:     1,
+			Kinds:     []string{"reads"},
+		})
+		if err != nil {
+			t.Fatalf("GetReferenceTree node file: %v", err)
+		}
+		if nodeFileTree.Root.Object != "file" || nodeFileTree.Root.Kind != "node" {
+			t.Fatalf("node file tree root = %#v", nodeFileTree.Root)
+		}
+		assertHasReferenceTreeEdge(t, nodeFileTree.Edges, "reads", "out", "auth.task.login", "auth.store.user_db", 1)
+		assertHasReferenceTreeNode(t, nodeFileTree.Nodes, "auth.store.user_db", 1, []string{"reads"})
 
 		if _, err := service.GetReferenceTree(GetReferenceTreeRequest{Selector: transitionSelector, Direction: "out", Depth: 5}); err == nil {
 			t.Fatalf("GetReferenceTree depth 5 expected error")
@@ -565,6 +621,17 @@ func TestQueryServiceUC001(t *testing.T) {
 			t.Fatalf("AnalyzeImpact field rename diagnostics = %#v", fieldRename.Diagnostics)
 		}
 
+		fieldAliasRename, err := service.AnalyzeImpact(AnalyzeImpactRequest{
+			Selector: Selector{Kind: "model_field", ID: "order.model.order.id"},
+			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeRename, NewID: "order.model.order.order_id"},
+		})
+		if err != nil {
+			t.Fatalf("AnalyzeImpact model_field alias rename: %v", err)
+		}
+		if fieldAliasRename.Target.Object != "field" || fieldAliasRename.Target.ID != "order.model.order.id" || !hasString(fieldAliasRename.Coverage.Analyzed, "flow_param_field_resolution") {
+			t.Fatalf("AnalyzeImpact model_field alias response = target %#v coverage %#v", fieldAliasRename.Target, fieldAliasRename.Coverage)
+		}
+
 		fieldTypeChange, err := service.AnalyzeImpact(AnalyzeImpactRequest{
 			Selector: Selector{Object: "field", ID: "order.model.order", LocalID: "id"},
 			Change:   AnalyzeImpactChange{Kind: AnalyzeImpactChangeType, NewType: "int"},
@@ -720,6 +787,22 @@ func TestQueryServiceUC001(t *testing.T) {
 			t.Fatalf("GetReferences private sub task: %v", err)
 		}
 		assertHasReference(t, buildOrderRefs.References, "produces_asset", "out", "order/task/checkout.yaml#build_order", "order/task/checkout.yaml#build_order#draft_order")
+
+		fieldAlias, err := service.GetSignature(GetSignatureRequest{Selector: Selector{Object: "field", Kind: "model_field", ID: "order.model.order", LocalID: "id"}})
+		if err != nil {
+			t.Fatalf("GetSignature model_field alias: %v", err)
+		}
+		if fieldAlias.Object.Object != "field" || fieldAlias.Object.Kind != "field" || fieldAlias.Object.ID != "order.model.order.id" {
+			t.Fatalf("model_field alias object = %#v", fieldAlias.Object)
+		}
+
+		fullFieldAlias, err := service.GetSignature(GetSignatureRequest{Selector: Selector{Object: "field", Kind: "model_field", ID: "order.model.order.id"}})
+		if err != nil {
+			t.Fatalf("GetSignature full model_field alias: %v", err)
+		}
+		if fullFieldAlias.Object.Object != "field" || fullFieldAlias.Object.ID != "order.model.order.id" {
+			t.Fatalf("full model_field alias object = %#v", fullFieldAlias.Object)
+		}
 
 		inspected, err := service.Inspect(InspectRequest{Selector: buildOrderSelector})
 		if err != nil {

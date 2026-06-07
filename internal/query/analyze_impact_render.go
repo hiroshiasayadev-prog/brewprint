@@ -69,7 +69,7 @@ func analyzeImpactRenderChangeSupported(kind string) bool {
 
 func (s *Service) renderOutputMappingsForTarget(req AnalyzeImpactRequest, targetKey semantic.ObjectKey, target ObjectRef) []renderOutputMapping {
 	switch {
-	case target.Object == "field" || req.Selector.Object == "field" || req.Selector.Kind == "field":
+	case target.Object == "field" || req.Selector.Object == "field" || isFieldKind(req.Selector.Kind):
 		model, field, err := s.modelFieldBySelector(req.Selector)
 		if err != nil {
 			return nil

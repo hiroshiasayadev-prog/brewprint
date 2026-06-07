@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/mcp/tools/analyze-impact.md
 status: draft
-last_updated: 2026-05-01
+last_updated: 2026-06-07
 summary: >
   analyze_impact toolの仕様を定義する。
   対象objectとchange kindから影響範囲を解釈付きで返す。
@@ -67,6 +67,9 @@ depends_on:
 
 `depth` は input に持たない。
 影響範囲の探索深さは change kind ごとに tool 側が決める。
+
+`selector` の object / kind 対応範囲は `docs/spec/mcp/schema.md` の selector support matrix を正本とする。
+`analyze_impact` で matrix が `no` の selector を受け取った場合は、tool error ではなく、空 `impacts`、`coverage`、および `unsupported_selector` diagnostic を含む通常responseとして返す。
 
 > 由来: ADR-056 §決定 §2
 
@@ -580,7 +583,7 @@ v1 で supported:
 - `node: event`
 - `node: actor`
 - `transition`
-- `field`
+- `field` / `model_field`
 
 v1 で unsupported（`coverage.not_analyzed` に該当 kind を含めて空 impact を返す）:
 
@@ -592,6 +595,7 @@ v1 で unsupported（`coverage.not_analyzed` に該当 kind を含めて空 impa
 - `primitive`
 - `render_index`
 
+この一覧は共有 selector support matrix の `analyze_impact` 列と一致させる。
 unsupported selector が来た場合、 `diagnostics[]` に `unsupported_selector` を含めて返す。
 
 ---

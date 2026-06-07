@@ -10,6 +10,9 @@ func (s *Service) Inspect(req InspectRequest) (InspectResponse, error) {
 	if req.Detail != "" && req.Detail != "brief" && req.Detail != "normal" && req.Detail != "full" {
 		return InspectResponse{}, errUnsupportedDetail(req.Detail)
 	}
+	if err := s.ensureSelectorSupported(toolInspect, req.Selector); err != nil {
+		return InspectResponse{}, err
+	}
 
 	if s.isFileSelector(req.Selector) {
 		return s.inspectFile(req)

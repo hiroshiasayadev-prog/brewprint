@@ -15,8 +15,8 @@ const (
 )
 
 func (s *Service) GetReferenceTree(req GetReferenceTreeRequest) (GetReferenceTreeResponse, error) {
-	if unsupportedReferenceTreeSelector(req.Selector) {
-		return GetReferenceTreeResponse{}, fmt.Errorf("unsupported object for reference tree: %s:%s", req.Selector.Object, req.Selector.Kind)
+	if err := s.ensureSelectorSupported(toolGetReferenceTree, req.Selector); err != nil {
+		return GetReferenceTreeResponse{}, err
 	}
 
 	rootKey, root, err := s.referenceTarget(req.Selector)
@@ -68,7 +68,7 @@ func (s *Service) GetReferenceTree(req GetReferenceTreeRequest) (GetReferenceTre
 			continue
 		}
 
-		candidates := s.referenceTreeCandidates(current.key, direction, kindFilter)
+		candidates := s.referenceTreeCandidatesForRoot(current.key, rootKey, root, direction, kindFilter)
 		for _, candidate := range candidates {
 			nextDepth := current.depth + 1
 			if _, seen := visited[candidate.nextKey]; !seen && len(nodes) >= maxNodes {
@@ -116,22 +116,6 @@ func (s *Service) GetReferenceTree(req GetReferenceTreeRequest) (GetReferenceTre
 	}, nil
 }
 
-func unsupportedReferenceTreeSelector(selector Selector) bool {
-	if selector.Object == "primitive" || selector.Kind == "primitive" {
-		return true
-	}
-	if selector.Object == "view" {
-		return selector.Kind == "api_table" || selector.Kind == "er_diagram"
-	}
-	if selector.Object == "file" {
-		switch selector.Kind {
-		case "sequence_diagram", "api_table", "er_diagram", "render_index":
-			return true
-		}
-	}
-	return false
-}
-
 func isReferenceTreeSupportedRoot(root ObjectRef) bool {
 	switch root.Object {
 	case "node", "transition", "field", "asset":
@@ -145,6 +129,47 @@ func isReferenceTreeSupportedRoot(root ObjectRef) bool {
 	}
 }
 
+func (s *Service) referenceTreeCandidatesForRoot(key, rootKey semantic.ObjectKey, root ObjectRef, direction string, kindFilter map[string]struct{}) []referenceTreeCandidate {
+	if key == rootKey && root.Object == "file" {
+		switch root.Kind {
+		case "node":
+			return s.nodeFileReferenceTreeCandidates(semantic.FileID(root.ID), direction, kindFilter)
+		case "state_file":
+			return s.stateFileReferenceTreeCandidates(semantic.FileID(root.ID), direction, kindFilter)
+		}
+	}
+	return s.referenceTreeCandidates(key, direction, kindFilter)
+}
+
+func (s *Service) nodeFileReferenceTreeCandidates(fileID semantic.FileID, direction string, kindFilter map[string]struct{}) []referenceTreeCandidate {
+	var out []referenceTreeCandidate
+	for _, node := range s.project.NodesByFile[fileID] {
+		key := semantic.NodeObjectKey(node.GetQID())
+		out = append(out, s.referenceTreeCandidatesFromIndexes(
+			filterNodeFileReferences(s.project.ReferencesBySource[key]),
+			filterNodeFileReferences(s.project.ReferencesByTarget[key]),
+			direction,
+			kindFilter,
+		)...)
+	}
+	sortReferenceTreeCandidates(out)
+	return out
+}
+
+func (s *Service) stateFileReferenceTreeCandidates(fileID semantic.FileID, direction string, kindFilter map[string]struct{}) []referenceTreeCandidate {
+	var out []referenceTreeCandidate
+	for _, key := range stateFileReferenceKeys(s.project, fileID) {
+		out = append(out, s.referenceTreeCandidatesFromIndexes(
+			s.project.ReferencesBySource[key],
+			s.project.ReferencesByTarget[key],
+			direction,
+			kindFilter,
+		)...)
+	}
+	sortReferenceTreeCandidates(out)
+	return out
+}
+
 type referenceTreeCandidate struct {
 	ref          semantic.Reference
 	direction    string
@@ -153,9 +178,15 @@ type referenceTreeCandidate struct {
 }
 
 func (s *Service) referenceTreeCandidates(key semantic.ObjectKey, direction string, kindFilter map[string]struct{}) []referenceTreeCandidate {
+	out := s.referenceTreeCandidatesFromIndexes(s.project.ReferencesBySource[key], s.project.ReferencesByTarget[key], direction, kindFilter)
+	sortReferenceTreeCandidates(out)
+	return out
+}
+
+func (s *Service) referenceTreeCandidatesFromIndexes(sourceRefs, targetRefs []semantic.Reference, direction string, kindFilter map[string]struct{}) []referenceTreeCandidate {
 	out := []referenceTreeCandidate{}
 	if direction == string(semantic.ReferenceDirectionOut) || direction == string(semantic.ReferenceDirectionBoth) {
-		for _, ref := range s.project.ReferencesBySource[key] {
+		for _, ref := range sourceRefs {
 			if !referenceKindAllowed(ref.Kind, kindFilter) {
 				continue
 			}
@@ -168,7 +199,7 @@ func (s *Service) referenceTreeCandidates(key semantic.ObjectKey, direction stri
 		}
 	}
 	if direction == string(semantic.ReferenceDirectionIn) || direction == string(semantic.ReferenceDirectionBoth) {
-		for _, ref := range s.project.ReferencesByTarget[key] {
+		for _, ref := range targetRefs {
 			if !referenceKindAllowed(ref.Kind, kindFilter) {
 				continue
 			}
@@ -180,6 +211,10 @@ func (s *Service) referenceTreeCandidates(key semantic.ObjectKey, direction stri
 			})
 		}
 	}
+	return out
+}
+
+func sortReferenceTreeCandidates(out []referenceTreeCandidate) {
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].direction != out[j].direction {
 			return out[i].direction < out[j].direction
@@ -192,7 +227,6 @@ func (s *Service) referenceTreeCandidates(key semantic.ObjectKey, direction stri
 		}
 		return out[i].ref.To.ID < out[j].ref.To.ID
 	})
-	return out
 }
 
 func referenceKindAllowed(kind semantic.ReferenceKind, kindFilter map[string]struct{}) bool {

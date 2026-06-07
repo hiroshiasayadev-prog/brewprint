@@ -11,6 +11,10 @@ func (s *Service) ListObjects(req ListObjectsRequest) (ListObjectsResponse, erro
 	if err := s.requireProject(); err != nil {
 		return ListObjectsResponse{}, err
 	}
+	req, err := s.validateListObjectsRequest(req)
+	if err != nil {
+		return ListObjectsResponse{}, err
+	}
 
 	var objects []ObjectRef
 	objects = append(objects, s.listNodeObjects(req)...)

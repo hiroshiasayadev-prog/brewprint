@@ -475,7 +475,7 @@ func assetByProducerAndName(project *semantic.Project, producer semantic.Qualifi
 
 func modelFieldEndpoint(model *semantic.Model, fieldName string) semantic.ReferenceEndpoint {
 	return semantic.ReferenceEndpoint{
-		Object:      "model_field",
+		Object:      "field",
 		Kind:        "field",
 		ID:          model.QID.String() + "." + fieldName,
 		QualifiedID: model.QID,
@@ -486,7 +486,7 @@ func modelFieldEndpoint(model *semantic.Model, fieldName string) semantic.Refere
 
 func modelFieldTargetEndpoint(model semantic.QualifiedID, fieldName string) semantic.ReferenceEndpoint {
 	return semantic.ReferenceEndpoint{
-		Object:      "model_field",
+		Object:      "field",
 		Kind:        "field",
 		ID:          model.String() + "." + fieldName,
 		QualifiedID: model,

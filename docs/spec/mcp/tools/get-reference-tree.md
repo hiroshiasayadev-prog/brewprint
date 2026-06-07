@@ -72,6 +72,10 @@ tool名は `tree` だが、返却形式は純粋な木ではなく、`nodes[]` /
 `kinds` を指定した場合、指定されたreference kindのみを traversal 経路として辿り、`edges[]` に含める。
 指定外kindでしか到達できないobjectには到達しない。
 
+`selector` の object / kind 対応範囲は `docs/spec/mcp/schema.md` の selector support matrix を正本とする。
+`get_reference_tree` で matrix が `no` の selector を受け取った場合は、原則として `unsupported_object` tool error とする。
+`limited` の selector は同matrixと §7 Selector support に従って traversal root / edge expansion を限定してよい。
+
 ## 3. Output
 
 ```json
@@ -270,7 +274,7 @@ rootから1 hop目で発見されたedgeは `depth: 1` とする。
 - `node: actor`
 - `view: sequence_diagram`
 - `transition`
-- `field`
+- `field` / `model_field`
 - `file: node` limited
 - `file: state_file`
 - `asset`
@@ -286,6 +290,7 @@ rootから1 hop目で発見されたedgeは `depth: 1` とする。
 - `file: er_diagram`
 - `file: render_index`
 
+この一覧は共有 selector support matrix の `get_reference_tree` 列と一致させる。
 `primitive` は reference target として到達可能だが、traversal rootにはできない。
 `file: node` をrootにした場合は、`get_references(file: node)` の limited 対応範囲に従い、file内nodeへのreferenceのみ展開する。
 

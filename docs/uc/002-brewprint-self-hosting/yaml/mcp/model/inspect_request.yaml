@@ -18,3 +18,4 @@ nodes:
       detailは brief / normal / full のenum相当。
       MCP v1ではdetailによる厳密な返却差分は実装任意だが、未知の値はerrorとする。
       detailのdefaultと未知値errorはMCP tool specを正本とし、このYAMLでは要約だけを保持する。
+      selector supportは docs/spec/mcp/schema.md §1.2 と docs/spec/mcp/tools/inspect.md §2 を正本とする。

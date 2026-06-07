@@ -283,6 +283,9 @@ func errorCode(err error) string {
 	if strings.Contains(message, "invalid fallback") {
 		return "invalid_args"
 	}
+	if strings.Contains(message, "invalid args") {
+		return "invalid_args"
+	}
 	if strings.Contains(message, "not found") {
 		return "not_found"
 	}

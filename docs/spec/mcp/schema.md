@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/mcp/schema.md
 status: draft
-last_updated: 2026-05-09
+last_updated: 2026-06-07
 summary: >
   MCP toolで共通利用するschemaを定義する。
   selector、ObjectRef、Reference、Diagnosticなどの共通表現を規定する。
@@ -38,9 +38,17 @@ depends_on:
 |---|---:|---|---|
 | `id` | 任意 | string | 対象objectのID。通常はQualifiedID。actorはglobal actor ID。scenario等のview objectはview固有ID。transition / asset / private sub nodeは後述のsynthetic IDを使う。`file` + `local_id` で指定できるobjectでは省略できる |
 | `object` | 任意 | enum | `node` / `view` / `transition` / `asset` / `field` / `file` / `primitive`。省略時は `node` として解決を試みる |
-| `kind` | 任意 | string | 期待するkind。指定時、解決結果のkindが一致しなければerror |
+| `kind` | 任意 | string | 期待するkind。値集合は `object` に依存する。指定時、解決結果のkindが一致しなければ `kind_mismatch` tool error とする |
 | `file` | 任意 | FileID | private sub node等、file-local objectを指定する場合に使う |
 | `local_id` | 任意 | string | `file` 内のlocal object ID。sub task等のprivate object参照に使う |
+
+`object` を省略した selector は `object: node` として解決を試みる。
+`kind` だけを指定しても object class は推論しない。
+node 以外を問い合わせる場合は、原則として `object` を明示する。
+
+selector の形が壊れている場合は `invalid_selector` tool error とする。
+selector が解決できない場合は `not_found`、複数候補に解決される場合は `ambiguous`、解決結果と `kind` が一致しない場合は `kind_mismatch` を返す。
+解決は成立したが tool がその object / kind を扱わない場合は、§1.2 の selector support matrix に従う。
 
 通常の外部参照可能nodeは `id` のみで指定する。
 private sub nodeを直接問い合わせる必要がある場合は、synthetic IDまたは `file` + `local_id` の形式を使う。
@@ -78,6 +86,24 @@ assetを直接問い合わせる場合は、producerとasset nameからなるsyn
 private sub nodeの直接問い合わせは `get_signature` / `get_references` / `inspect` で対応する。
 `inspect(main task)` の `members.sub_tasks` も同じObjectRef表現を使う。
 
+#### object-dependent kind vocabulary
+
+`kind` の値集合は `object` ごとに異なる。
+この表は selector validation と ObjectRef response の共通語彙である。
+
+| object | allowed kind values | notes |
+|---|---|---|
+| `node` | `task` / `model` / `store` / `state` / `event` / `actor` | brewprint node kind。private sub node も `object: node`, `kind: task` として表す |
+| `view` | `sequence_diagram` / `api_table` / `er_diagram` | view object。API endpoints の computed route 一覧は `list_endpoints` の責務 |
+| `transition` | `transition` | state file 内の synthetic transition object |
+| `asset` | `asset` | task / join returns から暗黙生成される asset object |
+| `field` | `field` / `model_field` | model field object。MCP v1 response では既存互換のため `field` を返してよい。新規specでは `model_field` を説明用語として使ってよい |
+| `file` | `node` / `state_file` / `sequence_diagram` / `api_table` / `er_diagram` / `render_index` | `yaml/` 配下の file kind。node kind ではなく file kind を表す |
+| `primitive` | `primitive` | primitive type reference target。直接query対象ではない |
+
+この vocabulary は DATA DSL の dependent enum 機能ではない。
+MCP schema / tool contract 上の runtime selector contract と response contract として扱う。
+
 ### 1.2 Selector support matrix
 
 MCP v1のselector対応範囲は以下とする。
@@ -92,7 +118,7 @@ MCP v1のselector対応範囲は以下とする。
 | `node: actor` | yes | yes | yes | yes | limited | supported / limited inspect |
 | `view: sequence_diagram` | yes | yes | yes | no | yes | supported |
 | `transition` | yes | yes | yes | yes | yes | supported |
-| `field` | yes | yes | yes | yes | yes | supported |
+| `field` / `model_field` | yes | yes | yes | yes | yes | supported |
 | `file: node` | no | limited | limited | no | yes | supported / limited references |
 | `file: state_file` | no | yes | yes | no | yes | supported |
 | `file: sequence_diagram` | no | no | no | no | yes | supported |
@@ -105,19 +131,31 @@ MCP v1のselector対応範囲は以下とする。
 | private sub node | yes | yes | yes | no | yes | supported |
 | `primitive` | no | no | no | no | no | reference target only |
 
+cell値の意味:
+
+| value | 意味 |
+|---|---|
+| `yes` | tool が当該 selector を通常 query 対象として扱う |
+| `no` | tool が当該 selector を通常 query 対象として扱わない |
+| `limited` | tool は当該 selector を扱うが、返却範囲または情報量に制約がある |
+
 statusの意味:
 
 | status | 意味 |
 |---|---|
 | `supported` | MCP v1でquery対象として扱う |
 | `supported / limited inspect` | signature / references は扱うが、専用inspectの情報量は限定的 |
+| `supported / limited references` | file単位など、referenceの意味が限定される |
 | `partial` | 一部toolのみ対応する |
 | `future` | 設計対話coverage上は候補だが、現時点では未実装 |
 | `v1 optional` | spec上は許容するが、実装必須ではない |
 | `reference target only` | reference targetとして返すが、直接query対象ではない |
 
-`get_reference_tree` における `file: node` の `limited` は、`get_references(file: node)` の対応範囲に従い、file内nodeへのreferenceのみ展開することを意味する。
+`no` の扱いは tool ごとに異なる。
+`get_signature` / `get_references` / `get_reference_tree` / `inspect` で `no` の selector を受け取った場合は、原則として `unsupported_object` tool error とする。
 `analyze_impact` の `no` は、tool error ではなく空 `impacts` と `unsupported_selector` diagnostic を返す対象を表す。
+
+`get_reference_tree` における `file: node` の `limited` は、`get_references(file: node)` の対応範囲に従い、file内nodeへのreferenceのみ展開することを意味する。
 `primitive` はreference targetとして到達可能だが、traversal rootとしては扱わない。
 
 > 由来: ADR-054 §決定
