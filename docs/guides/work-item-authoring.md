@@ -57,6 +57,8 @@ docs/work-items/<domain>/WORK-<DOMAIN>-NNN-<slug>.md
 ## Task Candidates
 
 ## Completion Condition
+
+## Evidence
 ```
 
 `id` は H1 の work item ID と一致させる。
@@ -85,6 +87,13 @@ Required metadata は Design Records MCP validation の対象である。
 | `in_progress` | 作業中 |
 | `blocked` | 依存判断・外部要因で停止中 |
 | `done` | 必要な反映・検証が完了 |
+
+MCP validation gate:
+When a work item has `status: done`, the following narrative sections must exist and be non-empty:
+
+- `Goal`
+- `Boundary`
+- `Evidence`
 
 ## Responsibility Boundary
 

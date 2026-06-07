@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/tools.md
 status: draft
-last_updated: 2026-06-05
+last_updated: 2026-06-07
 summary: >
   Design Records MCP の read/navigation/guidance tool interface と
   authoring transaction tool interface の責務境界を定義する。
@@ -783,6 +783,19 @@ It SHOULD include `candidate_headings` with heading text, level, and ordinal whe
 Workflow relation diagnostic (`unresolved_workflow_relation` / `invalid_workflow_relation_target` / `workflow_relation_mismatch` / `workflow_source_requirement_mismatch`) は、既存の diagnostic field に加えて `field`（`work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on`）、`value`（入力 ID-as-ref）、`ref_status`（`unresolved` / `invalid_target` / `mismatch`）を必須で返す。
 
 Investigation reference diagnostic (`unresolved_*` / `noncanonical_*` / metadata field 由来の `unsupported_reference`) は、既存の diagnostic field に加えて `field`（`source_refs` / `follow_up_results` / `follow_up_candidates`）、`value`（入力 ref 文字列）、`ref_status`（`unresolved` / `unsupported` / `noncanonical`）を必須で返す。対象が record ID-as-ref の場合は `target_id` も返してよい。Investigation metadata が duplicate semantic ref または duplicate record ID を指して単一解決できない場合は field-specific diagnostic を追加せず、index defect を示す `duplicate_semantic_ref` または `duplicate_id` のみを返す。これら duplicate diagnostic および spec declaration / section lookup diagnostic は investigation metadata field 由来の追加 field を要求しない。
+
+Valid status values by record kind:
+
+| record kind | valid status values |
+|---|---|
+| `decision` | `proposed`, `accepted`, `superseded` |
+| `spec` | `confirmed`, `draft`, `wip` |
+| `investigation` | `investigating`, `concluded`, `superseded` |
+| `requirement` | `captured`, `decision_needed`, `accepted`, `deferred`, `rejected` |
+| `work_item` | `not_started`, `in_progress`, `blocked`, `done` |
+| `task` | `not_started`, `in_progress`, `blocked`, `done` |
+
+Supplying a `status` value outside the target record kind's valid set produces `invalid_metadata_value` or `invalid_status_for_kind`, depending on whether the invalid value is detected during authoring metadata validation or indexed record validation.
 
 Required narrative section policy:
 

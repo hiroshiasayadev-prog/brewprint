@@ -95,6 +95,12 @@ Required metadata は Design Records MCP validation の対象である。
 | `deferred` | 要求としては認識するが後回し |
 | `rejected` | 採用しない |
 
+MCP validation gate:
+When a requirement has `status: accepted`, the following narrative sections must exist and be non-empty:
+
+- `Requirement`
+- `Required Outcome`
+
 `accepted` は現行仕様への反映完了を意味しない。必要な spec / internal design / implementation 更新と検証は work item で追跡する。
 
 ## Responsibility Boundary

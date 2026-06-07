@@ -110,6 +110,9 @@ Required metadata は Design Records MCP validation の対象である。
 - `Verification`: 完了判断の確認方法。
 - `Evidence`: 実行結果、判断結果、検証結果。
 
+MCP validation gate:
+When a task has `status: done`, all sections listed above must exist and be non-empty.
+
 Task が investigation、ADR、spec、implementation、fixture 等を作成・更新する場合、それらは outputs または evidence として記録する。
 
 Task 本文がそれら artifact の source of truth になってはならない。
