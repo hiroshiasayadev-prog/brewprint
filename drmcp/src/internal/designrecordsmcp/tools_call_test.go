@@ -185,7 +185,7 @@ func TestToolsCallSuccess(t *testing.T) {
 				if resp.NextID != "ADR-003" || resp.NextNumber != 3 || resp.ExistingMaxID != "ADR-002" {
 					t.Fatalf("suggest_next_record response = %#v", resp)
 				}
-				if resp.SuggestedPath != "docs/adr/003-next-thing.md" {
+				if resp.SuggestedPath != "docs/adr/ADR-003-next-thing.md" {
 					t.Fatalf("suggested path = %q", resp.SuggestedPath)
 				}
 			},
@@ -248,7 +248,7 @@ func TestToolsCallValidateWorkflowMetadataDiagnosticShape(t *testing.T) {
 	root := t.TempDir()
 	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-006-test.md", "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: in_progress\n- **date**: 2026-06-01\n- **source_requirement**:\n- **impact_refs**:\n- **tasks**:\n")
 
-	server := NewServerWithIndexBuilder(designrecords.Config{Root: root}, func(ctx context.Context, cfg designrecords.Config) (*designrecords.Index, error) {
+	server := NewServerWithIndexBuilder(designrecords.Config{Root: root, RecordsRoot: "docs"}, func(ctx context.Context, cfg designrecords.Config) (*designrecords.Index, error) {
 		return designrecords.BuildIndex(ctx, cfg)
 	})
 
@@ -388,7 +388,7 @@ func TestToolsCallAuthoringTransaction(t *testing.T) {
 	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-001-test.md", "# WORK-MCP-001: Test work\n\n- **id**: WORK-MCP-001\n- **status**: in_progress\n- **date**: 2026-06-02\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-001-01\n")
 	taskRel := "docs/tasks/mcp/TASK-MCP-001-01-test.md"
 	writeToolsCallTestFile(t, root, taskRel, "# TASK-MCP-001-01: Test task\n\n- **id**: TASK-MCP-001-01\n- **status**: not_started\n- **date**: 2026-06-02\n- **work_item**: WORK-MCP-001\n- **source_requirement**: REQ-MCP-001\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - output\n\n## Evidence\nold\n")
-	cfg, err := designrecords.NewConfig(root)
+	cfg, err := designrecords.NewConfig(root, "docs")
 	if err != nil {
 		t.Fatalf("NewConfig: %v", err)
 	}
@@ -430,7 +430,7 @@ func TestToolsCallProposeRecordUpdateNoOpResponseShape(t *testing.T) {
 	writeToolsCallTestFile(t, root, "docs/requirements/mcp/REQ-MCP-001-test.md", "# REQ-MCP-001: Test requirement\n\n- **id**: REQ-MCP-001\n- **status**: captured\n- **date**: 2026-06-02\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-001\n")
 	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-001-test.md", "# WORK-MCP-001: Test work\n\n- **id**: WORK-MCP-001\n- **status**: in_progress\n- **date**: 2026-06-02\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-001-01\n")
 	writeToolsCallTestFile(t, root, "docs/tasks/mcp/TASK-MCP-001-01-test.md", "# TASK-MCP-001-01: Test task\n\n- **id**: TASK-MCP-001-01\n- **status**: not_started\n- **date**: 2026-06-02\n- **work_item**: WORK-MCP-001\n- **source_requirement**: REQ-MCP-001\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - output\n\n## Evidence\nold\n")
-	cfg, err := designrecords.NewConfig(root)
+	cfg, err := designrecords.NewConfig(root, "docs")
 	if err != nil {
 		t.Fatalf("NewConfig: %v", err)
 	}
@@ -475,7 +475,7 @@ func TestToolsCallValidateRecordsExposesSectionHeadingCaseMismatchFields(t *test
 	writeToolsCallTestFile(t, root, "docs/requirements/mcp/REQ-MCP-021-heading-case-mismatch.md", "# REQ-MCP-021: Heading case mismatch\n\n- **id**: REQ-MCP-021\n- **status**: captured\n- **date**: 2026-06-05\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-021\n")
 	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-021-heading-case-mismatch.md", "# WORK-MCP-021: Heading case mismatch\n\n- **id**: WORK-MCP-021\n- **status**: in_progress\n- **date**: 2026-06-05\n- **source_requirement**: REQ-MCP-021\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-021-01\n")
 	writeToolsCallTestFile(t, root, "docs/tasks/mcp/TASK-MCP-021-01-heading-case-mismatch.md", "# TASK-MCP-021-01: Heading case mismatch\n\n- **id**: TASK-MCP-021-01\n- **status**: done\n- **date**: 2026-06-05\n- **work_item**: WORK-MCP-021\n- **source_requirement**: REQ-MCP-021\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n\n## Goal\n\nGoal text.\n\n## Work\n\nWork text.\n\n## Done Condition\n\nDone text.\n\n## Verification\n\nVerification text.\n\n## Evidence\n\nEvidence text.\n")
-	cfg, err := designrecords.NewConfig(root)
+	cfg, err := designrecords.NewConfig(root, "docs")
 	if err != nil {
 		t.Fatalf("NewConfig: %v", err)
 	}
@@ -710,7 +710,7 @@ func TestToolsCallProposeExactWorkIDGapDiagnostic(t *testing.T) {
 		"# REQ-MCP-001: Test req\n\n- **id**: REQ-MCP-001\n- **status**: captured\n- **date**: 2026-06-03\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-001\n")
 	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-001-test.md",
 		"# WORK-MCP-001: Test work\n\n- **id**: WORK-MCP-001\n- **status**: in_progress\n- **date**: 2026-06-03\n- **source_requirement**: REQ-MCP-001\n- **impact_refs**:\n- **tasks**:\n")
-	cfg, err := designrecords.NewConfig(root)
+	cfg, err := designrecords.NewConfig(root, "docs")
 	if err != nil {
 		t.Fatalf("NewConfig: %v", err)
 	}
@@ -766,7 +766,7 @@ func TestToolsCallProposeExactWorkIDGapDiagnostic(t *testing.T) {
 }
 
 func toolsCallTestIndex() *designrecords.Index {
-	idx := &designrecords.Index{Records: []designrecords.Record{
+	idx := &designrecords.Index{RecordsRoot: "docs", Records: []designrecords.Record{
 		toolsCallRecord("ADR-001", "One"),
 		toolsCallRecord("ADR-002", "Two"),
 		{

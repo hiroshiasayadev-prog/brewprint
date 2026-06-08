@@ -14,7 +14,7 @@ import (
 )
 
 func TestRunServerModeStdio(t *testing.T) {
-	root := filepath.FromSlash("../..")
+	root := filepath.FromSlash("../../../..")
 	input := strings.Join([]string{
 		`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}`,
 		`{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}`,
@@ -62,7 +62,7 @@ func TestRunServerModeStdio(t *testing.T) {
 func TestRunServerModeEmptyInputDoesNotWriteSummary(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	if err := run([]string{"--root", filepath.FromSlash("../..")}, strings.NewReader(""), &stdout, &stderr); err != nil {
+	if err := run([]string{"--root", filepath.FromSlash("../../../../")}, strings.NewReader(""), &stdout, &stderr); err != nil {
 		t.Fatalf("run server mode empty input: %v\nstderr=%s", err, stderr.String())
 	}
 	if got := stdout.String(); got != "" {
@@ -73,7 +73,7 @@ func TestRunServerModeEmptyInputDoesNotWriteSummary(t *testing.T) {
 func TestRunSummaryMode(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	if err := run([]string{"--root", filepath.FromSlash("../.."), "--summary"}, strings.NewReader(""), &stdout, &stderr); err != nil {
+	if err := run([]string{"--root", filepath.FromSlash("../../../../"), "--summary"}, strings.NewReader(""), &stdout, &stderr); err != nil {
 		t.Fatalf("run summary mode: %v\nstderr=%s", err, stderr.String())
 	}
 	got := stdout.String()
@@ -85,7 +85,7 @@ func TestRunSummaryMode(t *testing.T) {
 }
 
 func TestProcessStdioSmoke(t *testing.T) {
-	repoRoot, err := filepath.Abs(filepath.FromSlash("../.."))
+	repoRoot, err := filepath.Abs(filepath.FromSlash("../../../../"))
 	if err != nil {
 		t.Fatalf("resolve repo root: %v", err)
 	}
@@ -98,7 +98,7 @@ func TestProcessStdioSmoke(t *testing.T) {
 		`{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}`,
 		`{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`,
 		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list_records","arguments":{"kind":"decision","limit":1,"order_by":"id","order":"desc"}}}`,
-		`{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_record","arguments":{"id":"ADR-076","include_body":false}}}`,
+		`{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_record","arguments":{"id":"V01-ADR-076","include_body":false}}}`,
 		`{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"validate_records","arguments":{}}}`,
 		`{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"suggest_next_record","arguments":{"kind":"decision","title":"Process Smoke Should Not Exist"}}}`,
 		`{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"get_record","arguments":{"id":"ADR-999"}}}`,
@@ -232,8 +232,8 @@ func assertGetRecordSmokeResponse(t *testing.T, response map[string]any) {
 	var payload map[string]any
 	unmarshalJSONText(t, text, &payload)
 	record := payload["record"].(map[string]any)
-	if record["id"] != "ADR-076" {
-		t.Fatalf("get_record id = %#v, want ADR-076; text=%s", record["id"], text)
+	if record["id"] != "V01-ADR-076" {
+		t.Fatalf("get_record id = %#v, want V01-ADR-076; text=%s", record["id"], text)
 	}
 	if _, ok := record["body"]; ok {
 		t.Fatalf("get_record include_body=false returned body: %s", text)

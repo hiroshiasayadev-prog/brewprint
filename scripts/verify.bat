@@ -3,16 +3,16 @@ setlocal
 
 cd /d C:\Users\imved\projects\brewprint
 
-echo [test] go test ./...
-go test ./...
+echo [test] go test ./drmcp/src/...
+go test ./drmcp/src/...
 if errorlevel 1 exit /b 1
 
-echo [build] cmd/brewprint
-go build -o bin\brewprint.exe .\cmd\brewprint
+echo [build] v01/src/cmd/brewprint
+go build -o bin\brewprint.exe .\v01\src\cmd\brewprint
 if errorlevel 1 exit /b 1
 
-echo [build] cmd/design-records-mcp
-go build -o bin\design-records-mcp.exe .\cmd\design-records-mcp
+echo [build] drmcp/src/cmd/design-records-mcp
+go build -o bin\design-records-mcp.exe .\drmcp\src\cmd\design-records-mcp
 if errorlevel 1 exit /b 1
 
 echo OK
