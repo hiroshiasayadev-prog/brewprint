@@ -993,8 +993,9 @@ func resolveCreateID(idx *Index, kind RecordKind, requestedID, requestedDomain, 
 		if parent == nil {
 			return "", "", fmt.Errorf("parent work item %s was not found", parentID)
 		}
-		parentDomain := workflowDomain(parentID)
-		parentSeq := workflowSequence(parentID)
+		parentBare := strings.TrimPrefix(parentID, idx.NamespacePrefix)
+		parentDomain := workflowDomain(parentBare)
+		parentSeq := workflowSequence(parentBare)
 		if match := createTaskPlaceholderPattern.FindStringSubmatch(requestedID); match != nil {
 			if match[1] != parentDomain || match[2] != parentSeq {
 				return "", "", fmt.Errorf("task placeholder ID must match parent work item domain and sequence")
