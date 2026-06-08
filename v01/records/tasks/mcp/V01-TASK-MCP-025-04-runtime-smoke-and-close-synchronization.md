@@ -1,0 +1,62 @@
+# V01-TASK-MCP-025-04: Runtime smoke and close synchronization
+
+- **id**: V01-TASK-MCP-025-04
+- **status**: done
+- **date**: 2026-06-07
+- **work_item**: V01-WORK-MCP-025
+- **source_requirement**: V01-REQ-MCP-024
+- **estimate**: 0.5d
+- **depends_on**:
+  - V01-TASK-MCP-025-03
+- **outputs**:
+  - runtime smoke evidence
+  - V01-REQ-MCP-024 / V01-REQ-MCP-028 / V01-WORK-MCP-025 / task close synchronization
+
+## Goal
+
+Run runtime smoke for the new structured create diagnostic behavior, then synchronize workflow artifact statuses when all acceptance criteria are met.
+
+## Work
+
+- Update `tmp.py` to add smoke cases for V01-REQ-MCP-024 and V01-REQ-MCP-028:
+  - `propose_record_create` with missing required fields → verify batch diagnostic lists all missing fields.
+  - `propose_record_create` with invalid status → verify `invalid_metadata_value` with `allowed_values`.
+  - `propose_record_create` in `report_required_follow_up` mode → verify clarity diagnostic.
+- Run smoke against the repo-local MCP server.
+- Record smoke results as Evidence.
+- Synchronize final statuses for `TASK-MCP-025-*`, `V01-WORK-MCP-025`, `V01-REQ-MCP-024`, and `V01-REQ-MCP-028`.
+
+## Done condition
+
+- Runtime smoke passes for all three new diagnostic behaviors.
+- Test commands and results are recorded as Evidence.
+- `V01-REQ-MCP-024` status set to `accepted`.
+- `V01-REQ-MCP-028` status set to `accepted`.
+- `V01-WORK-MCP-025` status set to `done`.
+- All tasks synchronized to `done`.
+
+## Verification
+
+- Run `go test ./...` after smoke.
+- Run `validate_records` for affected artifacts.
+
+## Evidence
+
+Verdict: PASS.
+
+`tmp.py` updated to add smoke cases [4] and [5]:
+
+- [4] V01-REQ-MCP-028: `propose_record_create` with only `date` field (missing `status`, `source_requirement`, `impact_refs`, `tasks`) → `proposal_created: false`, `missing_required_metadata_batch` diagnostic with `severity: error`, `required_fields: [status, source_requirement, impact_refs, tasks]`, `target_kind: work_item`.
+- [5] V01-REQ-MCP-024: `propose_record_create` with `status: implementation_pending` and all other fields valid → `proposal_created: false`, `invalid_metadata_value` diagnostic with `severity: error`, `field: status`, `allowed_values: [not_started, in_progress, blocked, done]`, `repair_suggestion: {status: not_started}`.
+
+All 5 smoke cases passed in a single run against a temp-root copy of `docs/`.
+
+`go test ./...`: passed (all packages).
+
+Close synchronization:
+
+- `V01-TASK-MCP-025-03` status set to `done`.
+- `V01-TASK-MCP-025-04` status set to `done`.
+- `V01-WORK-MCP-025` status set to `done`.
+- `V01-REQ-MCP-024` status set to `accepted`.
+- `V01-REQ-MCP-028` status set to `accepted`.

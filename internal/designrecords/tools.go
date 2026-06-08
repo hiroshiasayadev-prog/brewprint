@@ -496,7 +496,7 @@ func isListableRecordKind(kind RecordKind) bool {
 }
 
 func suggestedDecisionRecordPath(num int, title string) string {
-	prefix := fmt.Sprintf("docs/adr/%03d", num)
+	prefix := fmt.Sprintf("v01/records/adr/V01-ADR-%03d", num)
 	slug := slugifyRecordTitle(title)
 	if slug == "" {
 		return prefix + ".md"

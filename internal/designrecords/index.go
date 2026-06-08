@@ -50,7 +50,7 @@ func BuildIndex(ctx context.Context, cfg Config) (*Index, error) {
 }
 
 func discoverADRRecords(ctx context.Context, root string, idx *Index) error {
-	adrRoot := filepath.Join(root, "docs", "adr")
+	adrRoot := filepath.Join(root, "v01", "records", "adr")
 	if _, err := os.Stat(adrRoot); os.IsNotExist(err) {
 		return nil
 	}
@@ -85,7 +85,7 @@ func discoverADRRecords(ctx context.Context, root string, idx *Index) error {
 }
 
 func discoverInvestigationRecords(ctx context.Context, root string, idx *Index) error {
-	investigationRoot := filepath.Join(root, "docs", "investigations")
+	investigationRoot := filepath.Join(root, "v01", "records", "investigations")
 	if _, err := os.Stat(investigationRoot); os.IsNotExist(err) {
 		return nil
 	}
@@ -131,7 +131,7 @@ func discoverInvestigationRecords(ctx context.Context, root string, idx *Index) 
 }
 
 func discoverSpecRecords(ctx context.Context, root string, idx *Index) error {
-	specRoot := filepath.Join(root, "docs", "spec")
+	specRoot := filepath.Join(root, "v01", "records", "spec")
 	if _, err := os.Stat(specRoot); os.IsNotExist(err) {
 		return nil
 	}
@@ -180,15 +180,15 @@ func discoverSpecRecords(ctx context.Context, root string, idx *Index) error {
 }
 
 func discoverRequirementRecords(ctx context.Context, root string, idx *Index) error {
-	return discoverWorkflowRecords(ctx, root, idx, filepath.Join("docs", "requirements"), "REQ-*.md", RecordKindRequirement, parseRequirementRecord)
+	return discoverWorkflowRecords(ctx, root, idx, filepath.Join("v01", "records", "requirements"), "V01-REQ-*.md", RecordKindRequirement, parseRequirementRecord)
 }
 
 func discoverWorkItemRecords(ctx context.Context, root string, idx *Index) error {
-	return discoverWorkflowRecords(ctx, root, idx, filepath.Join("docs", "work-items"), "WORK-*.md", RecordKindWorkItem, parseWorkItemRecord)
+	return discoverWorkflowRecords(ctx, root, idx, filepath.Join("v01", "records", "work-items"), "V01-WORK-*.md", RecordKindWorkItem, parseWorkItemRecord)
 }
 
 func discoverTaskRecords(ctx context.Context, root string, idx *Index) error {
-	return discoverWorkflowRecords(ctx, root, idx, filepath.Join("docs", "tasks"), "TASK-*.md", RecordKindTask, parseTaskRecord)
+	return discoverWorkflowRecords(ctx, root, idx, filepath.Join("v01", "records", "tasks"), "V01-TASK-*.md", RecordKindTask, parseTaskRecord)
 }
 
 func discoverWorkflowRecords(ctx context.Context, root string, idx *Index, rootRel, pattern string, kind RecordKind, parser func(string, string) (*Record, RecordCandidate, []ParseIssue)) error {

@@ -655,17 +655,17 @@ func decisionFilenameNumber(path string) (int, bool) {
 
 func kindFromPath(path string) (RecordKind, bool) {
 	switch {
-	case strings.HasPrefix(path, "docs/adr/"):
+	case strings.HasPrefix(path, "v01/records/adr/"):
 		return RecordKindDecision, true
-	case strings.HasPrefix(path, "docs/spec/"):
+	case strings.HasPrefix(path, "v01/records/spec/"):
 		return RecordKindSpec, true
-	case strings.HasPrefix(path, "docs/investigations/"):
+	case strings.HasPrefix(path, "v01/records/investigations/"):
 		return RecordKindInvestigation, true
-	case strings.HasPrefix(path, "docs/requirements/"):
+	case strings.HasPrefix(path, "v01/records/requirements/"):
 		return RecordKindRequirement, true
-	case strings.HasPrefix(path, "docs/work-items/"):
+	case strings.HasPrefix(path, "v01/records/work-items/"):
 		return RecordKindWorkItem, true
-	case strings.HasPrefix(path, "docs/tasks/"):
+	case strings.HasPrefix(path, "v01/records/tasks/"):
 		return RecordKindTask, true
 	default:
 		return "", false

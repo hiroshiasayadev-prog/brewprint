@@ -1787,15 +1787,15 @@ func diagnosticInAffectedSet(diagnostic Diagnostic, affectedIDs, affectedPaths m
 
 func parseRecordByPath(path, content string) (*Record, RecordCandidate, []ParseIssue) {
 	switch {
-	case strings.HasPrefix(path, "docs/adr/"):
+	case strings.HasPrefix(path, "v01/records/adr/"):
 		return parseADRRecord(path, content)
-	case strings.HasPrefix(path, "docs/spec/"):
+	case strings.HasPrefix(path, "v01/records/spec/"):
 		return parseSpecRecord(path, content)
-	case strings.HasPrefix(path, "docs/requirements/"):
+	case strings.HasPrefix(path, "v01/records/requirements/"):
 		return parseRequirementRecord(path, content)
-	case strings.HasPrefix(path, "docs/work-items/"):
+	case strings.HasPrefix(path, "v01/records/work-items/"):
 		return parseWorkItemRecord(path, content)
-	case strings.HasPrefix(path, "docs/tasks/"):
+	case strings.HasPrefix(path, "v01/records/tasks/"):
 		return parseTaskRecord(path, content)
 	default:
 		return nil, RecordCandidate{}, nil
@@ -2287,13 +2287,13 @@ func createRecordPath(kind RecordKind, id, title, domain string) string {
 	}
 	switch kind {
 	case RecordKindDecision:
-		return "docs/adr/" + strings.TrimPrefix(id, "ADR-") + suffix
+		return "v01/records/adr/" + strings.TrimPrefix(id, "V01-ADR-") + suffix
 	case RecordKindRequirement:
-		return "docs/requirements/" + strings.ToLower(domain) + "/" + id + suffix
+		return "v01/records/requirements/" + strings.ToLower(domain) + "/" + id + suffix
 	case RecordKindWorkItem:
-		return "docs/work-items/" + strings.ToLower(domain) + "/" + id + suffix
+		return "v01/records/work-items/" + strings.ToLower(domain) + "/" + id + suffix
 	case RecordKindTask:
-		return "docs/tasks/" + strings.ToLower(domain) + "/" + id + suffix
+		return "v01/records/tasks/" + strings.ToLower(domain) + "/" + id + suffix
 	default:
 		return id + suffix
 	}

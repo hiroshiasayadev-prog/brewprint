@@ -3,16 +3,16 @@
 ## Paths
 
 - repo: `C:\Users\imved\projects\brewprint`
-- docs: `C:\Users\imved\projects\brewprint\docs`
-- adr: `C:\Users\imved\projects\brewprint\docs\adr`
-- spec: `C:\Users\imved\projects\brewprint\docs\spec`
-- uc: `C:\Users\imved\projects\brewprint\docs\uc`
+- records: `C:\Users\imved\projects\brewprint\v01\records`
+- adr: `C:\Users\imved\projects\brewprint\v01\records\adr`
+- spec: `C:\Users\imved\projects\brewprint\v01\records\spec`
+- uc: `C:\Users\imved\projects\brewprint\v01\records\uc`
 
 ## Startup
 
 - 回答は日本語。
-- `docs/doc-policy.md` を読む。
-- `docs/adr/` の一覧を把握し、acceptedなADRのタイトルを確認する。
+- `v01/records/doc-policy.md` を読む。
+- `v01/records/adr/` の一覧を把握し、acceptedなADRのタイトルを確認する。
 - 作業に関連するspec / uc / YAMLだけ読む。全docを最初から読まない。
 - 大きな作業では、この会話で扱うスコープを明確にする。
 - prompt_chappy.mdとAGENTS.mdは読む指示があっても読まなくていい。これはCALUDE.mdで代替されている。

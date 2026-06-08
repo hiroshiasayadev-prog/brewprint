@@ -1,4 +1,4 @@
-"""REQ-MCP-027 / REQ-MCP-024 / REQ-MCP-028 runtime smoke.
+"""REQ-MCP-027 / REQ-MCP-024 / REQ-MCP-028 / REQ-MCP-025 runtime smoke.
 
 Uses a temp root (copy of docs/) so the real repository is never modified.
 Smoke covers:
@@ -9,6 +9,14 @@ Smoke covers:
       → proposal_created:false, missing_required_metadata_batch diagnostic
   [5] REQ-MCP-024: propose_record_create with invalid status
       → proposal_created:false, invalid_metadata_value with allowed_values
+  [6] REQ-MCP-025: operations array -- metadata_fields_replace + named_section_replace
+      → proposal_created:true, diff contains both changes
+  [7] REQ-MCP-025: conflict -- two named_section_replace ops
+      → proposal_created:false, multiple_section_replace_not_supported
+  [8] REQ-MCP-025: exclusivity -- update + operations both supplied
+      → proposal_created:false, invalid_request
+  [9] REQ-MCP-025: conflicting metadata fields -- same key in two metadata ops
+      → proposal_created:false, conflicting_operations
 """
 
 import json
@@ -105,7 +113,7 @@ def assert_bounded_git_modify_diff(payload, expected_fragment, *, max_diff_lines
     plus_content = [l for l in lines if l.startswith("+") and not l.startswith("+++")]
     if len(plus_content) > 5:
         raise AssertionError(
-            f"too many '+' content lines ({len(plus_content)}) — looks like whole-file addition:\n"
+            f"too many '+' content lines ({len(plus_content)}) -- looks like whole-file addition:\n"
             + "\n".join(l for l in lines if l.startswith("+"))
         )
 
@@ -254,7 +262,7 @@ def main():
                 raise AssertionError(
                     f"expected state:accepted, got: {accept_payload.get('state')}"
                 )
-            # Accepted — remove from discard list
+            # Accepted -- remove from discard list
             proposal_ids_to_discard.remove(real_proposal_id)
             print("[3] PASS")
 
@@ -265,7 +273,7 @@ def main():
                 "id": "WORK-MCP-new",
                 "domain": "MCP",
                 "title": "Batch validation smoke",
-                # Deliberately omit source_requirement, impact_refs, tasks, status — provide only date
+                # Deliberately omit source_requirement, impact_refs, tasks, status -- provide only date
                 "fields": {"date": "2026-06-07"},
             })
             print(json.dumps({
@@ -329,10 +337,134 @@ def main():
                 )
             print("[5] PASS")
 
+            # ── [6] REQ-MCP-025: operations array ────────────────────────────
+            print("\n== [6] REQ-MCP-025: operations array -- metadata_fields_replace + named_section_replace ==")
+            multi_op_payload = call_tool(proc, 7, "propose_record_update", {
+                "id": TARGET_ID,
+                "kind": TARGET_KIND,
+                "operations": [
+                    {
+                        "type": "metadata_fields_replace",
+                        "metadata": {"status": "done"},
+                    },
+                    {
+                        "type": "named_section_replace",
+                        "section_selector": {"heading": "Evidence", "match": "exact"},
+                        "body": "2026-06-07: smoke test completed.\n",
+                    },
+                ],
+            })
+            print(json.dumps({
+                "proposal_created": multi_op_payload.get("proposal_created"),
+                "proposal_id": multi_op_payload.get("proposal_id"),
+                "diff_snippet": ((multi_op_payload.get("diff") or {}).get("text") or "")[:400],
+            }, ensure_ascii=False, indent=2))
+            if not multi_op_payload.get("proposal_created"):
+                raise AssertionError(
+                    f"[6] expected proposal_created:true:\n"
+                    f"{json.dumps(multi_op_payload, ensure_ascii=False, indent=2)}"
+                )
+            diff6 = (multi_op_payload.get("diff") or {}).get("text", "")
+            for header in ("diff --git ", "--- a/", "+++ b/", "@@"):
+                if header not in diff6:
+                    raise AssertionError(f"[6] missing git diff header '{header}': {diff6}")
+            if "+- **status**: done" not in diff6:
+                raise AssertionError(f"[6] expected status change in diff:\n{diff6}")
+            if "smoke test completed" not in diff6:
+                raise AssertionError(f"[6] expected Evidence change in diff:\n{diff6}")
+            proposal_ids_to_discard.append(multi_op_payload["proposal_id"])
+            print("[6] PASS")
+
+            # ── [7] REQ-MCP-025: conflict -- multiple named_section_replace ────
+            print("\n== [7] REQ-MCP-025: conflict -- two named_section_replace → multiple_section_replace_not_supported ==")
+            conflict7_payload = call_tool(proc, 8, "propose_record_update", {
+                "id": TARGET_ID,
+                "kind": TARGET_KIND,
+                "operations": [
+                    {
+                        "type": "named_section_replace",
+                        "section_selector": {"heading": "Evidence"},
+                        "body": "a\n",
+                    },
+                    {
+                        "type": "named_section_replace",
+                        "section_selector": {"heading": "Work"},
+                        "body": "b\n",
+                    },
+                ],
+            })
+            print(json.dumps({
+                "proposal_created": conflict7_payload.get("proposal_created"),
+                "diagnostics": conflict7_payload.get("diagnostics"),
+            }, ensure_ascii=False, indent=2))
+            if conflict7_payload.get("proposal_created"):
+                raise AssertionError("[7] proposal must NOT be created for multiple named_section_replace")
+            diags7 = conflict7_payload.get("diagnostics") or []
+            d7 = next((d for d in diags7 if d.get("category") == "multiple_section_replace_not_supported"), None)
+            if d7 is None:
+                raise AssertionError(f"[7] missing multiple_section_replace_not_supported diagnostic: {diags7}")
+            print("[7] PASS")
+
+            # ── [8] REQ-MCP-025: exclusivity -- update + operations ────────────
+            print("\n== [8] REQ-MCP-025: exclusivity -- update + operations both supplied → invalid_request ==")
+            excl8_payload = call_tool(proc, 9, "propose_record_update", {
+                "id": TARGET_ID,
+                "kind": TARGET_KIND,
+                "update": {
+                    "type": "metadata_fields_replace",
+                    "metadata": {"status": "done"},
+                },
+                "operations": [
+                    {
+                        "type": "metadata_fields_replace",
+                        "metadata": {"status": "done"},
+                    },
+                ],
+            })
+            print(json.dumps({
+                "proposal_created": excl8_payload.get("proposal_created"),
+                "diagnostics": excl8_payload.get("diagnostics"),
+            }, ensure_ascii=False, indent=2))
+            if excl8_payload.get("proposal_created"):
+                raise AssertionError("[8] proposal must NOT be created when update and operations are both set")
+            diags8 = excl8_payload.get("diagnostics") or []
+            d8 = next((d for d in diags8 if d.get("category") == "invalid_request"), None)
+            if d8 is None:
+                raise AssertionError(f"[8] missing invalid_request diagnostic: {diags8}")
+            print("[8] PASS")
+
+            # ── [9] REQ-MCP-025: conflicting metadata fields ──────────────────
+            print("\n== [9] REQ-MCP-025: conflicting ops -- same field in two metadata ops → conflicting_operations ==")
+            dup9_payload = call_tool(proc, 10, "propose_record_update", {
+                "id": TARGET_ID,
+                "kind": TARGET_KIND,
+                "operations": [
+                    {
+                        "type": "metadata_fields_replace",
+                        "metadata": {"status": "done"},
+                    },
+                    {
+                        "type": "metadata_fields_replace",
+                        "metadata": {"status": "in_progress"},
+                    },
+                ],
+            })
+            print(json.dumps({
+                "proposal_created": dup9_payload.get("proposal_created"),
+                "diagnostics": dup9_payload.get("diagnostics"),
+            }, ensure_ascii=False, indent=2))
+            if dup9_payload.get("proposal_created"):
+                raise AssertionError("[9] proposal must NOT be created for conflicting metadata ops")
+            diags9 = dup9_payload.get("diagnostics") or []
+            d9 = next((d for d in diags9 if d.get("category") == "conflicting_operations"), None)
+            if d9 is None:
+                raise AssertionError(f"[9] missing conflicting_operations diagnostic: {diags9}")
+            print("[9] PASS")
+
             # ── discard remaining proposals ──────────────────────────────────
             if proposal_ids_to_discard:
                 print(f"\n== discard remaining proposals ==")
-                for i, pid in enumerate(proposal_ids_to_discard, start=7):
+                for i, pid in enumerate(proposal_ids_to_discard, start=11):
                     d = call_tool(proc, i, "discard_proposed_write", {"proposal_id": pid})
                     print(json.dumps({
                         "proposal_id": pid,
