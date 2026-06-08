@@ -1,13 +1,14 @@
 # REQ-PRODUCT-003: App namespace-first repository directory layout model
 
 - **id**: REQ-PRODUCT-003
-- **status**: captured
+- **status**: accepted
 - **date**: 2026-06-08
 - **source_refs**:
   - REQ-PRODUCT-001
   - REQ-PRODUCT-002
 - **work_items**:
   - WORK-PRODUCT-003
+  - WORK-PRODUCT-004
 
 ## Requirement
 

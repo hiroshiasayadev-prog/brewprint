@@ -1,7 +1,7 @@
 # WORK-PRODUCT-003: App namespace-first layout model 仕様化と migration 方針決定
 
 - **id**: WORK-PRODUCT-003
-- **status**: not_started
+- **status**: done
 - **date**: 2026-06-08
 - **source_requirement**: REQ-PRODUCT-003
 - **impact_refs**:
@@ -46,8 +46,17 @@ flowchart TD
 
 ## Completion Condition
 
-- namespace-model spec に app namespace-first layout model が記述されている
-- migration 対象の棚卸しが完了し、パス一覧が存在する
-- compatibility / legacy path 方針が決定されている
-- migration 実行または explicit defer が記録されている
-- REQ-PRODUCT-003 が accepted に更新されている
+- namespace-model spec に app namespace-first layout model が記述されている ✓（`docs/spec/concepts/repository-layout/index.md`）
+- migration 対象の棚卸しが完了し、パス一覧が存在する ✓（INV-PRODUCT-001）
+- compatibility / legacy path 方針が決定されている ✓（完全切り替え・symlink なし・V01- prefix 採用）
+- migration 実行の WORK が切り出されている ✓（WORK-PRODUCT-004）
+- REQ-PRODUCT-003 が accepted に更新されている ✓
+
+## Evidence
+
+| タスク | 成果物 |
+|---|---|
+| TASK-01: ADR-097 + repository-layout spec 作成 | `docs/adr/097-app-namespace-first-repository-directory-layout.md`、`docs/spec/concepts/repository-layout/index.md` |
+| TASK-02: migration impact inventory | `docs/investigations/product/INV-PRODUCT-001-migration-impact-inventory-for-app-namespace-first-repository-layout.md` |
+| TASK-03: compatibility / legacy path 方針決定 | ADR-098（superseded）、ADR-099（V01- epoch prefix）、path: メタデータ不在確認 |
+| TASK-04: migration plan 確定・WORK 切り出し | `docs/work-items/product/WORK-PRODUCT-004-repository-layout-migration-execution-v01-restructure-and-v01-id-rename.md` |
