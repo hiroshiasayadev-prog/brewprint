@@ -1,9 +1,10 @@
 # 098: 既存 artifact ID の v2 grammar への一括移行
 
-- **status**: accepted
+- **status**: superseded
 - **date**: 2026-06-08
 - **depends_on**: ADR-096, ADR-097
 - **supersedes**: ADR-096（「既存 artifact ID 変更なし」の決定のみ）
+- **superseded_by**: ADR-099
 - **migrated_to_spec**: 
 
 ## 背景
