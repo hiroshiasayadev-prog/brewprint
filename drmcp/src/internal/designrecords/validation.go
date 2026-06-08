@@ -457,19 +457,25 @@ func validateWorkflowRelationTarget(record Record, field, value string, expected
 	if strings.TrimSpace(value) == "" {
 		return Record{}, false, nil
 	}
-	if !validWorkflowIDForKind(value, expectedKind) {
-		return Record{}, false, []Diagnostic{workflowTargetDiagnostic(record, DiagnosticInvalidWorkflowRelationTarget, field, value, "invalid_target", value)}
-	}
+	// Index lookup is performed first so that namespace-prefixed public IDs
+	// (e.g. "V01-REQ-MCP-033") resolve correctly even though validWorkflowIDForKind
+	// only matches bare ID patterns. The bare-format check is a fallback that
+	// distinguishes "valid format but record not yet in index" (unresolved) from
+	// "unrecognisable ID string" (invalid_target).
 	targets := recordsByID[normalizeRecordID(value)]
-	if len(targets) == 0 {
-		return Record{}, false, []Diagnostic{workflowTargetDiagnostic(record, DiagnosticUnresolvedWorkflowRelation, field, value, "unresolved", value)}
-	}
 	for _, target := range targets {
 		if target.Kind == expectedKind {
 			return target, true, nil
 		}
 	}
-	return Record{}, false, []Diagnostic{workflowTargetDiagnostic(record, DiagnosticInvalidWorkflowRelationTarget, field, value, "invalid_target", value)}
+	if len(targets) > 0 {
+		// Found at least one record with this ID but none matched expectedKind.
+		return Record{}, false, []Diagnostic{workflowTargetDiagnostic(record, DiagnosticInvalidWorkflowRelationTarget, field, value, "invalid_target", value)}
+	}
+	if !validWorkflowIDForKind(value, expectedKind) {
+		return Record{}, false, []Diagnostic{workflowTargetDiagnostic(record, DiagnosticInvalidWorkflowRelationTarget, field, value, "invalid_target", value)}
+	}
+	return Record{}, false, []Diagnostic{workflowTargetDiagnostic(record, DiagnosticUnresolvedWorkflowRelation, field, value, "unresolved", value)}
 }
 
 func workflowTargetDiagnostic(record Record, category DiagnosticCategory, field, value, refStatus, targetID string) Diagnostic {
