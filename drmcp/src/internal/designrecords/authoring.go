@@ -575,10 +575,13 @@ func prepareCreate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 	if mode != "include_required" && mode != "report_required_follow_up" {
 		return authoringPreparation{}, fmt.Errorf("unsupported reciprocal_update_mode %q", req.ReciprocalUpdateMode)
 	}
-	resolved, domain, err := resolveCreateID(idx, req.Kind, req.ID, req.Domain, req.ParentID)
+	resolvedBare, domain, err := resolveCreateID(idx, req.Kind, req.ID, req.Domain, req.ParentID)
 	if err != nil {
 		return authoringPreparation{}, err
 	}
+	// Apply namespace prefix so file content and paths use the public ID (e.g. V01-TASK-X-Y-01).
+	// resolvedBare is kept without prefix for internal sequence comparisons (exactIDGapWarning).
+	resolved := idx.NamespacePrefix + resolvedBare
 	if err := validateCreateFieldsID(req.Kind, req.ID, req.Fields); err != nil {
 		return authoringPreparation{}, err
 	}
@@ -623,7 +626,7 @@ func prepareCreate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 	prep.files = append(prep.files, reciprocalFiles...)
 	prep.requiredFollowUpUpdates = append(prep.requiredFollowUpUpdates, followUps...)
 	prep.diagnostics = append(prep.diagnostics, reciprocalDiags...)
-	if d := exactIDGapWarning(idx, req.Kind, req.ID, resolved, domain, req.ParentID); d != nil {
+	if d := exactIDGapWarning(idx, req.Kind, req.ID, resolvedBare, domain, req.ParentID); d != nil {
 		prep.diagnostics = append(prep.diagnostics, *d)
 	}
 	return prep, nil
@@ -688,7 +691,7 @@ func prepareUpdate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 			RequestedID: req.ID,
 			ResolvedID:  record.ID,
 			Kind:        record.Kind,
-			Domain:      workflowDomain(record.ID),
+			Domain:      workflowDomain(bareRecordID(record.ID, idx.NamespacePrefix)),
 			Path:        record.Path,
 		},
 		files:       []ProposedFile{file},
@@ -827,7 +830,7 @@ func prepareMultiOpUpdate(ctx context.Context, cfg Config, idx *Index, req Propo
 			RequestedID: req.ID,
 			ResolvedID:  record.ID,
 			Kind:        record.Kind,
-			Domain:      workflowDomain(record.ID),
+			Domain:      workflowDomain(bareRecordID(record.ID, idx.NamespacePrefix)),
 			Path:        record.Path,
 		},
 		files:       []ProposedFile{file},
@@ -2191,8 +2194,9 @@ func exactIDGapWarning(idx *Index, kind RecordKind, requestedID, resolvedID, dom
 		if err != nil {
 			return nil
 		}
-		parentDomain := workflowDomain(parentID)
-		parentWorkSeq := workflowSequence(parentID)
+		parentBareParts := bareRecordID(parentID, idx.NamespacePrefix)
+		parentDomain := workflowDomain(parentBareParts)
+		parentWorkSeq := workflowSequence(parentBareParts)
 		maxSeq := maxTaskSeqForParent(idx, parentDomain, parentWorkSeq)
 		if requestedTaskSeq <= maxSeq+1 {
 			return nil
@@ -2212,10 +2216,11 @@ func exactIDGapWarning(idx *Index, kind RecordKind, requestedID, resolvedID, dom
 func maxWorkflowSeq(idx *Index, kind RecordKind, domain string) int {
 	maxNum := 0
 	for _, record := range idx.Records {
-		if record.Kind != kind || workflowDomain(record.ID) != domain {
+		bare := bareRecordID(record.ID, idx.NamespacePrefix)
+		if record.Kind != kind || workflowDomain(bare) != domain {
 			continue
 		}
-		seq, err := strconv.Atoi(workflowSequence(record.ID))
+		seq, err := strconv.Atoi(workflowSequence(bare))
 		if err == nil && seq > maxNum {
 			maxNum = seq
 		}
@@ -2226,10 +2231,11 @@ func maxWorkflowSeq(idx *Index, kind RecordKind, domain string) int {
 func maxTaskSeqForParent(idx *Index, domain, workSeq string) int {
 	maxNum := 0
 	for _, record := range idx.Records {
-		if record.Kind != RecordKindTask || workflowDomain(record.ID) != domain || workflowSequence(record.ID) != workSeq {
+		bare := bareRecordID(record.ID, idx.NamespacePrefix)
+		if record.Kind != RecordKindTask || workflowDomain(bare) != domain || workflowSequence(bare) != workSeq {
 			continue
 		}
-		parts := strings.Split(record.ID, "-")
+		parts := strings.Split(bare, "-")
 		if len(parts) == 4 {
 			seq, err := strconv.Atoi(parts[3])
 			if err == nil && seq > maxNum {
@@ -2245,6 +2251,14 @@ func workflowKindPrefix(kind RecordKind) string {
 		return "WORK"
 	}
 	return "REQ"
+}
+
+// bareRecordID strips the namespace prefix from an ID before passing it to
+// positional parsers (workflowDomain, workflowSequence, decisionRecordNumber)
+// that expect bare IDs without namespace prefix. Safe to call when nsPrefix is
+// empty or when id does not start with nsPrefix.
+func bareRecordID(id, nsPrefix string) string {
+	return strings.TrimPrefix(id, nsPrefix)
 }
 
 func repairGuidance(diagnostics []Diagnostic) []string {
@@ -2317,7 +2331,7 @@ func nextDecisionID(idx *Index) (string, int) {
 		if record.Kind != RecordKindDecision {
 			continue
 		}
-		num, ok := decisionRecordNumber(record.ID)
+		num, ok := decisionRecordNumber(bareRecordID(record.ID, idx.NamespacePrefix))
 		if ok && num > maxNum {
 			maxNum = num
 		}
@@ -2328,10 +2342,11 @@ func nextDecisionID(idx *Index) (string, int) {
 func nextWorkflowID(idx *Index, kind RecordKind, domain string) string {
 	maxNum := 0
 	for _, record := range idx.Records {
-		if record.Kind != kind || workflowDomain(record.ID) != domain {
+		bare := bareRecordID(record.ID, idx.NamespacePrefix)
+		if record.Kind != kind || workflowDomain(bare) != domain {
 			continue
 		}
-		seq, err := strconv.Atoi(workflowSequence(record.ID))
+		seq, err := strconv.Atoi(workflowSequence(bare))
 		if err == nil && seq > maxNum {
 			maxNum = seq
 		}
@@ -2346,10 +2361,11 @@ func nextWorkflowID(idx *Index, kind RecordKind, domain string) string {
 func nextTaskID(idx *Index, domain, workSeq string) string {
 	maxNum := 0
 	for _, record := range idx.Records {
-		if record.Kind != RecordKindTask || workflowDomain(record.ID) != domain || workflowSequence(record.ID) != workSeq {
+		bare := bareRecordID(record.ID, idx.NamespacePrefix)
+		if record.Kind != RecordKindTask || workflowDomain(bare) != domain || workflowSequence(bare) != workSeq {
 			continue
 		}
-		parts := strings.Split(record.ID, "-")
+		parts := strings.Split(bare, "-")
 		if len(parts) == 4 {
 			seq, err := strconv.Atoi(parts[3])
 			if err == nil && seq > maxNum {
@@ -2364,7 +2380,7 @@ func collectSubdomainValues(idx *Index, domain string) []string {
 	seen := map[string]bool{}
 	var values []string
 	for _, r := range idx.Records {
-		if workflowDomain(r.ID) != domain {
+		if workflowDomain(bareRecordID(r.ID, idx.NamespacePrefix)) != domain {
 			continue
 		}
 		var sub *string
@@ -2386,7 +2402,7 @@ func collectSubdomainValues(idx *Index, domain string) []string {
 }
 
 func subdomainAdvisoryDiagnostics(idx *Index, id, subdomain string) []Diagnostic {
-	domain := workflowDomain(id)
+	domain := workflowDomain(bareRecordID(id, idx.NamespacePrefix))
 	if domain == "" || subdomain == "" {
 		return nil
 	}

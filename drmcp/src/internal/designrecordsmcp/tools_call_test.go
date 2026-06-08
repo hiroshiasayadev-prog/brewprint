@@ -348,9 +348,9 @@ func TestToolsProposeRecordCreateSchemaFieldsRequired(t *testing.T) {
 
 func TestToolsCallAuthoringGuidance(t *testing.T) {
 	root := t.TempDir()
-	writeToolsCallTestFile(t, root, "docs/guides/zeta.md", "# Zeta Guide\n\n## Abstract\n\nZeta summary.\n\n## Body\n\nZeta body.\n")
+	writeToolsCallTestFile(t, root, "v01/records/guides/zeta.md", "# Zeta Guide\n\n## Abstract\n\nZeta summary.\n\n## Body\n\nZeta body.\n")
 	content := "# Alpha Guide\n\n## Abstract\n\nAlpha summary.\n\n## Body\n\nAlpha body.\n"
-	writeToolsCallTestFile(t, root, "docs/guides/alpha.md", content)
+	writeToolsCallTestFile(t, root, "v01/records/guides/alpha.md", content)
 
 	calls := 0
 	server := NewServerWithIndexBuilder(designrecords.Config{Root: root}, func(context.Context, designrecords.Config) (*designrecords.Index, error) {

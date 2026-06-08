@@ -63,7 +63,7 @@ func loadAuthoringGuides(ctx context.Context, cfg Config) ([]authoringGuide, err
 	if err != nil {
 		return nil, newToolError(ErrorCodeInvalidRequest, err.Error())
 	}
-	guideRoot := filepath.Join(normalized.Root, "docs", "guides")
+	guideRoot := filepath.Join(normalized.Root, filepath.FromSlash(normalized.RecordsRoot), "guides")
 	if _, err := os.Stat(guideRoot); os.IsNotExist(err) {
 		return []authoringGuide{}, nil
 	} else if err != nil {

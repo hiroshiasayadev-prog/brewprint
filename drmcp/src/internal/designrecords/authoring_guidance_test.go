@@ -8,9 +8,9 @@ import (
 
 func TestListAuthoringGuides(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, root, "docs/guides/zeta.md", "# Zeta Guide\n\n## Abstract\n\nZeta summary.\n\n## Body\n\nZeta body.\n")
-	writeTestFile(t, root, "docs/guides/alpha.md", "# Alpha Guide\n\n## Abstract\n\nAlpha summary line 1.\n\nAlpha summary line 2.\n\n### Detail\n\nKept in abstract.\n\n## Body\n\nAlpha body.\n")
-	writeTestFile(t, root, "docs/guides/not-markdown.txt", "# Ignored\n\n## Abstract\n\nIgnored.\n")
+	writeTestFile(t, root, "v01/records/guides/zeta.md", "# Zeta Guide\n\n## Abstract\n\nZeta summary.\n\n## Body\n\nZeta body.\n")
+	writeTestFile(t, root, "v01/records/guides/alpha.md", "# Alpha Guide\n\n## Abstract\n\nAlpha summary line 1.\n\nAlpha summary line 2.\n\n### Detail\n\nKept in abstract.\n\n## Body\n\nAlpha body.\n")
+	writeTestFile(t, root, "v01/records/guides/not-markdown.txt", "# Ignored\n\n## Abstract\n\nIgnored.\n")
 
 	cfg, err := NewConfig(root, "")
 	if err != nil {
@@ -39,7 +39,7 @@ func TestListAuthoringGuides(t *testing.T) {
 func TestGetAuthoringGuidance(t *testing.T) {
 	root := t.TempDir()
 	content := "# ADR Authoring Guide\n\n## Abstract\n\nADR summary.\n\n## Body\n\nKeep this Markdown exactly.\n"
-	writeTestFile(t, root, "docs/guides/adr-authoring.md", content)
+	writeTestFile(t, root, "v01/records/guides/adr-authoring.md", content)
 
 	cfg, err := NewConfig(root, "")
 	if err != nil {
@@ -57,7 +57,7 @@ func TestGetAuthoringGuidance(t *testing.T) {
 
 func TestGetAuthoringGuidanceErrors(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, root, "docs/guides/adr-authoring.md", "# ADR Authoring Guide\n\n## Abstract\n\nADR summary.\n")
+	writeTestFile(t, root, "v01/records/guides/adr-authoring.md", "# ADR Authoring Guide\n\n## Abstract\n\nADR summary.\n")
 	cfg, err := NewConfig(root, "")
 	if err != nil {
 		t.Fatalf("NewConfig: %v", err)
@@ -72,7 +72,7 @@ func TestGetAuthoringGuidanceErrors(t *testing.T) {
 
 func TestBuildIndexIgnoresAuthoringGuides(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, root, "docs/guides/adr-authoring.md", "# ADR Authoring Guide\n\n## Abstract\n\nADR summary.\n")
+	writeTestFile(t, root, "v01/records/guides/adr-authoring.md", "# ADR Authoring Guide\n\n## Abstract\n\nADR summary.\n")
 
 	cfg, err := NewConfig(root, "")
 	if err != nil {
