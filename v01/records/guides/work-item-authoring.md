@@ -69,6 +69,10 @@ When calling `propose_record_create` with `fields` plus `body`, put metadata in 
 Do not include the H1, metadata block, metadata `id`, or guessed server-resolved ID in that MCP `body`.
 Pass `id: WORK-<DOMAIN>-new` (e.g. `WORK-MCP-new`); the MCP resolves the next number server-side. Never hardcode a guessed work item number in `body` or `fields`.
 
+Always include all sections in `body`, even those that will be filled in later.
+Use `TBD` as a placeholder for sections that are not yet written (e.g. `## Evidence\n\nTBD`).
+This ensures `propose_record_update` `named_section_replace` can target those sections later without falling back to filesystem edits.
+
 Use exact `WORK-<DOMAIN>-NNN` only when that specific work item ID is intentional. If an exact ID would skip the next domain-scoped work item sequence, `propose_record_create` may return a non-blocking `exact_id_sequence_gap` info diagnostic. Prefer `WORK-<DOMAIN>-new` when no reserved ID is required.
 
 Required metadata は Design Records MCP validation の対象である。

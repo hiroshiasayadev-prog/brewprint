@@ -42,6 +42,7 @@
 - `SPEC-new` / spec skeleton create は MVP 外なので、必要なら REQ-MCP-010 系の placement discovery follow-up として扱う。
 - authoring transaction tool が未対応・失敗・曖昧な場合だけ、理由を明記して filesystem edit に fallback する。
 - `propose_record_create` で新規 REQ / WORK / TASK を作る場合は、デフォルトで `*-new` placeholder を使う。ユーザーが exact ID を明示した場合、または番号予約が確認済みの場合だけ exact ID を使う。
+- WORK / TASK を起票する前に、`get_authoring_guidance` で対応 kind のガイド（`work-item-authoring` / `task-authoring`）を読む。body に渡すセクション構成と TBD placeholder ルールを確認してから `propose_record_create` を呼ぶ。
 
 ## Design Records MCP write common rules
 
