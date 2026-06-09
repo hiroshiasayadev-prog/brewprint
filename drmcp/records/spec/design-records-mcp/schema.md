@@ -63,7 +63,7 @@ Design Records MCP では、decision / spec / investigation / requirement / work
 ADR は既存フォーマットを維持し、H1直下の箇条書きmetadataを読む。
 
 ```markdown
-# 076: Design Records MCP
+# V01-ADR-076: Design Records MCP
 
 - **status**: accepted
 - **date**: 2026-05-11
@@ -142,18 +142,18 @@ Investigation の metadata block は ADR と同様に H1 直後から最初の H
 `status` / `date` / `trigger` / `scope` / `non_scope` / `source_refs` / `follow_up_candidates` は required metadata とする。
 `supersedes` / `related_requirements` / `related_work_items` / `related_adrs` / `related_specs` / `related_internal_design` / `related_coverage` / `follow_up_results` は、記載がある場合のみ読む optional metadata とする。
 
-`source_refs` と `follow_up_results` の各値は canonical reference として Design Records MCP が扱う record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*`) または active `spec:` semantic ref を用いる。記載値は解決可能でなければならず、unresolved は error とする。physical path が入力に現れた場合、compatibility input として読み取ってよいが canonical form ではなく、error diagnostic の対象とする。
+`source_refs` と `follow_up_results` の各値は canonical reference として Design Records MCP が扱う record の public ID-as-ref（MVP では `V01-ADR-*` / `V01-SPEC-*` / `V01-INV-*` 等）または active `spec:` semantic ref を用いる。記載値は解決可能でなければならず、unresolved は error とする。physical path が入力に現れた場合、compatibility input として読み取ってよいが canonical form ではなく、error diagnostic の対象とする。
 V01-ADR-088 により、`internal-design:` / `coverage:` / `COV-*` は MVP canonical reference / resolver input として要求しない。
-`follow_up_candidates` に artifact reference が記載される場合も、record ID-as-ref または active `spec:` semantic ref の canonical form を用いる。候補は未作成 artifact を指しうるため、canonical form の unresolved は error にせず、予定された後続 artifact が未作成であることを示す `info` diagnostic として返す。Physical path による candidate は canonical form ではなく、noncanonical candidate を示す `info` diagnostic として返す。
+`follow_up_candidates` に artifact reference が記載される場合も、public record ID-as-ref または active `spec:` semantic ref の canonical form を用いる。候補は未作成 artifact を指しうるため、canonical form の unresolved は error にせず、予定された後続 artifact が未作成であることを示す `info` diagnostic として返す。Physical path による candidate は canonical form ではなく、noncanonical candidate を示す `info` diagnostic として返す。
 `trigger` / `related_*` の resolve / validation rule はこの版では確定しない。
 
-V01-ADR-092 により、investigation の上記 validated reference field に追加で使用できる workflow artifact ID-as-ref は `REQ-<DOMAIN>-NNN` / `WORK-<DOMAIN>-NNN` とする。`TASK-*` は workflow artifact 間 relation と direct resolver input では supported だが、investigation metadata field の canonical reference form には含めない。`TASK-*` が investigation の `source_refs` / `follow_up_results` に現れた場合は `unsupported_reference` error、`follow_up_candidates` に現れた場合は `unsupported_reference` info とする。
+V01-ADR-092 により、investigation の上記 validated reference field に追加で使用できる workflow artifact の public ID-as-ref は `V01-REQ-<DOMAIN>-NNN` / `V01-WORK-<DOMAIN>-NNN` 等（namespace_prefix 付き完全形）とする。`TASK-*` 系（`V01-TASK-*` 等）は workflow artifact 間 relation と direct resolver input では supported だが、investigation metadata field の canonical reference form には含めない。namespace_prefix 付き `TASK-*` が investigation の `source_refs` / `follow_up_results` に現れた場合は `unsupported_reference` error、`follow_up_candidates` に現れた場合は `unsupported_reference` info とする。
 
 ### Workflow artifact bullet metadata 文法
 
 Requirement / work item / task の metadata block は ADR / investigation と同様に H1 直後から最初の H2 行または blockquote 行の直前までとする。認識する metadata 行は `- **<key>**: <value>` と、その直下のインデント付き list item とする。
 
-Workflow artifact ID grammar は以下とする。
+Workflow artifact の bare ID grammar（namespace_prefix ストリップ後の内部検証形式）は以下とする。public ID は namespace_prefix を付与した形（例: `V01-WORK-DRMCP-001`）となる。
 
 ```text
 REQ-<DOMAIN>-NNN
@@ -164,7 +164,7 @@ TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>
 - `<DOMAIN>` は uppercase ASCII letter / digit / hyphen で構成し、先頭と末尾を hyphen にしない。
 - Requirement / work item の `NNN` と task の `<WORK-SEQUENCE>` は3桁ゼロ埋め decimal sequence とする。
 - Task の `<TASK-SEQUENCE>` は2桁ゼロ埋め decimal sequence とする。
-- ID は metadata `id`、H1 ID、filename prefix で一致しなければならない。
+- Public ID（namespace_prefix 付き完全形）は metadata `id`、H1 ID、filename prefix で一致しなければならない。
 - Workflow relation は metadata field に記載された ID-as-ref だけから読み、task ID 文字列または path から親 relation を推定しない。
 
 Requirement の認識 field:
@@ -417,12 +417,12 @@ MVP の discovery は以下の規則に従う。
 
 | kind | discovery rule |
 |---|---|
-| `decision` | `docs/adr/*.md` の Markdown file を ADR 候補として読む |
-| `spec` | `docs/spec/**/*.md` のうち YAML front matter に `design_record.id` と `design_record.kind` を持つ file のみを spec record として読む |
-| `investigation` | `docs/investigations/*/INV-*-*.md` の Markdown file を investigation 候補として読む |
-| `requirement` | `docs/requirements/*/REQ-*-*.md` の Markdown file を requirement 候補として読む |
-| `work_item` | `docs/work-items/*/WORK-*-*.md` の Markdown file を work item 候補として読む |
-| `task` | `docs/tasks/*/TASK-*-*.md` の Markdown file を新形式 task 候補として読む。`docs/tasks/m*.md` は含めない |
+| `decision` | `<records_root>/adr/*.md` の Markdown file を ADR 候補として読む |
+| `spec` | `<records_root>/spec/**/*.md` のうち YAML front matter に `design_record.id` と `design_record.kind` を持つ file のみを spec record として読む |
+| `investigation` | `<records_root>/investigations/*/<namespace_prefix>INV-*-*.md` の Markdown file を investigation 候補として読む |
+| `requirement` | `<records_root>/requirements/*/<namespace_prefix>REQ-*-*.md` の Markdown file を requirement 候補として読む |
+| `work_item` | `<records_root>/work-items/*/<namespace_prefix>WORK-*-*.md` の Markdown file を work item 候補として読む |
+| `task` | `<records_root>/tasks/*/<namespace_prefix>TASK-*-*.md` の Markdown file を新形式 task 候補として読む |
 
 `design_record` を持たない spec は index 対象外とする。
 その場合も `missing_design_record` diagnostic は出さない。
@@ -433,40 +433,76 @@ spec の `design_record.kind` が `spec` 以外の場合、この版では index
 
 > 由来: V01-ADR-076 §bootstrap方針, V01-ADR-077 §validate_records の責務, V01-ADR-092 §1
 
+## ID normalization model
+
+Design Records MCP において、record ID には **public ID** と **bare ID grammar** の2層がある。
+
+### Public ID
+
+tools が外部に公開する record ID。namespace_prefix + bare ID の結合形式。
+
+```
+public_id = namespace_prefix + bare_id
+```
+
+MVP（`--records-root v01/records`）での public ID 例:
+
+| kind | public ID 例 |
+|---|---|
+| `decision` | `V01-ADR-076` |
+| `spec` | `V01-SPEC-design-records-mcp-schema` |
+| `investigation` | `V01-INV-MCP-001` |
+| `requirement` | `V01-REQ-MCP-003` |
+| `work_item` | `V01-WORK-MCP-003` |
+| `task` | `V01-TASK-MCP-003-01` |
+
+`list_records` / `get_record` / `resolve_reference` 等の tool inputs / outputs はすべて public ID を使う。bare ID を tool の入力として受け付けない。
+
+### Bare ID grammar
+
+parser が namespace_prefix をストリップした後、内部検証に使う形式。tool の外部 contract には現れない。
+
+| kind | bare ID grammar |
+|---|---|
+| `decision` | `ADR-NNN`（3桁ゼロ埋め） |
+| `spec` | `SPEC-<slug>` |
+| `investigation` | `INV-<DOMAIN>-NNN` |
+| `requirement` | `REQ-<DOMAIN>-NNN` |
+| `work_item` | `WORK-<DOMAIN>-NNN` |
+| `task` | `TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>` |
+
+本 spec の他のセクションで `ADR-*` / `REQ-*` 等の bare 形式が現れる場合、特記がない限り bare ID grammar（検証規則の記述）を指す。
+
+> 由来: V01-ADR-097, V01-ADR-099
+
 ## `id`
 
-`id` は record の安定識別子である。
+`id` は record の安定識別子である。tool が公開する `id` は public ID（namespace_prefix 付き完全形）とする。
 
-MVP で扱う ID 形式は以下とする。
-
-| kind | ID 例 | 備考 |
+| kind | public ID 例 | 備考 |
 |---|---|---|
 | `decision` | `V01-ADR-076` | ADR 番号を3桁ゼロ埋めで持つ |
-| `spec` | `SPEC-design-records-mcp-schema` | spec 用の stable ID |
+| `spec` | `V01-SPEC-design-records-mcp-schema` | spec 用の stable ID |
 | `investigation` | `V01-INV-MCP-001` | V01-ADR-086 に従う domain-scoped ID |
-| `requirement` | `V01-REQ-MCP-003` | domain-scoped ID。`REQ-<DOMAIN>-NNN` |
-| `work_item` | `V01-WORK-MCP-003` | domain-scoped ID。`WORK-<DOMAIN>-NNN` |
-| `task` | `V01-TASK-MCP-003-01` | parent work item sequence と task sequence を含む ID。`TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>` |
+| `requirement` | `V01-REQ-MCP-003` | domain-scoped ID |
+| `work_item` | `V01-WORK-MCP-003` | domain-scoped ID |
+| `task` | `V01-TASK-MCP-003-01` | parent work item sequence と task sequence を含む ID |
 
-`decision` record の canonical ID は、H1 の番号から `ADR-NNN` として導出する。
-filename 先頭の番号は canonical ID との一致検査にのみ使う。
-H1 が不正な場合は `invalid_h1_title` を出し、filename 由来の ID を canonical ID として採用しない。
+`decision` record の canonical ID は、H1 から namespace_prefix をストリップした後の番号で bare `ADR-NNN` を構築し、namespace_prefix を付与した public ID として導出する。filename 先頭の ID prefix（namespace_prefix 込み）は canonical ID との一致検査にのみ使う。H1 が不正な場合は `invalid_h1_title` を出し、filename 由来の ID を canonical ID として採用しない。
 
-canonical ID の番号と filename 先頭の番号が一致していなければならない。
+Requirement / work item / task の canonical ID は metadata `id` と H1 の ID から取得し、両者および filename の ID prefix が一致しなければならない。Workflow ID の syntax が bare ID grammar に従わない場合、または metadata / H1 / filename prefix が一致しない場合は `invalid_workflow_id` または `filename_id_mismatch` とする。
 
-Requirement / work item / task の canonical ID は metadata `id` と H1 の ID から取得し、両者および filename の ID prefix が一致しなければならない。Workflow ID の syntax が上記 grammar に従わない場合、または metadata / H1 / filename prefix が一致しない場合は `invalid_workflow_id` または `filename_id_mismatch` とする。
-
-例:
+例（MVP `v01/records` での ADR）:
 
 ```text
-H1: # 076: Design Records MCP
+H1: # V01-ADR-076: Design Records MCP
 id: V01-ADR-076
-path: docs/adr/076-design-records-mcp.md
+path: v01/records/adr/V01-ADR-076-design-records-mcp.md
 ```
 
 一致しない場合、`filename_id_mismatch` とする。
 
-> 由来: V01-ADR-077 §validate_records の責務
+> 由来: V01-ADR-077 §validate_records の責務, V01-ADR-097, V01-ADR-099
 
 ## `kind`
 
@@ -522,13 +558,13 @@ MVP では legacy M-series task record / UC / impl note を record kind とし�
 
 `spec` record の `depends_on` は、その仕様が依存する record ID の list として `design_record.depends_on` から読む。Spec top-level front matter の `depends_on` は doc-policy 用の出自 path listであり、record dependency としては扱わない。
 
-Decision / spec dependency が参照できる canonical record ID-as-ref は `ADR-*` / `SPEC-*` / `INV-*` とする。したがって ADR / spec が investigation record (`INV-*`) に依存することは valid である。
+Decision / spec dependency が参照できる canonical record の public ID-as-ref は namespace_prefix 付き `ADR-*` / `SPEC-*` / `INV-*` 系（MVP では `V01-ADR-*` / `V01-SPEC-*` / `V01-INV-*`）とする。したがって ADR / spec が investigation record に依存することは valid である。
 
 存在しない ID を参照している場合、`missing_depends_on_target` とする。MVP では参照元・参照先の status 組み合わせは検査しない。
 
 ### Task dependency relation
 
-`task` record の `depends_on` は、同 task の実行が依存する task artifact を指す workflow relation field として task 箇条書きmetadataから読む。Canonical target form は `TASK-*` とする。
+`task` record の `depends_on` は、同 task の実行が依存する task artifact を指す workflow relation field として task 箇条書きmetadataから読む。Canonical target form は public ID（namespace_prefix 付き `TASK-*` 系、MVP では `V01-TASK-*`）とする。
 
 `task.depends_on` は decision / spec dependency ではなく、`unresolved_workflow_relation` / `invalid_workflow_relation_target` の対象とする。MVP は参照先の存在確認を行うが、same-work-item 制約、cycle detection、execution order projection は扱わない。
 
@@ -569,56 +605,47 @@ MVP では `migration.state` のような正規化状態語彙は導入しない
 
 ## Title extraction
 
-MVP では `title` を Markdown H1 から抽出する。
+MVP では `title` を Markdown H1 から抽出する。H1 に記載する ID は public ID（namespace_prefix 付き完全形）とする。parser は namespace_prefix をストリップして bare ID grammar で検証し、public ID を canonical ID として返す。
 
-ADR の H1 は以下の形式のみ valid とする。
+ADR の H1 は以下の処理手順で解釈する。
 
-```text
-^#\s+(?P<num>\d{3}):\s+(?P<title>.+?)\s*$
-```
+1. namespace_prefix をストリップした残りを bare form `^#\s+ADR-(?P<num>\d{3}):\s+(?P<title>.+?)\s*$` で照合する
+2. `num` は3桁ゼロ埋め必須とする
+3. 区切りは ASCII colon `:` とする
+4. colon 直後には1文字以上の whitespace が必要である
+5. `title` は trim 後 non-empty でなければならない
+6. canonical ID は `<namespace_prefix>ADR-<num>`（MVP例: `V01-ADR-076`）として導出する
+7. filename の public ID prefix との比較は文字列一致とする
 
-制約:
-
-- `num` は3桁ゼロ埋め必須とする
-- `ADR-` prefix は許可しない
-- 区切りは ASCII colon `:` とする
-- colon 直後には1文字以上の whitespace が必要である
-- `title` は trim 後 non-empty でなければならない
-- canonical ID は `ADR-<num>` として導出する
-- filename 先頭番号との比較は3桁ゼロ埋め文字列一致とする
-
-例:
+例（MVP, namespace_prefix = `V01-`）:
 
 ```markdown
-# 076: Design Records MCP
+# V01-ADR-076: Design Records MCP
 ```
 
 H1 が存在しない、または期待形式に合わない場合、`invalid_h1_title` とする。
 
-spec record の H1 は `# <title>` 形式とし、先頭に番号を要求しない。
+spec record の H1 は `# <title>` 形式とし、先頭に番号や ID を要求しない。
 spec record の title は、H1 行から leading `#` とその直後の whitespace を除き、前後 whitespace を trim した残りとする。
 
-investigation record の H1 は以下の形式のみ valid とする。
+investigation record の H1 は namespace_prefix をストリップした後、以下の bare form で照合する。
 
-```text
-^#\s+(?P<id>INV-[A-Z0-9-]+-\d{3}):\s+(?P<title>.+?)\s*$
-```
+bare form: `^#\s+(?P<id>INV-[A-Z0-9-]+-\d{3}):\s+(?P<title>.+?)\s*$`
 
-investigation の canonical ID は H1 の `id` から取得する。filename は `INV-<DOMAIN>-NNN-<slug>.md` 形式であり、H1 の canonical ID と prefix が一致しなければならない。不一致は filename / ID mismatch として診断対象にする。
+investigation の canonical ID は `<namespace_prefix>` + H1 bare `id` として導出する（MVP例: `V01-INV-MCP-001`）。filename は `<namespace_prefix>INV-<DOMAIN>-NNN-<slug>.md` 形式であり、H1 の canonical ID と一致しなければならない。不一致は filename / ID mismatch として診断対象にする。
 
-Workflow artifact record の H1 は以下の形式のみ valid とする。
+Workflow artifact record の H1 は namespace_prefix をストリップした後、以下のいずれかの bare form で照合する。
 
-```text
-^#\s+(?P<id>REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*-\d{3}):\s+(?P<title>.+?)\s*$
-^#\s+(?P<id>WORK-[A-Z0-9]+(?:-[A-Z0-9]+)*-\d{3}):\s+(?P<title>.+?)\s*$
-^#\s+(?P<id>TASK-[A-Z0-9]+(?:-[A-Z0-9]+)*-\d{3}-\d{2}):\s+(?P<title>.+?)\s*$
-```
+bare forms:
+- `^#\s+(?P<id>REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*-\d{3}):\s+(?P<title>.+?)\s*$`
+- `^#\s+(?P<id>WORK-[A-Z0-9]+(?:-[A-Z0-9]+)*-\d{3}):\s+(?P<title>.+?)\s*$`
+- `^#\s+(?P<id>TASK-[A-Z0-9]+(?:-[A-Z0-9]+)*-\d{3}-\d{2}):\s+(?P<title>.+?)\s*$`
 
-Requirement / work item / task の canonical ID は metadata `id` と H1 の `id` が一致したとき、その ID とする。H1 または metadata `id` が grammar に従わない場合は `invalid_workflow_id`、両者または filename の ID prefix が一致しない場合は `filename_id_mismatch` とする。
+Workflow の canonical ID は `<namespace_prefix>` + H1 bare `id` として導出する。metadata `id` field と H1 由来 canonical ID が一致しなければならない。H1 または metadata `id` が grammar に従わない場合は `invalid_workflow_id`、両者または filename の ID prefix が一致しない場合は `filename_id_mismatch` とする。
 
 filename からの title 推定は MVP では行わない。
 
-> 由来: V01-ADR-077 §list_records の責務, V01-ADR-077 §理由, V01-ADR-092 §3
+> 由来: V01-ADR-077 §list_records の責務, V01-ADR-077 §理由, V01-ADR-092 §3, V01-ADR-099
 
 ## Record model
 

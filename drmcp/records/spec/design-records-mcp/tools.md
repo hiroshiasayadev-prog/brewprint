@@ -6,8 +6,8 @@ summary: >
   Design Records MCP の read/navigation/guidance tool interface と
   authoring transaction tool interface の責務境界を定義する。
 depends_on:
-  - docs/adr/076-design-records-mcp.md
-  - docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
+  - v01/records/adr/V01-ADR-076-design-records-mcp.md
+  - v01/records/adr/V01-ADR-077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
   - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
   - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
   - docs/adr/090-design-records-mcp-batch-retrieval-tool-boundary.md
@@ -77,7 +77,7 @@ Decision example:
   "kind": "decision",
   "title": "Design Records MCP",
   "status": "accepted",
-  "path": "docs/adr/076-design-records-mcp.md",
+  "path": "v01/records/adr/V01-ADR-076-design-records-mcp.md",
   "decision": {
     "depends_on": ["V01-ADR-050", "V01-ADR-068"],
     "supersedes": [],
@@ -94,7 +94,7 @@ Investigation example:
   "kind": "investigation",
   "title": "Design Records MCP investigation support",
   "status": "concluded",
-  "path": "docs/investigations/mcp/INV-MCP-001-design-records-mcp-investigation-support.md",
+  "path": "v01/records/investigations/mcp/V01-INV-MCP-001-design-records-mcp-investigation-support.md",
   "investigation": {
     "trigger": "V01-ADR-087",
     "scope": "investigation MCP integration",
@@ -113,10 +113,10 @@ Workflow artifact example:
   "kind": "work_item",
   "title": "Workflow artifact MCP support の最小 public contract を判断・実現する",
   "status": "in_progress",
-  "path": "docs/work-items/mcp/WORK-MCP-003-workflow-artifact-mcp-support.md",
+  "path": "v01/records/work-items/mcp/V01-WORK-MCP-003-workflow-artifact-mcp-support.md",
   "work_item": {
     "source_requirement": "V01-REQ-MCP-003",
-    "impact_refs": ["V01-ADR-092", "SPEC-design-records-mcp-tools"],
+    "impact_refs": ["V01-ADR-092", "V01-SPEC-design-records-mcp-tools"],
     "tasks": ["V01-TASK-MCP-003-01", "V01-TASK-MCP-003-02", "V01-TASK-MCP-003-03"]
   }
 }
@@ -182,12 +182,14 @@ MVP request schema:
 
 `id_range` は以下の ID family に適用できる。
 
-| family | effective `kind` | endpoint form | ordering |
+endpoint は public ID（namespace_prefix 付き）で指定する。ordering は namespace_prefix ストリップ後の bare 部分の数値で行う。
+
+| family | effective `kind` | endpoint form（MVP） | ordering |
 |---|---|---|---|
-| decision | `decision` | `ADR-NNN` | `NNN` の数値比較 |
-| requirement | `requirement` | `REQ-<DOMAIN>-NNN` | 同一 `<DOMAIN>` 内の `NNN` 数値比較 |
-| work item | `work_item` | `WORK-<DOMAIN>-NNN` | 同一 `<DOMAIN>` 内の `NNN` 数値比較 |
-| task | `task` | `TASK-<DOMAIN>-NNN-MM` | 同一 `<DOMAIN>` かつ同一 work sequence `NNN` 内の task sequence `MM` 数値比較 |
+| decision | `decision` | `V01-ADR-NNN` | bare `NNN` の数値比較 |
+| requirement | `requirement` | `V01-REQ-<DOMAIN>-NNN` | 同一 `<DOMAIN>` 内の bare `NNN` 数値比較 |
+| work item | `work_item` | `V01-WORK-<DOMAIN>-NNN` | 同一 `<DOMAIN>` 内の bare `NNN` 数値比較 |
+| task | `task` | `V01-TASK-<DOMAIN>-NNN-MM` | 同一 `<DOMAIN>` かつ同一 work sequence `NNN` 内の task sequence `MM` 数値比較 |
 
 `kind` が省略され、かつ `id_range` が指定された場合は、指定された endpoint family から effective `kind` を決める。
 `kind` が指定されている場合、endpoint family は指定 `kind` と一致しなければならない。
@@ -211,7 +213,7 @@ Mixed family、mixed domain、mixed task work sequence、malformed endpoint、�
       "kind": "decision",
       "title": "Design Records MCP",
       "status": "accepted",
-      "path": "docs/adr/076-design-records-mcp.md",
+      "path": "v01/records/adr/V01-ADR-076-design-records-mcp.md",
       "decision": {
         "depends_on": ["V01-ADR-050", "V01-ADR-068"],
         "supersedes": [],
@@ -260,7 +262,7 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
     "kind": "decision",
     "title": "Design Records MCP",
     "status": "accepted",
-    "path": "docs/adr/076-design-records-mcp.md",
+    "path": "v01/records/adr/V01-ADR-076-design-records-mcp.md",
     "decision": {
       "depends_on": ["V01-ADR-050", "V01-ADR-068"],
       "supersedes": [],
@@ -286,7 +288,7 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
     "kind": "decision",
     "title": "Design Records MCP",
     "status": "accepted",
-    "path": "docs/adr/076-design-records-mcp.md",
+    "path": "v01/records/adr/V01-ADR-076-design-records-mcp.md",
     "decision": {
       "depends_on": ["V01-ADR-050", "V01-ADR-068"],
       "supersedes": [],
@@ -318,7 +320,7 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
 {
   "ids": [
     "V01-ADR-077",
-    "SPEC-design-records-mcp-tools",
+    "V01-SPEC-design-records-mcp-tools",
     "V01-INV-DOCS-001",
     "V01-ADR-077",
     "V01-INV-DOCS-999"
@@ -351,7 +353,7 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
         "kind": "decision",
         "title": "Design Records MCP MVP boundary and tool prioritization",
         "status": "accepted",
-        "path": "docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md",
+        "path": "v01/records/adr/V01-ADR-077-design-records-mcp-mvp-boundary-and-tool-prioritization.md",
         "decision": {
           "depends_on": ["V01-ADR-076"],
           "supersedes": [],
@@ -362,14 +364,14 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
       "diagnostics": []
     },
     {
-      "id": "SPEC-design-records-mcp-tools",
+      "id": "V01-SPEC-design-records-mcp-tools",
       "retrieval_status": "found",
       "record": {
-        "id": "SPEC-design-records-mcp-tools",
+        "id": "V01-SPEC-design-records-mcp-tools",
         "kind": "spec",
         "title": "Design Records MCP tools",
         "status": "draft",
-        "path": "docs/spec/design-records-mcp/tools.md",
+        "path": "drmcp/records/spec/design-records-mcp/tools.md",
         "spec": {
           "depends_on": ["V01-ADR-076", "V01-ADR-077", "V01-ADR-087", "V01-ADR-088", "V01-ADR-090", "V01-ADR-092", "V01-ADR-093"]
         },
@@ -385,7 +387,7 @@ ADR 番号から path や本文を取得できることで、候補絞り込み�
         "kind": "investigation",
         "title": "investigation artifact format and lifecycle",
         "status": "concluded",
-        "path": "docs/investigations/docs/INV-DOCS-001-investigation-artifact-format-and-lifecycle.md",
+        "path": "v01/records/investigations/docs/V01-INV-DOCS-001-investigation-artifact-format-and-lifecycle.md",
         "investigation": {
           "trigger": "V01-ADR-085",
           "scope": "investigation artifact format and lifecycle",
@@ -567,18 +569,18 @@ Response MUST NOT expose guide source file path.
 |---|---:|---|---|
 | `ref` | yes | string | 解決対象の canonical reference candidate。前後 whitespace は許容せず、入力文字列をそのまま評価する |
 
-Supported input は以下のみとする。
+Supported input は以下のみとする。record ID-as-ref は index が返す完全 ID（namespace prefix 付き）を使う。MVP では namespace_prefix = `V01-` となる。
 
 | input form | ref kind | lookup source |
 |---|---|---|
 | active `spec:` document-level ref | `semantic_ref` | spec front matter `semantic_refs` |
 | active `spec:` section-level ref | `semantic_ref` | spec front matter `sections` |
-| `ADR-NNN` | `record_id` | `decision` record index |
-| `SPEC-<slug>` | `record_id` | `spec` record index |
-| `INV-<DOMAIN>-NNN` | `record_id` | `investigation` record index |
-| `REQ-<DOMAIN>-NNN` | `record_id` | `requirement` record index |
-| `WORK-<DOMAIN>-NNN` | `record_id` | `work_item` record index |
-| `TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>` | `record_id` | `task` record index |
+| `<namespace_prefix>ADR-NNN`（例: `V01-ADR-097`） | `record_id` | `decision` record index |
+| `<namespace_prefix>SPEC-<slug>`（例: `V01-SPEC-design-records-mcp-overview`） | `record_id` | `spec` record index |
+| `<namespace_prefix>INV-<DOMAIN>-NNN`（例: `V01-INV-MCP-001`） | `record_id` | `investigation` record index |
+| `<namespace_prefix>REQ-<DOMAIN>-NNN`（例: `V01-REQ-MCP-001`） | `record_id` | `requirement` record index |
+| `<namespace_prefix>WORK-<DOMAIN>-NNN`（例: `V01-WORK-DRMCP-001`） | `record_id` | `work_item` record index |
+| `<namespace_prefix>TASK-<DOMAIN>-<WRK>-<TSK>`（例: `V01-TASK-MCP-001-01`） | `record_id` | `task` record index |
 
 `internal-design:` / `coverage:`、`COV-*`、physical path、および grammar に合わない ID form は supported input ではなく、direct query では tool execution error ではなく `status: "unsupported"` を返す。Workflow ID grammar として、requirement / work item sequence および task の work sequence は3桁ゼロ埋め、task sequence は2桁ゼロ埋めとする。`yaml:` は reserved prefix だが、MVP は public resolver input または direct query response behavior を定義しない。
 
@@ -603,7 +605,7 @@ Resolved section-level `spec:` example:
   "status": "resolved",
   "target": {
     "target_type": "section",
-    "path": "docs/spec/concepts/traceability/semantic-ref.md",
+    "path": "v01/records/spec/concepts/traceability/semantic-ref.md",
     "section": "Semantic ref definition"
   },
   "diagnostics": []
@@ -639,7 +641,7 @@ Direct query の `unsupported_reference` は resolver の failure ではなく i
 
 `validate_records` は、Design Records MCP の metadata index が信頼できる状態かを検証する tool である。
 
-record metadata の基本整合性検査に加え、active `spec:` semantic ref、record ID-as-ref (`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*`)、investigation の `source_refs` / 記載済み `follow_up_results` が canonical reference として解決可能であること、および workflow relation field の宣言済み integrity を検査する。
+record metadata の基本整合性検査に加え、active `spec:` semantic ref、record の public ID-as-ref（namespace_prefix 付き完全形。MVP では `V01-ADR-*` / `V01-SPEC-*` / `V01-INV-*` / `V01-REQ-*` / `V01-WORK-*` / `V01-TASK-*` 等）、investigation の `source_refs` / 記載済み `follow_up_results` が canonical reference として解決可能であること、および workflow relation field の宣言済み integrity を検査する。
 `follow_up_candidates` に artifact reference が記載された場合は canonical form を検査する。Canonical form の unresolved candidate は予定された後続 artifact が未作成であることを示す `info` diagnostic とし、physical path による candidate は noncanonical candidate を示す `info` diagnostic とする。
 
 Workflow artifact については、metadata / relation validation に加えて、status-gated required narrative section validation を行う。
@@ -669,7 +671,7 @@ V01-ADR-088 / V01-ADR-092 により、`internal-design:` / `coverage:` / `COV-*`
 request が空の場合、MVP index 対象の全 record を検証する。
 
 `id_range` の endpoint family、effective `kind`、one-sided range、unsupported range の扱いは `list_records` と同じとする。
-したがって `validate_records` でも `REQ-<DOMAIN>-NNN` / `WORK-<DOMAIN>-NNN` / `TASK-<DOMAIN>-NNN-MM` の safe workflow artifact range を指定できる。
+したがって `validate_records` でも public ID 形式の `V01-REQ-<DOMAIN>-NNN` / `V01-WORK-<DOMAIN>-NNN` / `V01-TASK-<DOMAIN>-NNN-MM` の safe workflow artifact range を指定できる。
 `SPEC-*` / `INV-*` range、mixed family、mixed domain、mixed task work sequence、malformed endpoint、および指定 `kind` と endpoint family の不一致は request error とする。
 
 ### Response
@@ -682,7 +684,7 @@ request が空の場合、MVP index 対象の全 record を検証する。
       "category": "missing_required_section",
       "severity": "error",
       "record_id": "V01-WORK-MCP-014",
-      "path": "docs/work-items/mcp/WORK-MCP-014-normalize-propose-record-create-id-fields-body-contract.md",
+      "path": "v01/records/work-items/mcp/V01-WORK-MCP-014-normalize-propose-record-create-id-fields-body-contract.md",
       "message": "required section \"Boundary\" must be non-empty when work_item status is \"done\"",
       "section": "Boundary",
       "status": "done"
@@ -924,7 +926,7 @@ MVP では spec 新規作成の path 提案は扱わない。
   "title": "Design Records MCP implementation package layout",
   "next_id": "V01-ADR-078",
   "next_number": 78,
-  "suggested_path": "docs/adr/078-design-records-mcp-implementation-package-layout.md",
+  "suggested_path": "v01/records/adr/V01-ADR-078-design-records-mcp-implementation-package-layout.md",
   "existing_max_id": "V01-ADR-077"
 }
 ```
@@ -940,7 +942,7 @@ MVP の slug 生成規則は以下とする。
 - 前後の `-` は除去する
 - 非 ASCII 文字は `-` として扱う
 
-slug が空になる場合、`suggested_path` は `docs/adr/{NNN}.md` としてよい。
+slug が空になる場合、`suggested_path` は `v01/records/adr/V01-ADR-{NNN}.md` としてよい。
 `suggested_path` は提案であり、人間が起票時に上書きしてよい。
 
 ## Authoring transaction model
@@ -1152,7 +1154,7 @@ Investigation creation is outside this MVP authoring surface.
 ```json
 {
   "kind": "task",
-  "id": "TASK-MCP-008-new",
+  "id": "V01-TASK-MCP-008-new",
   "domain": "MCP",
   "parent_id": "V01-WORK-MCP-008",
   "title": "MCP tools spec reflection",
@@ -1162,7 +1164,7 @@ Investigation creation is outside this MVP authoring surface.
     "source_requirement": "V01-REQ-MCP-008",
     "estimate": "1d-2d",
     "depends_on": ["V01-TASK-MCP-008-03"],
-    "outputs": ["Updated SPEC-design-records-mcp-tools"]
+    "outputs": ["Updated V01-SPEC-design-records-mcp-tools"]
   },
   "body": "## Goal\n\nReflect the accepted authoring transaction contract in the Design Records MCP tools spec.\n\n## Work\n\n- Update the public tool contract.\n- Record verification evidence.\n\n## Done condition\n\nThe spec documents the current request and response contract.\n\n## Verification\n\n- go test ./internal/designrecords ./internal/designrecordsmcp\n\n## Evidence\n",
   "reciprocal_update_mode": "include_required"
@@ -1201,7 +1203,7 @@ For `new` placeholders, it is the canonical target family and server-side resolu
 When `fields` is present, the MCP renders the record H1 and metadata block from top-level `id`, `title`, server-resolved target identity, and `fields`.
 If `body` is also present, `body` is appended after the generated metadata block as content sections only.
 The `body` must start at the first content section, such as `## Goal`, `## Requirement`, or `## 背景`, and must not include a leading H1, bullet metadata block, YAML metadata, metadata `id`, or guessed resolved ID.
-For `id` placeholders such as `TASK-MCP-008-new`, the generated H1 and metadata must use `target.resolved_id`, not the literal `new` placeholder.
+For `id` placeholders such as `V01-TASK-MCP-008-new`, the generated H1 and metadata must use `target.resolved_id`, not the literal `new` placeholder.
 
 Full-record body create without `fields` is invalid.
 Callers must not submit H1, metadata block, metadata `id`, or guessed server-resolved ID through `body` / `body_cache_id`.
@@ -1221,17 +1223,17 @@ Therefore `domain: "mcp"` and `id: "V01-REQ-MCP-011"` are consistent, while `dom
 
 > 由来: V01-REQ-MCP-011, V01-TASK-MCP-011-01
 
-Allowed `id` placeholder forms:
+Allowed `id` placeholder forms（public ID。namespace_prefix 付き完全形で指定する。MVP では namespace_prefix = `V01-`）:
 
-| kind | allowed create ID forms |
+| kind | allowed create ID forms（MVP） |
 |---|---|
-| `decision` | exact `ADR-NNN` or `ADR-new` |
+| `decision` | exact `V01-ADR-NNN` or `V01-ADR-new` |
 | `spec` | not supported for create in MVP |
-| `requirement` | exact `REQ-<DOMAIN>-NNN` or `REQ-<DOMAIN>-new` |
-| `work_item` | exact `WORK-<DOMAIN>-NNN` or `WORK-<DOMAIN>-new` |
-| `task` | exact `TASK-<DOMAIN>-<WORK-SEQUENCE>-NN` or `TASK-<DOMAIN>-<WORK-SEQUENCE>-new` |
+| `requirement` | exact `V01-REQ-<DOMAIN>-NNN` or `V01-REQ-<DOMAIN>-new` |
+| `work_item` | exact `V01-WORK-<DOMAIN>-NNN` or `V01-WORK-<DOMAIN>-new` |
+| `task` | exact `V01-TASK-<DOMAIN>-<WORK-SEQUENCE>-NN` or `V01-TASK-<DOMAIN>-<WORK-SEQUENCE>-new` |
 
-The `new` placeholder is the literal token `new` in the sequence position. `ADR-new`, `REQ-<DOMAIN>-new`, `WORK-<DOMAIN>-new`, and `TASK-<DOMAIN>-<WORK-SEQUENCE>-new` are the only accepted placeholder forms. Any other token in the sequence position, such as `ADR-newish` or `REQ-MCP-newer`, is treated as malformed and rejected as `invalid_request`.
+The `new` placeholder is the literal token `new` in the sequence position. `V01-ADR-new`, `V01-REQ-<DOMAIN>-new`, `V01-WORK-<DOMAIN>-new`, and `V01-TASK-<DOMAIN>-<WORK-SEQUENCE>-new` are the only accepted placeholder forms. Any other token in the sequence position is treated as malformed and rejected as `invalid_request`.
 
 `new` is valid only for create operations.
 The MCP resolves the final ID using the current record index.
@@ -1251,7 +1253,7 @@ Exact ID gap-warning scopes are:
 | `work_item` | same work item kind and domain | requested `NNN` is greater than current max `NNN` plus one |
 | `task` | same domain and parent work item sequence | requested task `NN` is greater than current max task `NN` plus one |
 
-`decision` / `ADR-*` create is outside this workflow artifact warning scope.
+`decision` / `V01-ADR-*` create is outside this workflow artifact warning scope.
 `new` placeholder create must not emit `exact_id_sequence_gap`, because server-side allocation already uses the current max sequence plus one.
 Exact ID create that fills an existing gap must not emit `exact_id_sequence_gap`; existing duplicate ID checks still reject an exact ID that already exists.
 
@@ -1281,12 +1283,12 @@ Unsafe or ambiguous cases (missing parent, ambiguous parent resolution) remain b
   "operation": "create",
   "target_kind": "task",
   "target": {
-    "requested_id": "TASK-MCP-008-new",
+    "requested_id": "V01-TASK-MCP-008-new",
     "resolved_id": "V01-TASK-MCP-008-04",
     "kind": "task",
     "domain": "MCP",
     "parent_id": "V01-WORK-MCP-008",
-    "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md"
+    "path": "v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md"
   },
   "expires_at": "2026-06-05T00:00:00Z",
   "retention_days": 3,
@@ -1294,13 +1296,13 @@ Unsafe or ambiguous cases (missing parent, ambiguous parent resolution) remain b
     "format": "unified",
     "files": [
       {
-        "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md",
+        "path": "v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md",
         "change": "create",
         "record_id": "V01-TASK-MCP-008-04",
         "record_kind": "task"
       }
     ],
-    "text": "--- /dev/null\n+++ docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md\n..."
+    "text": "--- /dev/null\n+++ v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md\n..."
   },
   "validation": {
     "ok": true,
@@ -1343,7 +1345,7 @@ Exact ID sequence-gap warning example:
     {
       "category": "exact_id_sequence_gap",
       "severity": "info",
-      "message": "V01-REQ-MCP-020 skips the next available sequence V01-REQ-MCP-019; prefer REQ-MCP-new unless this ID is intentional"
+      "message": "V01-REQ-MCP-020 skips the next available sequence V01-REQ-MCP-019; prefer V01-REQ-MCP-new unless this ID is intentional"
     }
   ]
 }
@@ -1382,7 +1384,7 @@ Metadata block replacement:
       "source_requirement": "V01-REQ-MCP-008",
       "estimate": "1d-2d",
       "depends_on": ["V01-TASK-MCP-008-03"],
-      "outputs": ["Updated SPEC-design-records-mcp-tools"]
+      "outputs": ["Updated V01-SPEC-design-records-mcp-tools"]
     }
   }
 }
@@ -1553,14 +1555,14 @@ Spec metadata block replacement example:
 ```json
 {
   "kind": "spec",
-  "id": "SPEC-design-records-mcp-tools",
+  "id": "V01-SPEC-design-records-mcp-tools",
   "update": {
     "type": "metadata_block_replace",
     "metadata": {
-      "scope": "docs/spec/design-records-mcp/tools.md",
+      "scope": "drmcp/records/spec/design-records-mcp/tools.md",
       "status": "draft",
       "design_record": {
-        "id": "SPEC-design-records-mcp-tools",
+        "id": "V01-SPEC-design-records-mcp-tools",
         "kind": "spec",
         "status": "draft",
         "depends_on": ["V01-ADR-076", "V01-ADR-077", "V01-ADR-087", "V01-ADR-088", "V01-ADR-090", "V01-ADR-092", "V01-ADR-093"]
@@ -1688,7 +1690,7 @@ Metadata block replacement response example:
     "resolved_id": "V01-TASK-MCP-008-04",
     "kind": "task",
     "domain": "MCP",
-    "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md"
+    "path": "v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md"
   },
   "expires_at": "2026-06-05T00:00:00Z",
   "retention_days": 3,
@@ -1696,13 +1698,13 @@ Metadata block replacement response example:
     "format": "unified",
     "files": [
       {
-        "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md",
+        "path": "v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md",
         "change": "modify",
         "record_id": "V01-TASK-MCP-008-04",
         "record_kind": "task"
       }
     ],
-    "text": "diff --git a/docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md b/docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md\nindex oldhash..newhash 100644\n--- a/docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md\n+++ b/docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md\n@@ -1,7 +1,7 @@\n # V01-TASK-MCP-008-04: MCP tools spec reflection\n \n - **id**: V01-TASK-MCP-008-04\n-- **status**: todo\n+- **status**: done\n - **date**: 2026-06-01\n"
+    "text": "diff --git a/v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md b/v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md\nindex oldhash..newhash 100644\n--- a/v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md\n+++ b/v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md\n@@ -1,7 +1,7 @@\n # V01-TASK-MCP-008-04: MCP tools spec reflection\n \n - **id**: V01-TASK-MCP-008-04\n-- **status**: todo\n+- **status**: done\n - **date**: 2026-06-01\n"
   },
   "validation": {
     "ok": true,
@@ -1725,7 +1727,7 @@ No-op metadata field replacement response example:
     "resolved_id": "V01-TASK-MCP-008-04",
     "kind": "task",
     "domain": "MCP",
-    "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md"
+    "path": "v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md"
   },
   "validation": {
     "ok": true,
@@ -1736,7 +1738,7 @@ No-op metadata field replacement response example:
       "category": "no_op_update",
       "severity": "info",
       "record_id": "V01-TASK-MCP-008-04",
-      "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md",
+      "path": "v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md",
       "message": "update produced no persisted content changes"
     }
   ]
@@ -1799,7 +1801,7 @@ This is the only Design Records MCP authoring tool that may write repository fil
   "written": true,
   "files_written": [
     {
-      "path": "docs/tasks/mcp/TASK-MCP-008-04-mcp-tools-spec-reflection.md",
+      "path": "v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md",
       "record_id": "V01-TASK-MCP-008-04",
       "record_kind": "task"
     }
