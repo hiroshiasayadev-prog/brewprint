@@ -248,7 +248,11 @@ func TestToolsCallValidateWorkflowMetadataDiagnosticShape(t *testing.T) {
 	root := t.TempDir()
 	writeToolsCallTestFile(t, root, "docs/work-items/mcp/WORK-MCP-006-test.md", "# WORK-MCP-006: Test\n- **id**: WORK-MCP-006\n- **status**: in_progress\n- **date**: 2026-06-01\n- **source_requirement**:\n- **impact_refs**:\n- **tasks**:\n")
 
-	server := NewServerWithIndexBuilder(designrecords.Config{Root: root, RecordsRoot: "docs"}, func(ctx context.Context, cfg designrecords.Config) (*designrecords.Index, error) {
+	docsCfg, err := designrecords.NewConfig(root, "docs")
+	if err != nil {
+		t.Fatalf("NewConfig: %v", err)
+	}
+	server := NewServerWithIndexBuilder(docsCfg, func(ctx context.Context, cfg designrecords.Config) (*designrecords.Index, error) {
 		return designrecords.BuildIndex(ctx, cfg)
 	})
 

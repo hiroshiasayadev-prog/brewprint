@@ -146,8 +146,9 @@ type SemanticRefSource struct {
 
 type Index struct {
 	Root               string              `json:"root"`
-	NamespacePrefix    string              `json:"-"`
-	RecordsRoot        string              `json:"-"`
+	NamespacePrefix    string              `json:"-"` // primary namespace prefix (first entry)
+	RecordsRoot        string              `json:"-"` // primary records root (first entry)
+	RecordsEntries     []RecordsEntry      `json:"-"` // all namespace records trees
 	Records            []Record            `json:"records"`
 	Diagnostics        []Diagnostic        `json:"diagnostics,omitempty"`
 	Candidates         []RecordCandidate   `json:"-"`

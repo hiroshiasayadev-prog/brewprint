@@ -10,6 +10,8 @@ import (
 )
 
 // BuildIndex discovers design record and workflow artifact Markdown records.
+// It iterates over all records trees in cfg.RecordsRoots and merges results into
+// a single unified index.
 func BuildIndex(ctx context.Context, cfg Config) (*Index, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -18,12 +20,11 @@ func BuildIndex(ctx context.Context, cfg Config) (*Index, error) {
 	if err != nil {
 		return nil, err
 	}
-	ns := normalized.NamespacePrefix()
-	recordsRootAbs := filepath.Join(normalized.Root, filepath.FromSlash(normalized.RecordsRoot))
 	idx := &Index{
 		Root:               normalized.Root,
-		NamespacePrefix:    ns,
-		RecordsRoot:        normalized.RecordsRoot,
+		NamespacePrefix:    normalized.NamespacePrefix(),
+		RecordsRoot:        normalized.primaryRecordsRoot(),
+		RecordsEntries:     normalized.RecordsRoots,
 		Records:            []Record{},
 		Diagnostics:        []Diagnostic{},
 		Candidates:         []RecordCandidate{},
@@ -32,23 +33,27 @@ func BuildIndex(ctx context.Context, cfg Config) (*Index, error) {
 		SemanticRefs:       []SemanticRefDecl{},
 		SemanticRefSources: []SemanticRefSource{},
 	}
-	if err := discoverADRRecords(ctx, normalized.Root, recordsRootAbs, ns, idx); err != nil {
-		return nil, err
-	}
-	if err := discoverSpecRecords(ctx, normalized.Root, recordsRootAbs, idx); err != nil {
-		return nil, err
-	}
-	if err := discoverInvestigationRecords(ctx, normalized.Root, recordsRootAbs, ns, idx); err != nil {
-		return nil, err
-	}
-	if err := discoverRequirementRecords(ctx, normalized.Root, recordsRootAbs, ns, idx); err != nil {
-		return nil, err
-	}
-	if err := discoverWorkItemRecords(ctx, normalized.Root, recordsRootAbs, ns, idx); err != nil {
-		return nil, err
-	}
-	if err := discoverTaskRecords(ctx, normalized.Root, recordsRootAbs, ns, idx); err != nil {
-		return nil, err
+	for _, entry := range normalized.RecordsRoots {
+		ns := entry.NamespacePrefix
+		recordsRootAbs := filepath.Join(normalized.Root, filepath.FromSlash(entry.RecordsRoot))
+		if err := discoverADRRecords(ctx, normalized.Root, recordsRootAbs, ns, idx); err != nil {
+			return nil, err
+		}
+		if err := discoverSpecRecords(ctx, normalized.Root, recordsRootAbs, idx); err != nil {
+			return nil, err
+		}
+		if err := discoverInvestigationRecords(ctx, normalized.Root, recordsRootAbs, ns, idx); err != nil {
+			return nil, err
+		}
+		if err := discoverRequirementRecords(ctx, normalized.Root, recordsRootAbs, ns, idx); err != nil {
+			return nil, err
+		}
+		if err := discoverWorkItemRecords(ctx, normalized.Root, recordsRootAbs, ns, idx); err != nil {
+			return nil, err
+		}
+		if err := discoverTaskRecords(ctx, normalized.Root, recordsRootAbs, ns, idx); err != nil {
+			return nil, err
+		}
 	}
 	return idx, nil
 }

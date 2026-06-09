@@ -575,13 +575,15 @@ func prepareCreate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 	if mode != "include_required" && mode != "report_required_follow_up" {
 		return authoringPreparation{}, fmt.Errorf("unsupported reciprocal_update_mode %q", req.ReciprocalUpdateMode)
 	}
-	resolvedBare, domain, err := resolveCreateID(idx, req.Kind, req.ID, req.Domain, req.ParentID)
+	// Detect target namespace from requested ID (supports namespace-prefixed placeholders, e.g. DRMCP-REQ-MCP-new).
+	createNS, bareReqID := detectCreateNamespace(idx, req.ID)
+	resolvedBare, domain, err := resolveCreateID(idx, req.Kind, bareReqID, req.Domain, req.ParentID, createNS)
 	if err != nil {
 		return authoringPreparation{}, err
 	}
 	// Apply namespace prefix so file content and paths use the public ID (e.g. V01-TASK-X-Y-01).
 	// resolvedBare is kept without prefix for internal sequence comparisons (exactIDGapWarning).
-	resolved := idx.NamespacePrefix + resolvedBare
+	resolved := createNS + resolvedBare
 	if err := validateCreateFieldsID(req.Kind, req.ID, req.Fields); err != nil {
 		return authoringPreparation{}, err
 	}
@@ -613,7 +615,7 @@ func prepareCreate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 			return authoringPreparation{}, renderErr
 		}
 	}
-	path := createRecordPath(cfg, req.Kind, resolved, req.Title, domain)
+	path := createRecordPath(recordsRootForNamespace(cfg, createNS), req.Kind, resolved, req.Title, domain)
 	file := ProposedFile{Path: path, Change: "create", RecordID: resolved, RecordKind: req.Kind, BaseHash: "", Content: ensureTrailingNewline(content)}
 	prep := authoringPreparation{
 		target: AuthoringTarget{RequestedID: req.ID, ResolvedID: resolved, Kind: req.Kind, Domain: domain, ParentID: req.ParentID, Path: path},
@@ -691,7 +693,7 @@ func prepareUpdate(ctx context.Context, cfg Config, idx *Index, req ProposeRecor
 			RequestedID: req.ID,
 			ResolvedID:  record.ID,
 			Kind:        record.Kind,
-			Domain:      workflowDomain(bareRecordID(record.ID, idx.NamespacePrefix)),
+			Domain:      workflowDomain(bareRecordID(record.ID, namespacePrefixForID(idx, record.ID))),
 			Path:        record.Path,
 		},
 		files:       []ProposedFile{file},
@@ -830,7 +832,7 @@ func prepareMultiOpUpdate(ctx context.Context, cfg Config, idx *Index, req Propo
 			RequestedID: req.ID,
 			ResolvedID:  record.ID,
 			Kind:        record.Kind,
-			Domain:      workflowDomain(bareRecordID(record.ID, idx.NamespacePrefix)),
+			Domain:      workflowDomain(bareRecordID(record.ID, namespacePrefixForID(idx, record.ID))),
 			Path:        record.Path,
 		},
 		files:       []ProposedFile{file},
@@ -945,11 +947,11 @@ func resolveBodySource(store *AuthoringStore, body *string, bodyCacheID string, 
 	return &bodyValue, &publicEntry, nil, true
 }
 
-func resolveCreateID(idx *Index, kind RecordKind, requestedID, requestedDomain, parentID string) (string, string, error) {
+func resolveCreateID(idx *Index, kind RecordKind, requestedID, requestedDomain, parentID, ns string) (string, string, error) {
 	switch kind {
 	case RecordKindDecision:
 		if createDecisionPlaceholderPattern.MatchString(requestedID) {
-			next, _ := nextDecisionID(idx)
+			next, _ := nextDecisionID(idx, ns)
 			return next, "", nil
 		}
 		if _, ok := decisionRecordNumber(requestedID); ok {
@@ -962,7 +964,7 @@ func resolveCreateID(idx *Index, kind RecordKind, requestedID, requestedDomain, 
 			if !domainMatches(requestedDomain, domain) {
 				return "", "", fmt.Errorf("domain %q does not match ID domain %q", requestedDomain, domain)
 			}
-			return nextWorkflowID(idx, RecordKindRequirement, domain), domain, nil
+			return nextWorkflowID(idx, RecordKindRequirement, domain, ns), domain, nil
 		}
 		if !validWorkflowIDForKind(requestedID, kind) {
 			return "", "", fmt.Errorf("invalid requirement create ID %q", requestedID)
@@ -978,7 +980,7 @@ func resolveCreateID(idx *Index, kind RecordKind, requestedID, requestedDomain, 
 			if !domainMatches(requestedDomain, domain) {
 				return "", "", fmt.Errorf("domain %q does not match ID domain %q", requestedDomain, domain)
 			}
-			return nextWorkflowID(idx, RecordKindWorkItem, domain), domain, nil
+			return nextWorkflowID(idx, RecordKindWorkItem, domain, ns), domain, nil
 		}
 		if !validWorkflowIDForKind(requestedID, kind) {
 			return "", "", fmt.Errorf("invalid work item create ID %q", requestedID)
@@ -996,7 +998,7 @@ func resolveCreateID(idx *Index, kind RecordKind, requestedID, requestedDomain, 
 		if parent == nil {
 			return "", "", fmt.Errorf("parent work item %s was not found", parentID)
 		}
-		parentBare := strings.TrimPrefix(parentID, idx.NamespacePrefix)
+		parentBare := strings.TrimPrefix(parentID, namespacePrefixForID(idx, parentID))
 		parentDomain := workflowDomain(parentBare)
 		parentSeq := workflowSequence(parentBare)
 		if match := createTaskPlaceholderPattern.FindStringSubmatch(requestedID); match != nil {
@@ -1006,7 +1008,7 @@ func resolveCreateID(idx *Index, kind RecordKind, requestedID, requestedDomain, 
 			if !domainMatches(requestedDomain, parentDomain) {
 				return "", "", fmt.Errorf("domain %q does not match parent domain %q", requestedDomain, parentDomain)
 			}
-			return nextTaskID(idx, parentDomain, parentSeq), parentDomain, nil
+			return nextTaskID(idx, parentDomain, parentSeq, ns), parentDomain, nil
 		}
 		if !validWorkflowIDForKind(requestedID, kind) {
 			return "", "", fmt.Errorf("invalid task create ID %q", requestedID)
@@ -1705,6 +1707,8 @@ func buildHypotheticalIndex(idx *Index, files []ProposedFile) *Index {
 	hyp := &Index{
 		Root:            idx.Root,
 		NamespacePrefix: idx.NamespacePrefix,
+		RecordsRoot:     idx.RecordsRoot,
+		RecordsEntries:  idx.RecordsEntries,
 		Records:            []Record{},
 		Candidates:         []RecordCandidate{},
 		ParseIssues:        []ParseIssue{},
@@ -1742,7 +1746,8 @@ func buildHypotheticalIndex(idx *Index, files []ProposedFile) *Index {
 		}
 	}
 	for _, file := range files {
-		record, candidate, issues := parseRecordByPath(file.Path, file.Content, idx.NamespacePrefix, idx.RecordsRoot)
+		fileNS, fileRecordsRoot := entryForPath(hyp, file.Path)
+		record, candidate, issues := parseRecordByPath(file.Path, file.Content, fileNS, fileRecordsRoot)
 		if candidate.Path != "" {
 			hyp.Candidates = append(hyp.Candidates, candidate)
 		}
@@ -2194,7 +2199,7 @@ func exactIDGapWarning(idx *Index, kind RecordKind, requestedID, resolvedID, dom
 		if err != nil {
 			return nil
 		}
-		parentBareParts := bareRecordID(parentID, idx.NamespacePrefix)
+		parentBareParts := bareRecordID(parentID, namespacePrefixForID(idx, parentID))
 		parentDomain := workflowDomain(parentBareParts)
 		parentWorkSeq := workflowSequence(parentBareParts)
 		maxSeq := maxTaskSeqForParent(idx, parentDomain, parentWorkSeq)
@@ -2216,7 +2221,7 @@ func exactIDGapWarning(idx *Index, kind RecordKind, requestedID, resolvedID, dom
 func maxWorkflowSeq(idx *Index, kind RecordKind, domain string) int {
 	maxNum := 0
 	for _, record := range idx.Records {
-		bare := bareRecordID(record.ID, idx.NamespacePrefix)
+		bare := bareRecordID(record.ID, namespacePrefixForID(idx, record.ID))
 		if record.Kind != kind || workflowDomain(bare) != domain {
 			continue
 		}
@@ -2231,7 +2236,7 @@ func maxWorkflowSeq(idx *Index, kind RecordKind, domain string) int {
 func maxTaskSeqForParent(idx *Index, domain, workSeq string) int {
 	maxNum := 0
 	for _, record := range idx.Records {
-		bare := bareRecordID(record.ID, idx.NamespacePrefix)
+		bare := bareRecordID(record.ID, namespacePrefixForID(idx, record.ID))
 		if record.Kind != RecordKindTask || workflowDomain(bare) != domain || workflowSequence(bare) != workSeq {
 			continue
 		}
@@ -2295,13 +2300,12 @@ func readRepoFile(cfg Config, rel string) (string, error) {
 	return string(data), nil
 }
 
-func createRecordPath(cfg Config, kind RecordKind, id, title, domain string) string {
+func createRecordPath(root string, kind RecordKind, id, title, domain string) string {
 	slug := slugifyRecordTitle(title)
 	suffix := ".md"
 	if slug != "" {
 		suffix = "-" + slug + ".md"
 	}
-	root := filepath.ToSlash(cfg.RecordsRoot)
 	switch kind {
 	case RecordKindDecision:
 		return root + "/adr/" + id + suffix
@@ -2325,13 +2329,16 @@ func findRecordByIDKind(idx *Index, id string, kind RecordKind) *Record {
 	return nil
 }
 
-func nextDecisionID(idx *Index) (string, int) {
+func nextDecisionID(idx *Index, ns string) (string, int) {
 	maxNum := 0
 	for _, record := range idx.Records {
 		if record.Kind != RecordKindDecision {
 			continue
 		}
-		num, ok := decisionRecordNumber(bareRecordID(record.ID, idx.NamespacePrefix))
+		if namespacePrefixForID(idx, record.ID) != ns {
+			continue
+		}
+		num, ok := decisionRecordNumber(bareRecordID(record.ID, ns))
 		if ok && num > maxNum {
 			maxNum = num
 		}
@@ -2339,10 +2346,13 @@ func nextDecisionID(idx *Index) (string, int) {
 	return fmt.Sprintf("ADR-%03d", maxNum+1), maxNum + 1
 }
 
-func nextWorkflowID(idx *Index, kind RecordKind, domain string) string {
+func nextWorkflowID(idx *Index, kind RecordKind, domain, ns string) string {
 	maxNum := 0
 	for _, record := range idx.Records {
-		bare := bareRecordID(record.ID, idx.NamespacePrefix)
+		if namespacePrefixForID(idx, record.ID) != ns {
+			continue
+		}
+		bare := bareRecordID(record.ID, ns)
 		if record.Kind != kind || workflowDomain(bare) != domain {
 			continue
 		}
@@ -2358,10 +2368,13 @@ func nextWorkflowID(idx *Index, kind RecordKind, domain string) string {
 	return fmt.Sprintf("%s-%s-%03d", prefix, domain, maxNum+1)
 }
 
-func nextTaskID(idx *Index, domain, workSeq string) string {
+func nextTaskID(idx *Index, domain, workSeq, ns string) string {
 	maxNum := 0
 	for _, record := range idx.Records {
-		bare := bareRecordID(record.ID, idx.NamespacePrefix)
+		if namespacePrefixForID(idx, record.ID) != ns {
+			continue
+		}
+		bare := bareRecordID(record.ID, ns)
 		if record.Kind != RecordKindTask || workflowDomain(bare) != domain || workflowSequence(bare) != workSeq {
 			continue
 		}
@@ -2380,7 +2393,7 @@ func collectSubdomainValues(idx *Index, domain string) []string {
 	seen := map[string]bool{}
 	var values []string
 	for _, r := range idx.Records {
-		if workflowDomain(bareRecordID(r.ID, idx.NamespacePrefix)) != domain {
+		if workflowDomain(bareRecordID(r.ID, namespacePrefixForID(idx, r.ID))) != domain {
 			continue
 		}
 		var sub *string
@@ -2402,7 +2415,7 @@ func collectSubdomainValues(idx *Index, domain string) []string {
 }
 
 func subdomainAdvisoryDiagnostics(idx *Index, id, subdomain string) []Diagnostic {
-	domain := workflowDomain(bareRecordID(id, idx.NamespacePrefix))
+	domain := workflowDomain(bareRecordID(id, namespacePrefixForID(idx, id)))
 	if domain == "" || subdomain == "" {
 		return nil
 	}
@@ -2719,4 +2732,53 @@ func rawMetadataScalarValue(raw, key string) string {
 		}
 	}
 	return ""
+}
+
+// namespacePrefixForID returns the namespace prefix for the given record ID
+// by finding the first entry in idx.RecordsEntries whose prefix is a prefix of the ID.
+// Falls back to idx.NamespacePrefix when no entry matches.
+func namespacePrefixForID(idx *Index, id string) string {
+	for _, e := range idx.RecordsEntries {
+		if e.NamespacePrefix != "" && strings.HasPrefix(id, e.NamespacePrefix) {
+			return e.NamespacePrefix
+		}
+	}
+	return idx.NamespacePrefix
+}
+
+// detectCreateNamespace determines the target namespace for a create request by
+// stripping any matching namespace prefix from id. Returns the namespace prefix
+// and the bare ID (without namespace). Falls back to the primary namespace.
+func detectCreateNamespace(idx *Index, id string) (ns, bareID string) {
+	for _, e := range idx.RecordsEntries {
+		if e.NamespacePrefix != "" && strings.HasPrefix(id, e.NamespacePrefix) {
+			return e.NamespacePrefix, strings.TrimPrefix(id, e.NamespacePrefix)
+		}
+	}
+	return idx.NamespacePrefix, id
+}
+
+// recordsRootForNamespace returns the records root path (slash-separated) for the
+// given namespace prefix. Falls back to the primary records root.
+func recordsRootForNamespace(cfg Config, ns string) string {
+	for _, e := range cfg.RecordsRoots {
+		if e.NamespacePrefix == ns {
+			return filepath.ToSlash(e.RecordsRoot)
+		}
+	}
+	return filepath.ToSlash(cfg.primaryRecordsRoot())
+}
+
+// entryForPath returns the namespace prefix and records root for a proposed file
+// by matching the file path against each entry's records root.
+// Falls back to the primary namespace and records root.
+func entryForPath(idx *Index, path string) (ns, recordsRoot string) {
+	slashPath := filepath.ToSlash(path)
+	for _, e := range idx.RecordsEntries {
+		prefix := filepath.ToSlash(e.RecordsRoot) + "/"
+		if strings.HasPrefix(slashPath, prefix) {
+			return e.NamespacePrefix, e.RecordsRoot
+		}
+	}
+	return idx.NamespacePrefix, idx.RecordsRoot
 }

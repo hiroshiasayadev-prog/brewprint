@@ -1,7 +1,7 @@
 ---
 scope: docs/spec/design-records-mcp/overview.md
 status: draft
-last_updated: 2026-05-27
+last_updated: 2026-06-09
 summary: >
   Design Records MCP の目的、対象範囲、既存 brewprint MCP との責務境界、
   MVP の非目標を定義する。
@@ -23,6 +23,8 @@ design_record:
     - V01-ADR-088
     - V01-ADR-090
     - V01-ADR-092
+    - V01-ADR-097
+    - V01-ADR-099
 ---
 
 # Design Records MCP overview
@@ -48,7 +50,7 @@ Design Records MCP は、その関係を機械的に辿りやすくする query 
 
 ## 対象 record
 
-index / query / validation 対象は以下とする。パスは `<records_root>` からの相対。MVP では `records_root = v01/records`、`namespace_prefix = V01-`。
+index / query / validation 対象は以下とする。パスは `<records_root>` からの相対。`records_root` と `namespace_prefix` は app namespace ディレクトリから導出される。public ID 例は `namespace_prefix = V01-` の場合。
 
 | kind | discovery パス | public ID 例 |
 |---|---|---|
@@ -101,9 +103,11 @@ Resolver の public tool 名は `resolve_reference` とし、active `spec:` sema
 
 ## Record scanning と namespace prefix
 
-Design Records MCP は、リポジトリ内の1つの app namespace の records ツリーをスキャンして index を構築する。スキャン対象は `--records-root` フラグで指定する。
+Design Records MCP は、リポジトリ内の複数の app namespace records ツリーをスキャンして統合 index を構築する。
 
-**MVP のスキャン対象は `v01/records` のみ（デフォルト）とする。** namespace prefix は `V01-` となる。
+デフォルト動作: `design-records-mcp --root <repo>` の単一起動で、リポジトリ内の全 `*/records/` ディレクトリを自動検出し、各 namespace prefix を導出して統合 index を構築する。
+
+`--records-root <path>` を明示した場合は、指定した単一 records ツリーだけを対象とする単一 root モードとして動作する（backward compat）。
 
 ### records_root と namespace prefix 導出
 
@@ -111,19 +115,12 @@ Design Records MCP は、リポジトリ内の1つの app namespace の records 
 
 導出式: `namespace_prefix = strings.ToUpper(appNamespaceDir) + "-"`
 
-MVP での適用:
+適用例:
 
 | records_root | appNamespaceDir | namespace_prefix |
 |---|---|---|
 | `v01/records` | `v01` | `V01-` |
-
-将来の app namespace 対応（MVP 外）での導出式適用例（参考）:
-
-| records_root | appNamespaceDir | namespace_prefix |
-|---|---|---|
 | `drmcp/records` | `drmcp` | `DRMCP-` |
-
-注: 現時点の `drmcp/records/` 配下のファイルは `V01-SPEC-*` ID を持つ移管前コンテンツであり、`drmcp/records` を records_root として使用するには別途ファイル名・ID の re-prefixing が必要となる。この対応は MVP 外とする。
 
 ### kind 別 prefix 適用箇所
 
@@ -140,7 +137,13 @@ parser は kind 別の適用箇所から namespace prefix をストリップし�
 
 ### multi-root スキャン
 
-複数の app namespace records ツリーを同時にスキャンする機能は MVP 外とする。MVP では1プロセスにつき1つの records_root だけを index し、別 root の record は未スキャンとして扱う。root 間の merge / duplicate detection / cross-root relation validation は行わない。
+`design-records-mcp --root <repo>` を起動すると、リポジトリ内の全 `*/records/` ディレクトリを自動検出して統合 index を構築する。各 records ツリーの namespace prefix はディレクトリ名から機械的に導出され、record は自身の namespace prefix を持つ public ID で識別される。異なる app namespace の record を同一クエリで取得・参照解決できる。
+
+`--records-root <path>` を明示した場合は、指定した単一 records ツリーのみを対象とする単一 root モードとして動作する。
+
+cross-namespace relation（例: V01 の record が DRMCP namespace の record を参照する）は index が保持し、`resolve_reference` / `validate_records` が解決できる。
+
+namespace prefix が異なる record 間で public ID は衝突しない。
 
 > 由来: V01-ADR-097, V01-ADR-099
 

@@ -43,8 +43,9 @@ func run(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) err
 
 	fmt.Fprintln(stdout, "design-records-mcp ready")
 	fmt.Fprintf(stdout, "root: %s\n", idx.Root)
-	fmt.Fprintf(stdout, "records root: %s\n", cfg.RecordsRoot)
-	fmt.Fprintf(stdout, "namespace prefix: %s\n", cfg.NamespacePrefix())
+	for _, e := range idx.RecordsEntries {
+		fmt.Fprintf(stdout, "records: %s (prefix: %s)\n", e.RecordsRoot, e.NamespacePrefix)
+	}
 	fmt.Fprintf(stdout, "records: %d\n", len(idx.Records))
 	return nil
 }
