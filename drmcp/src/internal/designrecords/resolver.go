@@ -25,10 +25,23 @@ const (
 
 func resolveReference(idx *Index, ref string) ResolveReferenceResponse {
 	kind := classifyReference(ref)
-	if kind == refKindUnsupported && idx.NamespacePrefix != "" {
-		// Accept fully-qualified public IDs like "V01-ADR-088" when ns="V01-"
-		if bare := strings.TrimPrefix(ref, idx.NamespacePrefix); bare != ref && isSupportedRecordIDReference(bare) {
-			kind = refKindRecordID
+	if kind == refKindUnsupported {
+		// Accept fully-qualified public IDs for any known namespace prefix.
+		// e.g. "V01-ADR-088", "PRODUCT-REQ-SPEC-001", "DRMCP-WORK-MCP-001"
+		for _, e := range idx.RecordsEntries {
+			if e.NamespacePrefix == "" {
+				continue
+			}
+			if bare := strings.TrimPrefix(ref, e.NamespacePrefix); bare != ref && isSupportedRecordIDReference(bare) {
+				kind = refKindRecordID
+				break
+			}
+		}
+		// Fallback: single-root / backward-compat path when RecordsEntries is empty.
+		if kind == refKindUnsupported && idx.NamespacePrefix != "" {
+			if bare := strings.TrimPrefix(ref, idx.NamespacePrefix); bare != ref && isSupportedRecordIDReference(bare) {
+				kind = refKindRecordID
+			}
 		}
 	}
 	switch kind {
