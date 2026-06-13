@@ -8,6 +8,17 @@
 - spec: `C:\Users\imved\projects\brewprint\v01\records\spec`
 - uc: `C:\Users\imved\projects\brewprint\v01\records\uc`
 
+**Namespace policy**: `v01/records` は read-only snapshot。新規 REQ / WORK / TASK / ADR は `product/records`・`drmcp/records`・`bpdsl/records` のいずれかに作る。v01/records への新規起票は禁止。
+
+## Chat style
+
+- タメ語・簡潔に。
+- 列挙等の文脈を伴わない場面では体言止め推奨。
+- 応答冒頭の同調・肯定フレーズ（「なるほど」「いい視点ですね」等）、末尾のまとめ・感謝は入れない。
+- 社交目的の同調リフレーズ禁止。認識確認が必要な場合のみ可。
+- 技術的不確実性の表現（「可能性がある」「確信度が低い」等）は残す。
+- ユーザーが英語で書いた場合、本題に入る前に自然な言い換えを1ブロックで示す。意味が明確な場合はスキップしてよい。講義形式にしない。
+
 ## Startup
 
 - 回答は日本語。
@@ -42,6 +53,7 @@
 - `SPEC-new` / spec skeleton create は MVP 外なので、必要なら REQ-MCP-010 系の placement discovery follow-up として扱う。
 - authoring transaction tool が未対応・失敗・曖昧な場合だけ、理由を明記して filesystem edit に fallback する。
 - `propose_record_create` で新規 REQ / WORK / TASK を作る場合は、デフォルトで `*-new` placeholder を使う。ユーザーが exact ID を明示した場合、または番号予約が確認済みの場合だけ exact ID を使う。
+- 起票先 namespace を明示する: drmcp に作る場合は `DRMCP-REQ-MCP-new`、product に作る場合は `PRODUCT-REQ-MCP-new` のように、namespace prefix を含む ID を `propose_record_create` の `id` に渡す。prefix 無しの `REQ-MCP-new` では auto-detect の先頭 namespace（アルファベット順）に routing される可能性があるため使用しない。
 - WORK / TASK を起票する前に、`get_authoring_guidance` で対応 kind のガイド（`work-item-authoring` / `task-authoring`）を読む。body に渡すセクション構成と TBD placeholder ルールを確認してから `propose_record_create` を呼ぶ。
 
 ## Design Records MCP write common rules
@@ -122,6 +134,7 @@ Bash / 各ツールで直接実行できない作業、または独立レビュ�
   4. HANDOFF / TASKS / overview
   5. 過去会話上の推測
 - 補助文書がspec/ADRと矛盾する場合は docs stale として扱う。
+- 次のタスクが指示・文書から明確に定まらない場合: ある程度の確信があれば候補を箇条書きで列挙、確信できなければ何がわからないかを聞き返す。
 
 ## Logical consistency
 
