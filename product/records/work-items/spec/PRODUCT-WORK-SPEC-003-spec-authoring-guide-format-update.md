@@ -1,7 +1,7 @@
 # PRODUCT-WORK-SPEC-003: Spec authoring guide format update
 
 - **id**: PRODUCT-WORK-SPEC-003
-- **status**: not_started
+- **status**: done
 - **date**: 2026-06-10
 - **requirement_refs**:
   - PRODUCT-REQ-SPEC-001
