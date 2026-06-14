@@ -36,6 +36,10 @@
 - If evidence is insufficient, read the full file.
 - Only ask the user when no basis exists in docs.
 
+## Design Records MCP — current status
+
+DRMCP is currently non-operational due to namespace enactment in progress. Fall back to filesystem operations for all record retrieval, authoring, and validation tasks until further notice.
+
 ## Design Records first rule
 
 - When the user specifies a design record / workflow artifact ID such as `ADR-*`, `REQ-*`, `WORK-*`, `TASK-*`, `INV-*`, `SPEC-*`, use the Design Records MCP first.
