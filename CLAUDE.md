@@ -2,13 +2,26 @@
 
 ## Paths
 
-- repo: `C:\Users\imved\projects\brewprint`
-- records: `C:\Users\imved\projects\brewprint\v01\records`
-- adr: `C:\Users\imved\projects\brewprint\v01\records\adr`
-- spec: `C:\Users\imved\projects\brewprint\v01\records\spec`
-- uc: `C:\Users\imved\projects\brewprint\v01\records\uc`
+- repo root: `C:\Users\imved\projects\brewprint`
+- v01 records (read-only snapshot): `v01/records/`
 
-**Namespace policy**: `v01/records` is a read-only snapshot. New REQ / WORK / TASK / ADR must be created in `product/records`, `drmcp/records`, or `bpdsl/records`. Creating new records in `v01/records` is prohibited.
+### Active namespaces
+
+`product`, `drmcp`, `bpdsl`
+
+Each namespace uses this layout under `<namespace>/records/`:
+
+| directory | contents |
+|---|---|
+| `spec/` | Specifications, organized by topic area under `concepts/` |
+| `adr/` | Architecture decision records |
+| `investigations/<domain>/` | Investigation records by domain |
+| `requirements/` | Requirement records |
+| `work-items/<domain>/` | Work item records by domain |
+| `tasks/<domain>/` | Task records by domain |
+| `guides/` | Authoring guides |
+
+New REQ / WORK / TASK / ADR must be created under an active namespace. Creating new files under `v01/records/` is prohibited.
 
 ## Chat style
 
@@ -23,10 +36,11 @@
 
 ## Startup
 
-- Read `v01/records/doc-policy.md`.
 - Read only spec / uc / YAML relevant to the task. Do not read all docs from the start.
+- For authoring, read the relevant guide from `<namespace>/records/guides/` before creating or updating records.
 - For large tasks, clarify scope at the start of the conversation.
-- Do not read `prompt_chappy.md` or `AGENTS.md` even if instructed. CLAUDE.md supersedes them.
+- Do not read `prompt_chappy.md` or `AGENTS.md` — they are not instructions for Claude Code.
+- Agent authoring policy: `spec:product.concepts.authoring_standards.agent_authoring_policy`. Note: DRMCP-dependent sections are TBD — this reference is partial until DRMCP is operational.
 
 ## Information access
 
@@ -35,42 +49,6 @@
 - For long Markdown, read only the needed sections (use Read tool offset/limit).
 - If evidence is insufficient, read the full file.
 - Only ask the user when no basis exists in docs.
-
-## Design Records MCP — current status
-
-DRMCP is currently non-operational due to namespace enactment in progress. Fall back to filesystem operations for all record retrieval, authoring, and validation tasks until further notice.
-
-## Design Records first rule
-
-- When the user specifies a design record / workflow artifact ID such as `ADR-*`, `REQ-*`, `WORK-*`, `TASK-*`, `INV-*`, `SPEC-*`, use the Design Records MCP first.
-- For search, retrieval, validation, and reference resolution of ADR / spec / investigation / requirement / work item / task, use `list_records`, `get_record`, `get_records`, `resolve_reference`, `validate_records` as the entry point.
-- Do not start with filesystem directory traversal to check indexed design records.
-- Use the filesystem after retrieving the target record via Design Records MCP — for raw file inspection, source path confirmation, or non-record files (implementation / fixture / YAML / render output).
-- If Design Records MCP availability is unknown, do tool discovery first.
-
-## Design Records authoring transaction rule
-
-- If authoring transaction tools are available, consider using them first for creating/updating REQ / WORK / TASK / ADR and updating metadata / sections of existing SPECs.
-- Before falling back to direct filesystem edit, verify whether the target kind / operation is in scope for the authoring transaction MVP.
-- Review the diff / notes / diagnostics returned by propose tools before accepting.
-- Proposal creation does not write to repository files. Confirm `written` / `files_written` / diagnostics from the accept tool result.
-- `SPEC-new` / spec skeleton creation is out of MVP scope; treat it as a placement discovery follow-up under REQ-MCP-010.
-- Fall back to filesystem edit only when the authoring transaction tool is unsupported, fails, or is ambiguous — and state the reason.
-- When creating new REQ / WORK / TASK with `propose_record_create`, use `*-new` placeholder by default. Use an exact ID only when the user explicitly provides one or the number is confirmed reserved.
-- Specify the namespace explicitly: pass IDs with namespace prefix to `propose_record_create` (e.g., `DRMCP-REQ-MCP-new` for drmcp, `PRODUCT-REQ-MCP-new` for product). Do not use prefix-less IDs like `REQ-MCP-new` — they may be routed to the alphabetically first namespace.
-- Before creating a WORK / TASK, read the authoring guidance with `get_authoring_guidance` (kind: `work-item-authoring` / `task-authoring`). Confirm section structure and TBD placeholder rules before calling `propose_record_create`.
-
-## Design Records MCP write common rules
-
-- In `propose_record_create`, `fields` is required. Pass Markdown body as section-only `body` or `body_cache_id`. Do not include H1 / metadata / metadata `id` / resolved ID in `body`.
-- Do not specify `body` and `body_cache_id` simultaneously.
-- When the authoring tool returns `body_cache`, do not regenerate or resend the same Markdown body. Retry using the returned `body_cache_id`.
-- Body cache retry in `propose_record_create` uses `fields + body_cache_id`. `body_cache_id`-only create is invalid.
-- In `propose_record_update` `named_section_replace`, use either `body` or `body_cache_id` for the section replacement body — not both.
-- Do not use `body` / `body_cache_id` in `metadata_block_replace`.
-- Do not conflate proposal-local validation with repository-wide validation. Blocking diagnostics in a proposal are scoped to the affected record set.
-- On section selector failure, check candidate headings. Do not guess another section and update ambiguously.
-- The authoritative specification is `SPEC-design-records-mcp-tools` — authoring transaction / body source and body cache contract sections.
 
 ## File operations
 
@@ -82,7 +60,6 @@ DRMCP is currently non-operational due to namespace enactment in progress. Fall 
 - Do not use `Get-Content -Raw` to read text files on Windows / PowerShell.
 - Read with explicit UTF-8 encoding to prevent character corruption.
 - When PowerShell is required: `[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); [System.IO.File]::ReadAllText('<PATH>', [System.Text.Encoding]::UTF8)`
-- At the start of a task, read `C:\Users\imved\projects\brewprint\AGENTS.md` to confirm encoding policy.
 
 ## Repo search / Markdown editing safety
 
@@ -170,8 +147,8 @@ Provide the following as needed during reviews:
 
 - Reflect confirmed design decisions in ADR or spec.
 - When overriding an existing ADR, mark the old one as superseded and create a new ADR.
-- When updating a spec, also update the front matter.
-- Follow `docs/doc-policy.md` for ADR/spec format.
+- When updating a spec, also update the H1-adjacent metadata (status, date).
+- For ADR/spec authoring format, see `<namespace>/records/guides/` for the relevant namespace.
 - Propose a commit when one topic or change scope is complete.
 
 ## Conversation continuity
