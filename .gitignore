@@ -1,2 +1,4 @@
 # Local build / runtime artifacts
 bin/
+memory/
+__pycache__

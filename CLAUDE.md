@@ -21,6 +21,23 @@ Each namespace uses this layout under `<namespace>/records/`:
 | `tasks/<domain>/` | Task records by domain |
 | `guides/` | Authoring guides |
 
+Source files (scripts, code, tooling) live under `<namespace>/src/`, not inside `records/`.
+
+### Temporary tooling
+
+> Remove this section when DRMCP reimplementation lands (DRMCP-WORK-SPEC-001).
+
+**Spec format validator** (`product/src/tools/validate_spec.py`, PRODUCT-WORK-SPEC-006):
+
+```
+python product/src/tools/validate_spec.py [PATH...] [--strict] [--no-color]
+```
+
+- Default: inventory mode — migration-phase issues are warnings, not errors.
+- `--strict`: escalates migration-phase warnings to errors (use for new or explicitly migrated specs).
+- `PATH`: one or more `.md` files or directories. Defaults to `product/records/spec`.
+- Exit 0 if no errors; exit 1 if any errors.
+
 New REQ / WORK / TASK / ADR must be created under an active namespace. Creating new files under `v01/records/` is prohibited.
 
 ## Chat style
