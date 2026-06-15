@@ -2,19 +2,37 @@
 
 ### Paths
 
-- repo: `C:\Users\imved\projects\brewprint`
-- docs: `C:\Users\imved\projects\brewprint\docs`
-- adr: `C:\Users\imved\projects\brewprint\docs\adr`
-- spec: `C:\Users\imved\projects\brewprint\docs\spec`
-- uc: `C:\Users\imved\projects\brewprint\docs\uc`
+- repo root: `C:\Users\imved\projects\brewprint`
+- v01 records (read-only snapshot): `v01/records/`
+
+#### Active namespaces
+
+`product`, `drmcp`, `bpdsl`
+
+Each namespace uses this layout under `<namespace>/records/`:
+
+| directory | contents |
+|---|---|
+| `spec/` | Specifications, organized by topic area under `concepts/` |
+| `adr/` | Architecture decision records |
+| `investigations/<domain>/` | Investigation records by domain |
+| `requirements/` | Requirement records |
+| `work-items/<domain>/` | Work item records by domain |
+| `tasks/<domain>/` | Task records by domain |
+| `guides/` | Authoring guides |
+
+New REQ / WORK / TASK / ADR must be created under an active namespace. Creating new files under `v01/records/` is prohibited.
 
 ### Startup
 
-- 回答は日本語。
-- `docs/doc-policy.md` を読む。
-- `docs/adr/` の一覧を把握し、acceptedなADRのタイトルを確認する。
-- 作業に関連するspec / uc / YAMLだけ読む。全docを最初から読まない。
+- 回答は原則としてユーザーの入力言語に合わせる。
+- このファイル `prompt_chappy.md` を ChatGPT 用 instruction source として扱う。
+- 作業に関連する spec / uc / YAML だけ読む。全 doc を最初から読まない。
+- Authoring では、record の作成・更新前に `<namespace>/records/guides/` の関連 guide を読む。
 - 大きな作業では、この会話で扱うスコープを明確にする。
+- `CLAUDE.md` や `AGENTS.md` は、明示的に依頼された場合だけ読む。
+- Agent authoring policy: `spec:product.concepts.authoring_standards.agent_authoring_policy`。
+- Note: DRMCP-dependent sections are TBD。DRMCP operational までは、この参照は partial と扱う。
 
 ### Chat style
 
@@ -37,22 +55,22 @@
 - 根拠が足りない場合は全文を読む。
 - docsに根拠がない場合のみ、不明としてユーザーに確認する。
 
-### Design Records first rule
+### Design Records access rule
 
-- ユーザーが `ADR-*`, `REQ-*`, `WORK-*`, `TASK-*`, `INV-*`, `SPEC-*` などの design record / workflow artifact ID を指定した場合、まず Design Records MCP を使う。
-- ADR / spec / investigation / requirement / work item / task の検索・取得・検証・参照解決は、原則として `list_records`, `get_record`, `get_records`, `resolve_reference`, `validate_records` を入口にする。
-- indexed design record を確認する目的で、最初に filesystem の directory traversal を行わない。
-- filesystem は、Design Records MCP で対象 record を取得した後、raw file inspection、source path confirmation、または implementation / fixture / YAML / render output など非 record ファイルを確認する場合に使う。
-- Design Records MCP が利用可能か不明な場合は、先に tool discovery を行う。
+- ユーザーが `ADR-*`, `REQ-*`, `WORK-*`, `TASK-*`, `INV-*`, `SPEC-*` などの design record / workflow artifact ID を指定した場合、まず現在利用可能な record access tools を確認する。
+- Design Records MCP が利用可能で、対象操作が現行仕様で supported の場合は、`list_records`, `get_record`, `get_records`, `resolve_reference`, `validate_records` を入口にする。
+- DRMCP operational でない場合、または DRMCP-dependent sections / tools が TBD の場合は、filesystem で active namespace 配下の record を読む。
+- indexed design record を確認する目的で repo 全体の directory traversal を行わない。filesystem fallback 時も、namespace / kind / domain / file 名で対象を絞る。
+- filesystem は、raw file inspection、source path confirmation、implementation / fixture / YAML / render output など非 record ファイルを確認する場合にも使う。
 
 ### Design Records authoring transaction rule
 
-- Design Records MCP の authoring transaction tools が利用可能なら、REQ / WORK / TASK / ADR の起票・更新、および既存 SPEC の metadata / section 更新ではまず authoring transaction tools の利用を検討する。
-- 直接 filesystem edit に戻る前に、対象 kind / operation が authoring transaction MVP の対応範囲か確認する。
-- propose 系 tool の返す diff / note / diagnostics を確認してから accept する。
+- Design Records MCP の authoring transaction tools が利用可能で、対象 kind / operation が supported の場合、REQ / WORK / TASK / ADR の起票・更新、および既存 SPEC の metadata / section 更新ではまず authoring transaction tools の利用を検討する。
+- DRMCP operational でない場合、または authoring transaction / placement discovery が TBD の場合は、理由を明記して filesystem edit に fallback する。
+- fallback 時も、関連 guide と agent authoring policy を先に確認する。
+- propose 系 tool を使う場合は、返された diff / note / diagnostics を確認してから accept する。
 - proposal creation は repository files を書き換えない。実書き込みは accept 系 tool の結果で `written` / `files_written` / diagnostics を確認する。
-- `SPEC-new` / spec skeleton create は MVP 外なので、必要なら V01-REQ-MCP-010 系の placement discovery follow-up として扱う。
-- authoring transaction tool が未対応・失敗・曖昧な場合だけ、理由を明記して filesystem edit に fallback する。
+- `SPEC-new` / spec skeleton create は、DRMCP 側 placement discovery が operational になるまでは supported 不明として扱う。
 - `propose_record_create` で新規 REQ / WORK / TASK を作る場合は、デフォルトで `*-new` placeholder を使う。ユーザーが exact ID を明示した場合、または番号予約が確認済みの場合だけ exact ID を使う。
 
 ### Design Records MCP write common rules
@@ -65,7 +83,7 @@
 - `metadata_block_replace` では `body` / `body_cache_id` を使わない。
 - Proposal-local validation と repository-wide validation を混同しない。Proposal の blocking diagnostics は affected record set に限定される。
 - Section selector failure では candidate headings を確認し、曖昧なまま別 section を推測して更新しない。
-- 詳細仕様は `SPEC-design-records-mcp-tools` の authoring transaction / body source and body cache contract を正本とする。
+- 詳細仕様は、DRMCP operational 後は `SPEC-design-records-mcp-tools` の authoring transaction / body source and body cache contract を正本とする。
 
 ### File operations
 
@@ -82,7 +100,7 @@
 - 推奨コマンド: `python -X utf8 -c "from pathlib import Path; print(Path(r'<PATH>').read_text(encoding='utf-8'))"`
 - PowerShell が必要な場合: `[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false); [System.IO.File]::ReadAllText('<PATH>', [System.Text.Encoding]::UTF8)`
 - 既に `Get-Content -Raw` で読んだ内容は信用せず、UTF-8 明示で読み直す。
-- 作業開始時に `C:\Users\imved\projects\brewprint\AGENTS.md` を読み、Encoding policy を確認する。
+- `AGENTS.md` は、明示的に依頼された場合だけ読む。
 
 ### Repo search / Markdown editing safety
 
