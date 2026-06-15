@@ -1,14 +1,15 @@
 # PRODUCT-WORK-SPEC-006: Temporary spec format validator tooling
 
 - **id**: PRODUCT-WORK-SPEC-006
-- **status**: not_started
-- **date**: 2026-06-10
+- **status**: done
+- **date**: 2026-06-16
 - **requirement_refs**:
   - PRODUCT-REQ-SPEC-001
 - **source_work_items**:
   - PRODUCT-WORK-SPEC-001
   - PRODUCT-WORK-SPEC-002
 - **task_refs**:
+  - PRODUCT-TASK-SPEC-006-01
 
 ## Summary
 
@@ -62,3 +63,12 @@ This is a bridge for PRODUCT-WORK-SPEC-005. It is not a DRMCP reimplementation a
 | PRODUCT-WORK-SPEC-002 | Defines compatibility behavior needed before strict mismatch handling. |
 
 ## Evidence
+
+- Output form decided: standalone Python script (not MCP surface). Rationale: temporary bridge; MCP surface implies stable contract; script is disposable when DRMCP reimplementation lands.
+- Created `product/src/tools/validate_spec.py`.
+- Inventory mode: 10 pre-migration spec files produce 49 warnings, 0 errors. New-format specs (10 files) pass clean.
+- Strict mode: pre-migration diagnostics escalate to errors; new-format specs still clean.
+- ID derivation spot-checked against examples in `spec:product.concepts.spec_format.spec_id_as_ref`.
+- No DRMCP implementation code changed.
+- No `v01/records/**` files changed.
+- Done condition satisfied: resolver available, validator available, diagnostics actionable for WORK-SPEC-005.
