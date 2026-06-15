@@ -63,3 +63,10 @@ Update spec authoring guidance so humans and agents can write new or migrated sp
 
 ## Evidence
 
+| item | detail |
+|---|---|
+| Guide created | `product/records/guides/spec-authoring.md` |
+| Source specs read | `spec:product.concepts.spec_format` and all child specs (`document_shape`, `spec_id_as_ref`, `topics_table`, `validation_policy`, `follow_up_boundary`) |
+| Writing standard applied | INV-SPEC-003 candidate rules (structured blocks, BLUF, label-first, no throat-clearing) |
+| Review | User: no findings. Chappy: missing `body H2 containing at least one Markdown table` row for `Reference` kind — fixed before close. |
+| Commit | `8657701` |
