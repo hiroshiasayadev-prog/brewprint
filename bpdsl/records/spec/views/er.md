@@ -1,66 +1,55 @@
----
-scope: docs/spec/views/er.md
-status: confirmed
-last_updated: 2026-05-31
-summary: >
-  ER図のrenderルール。
-  store.kind=dbとmodelの参照を辿ってMermaid erDiagramを生成する際の
-  エンティティ・カラム・リレーション表記ルールを定義する。
-  view YAMLによる横断描画もサポートする（V01-ADR-039）。
-depends_on:
-  - docs/adr/007-asset-store-boundary.md
-  - docs/adr/021-model-field-structure.md
-  - docs/adr/026-fk-cardinality-and-nm-relation.md
-  - docs/adr/039-er-diagram-composed-view.md
-  - docs/adr/014-initializes-field.md
-  - docs/adr/065-asset-immutability-and-edge-role-contrast.md
-  - docs/adr/070-model-visibility-file-private-helper-model.md
----
+# Contract: ER Diagram render rules
 
-# ER図 renderルール
+- **id**: `spec:bpdsl.views.er`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.views.overview`
+- **contract_class**: `format`
 
-## 対象ノード
+## What this is
 
-ER図に登場するノードは以下の2種のみ。
+Render rules for the ER Diagram: entity, column, and relation notation when generating a Mermaid `erDiagram` by following `store.kind=db` and the models it references. Also supports cross-module composed rendering via view YAML (V01-ADR-039).
 
-| ノード | 役割 |
-|--------|------|
-| `store.kind: db` | エンティティ（テーブル）として描画 |
-| `model.kind: struct`（`store.of` から辿ったもの） | エンティティの列定義として使用 |
+> Source: V01-ADR-007, V01-ADR-014, V01-ADR-021, V01-ADR-026, V01-ADR-039, V01-ADR-065, V01-ADR-070
 
-`store.kind: session` / `collection` / `context` はER図に登場しない。
-`model.kind: list` / `dict` はエンティティとしてER図に登場しない（structのフィールド型として出現するのみ）。
+## Current contract
 
-`initializes[]` で宣言された initialized store もER図に登場しない。`kind` を持たないため `store.kind: db` の条件を満たさず、また task 内の file-private な runtime instance であって永続データ構造ではないため（V01-ADR-014, V01-ADR-065）。
+### Target nodes
 
-Task-file helper model の基本 semantics は [nodes.md](../nodes.md#task-file-private-helper-model-semantics) が定義する。ER図は `store.kind: db` の `store.of` から辿る public model を対象とするため、task-file helper model はER図に登場しない。
+Only two node kinds appear in an ER Diagram:
 
----
+| node | role |
+|---|---|
+| `store.kind: db` | Drawn as an entity (table). |
+| `model.kind: struct` (followed from `store.of`) | Used as the entity's column definitions. |
 
-## エンティティの導出
+`store.kind: session` / `collection` / `context` do not appear in an ER Diagram. `model.kind: list` / `dict` do not appear as entities (they only appear as struct field types).
 
-`store.kind: db` の `of:` フィールドが参照する model をエンティティとして描画する。
+An `initializes[]`-declared initialized store does not appear in an ER Diagram either — it has no `kind`, so it doesn't satisfy the `store.kind: db` condition, and it's a file-private runtime instance within a task, not a persistent data structure (V01-ADR-014, V01-ADR-065).
+
+Task-file helper model basic semantics are defined by [`spec:bpdsl.dsl.nodes.data`](../dsl/nodes/data.md). Since the ER Diagram only targets public models followed from `store.kind: db`'s `store.of`, task-file helper models never appear in an ER Diagram.
+
+### Entity derivation
+
+The model referenced by a `store.kind: db`'s `of:` field is drawn as an entity.
 
 ```yaml
 - id: user_db
   type: store
   kind: db
-  of: user        # → user model をエンティティとして描画
+  of: user        # → the user model is drawn as an entity
 ```
 
-エンティティ名は `store.id`（例: `user_db`）ではなく `model.id`（例: `user`）を使う。
-1つの model を複数の `store.kind: db` が参照している場合、エンティティは1つとして描画する（重複しない）。
+The entity name uses `model.id` (e.g. `user`), not `store.id` (e.g. `user_db`). If multiple `store.kind: db` reference the same model, the entity is drawn once (no duplication).
 
----
+### Column derivation
 
-## カラムの導出
+An entity's columns derive from a `model.kind: struct`'s `fields`.
 
-エンティティのカラムは `model.kind: struct` の `fields` から導出する。
+Column type mapping:
 
-### カラム型のマッピング
-
-| brewprint `type` | ER図上の型表記 |
-|-----------------|--------------|
+| brewprint `type` | ER diagram type notation |
+|---|---|
 | `str` | `string` |
 | `int` | `int` |
 | `float` | `float` |
@@ -68,19 +57,19 @@ Task-file helper model の基本 semantics は [nodes.md](../nodes.md#task-file-
 | `bytes` | `bytes` |
 | `datetime` | `datetime` |
 | `any` | `any` |
-| model ID（`fk:` あり） | `string`（FK先の型は問わず） |
-| model ID（`fk:` なし） | `json`（JSON埋め込み） |
-| list kindのmodel | `json`（variant/JSON埋め込み） |
+| model ID (with `fk:`) | `string` (regardless of the FK target's actual type) |
+| model ID (no `fk:`) | `json` (JSON embed) |
+| list-kind model | `json` (variant/JSON embed) |
 
-### PK / FK フラグ
+PK / FK flags:
 
-| フィールド条件 | ER図上の表記 |
-|-------------|------------|
+| field condition | ER diagram notation |
+|---|---|
 | `pk: true` | `PK` |
 | `fk: <model-id>.<field>` | `FK` |
-| `pk: true` かつ `fk:` あり | `PK, FK` |
+| `pk: true` and has `fk:` | `PK, FK` |
 
-### Mermaid 出力イメージ
+Mermaid output image:
 
 ```mermaid
 erDiagram
@@ -93,26 +82,22 @@ erDiagram
   }
 ```
 
----
+### Relation derivation
 
-## リレーションの導出
+A relation line is drawn from a field that has `fk:`.
 
-`fk:` を持つフィールドからリレーション線を引く。
+Cardinality rule (V01-ADR-026):
 
-### カーディナリティルール（V01-ADR-026）
-
-| 条件 | カーディナリティ | Mermaid記法 |
-|------|--------------|------------|
-| `fk:` のみ（デフォルト） | many-to-one | `}o--\|\|` |
+| condition | cardinality | Mermaid notation |
+|---|---|---|
+| `fk:` only (default) | many-to-one | `}o--\|\|` |
 | `fk:` + `unique: true` | one-to-one | `\|o--\|\|` |
 
-FK を持つ側が「多」または「1（unique）」、参照先が「1」。
+The side holding the FK is "many" or "one (unique)"; the referenced side is "one."
 
-### リレーションラベル
+Relation label: always an empty string. brewprint keeps the semantic explanation of an FK in `note`, so no label is needed on the diagram.
 
-Mermaid のリレーションラベルは空文字とする。brewprint は FK の意味的説明を `note` に持つため、図上にラベルは不要。
-
-### Mermaid 出力イメージ
+Mermaid output image:
 
 ```mermaid
 erDiagram
@@ -133,14 +118,9 @@ erDiagram
   user |o--|| user_profile : ""
 ```
 
----
+### N:M representation
 
-## N:M の表現
-
-N:M は中間 model（FK を2本持つ struct）として明示的に定義する（V01-ADR-026）。
-中間 model もDBテーブルとして実在するため、対応する `store.kind: db` を定義する必要がある。
-`store.kind: db` を定義しない中間 model はER図に登場しない（下記「renderスコープ」の描画対象外ルールに該当する）。
-ER図上は中間エンティティを介した2本のN:1として描画される。
+An N:M relationship is explicitly defined as an intermediate model — a struct with two FK fields (V01-ADR-026). The intermediate model also exists as a real DB table, so a corresponding `store.kind: db` must be defined for it. An intermediate model without a `store.kind: db` does not appear in the ER Diagram (per the render-scope exclusion rule below). On the ER Diagram, it's drawn as two N:1 relations through the intermediate entity.
 
 ```mermaid
 erDiagram
@@ -160,38 +140,30 @@ erDiagram
   user_tag }o--|| tag : ""
 ```
 
----
+### JSON-embedded field handling
 
-## JSON埋め込みフィールドの扱い
-
-`fk:` なしの model ID 参照（JSON埋め込み）は、ER図上では `json` 型カラムとして表示するのみ。
-参照先 model へのリレーション線は引かない（DBレベルの外部キー制約がないため）。
+A model-ID reference without `fk:` (JSON embed) is shown only as a `json`-typed column on the ER Diagram. No relation line is drawn to the referenced model (there's no DB-level foreign-key constraint).
 
 ```mermaid
 erDiagram
   user {
     string id PK
-    json address      ← address model へのリレーション線なし
+    json address      ← no relation line to the address model
   }
 ```
 
----
+## Rules
 
-## renderスコープ
+### Render scope
 
-### デフォルト: モジュール単位
+**Default: module granularity.** When no view YAML is specified, the ER Diagram is drawn at **module granularity** — all `store.kind: db` within the module are collected, and the models they reference are followed into a single diagram.
 
-view YAML を指定しない場合、ER図は**モジュール単位**で描画する。
-モジュール内の全 `store.kind: db` を収集し、それらが参照する model を辿って1枚の図にまとめる。
-
-### view YAML による横断描画（V01-ADR-039）
-
-複数モジュールにまたがる ER 図を生成したい場合は、view YAML を定義する。
+**Cross-module composed rendering via view YAML (V01-ADR-039).** To generate an ER Diagram spanning multiple modules, define a view YAML:
 
 ```yaml
 as: er_diagram
 id: ec_er
-note: ECサイト全体のER図
+note: ER diagram for the entire EC site
 modules:
   - module: auth
   - module: catalog
@@ -200,28 +172,38 @@ modules:
   - module: payment
 ```
 
-| フィールド | 説明 |
-|-----------|------|
-| `as` | `er_diagram` 固定 |
-| `id` | ER図の識別子 |
-| `note` | 説明（任意） |
-| `modules[].module` | 集計対象モジュールパス。直下の `store.kind: db` のみが対象（サブモジュールは自動収集しない） |
+| field | description |
+|---|---|
+| `as` | Fixed: `er_diagram`. |
+| `id` | ER Diagram identifier. |
+| `note` | Description (optional). |
+| `modules[].module` | Module path to aggregate. Only `store.kind: db` directly under that module is targeted (submodules are not auto-collected). |
 
-サブモジュールを含めたい場合は `modules[]` に明示的に列挙する。
+To include submodules, list them explicitly in `modules[]`.
 
-#### クロスモジュール FK の扱い
+#### Cross-module FK handling
 
-view YAML に複数モジュールが含まれる場合、モジュールをまたぐ `fk:` もリレーション線として描画する。
-view YAML に含まれないモジュールへの FK は `json` 型カラムとして表示し、リレーション線は引かない。
+When a view YAML includes multiple modules, an `fk:` crossing those modules is also drawn as a relation line. An FK to a module not included in the view YAML is shown as a `json`-typed column, with no relation line drawn.
 
-描画対象外（デフォルト・横断共通）：
-- `store.kind: db` に辿り着かない model（型定義として使われているだけのもの、`store.kind: db` を定義していないN:M中間 model を含む）
-- JSON埋め込みの参照先 model
-- view YAML に含まれないモジュールへのクロスモジュール FK
+Excluded from rendering (default and cross-module alike):
 
----
+- A model that is never reached from `store.kind: db` (used only as a type definition, including an N:M intermediate model with no `store.kind: db` defined).
+- A JSON-embed reference target model.
+- A cross-module FK pointing to a module not included in the view YAML.
 
-## 図の生成元
+The ER Diagram is generated by brewprint's MCP tool (`render_er`) after loading the YAML. Hand-written Mermaid never exists for this view.
 
-ER図は `spec/views/er.md` のルールに従い、brewprintのMCPツール（`render_er`）が生成する。
-YAML を直接 Mermaid に変換するため、手書きの ER 記述は存在しない。
+## Validation rules
+
+- A `store.kind` other than `db` never produces an ER entity, regardless of whether it has an `of:`.
+- An `initializes[]`-declared initialized store is never targeted, since it lacks `kind` entirely.
+- A view YAML's `modules[].module` targets only that module's direct `store.kind: db` — submodules require explicit listing, not assumed inclusion.
+- An N:M intermediate model lacking a `store.kind: db` is silently excluded from the diagram — this is not a parser error.
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.views.overview` | Parent overview; view kind catalog. |
+| `spec:bpdsl.dsl.nodes.data` | `store` and `model` node definitions this render follows. |
+| `spec:bpdsl.dsl.naming` | FK field reference resolution (bare vs. qualified). |

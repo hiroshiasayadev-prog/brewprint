@@ -1,28 +1,19 @@
----
-scope: docs/spec/mcp/schema.md
-status: draft
-last_updated: 2026-06-07
-summary: >
-  MCP toolで共通利用するschemaを定義する。
-  selector、ObjectRef、Reference、Diagnosticなどの共通表現を規定する。
-depends_on:
-  - docs/adr/027-module-nesting-and-name-resolution.md
-  - docs/adr/031-actor-global-definition.md
-  - docs/adr/035-fsm-guard-branch-and-transition-identification.md
-  - docs/adr/043-project-root-layout-and-render-output.md
-  - docs/adr/048-resolved-project-index-strategy.md
-  - docs/adr/054-mcp-query-coverage-for-design-conversation.md
-  - docs/adr/056-mcp-analyze-impact-tool-design.md
-  - docs/adr/062-task-return-source.md
----
+# Reference: MCP schema
 
-# MCP schema
+- **id**: `spec:bpdsl.mcp.schema`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.mcp.overview`
 
-## 1. Common schema
+## What this is
 
-### 1.1 Object selector
+Common schema shared across MCP tools: selector, ObjectRef, Reference, Diagnostic, and the common ID representations (QualifiedID, FileID, synthetic ID).
 
-各toolは、対象objectを指定するために `selector` を受け取る。
+> Source: V01-ADR-027, V01-ADR-031, V01-ADR-035, V01-ADR-043, V01-ADR-048, V01-ADR-054, V01-ADR-056, V01-ADR-062
+
+## Object selector
+
+Each tool receives a `selector` that designates the target object.
 
 ```json
 {
@@ -32,26 +23,21 @@ depends_on:
 }
 ```
 
-#### selector fields
+### Selector fields
 
-| フィールド | 必須 | 型 | 内容 |
+| field | required | type | content |
 |---|---:|---|---|
-| `id` | 任意 | string | 対象objectのID。通常はQualifiedID。actorはglobal actor ID。scenario等のview objectはview固有ID。transition / asset / private sub nodeは後述のsynthetic IDを使う。`file` + `local_id` で指定できるobjectでは省略できる |
-| `object` | 任意 | enum | `node` / `view` / `transition` / `asset` / `field` / `file` / `primitive`。省略時は `node` として解決を試みる |
-| `kind` | 任意 | string | 期待するkind。値集合は `object` に依存する。指定時、解決結果のkindが一致しなければ `kind_mismatch` tool error とする |
-| `file` | 任意 | FileID | private sub node等、file-local objectを指定する場合に使う |
-| `local_id` | 任意 | string | `file` 内のlocal object ID。sub task等のprivate object参照に使う |
+| `id` | optional | string | Target object ID. Usually a QualifiedID. For `actor`, the global actor ID. For view objects (scenario etc.), a view-specific ID. For transition / asset / private sub-node, use the synthetic ID forms below. Omittable for objects addressable via `file` + `local_id`. |
+| `object` | optional | enum | `node` / `view` / `transition` / `asset` / `field` / `file` / `primitive`. Defaults to attempting resolution as `node` when omitted. |
+| `kind` | optional | string | Expected kind. Value set depends on `object`. If specified and the resolved kind doesn't match, returns `kind_mismatch` tool error. |
+| `file` | optional | FileID | Used to designate a file-local object, e.g. a private sub-node. |
+| `local_id` | optional | string | Local object ID within `file`. Used to reference private objects like sub tasks. |
 
-`object` を省略した selector は `object: node` として解決を試みる。
-`kind` だけを指定しても object class は推論しない。
-node 以外を問い合わせる場合は、原則として `object` を明示する。
+A selector that omits `object` is resolved as `object: node`. Specifying only `kind` does not infer the object class — when querying anything other than `node`, `object` should be specified explicitly.
 
-selector の形が壊れている場合は `invalid_selector` tool error とする。
-selector が解決できない場合は `not_found`、複数候補に解決される場合は `ambiguous`、解決結果と `kind` が一致しない場合は `kind_mismatch` を返す。
-解決は成立したが tool がその object / kind を扱わない場合は、§1.2 の selector support matrix に従う。
+`invalid_selector` tool error when the selector shape is malformed. `not_found` when it cannot be resolved, `ambiguous` when it resolves to multiple candidates, `kind_mismatch` when the resolved result doesn't match `kind`. When resolution succeeds but the tool doesn't handle that object/kind, follow the selector support matrix in §Selector support matrix below.
 
-通常の外部参照可能nodeは `id` のみで指定する。
-private sub nodeを直接問い合わせる必要がある場合は、synthetic IDまたは `file` + `local_id` の形式を使う。
+A normal externally-referenceable node is designated by `id` alone. To query a private sub-node directly, use a synthetic ID or the `file` + `local_id` form.
 
 ```json
 {
@@ -72,7 +58,7 @@ private sub nodeを直接問い合わせる必要がある場合は、synthetic 
 }
 ```
 
-assetを直接問い合わせる場合は、producerとasset nameからなるsynthetic ID、または `id` + `local_id` の形式を使う。
+To query an asset directly, use the synthetic ID composed of producer and asset name, or the `id` + `local_id` form.
 
 ```json
 {
@@ -83,30 +69,27 @@ assetを直接問い合わせる場合は、producerとasset nameからなるsyn
 }
 ```
 
-private sub nodeの直接問い合わせは `get_signature` / `get_references` / `inspect` で対応する。
-`inspect(main task)` の `members.sub_tasks` も同じObjectRef表現を使う。
+Direct private sub-node queries are handled via `get_signature` / `get_references` / `inspect`. `inspect(main task)`'s `members.sub_tasks` uses the same ObjectRef representation.
 
-#### object-dependent kind vocabulary
+### Object-dependent kind vocabulary
 
-`kind` の値集合は `object` ごとに異なる。
-この表は selector validation と ObjectRef response の共通語彙である。
+The `kind` value set differs per `object`. This table is the shared vocabulary for selector validation and ObjectRef responses.
 
 | object | allowed kind values | notes |
 |---|---|---|
-| `node` | `task` / `model` / `store` / `state` / `event` / `actor` | brewprint node kind。private sub node も `object: node`, `kind: task` として表す |
-| `view` | `sequence_diagram` / `api_table` / `er_diagram` | view object。API endpoints の computed route 一覧は `list_endpoints` の責務 |
-| `transition` | `transition` | state file 内の synthetic transition object |
-| `asset` | `asset` | task / join returns から暗黙生成される asset object |
-| `field` | `field` / `model_field` | model field object。MCP v1 response では既存互換のため `field` を返してよい。新規specでは `model_field` を説明用語として使ってよい |
-| `file` | `node` / `state_file` / `sequence_diagram` / `api_table` / `er_diagram` / `render_index` | `yaml/` 配下の file kind。node kind ではなく file kind を表す |
-| `primitive` | `primitive` | primitive type reference target。直接query対象ではない |
+| `node` | `task` / `model` / `store` / `state` / `event` / `actor` | brewprint node kind. A private sub-node is also represented as `object: node`, `kind: task`. |
+| `view` | `sequence_diagram` / `api_table` / `er_diagram` | View object. The computed route list for API endpoints is `list_endpoints`'s responsibility. |
+| `transition` | `transition` | Synthetic transition object within a state file. |
+| `asset` | `asset` | Asset object implicitly generated from a task/join's `returns`. |
+| `field` | `field` / `model_field` | Model field object. MCP v1 responses may return `field` for backward compatibility; new specs may use `model_field` as the descriptive term. |
+| `file` | `node` / `state_file` / `sequence_diagram` / `api_table` / `er_diagram` / `render_index` | File kind under `yaml/`. Represents file kind, not node kind. |
+| `primitive` | `primitive` | Primitive type-reference target. Not a direct query target. |
 
-この vocabulary は DATA DSL の dependent enum 機能ではない。
-MCP schema / tool contract 上の runtime selector contract と response contract として扱う。
+This vocabulary is not a DATA DSL dependent-enum feature — it is treated as the runtime selector contract and response contract on the MCP schema / tool contract.
 
-### 1.2 Selector support matrix
+## Selector support matrix
 
-MCP v1のselector対応範囲は以下とする。
+MCP v1's selector support range is as follows.
 
 | object / kind | [`get_signature`](tools/get-signature.md) | [`get_references`](tools/get-references.md) | [`get_reference_tree`](tools/get-reference-tree.md) | [`analyze_impact`](tools/analyze-impact.md) | [`inspect`](tools/inspect.md) | status |
 |---|---:|---:|---:|---:|---:|---|
@@ -126,49 +109,46 @@ MCP v1のselector対応範囲は以下とする。
 | `file: er_diagram` | no | no | no | no | yes | supported |
 | `file: render_index` | no | no | no | no | yes | supported |
 | `asset` | yes | yes | yes | no | yes | supported |
-| `view: api_table` | no | no | no | no | yes | supported; `list_endpoints` はcomputed route一覧専用 |
+| `view: api_table` | no | no | no | no | yes | supported; `list_endpoints` is dedicated to the computed route list |
 | `view: er_diagram` | no | no | no | no | yes | supported |
 | private sub node | yes | yes | yes | no | yes | supported |
 | `primitive` | no | no | no | no | no | reference target only |
 
-cell値の意味:
+Cell value meaning:
 
-| value | 意味 |
+| value | meaning |
 |---|---|
-| `yes` | tool が当該 selector を通常 query 対象として扱う |
-| `no` | tool が当該 selector を通常 query 対象として扱わない |
-| `limited` | tool は当該 selector を扱うが、返却範囲または情報量に制約がある |
+| `yes` | The tool treats this selector as a normal query target. |
+| `no` | The tool does not treat this selector as a normal query target. |
+| `limited` | The tool handles this selector, but with limited return scope or information volume. |
 
-statusの意味:
+Status meaning:
 
-| status | 意味 |
+| status | meaning |
 |---|---|
-| `supported` | MCP v1でquery対象として扱う |
-| `supported / limited inspect` | signature / references は扱うが、専用inspectの情報量は限定的 |
-| `supported / limited references` | file単位など、referenceの意味が限定される |
-| `partial` | 一部toolのみ対応する |
-| `future` | 設計対話coverage上は候補だが、現時点では未実装 |
-| `v1 optional` | spec上は許容するが、実装必須ではない |
-| `reference target only` | reference targetとして返すが、直接query対象ではない |
+| `supported` | Treated as a query target in MCP v1. |
+| `supported / limited inspect` | signature / references are handled, but the dedicated inspect's information volume is limited. |
+| `supported / limited references` | Reference meaning is limited, e.g. at file granularity. |
+| `partial` | Only some tools support it. |
+| `future` | A candidate for design-conversation coverage, not yet implemented. |
+| `v1 optional` | Permitted by the spec, but not implementation-mandatory. |
+| `reference target only` | Returned as a reference target, but not a direct query target. |
 
-`no` の扱いは tool ごとに異なる。
-`get_signature` / `get_references` / `get_reference_tree` / `inspect` で `no` の selector を受け取った場合は、原則として `unsupported_object` tool error とする。
-`analyze_impact` の `no` は、tool error ではなく空 `impacts` と `unsupported_selector` diagnostic を返す対象を表す。
+`no` handling differs per tool. `get_signature` / `get_references` / `get_reference_tree` / `inspect` return `unsupported_object` tool error in principle when given a `no` selector. `analyze_impact`'s `no` instead means returning a normal response with empty `impacts` and an `unsupported_selector` diagnostic, not a tool error.
 
-`get_reference_tree` における `file: node` の `limited` は、`get_references(file: node)` の対応範囲に従い、file内nodeへのreferenceのみ展開することを意味する。
-`primitive` はreference targetとして到達可能だが、traversal rootとしては扱わない。
+`get_reference_tree`'s `limited` for `file: node` means it follows `get_references(file: node)`'s support range — only expanding references to in-file nodes. `primitive` is reachable as a reference target but is not treated as a traversal root.
 
-> 由来: V01-ADR-054 §決定
+> Source: V01-ADR-054 §Decision
 
-### 1.3 QualifiedID
+## QualifiedID
 
-モジュールスコープを持つnodeのQualifiedIDは、V01-ADR-027に従う。
+A node with module scope follows the QualifiedID format defined in V01-ADR-027.
 
 ```text
 <module-path>.<node-kind>.<id>
 ```
 
-例:
+Examples:
 
 ```text
 auth.task.login
@@ -177,14 +157,13 @@ catalog.model.item
 payment.stripe.task.receive_webhook
 ```
 
-`<module-path>` は1段以上のdot区切りmodule path。
-`<node-kind>` はbrewprintのnode kind sentinel。
+`<module-path>` is a dot-separated module path of one or more segments. `<node-kind>` is a brewprint node-kind sentinel.
 
-#### actorの例外
+### Actor exception
 
-actorはV01-ADR-031によりproject globalであり、モジュールに属さない。
+`actor` is project-global per V01-ADR-031 and does not belong to a module.
 
-actor参照は常にID直参照とする。
+Actor references are always a direct ID reference.
 
 ```text
 stripe
@@ -192,7 +171,7 @@ scheduler
 end_user
 ```
 
-MCP responseでは、actorにも `qualified_id` フィールドを返すが、その値はglobal actor IDと同じでよい。
+MCP responses still return a `qualified_id` field for actors; its value may simply equal the global actor ID.
 
 ```json
 {
@@ -203,9 +182,9 @@ MCP responseでは、actorにも `qualified_id` フィールドを返すが、�
 }
 ```
 
-### 1.4 FileID
+## FileID
 
-FileIDは、V01-ADR-043で定義されるbrewprint projectの `yaml/` ディレクトリからの相対パスをslash正規化した文字列とする。
+FileID is the slash-normalized string of the path relative to the brewprint project's `yaml/` directory, as defined in V01-ADR-043.
 
 ```text
 auth/task/login.yaml
@@ -213,67 +192,61 @@ order/state.yaml
 views/scenarios/checkout_flow.yaml
 ```
 
-Windows上の `\\` はMCP responseでは `/` に正規化する。
+Windows `\` is normalized to `/` in MCP responses.
 
-### 1.5 Synthetic ID
+## Synthetic ID
 
-QualifiedIDを持たないfile-local objectには、MCP response上の安定参照としてsynthetic IDを使う。
+A file-local object without a QualifiedID uses a synthetic ID as a stable reference in MCP responses.
 
-#### private sub node ID
-
-private sub nodeのsynthetic IDは以下とする。
+### Private sub-node ID
 
 ```text
 <file-id>#<local-id>
 ```
 
-例:
+Examples:
 
 ```text
 order/task/checkout.yaml#build_order
 order/task/checkout.yaml#reserve_inventory
 ```
 
-sub nodeは外部モジュールから参照不可だが、MCP response内では `inspect(main task)` のmembersやreference targetとして識別する必要があるため、synthetic IDを返す。
+A sub-node is not externally referenceable from other modules, but an MCP response still needs to identify it as a reference target or as a member in `inspect(main task)`, hence the synthetic ID.
 
-#### asset ID
-
-implicit assetのsynthetic IDは以下とする。
+### Asset ID
 
 ```text
 <producer-qualified-id>#<asset-name>
 ```
 
-例:
+Examples:
 
 ```text
 order.task.build_order#draft_order
 auth.task.login#auth_token
 ```
 
-assetはtask / join の `returns` から暗黙生成される。直接queryする場合はこのsynthetic ID、またはproducerを `id`、asset nameを `local_id` として指定する。
+An asset is implicitly generated from a task/join's `returns`. To query it directly, use this synthetic ID, or specify the producer as `id` and the asset name as `local_id`.
 
-#### transition ID
+### Transition ID
 
-transition IDは、V01-ADR-035 / V01-ADR-048の `(stateFileID, fromStateID, eventID, guard?)` に対応する文字列として以下を使う。
+The transition ID corresponds to the `(stateFileID, fromStateID, eventID, guard?)` tuple from V01-ADR-035 / V01-ADR-048, represented as:
 
 ```text
 <state-file-id>#<from-state>:<event>
 <state-file-id>#<from-state>:<event>[<guard>]
 ```
 
-例:
+Examples:
 
 ```text
 auth/state.yaml#idle:login_submitted
 order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']
 ```
 
-guard文字列はYAML decode後の文字列をそのまま使う。
-trim、空白正規化、Unicode正規化、式AST比較は行わない。
-これはV01-ADR-035 / V01-ADR-048のguard exact match方針と一致する。
+The guard string is used verbatim as decoded from YAML. No trim, whitespace normalization, Unicode normalization, or expression-AST comparison is performed. This matches the guard exact-match policy of V01-ADR-035 / V01-ADR-048.
 
-### 1.6 SourceLocation
+## SourceLocation
 
 ```json
 {
@@ -285,19 +258,19 @@ trim、空白正規化、Unicode正規化、式AST比較は行わない。
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `file` | ✓ | FileID |
-| `line` | 任意 | 1-origin line number |
-| `column` | 任意 | 1-origin column number |
-| `end_line` | 任意 | 範囲終端line |
-| `end_column` | 任意 | 範囲終端column |
+| `file` | ✓ | FileID. |
+| `line` | optional | 1-origin line number. |
+| `column` | optional | 1-origin column number. |
+| `end_line` | optional | Range end line. |
+| `end_column` | optional | Range end column. |
 
-line / column が取得できない実装では `file` のみ返してよい。
+Implementations that cannot obtain line/column may return only `file`.
 
-### 1.7 ObjectRef
+## ObjectRef
 
-MCP response内でobjectを指す共通形式。
+The common form used to point at an object within an MCP response.
 
 ```json
 {
@@ -313,19 +286,19 @@ MCP response内でobjectを指す共通形式。
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `object` | ✓ | `node` / `view` / `transition` / `asset` / `field` / `file` / `primitive` |
-| `kind` | ✓ | object種別。nodeなら `task` / `model` 等 |
-| `id` | ✓ | object ID。nodeならQualifiedID、actor global ID、またはfile-local synthetic ID |
-| `qualified_id` | 任意 | 解決済みQualifiedID。QualifiedIDを持つobjectのみ。`id` と同じ場合も返してよい |
-| `file` | 任意 | file-local objectの場合の所属FileID |
-| `local_id` | 任意 | file-local objectの場合のlocal ID |
-| `label` | 任意 | 人間向け短縮表示名 |
-| `source` | 任意 | SourceLocation |
-| `parent` | 任意 | field等の親ObjectRef |
+| `object` | ✓ | `node` / `view` / `transition` / `asset` / `field` / `file` / `primitive`. |
+| `kind` | ✓ | Object kind subtype, e.g. `task` / `model` for a node. |
+| `id` | ✓ | Object ID — QualifiedID, actor global ID, or file-local synthetic ID. |
+| `qualified_id` | optional | Resolved QualifiedID; only for objects that have one. May equal `id`. |
+| `file` | optional | Owning FileID, for file-local objects. |
+| `local_id` | optional | Local ID within `file`, for file-local objects. |
+| `label` | optional | Human-readable short display name. |
+| `source` | optional | SourceLocation. |
+| `parent` | optional | Parent ObjectRef, e.g. for a field. |
 
-private sub nodeは以下のように表す。
+A private sub-node is represented as:
 
 ```json
 {
@@ -338,7 +311,7 @@ private sub nodeは以下のように表す。
 }
 ```
 
-primitiveは以下のように表す。
+A primitive is represented as:
 
 ```json
 {
@@ -349,7 +322,7 @@ primitiveは以下のように表す。
 }
 ```
 
-model fieldは以下のように表す。
+A model field is represented as:
 
 ```json
 {
@@ -365,9 +338,9 @@ model fieldは以下のように表す。
 }
 ```
 
-### 1.8 TransitionRef
+## TransitionRef
 
-TransitionRefは、transitionを表すObjectRef拡張である。
+TransitionRef is an ObjectRef extension representing a transition.
 
 ```json
 {
@@ -387,27 +360,24 @@ TransitionRefは、transitionを表すObjectRef拡張である。
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `object` | ✓ | `transition` 固定 |
-| `kind` | ✓ | `transition` 固定 |
-| `id` | ✓ | TransitionID |
-| `state_file` | ✓ | transition定義元のstate FileID |
-| `from` | ✓ | 遷移元state ID |
-| `on` | ✓ | event ID |
-| `to` | ✓ | 遷移先state ID |
-| `guard` | 任意 | guard文字列。exact match対象 |
-| `action` | 任意 | action task QualifiedID |
-| `source` | 任意 | SourceLocation |
+| `object` | ✓ | Fixed: `transition`. |
+| `kind` | ✓ | Fixed: `transition`. |
+| `id` | ✓ | TransitionID. |
+| `state_file` | ✓ | State FileID where the transition is defined. |
+| `from` | ✓ | Source state ID. |
+| `on` | ✓ | Event ID. |
+| `to` | ✓ | Target state ID. |
+| `guard` | optional | Guard string; exact-match target. |
+| `action` | optional | Action task QualifiedID. |
+| `source` | optional | SourceLocation. |
 
-state / event / taskへのObjectRefが必要な場合は、`references` に `transition_from` / `transition_event` / `transition_to` / `transition_action` として返す。
-TransitionRef本体の `from` / `on` / `to` は、state diagram / scenario stepを読みやすくするための短縮情報である。
+When ObjectRefs to the state / event / task are needed, they are returned in `references` as `transition_from` / `transition_event` / `transition_to` / `transition_action`. The `from` / `on` / `to` fields on TransitionRef itself are a shorthand for readability in state diagrams / scenario steps.
 
-### 1.9 AssetRef
+## AssetRef
 
-`asset` はYAML上に独立ファイルを持たず、taskの `returns` から暗黙生成される。
-implicit assetはQualifiedIDを持たないため、producerとasset nameからなるsynthetic IDで直接queryできる。
-`AssetRef` はproducer contextつきで返す。
+`asset` has no standalone YAML file — it is implicitly generated from a task's `returns`. Since an implicit asset has no QualifiedID, it can be queried directly via the synthetic ID composed of producer and asset name. `AssetRef` is returned with producer context.
 
 ```json
 {
@@ -420,19 +390,18 @@ implicit assetはQualifiedIDを持たないため、producerとasset nameから�
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `object` | ✓ | `asset` 固定 |
-| `id` | ✓ | `<producer>#<name>` のasset synthetic ID |
-| `name` | ✓ | `task.returns.name` |
-| `producer` | ✓ | assetを生成するtaskのQualifiedIDまたはfile-local synthetic ID |
-| `model` | ✓ | assetのmodel QualifiedIDまたはprimitive |
-| `scope_file` | 任意 | assetが生じるFileID |
+| `object` | ✓ | Fixed: `asset`. |
+| `id` | ✓ | Asset synthetic ID, `<producer>#<name>`. |
+| `name` | ✓ | `task.returns.name`. |
+| `producer` | ✓ | QualifiedID or file-local synthetic ID of the task that produces the asset. |
+| `model` | ✓ | Asset's model QualifiedID or primitive. |
+| `scope_file` | optional | FileID where the asset arises. |
 
-`task.returns.name` はDAG上のasset labelとして扱うが、sub taskや別fileで同名returnsがあり得るため、MCP responseではproducer contextと一緒に返す。
-直接query用のIDは `<producer>#<name>` のsynthetic IDを使う。
+`task.returns.name` is treated as the asset label on the DAG, but since a sub-task or a different file may have a same-named `returns`, MCP responses always return it together with producer context. The synthetic ID `<producer>#<name>` is used for direct queries.
 
-### 1.10 Diagnostic
+## Diagnostic
 
 ```json
 {
@@ -445,21 +414,19 @@ implicit assetはQualifiedIDを持たないため、producerとasset nameから�
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `severity` | ✓ | `error` / `warning` / `info` / `hint` |
-| `code` | ✓ | machine-readable code |
-| `message` | ✓ | human-readable message |
-| `source` | 任意 | SourceLocation |
-| `related` | 任意 | 関連SourceLocationまたはObjectRefの配列 |
+| `severity` | ✓ | `error` / `warning` / `info` / `hint`. |
+| `code` | ✓ | Machine-readable code. |
+| `message` | ✓ | Human-readable message. |
+| `source` | optional | SourceLocation. |
+| `related` | optional | Array of related SourceLocation or ObjectRef. |
 
----
+## Reference schema
 
-## 2. Reference schema
+### Reference
 
-### 2.1 Reference
-
-`Reference` は、brewprint object間の直接参照を表す。
+`Reference` represents a direct reference between brewprint objects.
 
 ```json
 {
@@ -482,58 +449,56 @@ implicit assetはQualifiedIDを持たないため、producerとasset nameから�
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `kind` | ✓ | reference種別 |
-| `direction` | ✓ | query対象から見た方向。`out` / `in` |
-| `from` | ✓ | 参照元ObjectRef |
-| `to` | ✓ | 参照先ObjectRef |
-| `source` | 任意 | このreferenceが定義されているSourceLocation |
-| `doc` | 任意 | referenceに関する自然言語補足。例: branch case label / transition note等 |
+| `kind` | ✓ | Reference kind. |
+| `direction` | ✓ | Direction relative to the query target: `out` / `in`. |
+| `from` | ✓ | Source ObjectRef. |
+| `to` | ✓ | Target ObjectRef. |
+| `source` | optional | SourceLocation where this reference is defined. |
+| `doc` | optional | Natural-language supplement about the reference, e.g. a branch case label or transition note. |
 
-### 2.2 Reference kind
+### Reference kind
 
-MCP v1で返すreference kindは以下とする。
+MCP v1 returns the following reference kinds.
 
-| kind | from | to | 意味 |
+| kind | from | to | meaning |
 |---|---|---|---|
-| `param_model` | task / branch / join | model / primitive | paramがmodelまたはprimitiveを型参照する |
-| `return_model` | task / join | model / primitive | returnsがmodelまたはprimitiveを型参照する |
-| `produces_asset` | task / join | asset | returnsによりimplicit assetを生成する |
-| `consumes_asset` | asset | task / join | flow wiringでimplicit assetがconsumer nodeへ渡される |
-| `reads` | task | store | taskがstoreを読む |
-| `writes` | task | store | taskがstoreへ書く |
-| `store_of` | store | model | storeがmodelを保持する |
-| `field_type` | model field | model / primitive | model fieldが型を参照する |
-| `field_fk` | model field | model field | model fieldがFK参照する |
-| `transition_event` | transition | event | transitionがeventをtriggerとして参照する |
-| `transition_from` | transition | state | transitionのfrom state |
-| `transition_to` | transition | state | transitionのto state |
-| `transition_action` | transition | task | transitionがaction taskを呼ぶ |
-| `event_payload` | event | model | event payloadがmodelを参照する |
-| `event_actor` | event | actor | external eventがactorを参照する |
-| `event_watches` | event | store | er eventがstoreを監視する |
-| `scenario_state_file` | scenario | state file | sequence scenarioがstate_fileを参照する |
-| `scenario_step_transition` | scenario step | transition | sequence scenario stepがtransitionを参照する |
+| `param_model` | task / branch / join | model / primitive | A param type-references a model or primitive. |
+| `return_model` | task / join | model / primitive | `returns` type-references a model or primitive. |
+| `produces_asset` | task / join | asset | `returns` implicitly generates an asset. |
+| `consumes_asset` | asset | task / join | Flow wiring passes an implicit asset to a consumer node. |
+| `reads` | task | store | Task reads a store. |
+| `writes` | task | store | Task writes a store. |
+| `store_of` | store | model | Store holds a model. |
+| `field_type` | model field | model / primitive | Model field type-references something. |
+| `field_fk` | model field | model field | Model field FK-references another field. |
+| `transition_event` | transition | event | Transition references an event as its trigger. |
+| `transition_from` | transition | state | Transition's from state. |
+| `transition_to` | transition | state | Transition's to state. |
+| `transition_action` | transition | task | Transition calls an action task. |
+| `event_payload` | event | model | Event payload references a model. |
+| `event_actor` | event | actor | An external event references an actor. |
+| `event_watches` | event | store | An ER event watches a store. |
+| `scenario_state_file` | scenario | state file | Sequence scenario references a state file. |
+| `scenario_step_transition` | scenario step | transition | Sequence scenario step references a transition. |
 
-flow wiring（`flow_step` / `flow_param` 相当の情報）はMCP v1の `get_references` では返さない。
-flow wiringはDAG file内部の局所構造であり、MCP v1では `inspect(task).members.flow.entries` に閉じる。
+Flow wiring (information corresponding to `flow_step` / `flow_param`) is not returned by `get_references` in MCP v1 — it is internal local structure within a DAG file and stays scoped to `inspect(task).members.flow.entries` in MCP v1.
 
-`returns.source` による task return wiring も、MCP v1の `get_references` では返さない。`returns.source` は `inspect(task).members.return_source` に raw / resolved 情報として返し、global reverse index（`referencesBySource` / `referencesByTarget`）の必須対象にはしない。
+Task return wiring via `returns.source` is likewise not returned by `get_references` in MCP v1. `returns.source` is returned as raw/resolved info in `inspect(task).members.return_source` and is not a mandatory target of the global reverse index (`referencesBySource` / `referencesByTarget`).
 
-M11ではこの方針を維持し、`flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over` / `task_return_source` は `Reference.kind` ではなく、flow / task inspect用の語彙として扱う。
-これらは将来の `get_reference_tree` / `analyze_impact` の traversal 材料になりうるが、direct references v1 の返却対象には含めない。
+This policy is maintained for the M11 scope: `flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over` / `task_return_source` are treated as flow/task-inspect vocabulary, not `Reference.kind`. These may become traversal material for a future `get_reference_tree` / `analyze_impact`, but are not included in direct-references-v1's return scope.
 
-### 2.3 Direction
+### Direction
 
-`direction` は、query対象から見た向きを表す。
+`direction` represents the direction relative to the query target.
 
-| direction | 意味 |
+| direction | meaning |
 |---|---|
-| `out` | query対象が参照している相手 |
-| `in` | query対象を参照している相手 |
+| `out` | The party the query target references. |
+| `in` | The party that references the query target. |
 
-例: `inspect(auth.store.user_db)` で `auth.task.login` が `user_db` を読む場合、referenceは以下になる。
+Example: querying `inspect(auth.store.user_db)` where `auth.task.login` reads `user_db` yields:
 
 ```json
 {
@@ -544,4 +509,10 @@ M11ではこの方針を維持し、`flow_step` / `flow_param` / `flow_branch_ca
 }
 ```
 
----
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.mcp.overview` | Parent overview; tool catalog. |
+| `spec:bpdsl.mcp.errors` | Error model that consumes the selector / Diagnostic shapes defined here. |
+| `spec:bpdsl.dsl.naming` | QualifiedID format and bare ID resolution that this schema's QualifiedID section is derived from. |

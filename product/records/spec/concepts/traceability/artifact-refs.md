@@ -1,38 +1,23 @@
----
-scope: docs/spec/concepts/traceability/artifact-refs.md
-status: draft
-last_updated: 2026-05-27
-summary: >
-  traceability MVP の active / reserved / deferred semantic ref と、
-  canonical ID-as-ref の境界を定義する。
-depends_on:
-  - docs/adr/081-requirement-artifacts-and-spec-traceability.md
-  - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
-  - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
-  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
-  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
-  - docs/adr/091-workflow-artifact-work-item-task-milestone.md
-  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
-semantic_refs:
-  - spec:trace.artifact-refs
-sections:
-  spec:trace.artifact-refs.active-prefixes: Active prefixes
-  spec:trace.artifact-refs.reserved-prefixes: Reserved prefixes
-  spec:trace.artifact-refs.deferred-prefixes: Deferred prefixes
-  spec:trace.artifact-refs.id-as-ref: ID-as-ref
----
+# Reference: Artifact refs
 
-# Artifact refs
+- **id**: `spec:product.concepts.traceability.artifact_refs`
+- **status**: draft
+- **date**: 2026-06-22
+- **parent**: `spec:product.concepts.traceability`
+
+## What this is
+
+Defines which semantic ref prefixes and record ID-as-ref forms the traceability MVP resolves, which are reserved, and which are deferred.
 
 ## Purpose
 
-この file は、canonical reference resolution foundation としての traceability MVP が解決する ref 種別を定義する。
+This file defines the ref types that the traceability MVP resolves as a canonical reference resolution foundation.
 
-MVP は、全 artifact layer や realization relation を semantic trace graph の一級対象にしない。Active semantic ref は `spec:` のみに限定し、record artifact は ID-as-ref で解決する。
+The MVP does not make all artifact layers or realization relations first-class targets of a semantic trace graph. Active semantic refs are limited to `spec:` only; record artifacts are resolved by ID-as-ref.
 
 ## Active prefixes
 
-MVP の active semantic ref prefix は以下のみである。
+The MVP active semantic ref prefixes are limited to:
 
 ```yaml
 active_prefixes:
@@ -41,7 +26,7 @@ active_prefixes:
 
 ### `spec:`
 
-`spec:` は design spec の document-level または section-level semantic ref を表す。
+`spec:` represents a document-level or section-level semantic ref for a design spec.
 
 ```text
 spec:trace
@@ -49,7 +34,7 @@ spec:trace.semantic-ref
 spec:trace.resolve-and-validation
 ```
 
-`spec:` section ref の解決は spec front matter の `sections` mapping を使う。Physical heading anchor を canonical identity として扱わない。
+`spec:` section ref resolution uses the `sections` mapping in spec front matter. Physical heading anchors are not treated as canonical identity.
 
 ## Reserved prefixes
 
@@ -60,13 +45,13 @@ reserved_prefixes:
 
 ### `yaml:`
 
-`yaml:` は、対象 system / design model を表す brewprint DSL YAML の future semantic endpoint 用に予約する。MVP では active にせず、resolve behavior も固定しない。
+`yaml:` is reserved for the future semantic endpoint for brewprint DSL YAML representing the target system / design model. It is not activated in the MVP and its resolve behavior is not fixed.
 
-Spec front matter や investigation metadata のような trace metadata は `yaml:` の対象ではない。
+Trace metadata such as spec front matter and investigation metadata is not a target for `yaml:`.
 
 ## Deferred prefixes
 
-以下は artifact layer の存在を否定せず、semantic trace endpoint としての operational contract を将来判断へ送った prefix 候補である。
+The following are prefix candidates whose operational contracts as semantic trace endpoints are deferred to a future decision. Their existence as artifact layers is not denied.
 
 ```yaml
 deferred_prefixes:
@@ -76,55 +61,54 @@ deferred_prefixes:
 
 ### `internal-design:`
 
-`docs/internal-design/` は implementation-facing documentation layer として存続する。ただし MVP は internal design document を semantic ref で index / resolve / validate せず、`spec:` との realization relation も扱わない。
+`docs/internal-design/` continues to exist as an implementation-facing documentation layer. However, the MVP does not index, resolve, or validate internal design documents via semantic refs, and does not handle the realization relation with `spec:`.
 
 ### `coverage:`
 
-MVP は external coverage artifact を採用しない。したがって `coverage:` mapping set identity も active / reserved contract としない。External artifact の再導入時に名称を含めて判断する。
+The MVP does not adopt external coverage artifacts. Therefore `coverage:` is not an active/reserved contract as a mapping set identity. The name will be reconsidered when reintroducing external artifacts.
 
 ## ID-as-ref
 
-MVP が canonical reference として扱う ID-as-ref は、少なくとも Design Records MCP の record artifact ID である。
+The ID-as-refs treated as canonical references by the MVP are at minimum the record artifact IDs of Design Records MCP.
 
-```yaml
-id_as_ref:
-  decision: "ADR-NNN"
-  spec_record: "SPEC-<slug>"
-  investigation: "INV-<DOMAIN>-NNN"
-  requirement: "REQ-<DOMAIN>-NNN"
-  work_item: "WORK-<DOMAIN>-NNN"
-  task: "TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>"
-```
+| record type | ID format |
+|---|---|
+| decision | `ADR-NNN` |
+| spec record | `SPEC-<slug>` |
+| investigation | `INV-<DOMAIN>-NNN` |
+| requirement | `REQ-<DOMAIN>-NNN` |
+| work item | `WORK-<DOMAIN>-NNN` |
+| task | `TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>` |
 
 ### `ADR-*` / `SPEC-*` / `INV-*`
 
-`ADR-*` / `SPEC-*` / `INV-*` は Design Records MCP が index / query / validation の対象とする record artifact ID である。Investigation の `source_refs` および記載済み `follow_up_results` は、これらの ID-as-ref または active `spec:` ref を canonical reference として使用できる。
+`ADR-*` / `SPEC-*` / `INV-*` are record artifact IDs targeted for index/query/validation by Design Records MCP. Investigation `source_refs` and recorded `follow_up_results` may use these ID-as-refs or active `spec:` refs as canonical references.
 
 ### `REQ-*` / `WORK-*` / `TASK-*`
 
-`REQ-*` / `WORK-*` / `TASK-*` は Design Records MCP が index / query / validation の対象とする workflow artifact ID-as-ref である。Workflow artifact 間の canonical relation はこれらの ID-as-ref を用い、physical path や semantic prefix を relation identity として使用しない。
+`REQ-*` / `WORK-*` / `TASK-*` are workflow artifact ID-as-refs targeted for index/query/validation by Design Records MCP. Canonical relations between workflow artifacts use these ID-as-refs; physical paths and semantic prefixes are not used as relation identities.
 
-Investigation metadata の `source_refs` / 記載済み `follow_up_results` / `follow_up_candidates` に追加して使用できる workflow artifact ID-as-ref は `REQ-*` / `WORK-*` に限定する。`TASK-*` は workflow artifact 間 relation と direct resolver input としては supported だが、investigation metadata canonical reference としては unsupported とする。
+The workflow artifact ID-as-refs that investigation metadata `source_refs` / recorded `follow_up_results` / `follow_up_candidates` may additionally use are limited to `REQ-*` / `WORK-*`. `TASK-*` is supported as a workflow artifact inter-relation and direct resolver input, but is unsupported as an investigation metadata canonical reference.
 
 ### `COV-*`
 
-`COV-*` は MVP の canonical reference form ではない。External coverage artifact と individual mapping を導入する必要が生じた場合に再判断する。
+`COV-*` is not a canonical reference form in the MVP. It will be reconsidered if the need for external coverage artifacts and individual mappings arises.
 
 ## Relation endpoint boundary
 
-MVP は semantic realization relation の endpoint を定義しない。`spec:` → `internal-design:` mapping、`maps_to`、`covers`、coverage mapping endpoint constraint は future scope である。
+The MVP does not define endpoints for semantic realization relations. `spec:` → `internal-design:` mapping, `maps_to`, `covers`, and coverage mapping endpoint constraints are future scope.
 
 ## Scope-out prefixes
 
-`fixture:` は MVP の active prefix でも reserved prefix でもない。Fixture / golden は processor / renderer / validator の検証資産であり、project-level canonical reference foundation には含めない。
+`fixture:` is neither an active nor a reserved prefix in the MVP. Fixture/golden assets are verification assets for processors/renderers/validators and are not included in the project-level canonical reference foundation.
 
-`requirement:` / `work-item:` / `task:` prefix も MVP では採用しない。Workflow artifact は `REQ-*` / `WORK-*` / `TASK-*` ID-as-ref で解決する。
+`requirement:` / `work-item:` / `task:` prefixes are also not adopted in the MVP. Workflow artifacts are resolved by `REQ-*` / `WORK-*` / `TASK-*` ID-as-refs.
 
-## 由来
+## Sources
 
-- V01-ADR-081 §5: requirement ID は ADR 番号と結合しない
-- V01-ADR-083 §8: physical path から trace identity を分離する原則
-- V01-ADR-087: Design Records MCP resolve responsibility と investigation canonical reference rule
-- V01-ADR-088: realization endpoint / external coverage artifact を MVP 外へ送り、canonical reference resolution foundation に縮小
-- V01-ADR-091: workflow artifact 間 relation の ID-as-ref boundary
+- V01-ADR-081 §5: requirement IDs do not combine with ADR numbers
+- V01-ADR-083 §8: principle of separating trace identity from physical path
+- V01-ADR-087: Design Records MCP resolve responsibility and investigation canonical reference rule
+- V01-ADR-088: scope reduced to canonical reference resolution foundation by deferring realization endpoints and external coverage artifacts to MVP-out
+- V01-ADR-091: ID-as-ref boundary for workflow artifact inter-relations
 - V01-ADR-092: workflow artifact record / resolve / relation validation boundary

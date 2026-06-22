@@ -1,52 +1,33 @@
----
-scope: docs/spec/views/dag.md
-status: confirmed
-last_updated: 2026-05-31
-summary: >
-  DAG（Directed Acyclic Graph）のrenderルール定義。
-  Processingレイヤーのノード・エッジをMermaid flowchartとして出力する際の
-  ノード形状・エッジ種別・スコープ・特殊ケースを定義する。
-depends_on:
-  - docs/adr/009-task-io-design.md
-  - docs/adr/011-file-main-node-and-sub-nodes.md
-  - docs/adr/012-control-flow-nodes.md
-  - docs/adr/015-file-internal-edge-structure.md
-  - docs/adr/016-foreach-as-flow-construct.md
-  - docs/adr/017-diagram-layers-and-scope.md
-  - docs/adr/020-cross-edge-management.md
-  - docs/adr/022-dag-node-shapes-and-edge-types.md
-  - docs/adr/023-control-flow-scope-and-branch-entry.md
-  - docs/adr/024-dag-boundary-nodes.md
-  - docs/adr/040-control-flow-step-wiring.md
-  - docs/adr/044-store-access-edge-labels.md
-  - docs/adr/062-task-return-source.md
-  - docs/adr/063-task-return-source-initialized-store.md
-  - docs/adr/064-returns-source-dag-render.md
-  - docs/adr/065-asset-immutability-and-edge-role-contrast.md
-  - docs/adr/066-dag-classdef-wcag-fix.md
-  - docs/adr/071-file-private-helper-model-render-exposure.md
----
+# Contract: DAG render rules
 
-# DAG renderルール
+- **id**: `spec:bpdsl.views.dag`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.views.overview`
+- **contract_class**: `format`
 
-## スコープ
+## What this is
 
-1ファイル = 1DAG。メインノードのファイルを単位としてDAGを描画する（V01-ADR-011）。
-複数ファイルをまたぐモジュール全体DAGは定義しない。
+Render rules for the DAG (Directed Acyclic Graph): node shape, edge kind, scope, and special-case handling when outputting Processing-layer nodes and edges as a Mermaid flowchart.
 
-他ファイルのメインノードを参照する場合（foreach.applyの外部参照等）は、
-参照先ノードを外部ノードとして描画する（→ [外部参照ノード](#外部参照ノード)）。
+> Source: V01-ADR-009, V01-ADR-011, V01-ADR-012, V01-ADR-015, V01-ADR-016, V01-ADR-017, V01-ADR-020, V01-ADR-022, V01-ADR-023, V01-ADR-024, V01-ADR-040, V01-ADR-044, V01-ADR-062, V01-ADR-063, V01-ADR-064, V01-ADR-065, V01-ADR-066, V01-ADR-071
 
----
+## Current contract
 
-## 出力フォーマット
+### Scope
+
+One file = one DAG. The DAG is drawn at the granularity of the file containing the main node (V01-ADR-011). A module-wide DAG spanning multiple files is not defined.
+
+When referencing a main node in another file (e.g. an external reference via `foreach.apply`), the referenced node is drawn as an external node (see §External reference node).
+
+### Output format
 
 ```markdown
-# {メインノードID}
+# {main node ID}
 
 **API**: [{method} {path}](../_cross/api.md)
 
-{メインノードのnote}
+{main node's note}
 
 ​```mermaid
 flowchart TD
@@ -65,27 +46,27 @@ flowchart TD
 | {helper_model_id} | struct | {task_id}.returns | field: type | note |
 ```
 
-- H1 = メインノードの `id`
-- **API行** = メインノードが `endpoint: true` の場合のみ出力。`note` の前に置く。リンク先は同じ `renders/` 配下の `_cross/api.md` とする
-- 説明文 = メインノードの `note`。`note` がない場合は省略
-- Mermaid記法: `flowchart TD`（上から下）
-- **Tasks詳細セクション** = Mermaid図の後に続く。task / fork / join / branch のsignature・reads/writes・noteを一覧する
-- **Private models詳細セクション** = 対象 task file に file-private helper model が存在する場合のみ、`## Tasks` の後に続けて出力する。存在しない場合は section 自体を省略する
+- H1 = the main node's `id`.
+- **API line** = output only if the main node has `endpoint: true`, placed before `note`. Links to `_cross/api.md` under the same `renders/` tree.
+- Description text = the main node's `note`; omitted if absent.
+- Mermaid notation: `flowchart TD` (top to bottom).
+- **Tasks detail section** = follows the Mermaid diagram. Lists task / fork / join / branch signature, reads/writes, and note.
+- **Private models detail section** = follows `## Tasks`, output only if the target task file has file-private helper models. The section itself is omitted otherwise.
 
-### Tasks詳細セクションのフォーマット
+### Tasks detail section format
 
 ```markdown
 ## Tasks
 
 ### login
 
-認証情報を検証しトークンを発行する。
+Validate credentials and issue a token.
 
 #### Params
 
 | name | model | note |
 |---|---|---|
-| credentials | credential | ログインフォーム入力 |
+| credentials | credential | Login form input |
 
 #### Returns
 
@@ -102,25 +83,25 @@ flowchart TD
 
 ### other_task
 
-**外部参照**: [auth.task.validate](../../auth/task/validate.md)
+**External reference**: [auth.task.validate](../../auth/task/validate.md)
 ```
 
-- 同ファイル内のtask / fork / join / branch: `note` をH3直下の本文として出力し、signature（params/returns）・reads/writesをtableで列挙する
-- メインノードの `note` はH1直下の説明文として既に出力されるため、`## Tasks` 内のメインノードH3直下では省略する
-- 外部参照taskのみ: `**外部参照**:` でリンクを示し詳細は省略
-- `note` がない場合はH3直下の本文を省略する
-- `params` がない場合は `#### Params` セクションを省略する
-- `returns` がない場合は `#### Returns` セクションを省略する
-- `returns.source` がある場合、`Returns` table の `source` 列に source 文字列を表示する。未指定の場合は `—` を表示する
-- `reads` / `writes` がない場合は `#### Store access` セクションを省略する
-- 同じstoreが `reads` と `writes` の両方に存在する場合、`Store access` の `access` は `read/write` として1行に集約する
-- `Params` の `note` がない場合は `—` を表示する
+- task / fork / join / branch in the same file: `note` is output as body text directly under the H3; signature (params/returns) and reads/writes are listed as tables.
+- The main node's `note` is already output as the description text directly under the H1, so it's omitted under the main node's own H3 within `## Tasks`.
+- External reference task only: shown with **External reference**: and a link; detail is omitted.
+- The body directly under H3 is omitted if `note` is absent.
+- The `#### Params` section is omitted if `params` is absent.
+- The `#### Returns` section is omitted if `returns` is absent.
+- If `returns.source` is present, the Returns table's `source` column shows the source string; `—` if unspecified.
+- The `#### Store access` section is omitted if both `reads` / `writes` are absent.
+- When the same store appears in both `reads` and `writes`, the `Store access` `access` column collapses to a single `read/write` row.
+- `Params`'s `note` shows `—` if absent.
 
-> 由来: V01-ADR-064 §1〜§3
+> Source: V01-ADR-064 §1–3
 
-### Private models詳細セクションのフォーマット
+### Private models detail section format
 
-Task-file helper model の基本 semantics は [nodes.md](../nodes.md#task-file-private-helper-model-semantics) が定義する。DAG Markdown は、この helper model を Mermaid flowchart 本体には描画せず、Mermaid 図と `## Tasks` の後に `## Private models` table として表示する。
+Task-file helper model basic semantics are defined by [`spec:bpdsl.dsl.nodes.data`](../dsl/nodes/data.md). The DAG Markdown does not draw this helper model in the Mermaid flowchart body — it shows it as a `## Private models` table after the Mermaid diagram and `## Tasks`.
 
 ```markdown
 ## Private models
@@ -131,159 +112,157 @@ Task-file helper model の基本 semantics は [nodes.md](../nodes.md#task-file-
 | preview_item | struct | preview_response.items | title: str<br/>url: str | item entry |
 ```
 
-| column | 内容 |
+| column | content |
 |---|---|
-| `model` | helper model id |
-| `kind` | `struct` / `list` / `dict` / `enum` |
-| `used by` | 当該 helper model を直接参照している箇所。複数ある場合は `<br/>` 区切り |
-| `shape` | kind に応じた depth 1 の schema 概要 |
-| `note` | helper model の `note`。ない場合は `—` |
+| `model` | Helper model ID. |
+| `kind` | `struct` / `list` / `dict` / `enum`. |
+| `used by` | Locations directly referencing this helper model. Multiple locations joined by `<br/>`. |
+| `shape` | Depth-1 schema summary appropriate to `kind`. |
+| `note` | The helper model's `note`; `—` if absent. |
 
-`used by` は depth 1 の直接参照だけを列挙する。表記は `<parent_id>.<location>` とし、location は参照元の種類に応じて以下を使う。
+`used by` lists only depth-1 direct references. Notation is `<parent_id>.<location>`, where `location` depends on the kind of referencing site:
 
-| 参照元 | location |
+| referencing site | location |
 |---|---|
-| struct field | field name |
+| struct field | Field name. |
 | task / branch / fork / join param | `param:<name>` |
 | returns | `returns` |
 | list model element | `element` |
 | dict model value | `value` |
 
-`shape` は kind に応じて以下の通り表示する。
+`shape` displays per kind:
 
 | kind | shape |
 |---|---|
-| `struct` | field を `name: type` 形式で `<br/>` 区切りで列挙する。field note は含めない |
+| `struct` | Fields listed as `name: type`, joined by `<br/>`. Field notes are not included. |
 | `list` | `list<element_type>` |
-| `dict` | `dict<value_type>`。key は常に `str` |
-| `enum` | values を `<br/>` 区切りで列挙する |
+| `dict` | `dict<value_type>`. Key is always `str`. |
+| `enum` | Values joined by `<br/>`. |
 
-Nested helper model は型名参照に留め、さらに深い schema 展開は行わない。Public model の deep schema 展開、model-file helper model render、model catalog render は DAG Markdown の責務外であり、V01-WORK-DATA-003 または後続 scope で扱う。
+A nested helper model is shown only as a type-name reference — no further deep schema expansion. Public model deep-schema expansion, model-file helper-model render, and model-catalog render are outside the DAG Markdown's responsibility.
 
-> 由来: V01-ADR-071 §1〜§5
+> Source: V01-ADR-071 §1–5
 
----
+## Rules
 
-## ノードのrender
+### Node render
 
-### start / end
+#### start / end
 
 ```
 _start([Start])
 _end([End])
 ```
 
-形状: スタジアム（Mermaid `([label])`）。ISO 5807:1985 Terminal記号に対応（V01-ADR-022）。
-Mermaid ID は `_start` / `_end`（キーワード衝突回避のためアンダースコアプレフィックス付与）（V01-ADR-024）。
-DAGの先頭に `_start([Start])` を置き、最後のtaskから `_end([End])` へ制御線（`==>`）を引く。floatingノード（V01-ADR-023）も `_end` へ接続する。
+Shape: stadium (Mermaid `([label])`), corresponding to the ISO 5807:1985 Terminal symbol (V01-ADR-022). Mermaid ID is `_start` / `_end` (underscore-prefixed to avoid keyword collision) (V01-ADR-024). The DAG places `_start([Start])` at the top, and draws a control line (`==>`) from the last task to `_end([End])`. A floating node (see §Control line below) also connects to `_end`.
 
-`_end` は ControlFlow 終点に加えて、`returns.source` の ObjectFlow 終点も兼ねる。最後の task / floating node からの制御線（`==>`）と、`returns.source` で指定された値を表す node からの label 付き data line（`-- "returns as <returns.name>" -->`）は同時に `_end` へ入ってよい。task / join / collected asset source のように asset を生成する source では、task node から直接 `_end` へ return data line を引かず、asset node から `_end` へ引く。
+`_end` doubles as both the ControlFlow terminus and the ObjectFlow terminus for `returns.source`. The control line (`==>`) from the last task / floating node, and the labeled data line (`-- "returns as <returns.name>" -->`) from the node representing the value specified by `returns.source`, may both enter `_end` simultaneously. For an asset-producing source like a task / join / collected asset source, the return data line is drawn from the asset node to `_end`, not directly from the task node.
 
-**floatingノード**: flow内で後続のwiring参照がないtask。branchの各caseタスクのように、分岐先で処理が完結しそれ以降のstepがない場合に発生する。floatingノードには暗黙的に `==> _end([End])` を追加して描画する。
+**Floating node**: a task within the flow with no subsequent wiring reference. Occurs, for example, when each branch case task completes processing at the branch destination with no further step. A floating node implicitly gets `==> _end([End])` added when drawn.
 
 ```
 admin_flow ==> _end([End])
 user_flow ==> _end
 ```
 
-（`_end` は1つのノードなので、2本以上の制御線が収束してよい。また、`returns.source` がある場合は data line も収束してよい）
+(`_end` is a single node, so two or more control lines may converge on it; if `returns.source` is present, data lines may converge there too.)
 
-> 由来: V01-ADR-024 §4, V01-ADR-064 §1〜§3
+> Source: V01-ADR-024 §4, V01-ADR-064 §1–3
 
-### task
+#### task
 
 ```
 task_id[task_id]
 ```
 
-形状: 矩形（Mermaid `[label]`）
+Shape: rectangle (Mermaid `[label]`).
 
-Task-file helper model は processing flow node ではないため、task / asset / store / branch / fork / join として Mermaid DAG 本体に描画しない。Helper model の render exposure は `## Private models` detail section に限定する。DAG の asset node label に TypeRef hint を表示する範囲は V01-ADR-074 / V01-REQ-DATA-005 / V01-WORK-DATA-007 が所有する。
+A task-file helper model is not a processing flow node, so it is never drawn in the Mermaid DAG body as a task / asset / store / branch / fork / join. Helper-model render exposure is limited to the `## Private models` detail section. The scope for showing a TypeRef hint on a DAG asset node label is owned by V01-ADR-074 / V01-REQ-DATA-005 / V01-WORK-DATA-007.
 
-### asset
+#### asset
 
 ```
 asset_name([asset_name: type_hint])
 ```
 
-形状: スタジアム（Mermaid `([label])`）。taskの `returns` から暗黙に生成される中間ノード（V01-ADR-009）。
+Shape: stadium (Mermaid `([label])`). An intermediate node implicitly generated from a task's `returns` (V01-ADR-009).
 
-Asset label は V01-ADR-074 により top-level TypeRef hint を表示する。
+Per V01-ADR-074, the asset label shows a top-level TypeRef hint:
 
 ```text
 {asset_name}: {type_hint}
 ```
 
-`type_hint` の算出規則:
+`type_hint` derivation rule:
 
-| TypeRef | asset label の type_hint |
+| TypeRef | asset-label type_hint |
 |---|---|
-| primitive | primitive 名。例: `str`, `int`, `bool`, `any` |
-| named model | model local id |
+| primitive | The primitive name, e.g. `str`, `int`, `bool`, `any`. |
+| named model | The model local ID. |
 | inline `list<T>` | `list` |
 | inline `dict<T>` | `dict` |
 
-named list / dict model は named model として扱い、`list` / `dict` へ潰さず model local id を表示する。
+A named list/dict model is treated as a named model — it shows the model local ID rather than collapsing to `list` / `dict`.
 
-同一 DAG render scope 内で別 identity の named model が同じ local id hint になる場合、その TypeRef hint は曖昧である。V01-WORK-DATA-007 minimum では shortened QID fallback は行わず、曖昧な asset label では TypeRef hint を省略して asset name のみを表示する。
+If a named model with a different identity happens to share the same local-id hint within the same DAG render scope, the TypeRef hint is ambiguous. V01-WORK-DATA-007 minimum does not perform a shortened-QID fallback — for an ambiguous asset label, the TypeRef hint is omitted and only the asset name is shown.
 
 ```text
-# 通常時
+# normal case
 response([response: get_reference_tree_response])
 
-# named model local id が曖昧な場合
+# ambiguous named-model local id
 response([response])
 ```
 
-TypeRef が invalid / unresolved の場合も、DAG label では TypeRef hint を省略する。invalid / unresolved TypeRef の説明は diagnostics が所有し、DAG render は追加 diagnostic surface を持たない。
+The TypeRef hint is also omitted on the DAG label when the TypeRef is invalid / unresolved. Explaining an invalid / unresolved TypeRef is owned by diagnostics — DAG render adds no extra diagnostic surface for this.
 
-full TypeRef は Mermaid label に展開しない。full TypeRef / full identity は Tasks detail section、MCP inspect、model render、または catalog render で確認する。
+A full TypeRef is never expanded into the Mermaid label. Check the full TypeRef / full identity via the Tasks detail section, MCP `inspect`, model render, or catalog render.
 
-### store
+#### store
 
 ```
 store_id[(store_id)]
 ```
 
-形状: シリンダー（Mermaid `[(label)]`）。`reads` / `writes` エッジで task と接続される（V01-ADR-020）。
+Shape: cylinder (Mermaid `[(label)]`). Connected to a task via `reads` / `writes` edges (V01-ADR-020).
 
-initialized store も DAG 上では store と同じシリンダー形状で描く。ただし通常の module-level store とは区別するため、`subgraph initializes` 内に配置し、`initStoreNode` classDef を適用する。
+An initialized store is drawn with the same cylinder shape as a regular store on the DAG. To distinguish it from a normal module-level store, it is placed inside `subgraph initializes` and gets the `initStoreNode` classDef applied.
 
-> 由来: V01-ADR-020, V01-ADR-063, V01-ADR-065, V01-ADR-064 §4〜§6
+> Source: V01-ADR-020, V01-ADR-063, V01-ADR-065, V01-ADR-064 §4–6
 
-### branch
+#### branch
 
 ```
 branch_id{branch_id}
 ```
 
-形状: ひし形（Mermaid `{label}`）。排他分岐（V01-ADR-012）。
+Shape: diamond (Mermaid `{label}`). Exclusive branch (V01-ADR-012).
 
-### fork / join
+#### fork / join
 
 ```
 fork_id{{fork_id}}
 join_id{{join_id}}
 ```
 
-形状: 六角形（Mermaid `{{label}}`）。並列分岐・合流（V01-ADR-012）。
+Shape: hexagon (Mermaid `{{label}}`). Parallel split / merge (V01-ADR-012).
 
-> UML 2.x標準のfork/joinはバー記号（━━）だが、Mermaid flowchartはバー記号を再現できないため六角形を代替として採用する（V01-ADR-022）。
+> The UML 2.x standard fork/join uses a bar symbol (━━), but since Mermaid flowchart can't reproduce a bar symbol, a hexagon is adopted as a substitute (V01-ADR-022).
 
-### 外部参照ノード
+#### External reference node
 
-同ファイル外のメインノードを参照する場合、classDefで色を変えて区別する。
+When referencing a main node outside the same file, distinguish it visually with a classDef.
 
 ```
 classDef external fill:#e0e0e0,stroke:#999,color:#555
 class other_task external
 ```
 
-外部ノードの形状はノード種別に従う（task → 矩形、等）。
+The shape of an external node follows its node kind (task → rectangle, etc.).
 
-### subgraph params
+#### subgraph params
 
-メインノードの入力を図の境界として `subgraph params` で囲む（V01-ADR-024）。
+The main node's input is enclosed in `subgraph params` as the diagram's boundary (V01-ADR-024).
 
 ```
 subgraph params
@@ -291,16 +270,16 @@ subgraph params
 end
 ```
 
-- メインノードに `params` がある場合、各paramをassetノードとして列挙する
-- params boundary asset も通常の asset と同じ TypeRef hint 表示対象である
-- 境界assetには `boundaryNode` classDef を適用する
-- `subgraph returns` は V01-ADR-064 により廃止する。`returns.name` を表す boundary asset node は描かず、`returns.source` で指定された値を表す node から `_end` への label 付き data line（`-- "returns as <returns.name>" -->`）で return を表現する。task / join / collected asset source では asset node を経由する
+- If the main node has `params`, each param is listed as an asset node.
+- A params-boundary asset is also subject to the same TypeRef hint display as a normal asset.
+- The `boundaryNode` classDef is applied to a boundary asset.
+- `subgraph returns` is abolished per V01-ADR-064. A boundary asset node representing `returns.name` is not drawn — return is instead expressed via a labeled data line (`-- "returns as <returns.name>" -->`) from the node representing the value specified by `returns.source`, to `_end`. For task / join / collected asset source, this goes via an asset node.
 
-> 由来: V01-ADR-024 §1〜§4, V01-ADR-064 §1〜§3
+> Source: V01-ADR-024 §1–4, V01-ADR-064 §1–3
 
-### subgraph initializes
+#### subgraph initializes
 
-`initializes[]` で宣言された file-private store は、`subgraph initializes` で囲って描画する。
+A file-private store declared via `initializes[]` is enclosed and drawn within `subgraph initializes`.
 
 ```
 subgraph initializes
@@ -309,27 +288,26 @@ subgraph initializes
 end
 ```
 
-- `initializes[]` が空の task では `subgraph initializes` を出力しない
-- initialized store は store と同じシリンダー形状 `[(label)]` で描く
-- initialized store には `initStoreNode` classDef を適用する
-- Mermaid source 上の記述順は `subgraph params` → `subgraph initializes` → 本体 → `_end` を推奨する。最終配置は Mermaid renderer に委ねられる
+- `subgraph initializes` is not output for a task whose `initializes[]` is empty.
+- An initialized store is drawn with the same cylinder shape `[(label)]` as a store.
+- The `initStoreNode` classDef is applied to an initialized store.
+- Recommended Mermaid source order: `subgraph params` → `subgraph initializes` → body → `_end`. Final placement is left to the Mermaid renderer.
 
-> 由来: V01-ADR-014, V01-ADR-063, V01-ADR-064 §4〜§6
+> Source: V01-ADR-014, V01-ADR-063, V01-ADR-064 §4–6
 
-### foreachの↻装飾
+#### foreach's ↻ decoration
 
-`foreach` はnode typeではなく `flow:` の制御構文のため、独立したノードとして描画しない（V01-ADR-016）。
-apply先taskのノードラベルに `↻` を付与して表現する。
+`foreach` is not a node type — it's a `flow:` control construct — so it is not drawn as a standalone node (V01-ADR-016). It is expressed by adding `↻` to the apply-target task's node label.
 
 ```
 process_item["↻ process_item"]
 ```
 
-apply先が外部参照ノードの場合は外部ノードのclassDefと組み合わせる。
+When the apply target is an external reference node, this combines with the external node's classDef.
 
-### ノードの色付け
+#### Node coloring
 
-種別ごとにclassDefで色分けする。WCAG 2.1 Level AA（コントラスト比4.5:1以上）に準拠（V01-ADR-022）。
+Color-coded by kind via classDef, conforming to WCAG 2.1 Level AA (contrast ratio ≥ 4.5:1) (V01-ADR-022).
 
 ```
 classDef taskNode      fill:#4A90D9,stroke:#2C5F8A,color:#000
@@ -343,11 +321,11 @@ classDef boundaryNode  fill:#2D7D9A,stroke:#1A5068,color:#fff
 classDef external      fill:#E0E0E0,stroke:#999,color:#555
 ```
 
-`boundaryNode` は `subgraph params` 内の境界assetに適用する。`subgraph returns` は V01-ADR-064 により廃止された。`initStoreNode` は `subgraph initializes` 内の initialized store に適用する。
+`boundaryNode` applies to a boundary asset within `subgraph params`. `subgraph returns` was abolished by V01-ADR-064. `initStoreNode` applies to an initialized store within `subgraph initializes`.
 
-> 由来: V01-ADR-022, V01-ADR-024, V01-ADR-064 §4〜§9, V01-ADR-066
+> Source: V01-ADR-022, V01-ADR-024, V01-ADR-064 §4–9, V01-ADR-066
 
-各ノードに対応するclassを付与する。
+A class is assigned per node:
 
 ```
 class login taskNode
@@ -360,123 +338,119 @@ class _start,_end terminalNode
 class config boundaryNode
 ```
 
----
+### Edge render
 
-## エッジのrender
+Edges correspond to the UML Activity Diagram's ControlFlow / ObjectFlow distinction (OMG UML 2.x / V01-ADR-022).
 
-エッジはUML Activity DiagramのControlFlow / ObjectFlowの区別に対応する（OMG UML 2.x / V01-ADR-022）。
-
-| 種別 | UML対応 | Mermaid記法 | 用途 |
+| kind | UML correspondence | Mermaid notation | purpose |
 |------|---------|------------|------|
-| データ線 | ObjectFlow | `-->` | データの受け渡し |
-| ラベル付きデータ線 | ObjectFlow | `--"label"-->` | foreach等、意味を付与するデータの受け渡し |
-| store access線 | ObjectFlow | `-- "read" -->` / `-- "write" -->` / `<-- "read/write" -->` | storeへの読み書きアクセス |
-| 制御線 | ControlFlow | `==>` | 実行順序の制御 |
-| ラベル付き制御線 | ControlFlow | `== "label" ==>` | branch・forkの条件付き制御フロー |
+| Data line | ObjectFlow | `-->` | Passing data. |
+| Labeled data line | ObjectFlow | `--"label"-->` | Passing data with added meaning, e.g. foreach. |
+| Store access line | ObjectFlow | `-- "read" -->` / `-- "write" -->` / `<-- "read/write" -->` | Read/write access to a store. |
+| Control line | ControlFlow | `==>` | Controls execution order. |
+| Labeled control line | ControlFlow | `== "label" ==>` | Conditional control flow for branch/fork. |
 
-### データ線（`-->`）
+#### Data line (`-->`)
 
-task → asset、asset → task のwiring。`flow:` の `params` wiringから導出する。
+Wiring from task → asset, asset → task. Derived from `flow:`'s `params` wiring.
 
 ```
 fetch_data --> raw([raw])
 raw --> transform
 ```
 
-flow wiring から initialized source を参照する場合も、値の受け渡し contract なので通常の data line（`-->`）で描く。cross-edge `reads` 表現に統合しない。
+Referencing an initialized source from flow wiring is also drawn with a normal data line (`-->`), since it's a value-passing contract — it is not folded into the cross-edge `reads` representation.
 
 ```
 report --> append_item
 ```
 
-### returns.source の data line
+#### `returns.source` data line
 
-`returns.source` が指定されている場合、値を表す node から `_end` へ label 付き data line（`-- "returns as <returns.name>" -->`）を引く。`returns.name` を表す boundary node は作らない。
+When `returns.source` is specified, a labeled data line (`-- "returns as <returns.name>" -->`) is drawn from the node representing the value to `_end`. No boundary node representing `returns.name` is drawn.
 
-| source 種別 | `_end` への return data line 起点 | Mermaid例 |
+| source kind | origin of the return data line into `_end` | Mermaid example |
 |---|---|---|
-| node ID / QualifiedID | 当該 task / join が生成する asset node | `result -- "returns as report" --> _end` |
-| collected asset source（`foreach.returns`） | `foreach.returns` 名で生成される collected asset node | `results -- "returns as report" --> _end` |
-| initialized source | `subgraph initializes` 内の store node | `report -- "returns as report" --> _end` |
-| `$params.<name>` | `subgraph params` 内の boundary asset | `config -- "returns as report" --> _end` |
+| node ID / QualifiedID | The asset node produced by that task / join. | `result -- "returns as report" --> _end` |
+| collected asset source (`foreach.returns`) | The collected asset node generated under the `foreach.returns` name. | `results -- "returns as report" --> _end` |
+| initialized source | The store node within `subgraph initializes`. | `report -- "returns as report" --> _end` |
+| `$params.<name>` | The boundary asset within `subgraph params`. | `config -- "returns as report" --> _end` |
 
-`returns.source` が未指定の場合、return を表す `_end` への return data line は追加しない。node ID / QualifiedID / collected asset source では、task node から直接 `_end` へ接続せず、asset node を経由する。edge label は source 種別を問わず `returns as <returns.name>` とする。
+If `returns.source` is unspecified, no return data line into `_end` is added. For node ID / QualifiedID / collected asset source, the connection goes via the asset node, not directly from the task node. The edge label is `returns as <returns.name>` regardless of source kind.
 
-> 由来: V01-ADR-062, V01-ADR-063, V01-ADR-064 §1〜§3
+> Source: V01-ADR-062, V01-ADR-063, V01-ADR-064 §1–3
 
-### store access線
+#### Store access line
 
-store の `reads` / `writes` は store access線として描く。通常の asset dataflow と区別するため、アクセス種別を edge label で明示する（V01-ADR-044）。
+A store's `reads` / `writes` is drawn as a store access line. To distinguish it from normal asset dataflow, the access kind is made explicit via an edge label (V01-ADR-044).
 
-| YAML上の指定 | Mermaid表現 | 意味 |
+| YAML designation | Mermaid representation | meaning |
 |-------------|-------------|------|
-| `reads: [store]` | `store -- "read" --> task` | task が store を読む |
-| `writes: [store]` | `task -- "write" --> store` | task が store に書く |
-| `reads` と `writes` の両方 | `task <-- "read/write" --> store` | task が store を読み書きする |
+| `reads: [store]` | `store -- "read" --> task` | The task reads the store. |
+| `writes: [store]` | `task -- "write" --> store` | The task writes the store. |
+| Both `reads` and `writes` | `task <-- "read/write" --> store` | The task reads and writes the store. |
 
-store edge の向きは従来どおり維持するが、意味の主表現はラベルに寄せる。
-
-```
-session_store[(session_store)] -- "read" --> login       %% reads のみ
-login -- "write" --> audit_log[(audit_log)]              %% writes のみ
-login <-- "read/write" --> session_store[(session_store)] %% reads + writes 両方
-```
-
-initialized store に対しても、`reads` / `writes` 宣言は通常 store と同じ store access line で描く。一方、flow wiring から initialized source を参照する場合は data line（`-->`）で描く。同じ initialized store node に data line と store access line が両方接続されうる。
-
-flow wiring から initialized source を渡している事実から `reads` / `writes` を推論しない。逆に、`reads` / `writes` が宣言されている事実から flow wiring の data line を省略しない。両者は独立した契約として描画する。
-
-> 由来: V01-ADR-044, V01-ADR-063 §7, V01-ADR-064 §7
-
-### 制御線（`==>`）
-
-以下の全ケースで制御線を引く。
-
-- `_start` → 最初のtask（DAG起点）
-- 最後のtask → `_end`（DAG終点）
-- floatingノード → `_end`（暗黙終端）
-- **flow上で連続するtask間**（data線があっても必ず併記する）
-- task → branch / fork（分岐への入り口）
-- branch / join → 後続task（分岐・合流の出口）
+The store edge's direction is kept as before, but the primary meaning is now carried by the label.
 
 ```
-process_report ==> transform       %% 連続するtask間
+session_store[(session_store)] -- "read" --> login       %% reads only
+login -- "write" --> audit_log[(audit_log)]              %% writes only
+login <-- "read/write" --> session_store[(session_store)] %% reads + writes both
+```
+
+`reads` / `writes` declared on an initialized store are also drawn with the normal store access line, same as a regular store. However, referencing an initialized source from flow wiring is drawn with a data line (`-->`). Both a data line and a store access line may connect to the same initialized-store node.
+
+The fact that an initialized source is passed via flow wiring does not imply `reads` / `writes`. Conversely, the fact that `reads` / `writes` is declared does not let the flow-wiring data line be omitted. The two are drawn as independent contracts.
+
+> Source: V01-ADR-044, V01-ADR-063 §7, V01-ADR-064 §7
+
+#### Control line (`==>`)
+
+A control line is drawn in all of the following cases:
+
+- `_start` → first task (DAG entry point).
+- Last task → `_end` (DAG exit point).
+- Floating node → `_end` (implicit terminus).
+- **Between consecutive tasks in the flow** (always co-drawn even when a data line also exists).
+- task → branch / fork (entry into a branch).
+- branch / join → subsequent task (exit from a branch/merge).
+
+```
+process_report ==> transform       %% between consecutive tasks
 fetch_user ==> route_by_role       %% task → branch
 fetch_data ==> fan_out{{fan_out}}  %% task → fork
 ```
 
-> データ線（`-->`）だけでは実行順序がLLMに伝わりにくい。UML ControlFlowとして明示することで、DAGの制御構造を機械的に解析可能にする（V01-ADR-022）。
+> A data line (`-->`) alone doesn't convey execution order clearly to an LLM. Making it explicit as UML ControlFlow lets the DAG's control structure be parsed mechanically (V01-ADR-022).
 
-**branch（排他分岐）**
+**branch (exclusive branching)**
 
-`cases[].label` をエッジラベルに使う（V01-ADR-022, V01-ADR-023）。
+`cases[].label` is used as the edge label (V01-ADR-022, V01-ADR-023).
 
 ```
 route_by_role{route_by_role} == "admin" ==> admin_flow
 route_by_role{route_by_role} == "user" ==> user_flow
 ```
 
-**branchのparams wiring（データ線）**: branchノードが受け取るassetは2種のデータ線を引く。
-1本はbranchノード自身（ルーティング判断用）、もう1本は各branch task（実行時に使うデータ）。
+**branch's params wiring (data line)**: an asset received by a branch node gets two kinds of data lines — one to the branch node itself (for the routing decision), and one to each branch task (data used at execution time).
 
 ```
-user --> route_by_role      %% ルーティング判断用
-user --> admin_flow         %% admin ブランチへのデータ
-user --> user_flow          %% user ブランチへのデータ
+user --> route_by_role      %% for the routing decision
+user --> admin_flow         %% data into the admin branch
+user --> user_flow          %% data into the user branch
 ```
 
-**fork / join（並列実行）**
+**fork / join (parallel execution)**
 
-forkからの各ブランチに `"parallel"` ラベルを付ける（BPMN 2.0 Parallel Gateway準拠 / V01-ADR-022）。
-joinノードへは、各branchタスクからの **制御線（合流）とデータ線（結果）の両方** を引く。
+Each branch from a fork gets a `"parallel"` label (per BPMN 2.0 Parallel Gateway / V01-ADR-022). Into the join node, both a **control line (merge) and a data line (result)** are drawn from each branch task.
 
 ```
 fan_out{{fan_out}} == "parallel" ==> static_analysis
 fan_out{{fan_out}} == "parallel" ==> dynamic_analysis
 fan_out{{fan_out}} == "parallel" ==> dep_check
-static_analysis --> static_result([static_result])   %% データ線（branchタスクの出力）
-static_result --> aggregate{{aggregate}}              %% データ線（joinへの入力）
-static_analysis ==> aggregate{{aggregate}}            %% 制御線（合流）
+static_analysis --> static_result([static_result])   %% data line (branch task output)
+static_result --> aggregate{{aggregate}}              %% data line (input to join)
+static_analysis ==> aggregate{{aggregate}}            %% control line (merge)
 dynamic_analysis --> dynamic_result([dynamic_result])
 dynamic_result --> aggregate
 dynamic_analysis ==> aggregate
@@ -487,19 +461,16 @@ dep_check ==> aggregate
 
 **foreach**
 
-「foreach」はデータがどう流れるか（1件ずつ）の意味なので、データ線（ObjectFlow）にラベルとして乗せる。
-タスク間の実行順序は制御線（ControlFlow）で示す（BPMN 2.0 Multi-Instance Activity準拠 / V01-ADR-022）。
+Since "foreach" carries the meaning of how data flows (one item at a time), it's expressed as a label on the data line (ObjectFlow). Task execution order is shown via the control line (ControlFlow) (per BPMN 2.0 Multi-Instance Activity / V01-ADR-022).
 
 ```
-fetch_items ==> process_item["↻ process_item"]    %% 制御線（実行順序）
-items --"foreach"--> process_item                 %% データ線（foreachラベル付きObjectFlow）
+fetch_items ==> process_item["↻ process_item"]    %% control line (execution order)
+items --"foreach"--> process_item                 %% data line (foreach-labeled ObjectFlow)
 ```
 
----
+### Render examples
 
-## render例
-
-### 基本的なDAG（2 task + asset）
+#### Basic DAG (2 tasks + asset)
 
 YAML:
 ```yaml
@@ -542,7 +513,7 @@ flow:
       raw: fetch_raw
 ```
 
-Mermaid出力:
+Mermaid output:
 ```mermaid
 flowchart TD
   subgraph params
@@ -568,7 +539,7 @@ flowchart TD
   class config boundaryNode
 ```
 
-### fork / join を含むDAG
+#### DAG with fork / join
 
 YAML:
 ```yaml
@@ -657,7 +628,7 @@ flow:
     join: aggregate
 ```
 
-Mermaid出力:
+Mermaid output:
 ```mermaid
 flowchart TD
   subgraph params
@@ -699,7 +670,7 @@ flowchart TD
   class source_code boundaryNode
 ```
 
-### storeを含むDAG
+#### DAG with a store
 
 YAML:
 ```yaml
@@ -736,7 +707,7 @@ flow:
       credentials: $params.credentials
 ```
 
-Mermaid出力:
+Mermaid output:
 ```mermaid
 flowchart TD
   subgraph params
@@ -762,7 +733,7 @@ flowchart TD
   class credentials boundaryNode
 ```
 
-### foreachを含むDAG
+#### DAG with foreach
 
 YAML:
 ```yaml
@@ -807,7 +778,7 @@ flow:
     returns: results
 ```
 
-Mermaid出力:
+Mermaid output:
 ```mermaid
 flowchart TD
   subgraph params
@@ -833,7 +804,7 @@ flowchart TD
   class config boundaryNode
 ```
 
-### initialized source を含むDAG
+#### DAG with an initialized source
 
 YAML:
 ```yaml
@@ -870,7 +841,7 @@ flow:
       item: $item
 ```
 
-Mermaid出力:
+Mermaid output:
 ```mermaid
 flowchart TD
   subgraph params
@@ -897,10 +868,9 @@ flowchart TD
   class items boundaryNode
 ```
 
-### branchを含むDAG（floatingノードあり）
+#### DAG with a branch (containing floating nodes)
 
-returnsなし・floatingノードを含むパターン。branch caseタスクが後続なしで完結するため、
-両caseタスクがfloatingノードとなり `_end` へ暗黙接続される。
+A pattern with no `returns`, containing floating nodes. Both branch case tasks complete with no successor, so both become floating nodes implicitly connected to `_end`.
 
 YAML:
 ```yaml
@@ -957,7 +927,7 @@ flow:
           user: fetch_user
 ```
 
-Mermaid出力:
+Mermaid output:
 ```mermaid
 flowchart TD
   subgraph params
@@ -988,4 +958,26 @@ flowchart TD
   class user_id boundaryNode
 ```
 
-> 由来: V01-ADR-064, V01-ADR-066
+> Source: V01-ADR-064, V01-ADR-066
+
+## Validation rules
+
+- A floating node (no downstream wiring reference) is not an error — it is implicitly connected to `_end` rather than left dangling.
+- `returns.source` unspecified means no return data line into `_end` is added; this is valid, not an omission error.
+- An ambiguous asset TypeRef hint (same local-id, different identity, within the same render scope) is not an error — the hint is silently omitted and only the asset name is shown.
+- An invalid / unresolved TypeRef is not surfaced as an additional DAG-render diagnostic — it is the responsibility of `diagnostics` (see [`spec:bpdsl.dsl.diagnostics`](../dsl/diagnostics.md)) and is simply omitted from the asset label.
+- `subgraph initializes` must not be emitted for a task whose `initializes[]` is empty.
+- A task-file helper model must never appear in the Mermaid DAG body (task/asset/store/branch/fork/join shapes) — only in the `## Private models` table.
+- The fact that an initialized source is passed via flow wiring must not be used to infer `reads` / `writes`, and vice versa — these are independent contracts and both must be drawn if both are declared.
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.views.overview` | Parent overview; view kind catalog. |
+| `spec:bpdsl.dsl.nodes.processing` | `task` / `asset` / `branch` / `fork` / `join` node definitions this render draws. |
+| `spec:bpdsl.dsl.nodes.data` | `store` node definition; task-file helper model semantics. |
+| `spec:bpdsl.dsl.edges.data_flow` | `flow:` wiring this render derives data/control lines from. |
+| `spec:bpdsl.dsl.edges.cross_edges` | `reads:` / `writes:` fields this render draws as store access lines. |
+| `spec:bpdsl.dsl.type_ref` | TypeRef used for the asset-label type hint. |
+| `spec:bpdsl.views.model_file` | Owns model-file helper-model render and model-catalog render, both outside this contract's scope. |

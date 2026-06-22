@@ -1,24 +1,20 @@
----
-scope: docs/spec/mcp/tools/list-endpoints.md
-status: draft
-last_updated: 2026-06-07
-summary: >
-  list_endpoints toolの仕様を定義する。
-  API Table view YAMLに基づくendpoint一覧を返す。
-  V01-ADR-028のroute合成規則に従うfull pathを規定する。
-depends_on:
-  - docs/adr/028-api-table-route-composition.md
----
+# Contract: `list_endpoints`
 
-# `list_endpoints`
+- **id**: `spec:bpdsl.mcp.tools.list_endpoints`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.mcp.overview`
+- **contract_class**: `interface`
 
-## 1. Purpose
+## What this is
 
-`list_endpoints` は、API Table view YAMLに基づいてendpoint一覧を返す。
+`list_endpoints` returns the endpoint list based on an API Table view YAML.
 
-`task(endpoint=true)` を単純列挙するだけではなく、V01-ADR-028のroute合成規則に従いfull pathを返す。
+Rather than simply enumerating `task(endpoint=true)`, it returns the full path following V01-ADR-028's route-composition rule.
 
-## 2. Input
+> Source: V01-ADR-028
+
+## Request
 
 ```json
 {
@@ -26,20 +22,15 @@ depends_on:
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `api_table_id` | 任意 | API Table view ID。省略時はproject内の全API Tableを返す |
+| `api_table_id` | optional | API Table view ID. When omitted, returns all API Tables in the project. |
 
-`api_table_id` が指定された場合、toolはそのAPI Table viewだけを対象にし、response の `tables[]` に対象API Tableを1件だけ入れて返す。
-`api_table_id` が省略された場合、toolはproject内の全API Table viewを対象にし、response の `tables[]` に全API Tableを入れて返す。
-この response shape は MCP tool contract の実行時挙動であり、DATA DSL の default / union 構文としては扱わない。
+When `api_table_id` is specified, the tool targets only that API Table view and the response's `tables[]` contains exactly that one entry. When omitted, the tool targets every API Table view in the project and `tables[]` contains all of them. This response shape is MCP tool-contract runtime behavior, not a DATA DSL default/union construct.
 
-## 3. Output
+## Response
 
-`list_endpoints` response は常に `tables[]` を返す。
-`api_table_id` が指定された場合、`tables[]` には対象API Tableを1件だけ入れる。
-`api_table_id` が省略された場合、`tables[]` にはproject内の全API Tableを入れる。
-top-level single table response は MCP v1 contract に含めない。
+`list_endpoints` always returns `tables[]`. When `api_table_id` is specified, `tables[]` contains exactly that one API Table. When omitted, `tables[]` contains every API Table in the project. A top-level single-table response is not part of the MCP v1 contract.
 
 ```json
 {
@@ -72,20 +63,31 @@ top-level single table response は MCP v1 contract に含めない。
 }
 ```
 
-この例ではsection起点moduleが `auth` のため、V01-ADR-028のroute合成規則により、section起点moduleからの相対module pathは空になる。
-そのためfull pathは `/api/auth/login` ではなく `/api/login` になる。
-`/api/auth/login` を返したい場合は、API Table view側で `http_root_path: /api/auth` とするか、section起点moduleを上位moduleにする。
+In this example, the section's anchor module is `auth`, so per V01-ADR-028's route-composition rule, the relative module path from the section's anchor module is empty. The full path is therefore `/api/login`, not `/api/auth/login`. To get `/api/auth/login`, either set `http_root_path: /api/auth` on the API Table view, or make the section's anchor module a parent module.
 
-## 4. endpoint object
+### endpoint object
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `method` | ✓ | HTTP method |
-| `path` | ✓ | API Table viewにより合成されたfull path |
-| `leaf_path` | ✓ | task側のleaf path。省略時はtask.id由来 |
-| `task` | ✓ | endpoint task QualifiedID |
-| `params` | 任意 | request model QualifiedID |
-| `returns` | 任意 | response model QualifiedID |
-| `source` | 任意 | endpoint taskのSourceLocation |
+| `method` | ✓ | HTTP method. |
+| `path` | ✓ | Full path composed by the API Table view. |
+| `leaf_path` | ✓ | Task-side leaf path. Derived from `task.id` when omitted. |
+| `task` | ✓ | Endpoint task QualifiedID. |
+| `params` | optional | Request model QualifiedID. |
+| `returns` | optional | Response model QualifiedID. |
+| `source` | optional | SourceLocation of the endpoint task. |
 
----
+## Errors
+
+| code | condition |
+|---|---|
+| `not_found` | `api_table_id` does not resolve to an existing API Table view. |
+| `invalid_args` | Malformed input. |
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.mcp.overview` | Parent overview; tool catalog and selection guidance. |
+| `spec:bpdsl.mcp.tools.get_signature` | `signature.endpoint.leaf_path` is task-side only; this tool owns the composed full path. |
+| `spec:bpdsl.mcp.tools.inspect` | `inspect(view: api_table)` uses the same route-composition rule for context retrieval. |

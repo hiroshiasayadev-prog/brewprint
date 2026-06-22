@@ -1,138 +1,126 @@
----
-scope: docs/spec/concepts/traceability/out-of-scope.md
-status: draft
-last_updated: 2026-05-27
-summary: >
-  canonical reference resolution foundation の scope 外と、
-  future extension を再判断する trigger を定義する。
-depends_on:
-  - docs/adr/081-requirement-artifacts-and-spec-traceability.md
-  - docs/adr/082-golden-fixture-and-self-hosting-requirement-boundary.md
-  - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
-  - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
-  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
-  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
-  - docs/adr/091-workflow-artifact-work-item-task-milestone.md
-  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
-semantic_refs:
-  - spec:trace.out-of-scope
-sections:
-  spec:trace.out-of-scope.boundary: MVP out-of-scope boundary
-  spec:trace.future-extensions: Future extensions
----
+# Reference: Traceability out of scope
 
-# Traceability out of scope
+- **id**: `spec:product.concepts.traceability.out_of_scope`
+- **status**: draft
+- **date**: 2026-06-22
+- **parent**: `spec:product.concepts.traceability`
+
+## What this is
+
+Catalogs what is explicitly out of scope for the traceability MVP and the triggers for reintroducing each item as a future requirement.
 
 ## MVP out-of-scope boundary
 
-Semantic trace MVP は canonical reference resolution foundation に限定する。Scope 外の項目は不要という意味ではなく、concrete requirement が確認された時点で後続 ADR / requirement / work item により判断する。
+The semantic trace MVP is limited to the canonical reference resolution foundation. Items outside scope are not deemed unnecessary — they will be decided via subsequent ADRs / requirements / work items when concrete requirements are confirmed.
 
 ## Internal-design semantic endpoint and realization relation
 
-`docs/internal-design/` artifact layer は存続するが、MVP は以下を扱わない。
+The `docs/internal-design/` artifact layer continues to exist, but the MVP does not handle:
 
-- `internal-design:` semantic ref の active 化
-- internal design document の canonical ref resolve / validation
-- internal design metadata による source `spec:` relation declaration
+- Activation of the `internal-design:` semantic ref
+- Canonical ref resolve/validation of internal design documents
+- Source `spec:` relation declarations via internal design metadata
 - `spec:` → `internal-design:` realization mapping
-- spec から internal design への reverse graph / impact query
+- Reverse graph / impact queries from spec to internal design
 
-再判断 trigger:
+Reintroduction triggers:
 
-- 複数の internal design document について spec からの機械的 navigation / impact analysis が必要になった場合
-- investigation / work item / MCP query が internal design artifact の canonical resolve を必要とする場合
-- YAML trace とともに cross-layer realization chain を扱う必要が生じた場合
+- Machine-driven navigation/impact analysis from spec becomes necessary for multiple internal design documents
+- An investigation / work item / MCP query needs canonical resolve of internal design artifacts
+- Cross-layer realization chain involving YAML trace becomes necessary
 
 ## External coverage artifact and relation vocabulary
 
-MVP は external relation / assurance artifact、その配置、`coverage:` ref、`COV-*` mapping identity、coverage mapping YAML schema を扱わない。
+The MVP does not handle external relation / assurance artifacts, their placement, `coverage:` refs, `COV-*` mapping identities, or coverage mapping YAML schemas.
 
-`maps_to` / `covers` / `validates` を semantic realization relation vocabulary として operational に採用することも延期する。Validation 自体は relation ではなく、canonical reference の tool behavior / metadata contract として MVP に残る。
+Adopting `maps_to` / `covers` / `validates` as an operational semantic realization relation vocabulary is also deferred. Validation itself remains in the MVP as tool behavior / metadata contract, not as a relation.
 
-再判断 trigger:
+Reintroduction triggers:
 
-- gap / completeness / approved relation set を中央管理する必要が生じた場合
-- evidence / sign-off / audit snapshot / release baseline を relation と結び付ける必要が生じた場合
-- relation entry 自体に stable identity / approval / lifecycle / history が必要になった場合
+- Central management of gap / completeness / approved relation sets becomes necessary
+- evidence / sign-off / audit snapshots / release baselines need to be bound to relations
+- Relation entries themselves need stable identity / approval / lifecycle / history
 
-将来 external artifact を導入する場合、名称を `coverage` とするか、semantic mapping と assurance matrix を分けるか、どの directory に配置するかも判断対象とする。MVP は external artifact 用 directory を予約しない。
+If external artifacts are introduced in the future, whether to call them `coverage`, whether to separate semantic mapping from assurance matrices, and which directory to place them in will all be subject to re-decision. The MVP does not reserve a directory for external artifacts.
 
 ## Brewprint DSL YAML entity-level refs
 
-MVP では `yaml:` prefix を active 化しない。
+The MVP does not activate the `yaml:` prefix.
 
-Scope 外:
+Out of scope:
 
-- brewprint DSL YAML file-level / entity-level semantic ref
-- node / edge / view / model / task / asset 単位の semantic ref
-- YAML 内 anchor と logical unit resolver rule
-- spec / internal design / YAML realization chain
+- File-level / entity-level semantic refs for brewprint DSL YAML
+- Semantic refs per node / edge / view / model / task / asset unit
+- Anchor and logical unit resolver rules within YAML
+- Realization chains between spec / internal design / YAML
 
-`yaml:` active 化は、self-hosting / UC-002 再構築、または YAML entity ref / resolver rule の concrete requirement が成立した時点で判断する。
+Activating `yaml:` will be decided when self-hosting / UC-002 reconstruction, or concrete requirements for YAML entity refs / resolver rules, are established.
 
-## Fixture / golden traceability
+## Fixture and golden traceability
 
-MVP では `fixture:` prefix を定義せず、fixture / golden を project-level canonical reference foundation に含めない。
+The MVP does not define the `fixture:` prefix and does not include fixture/golden in the project-level canonical reference foundation.
 
-Scope 外:
+Out of scope:
 
-- fixture semantic ref
-- fixture-local coverage の project-level 統合
-- golden output と spec semantic ref の対応
-- render expected comparison semantics
-- test harness schema / golden update workflow
+- Fixture semantic refs
+- Project-level integration of fixture-local coverage
+- Correspondence between golden outputs and spec semantic refs
+- Render expected comparison semantics
+- Test harness schema / golden update workflow
 
 ## Workflow semantic prefixes and derived operations
 
-Requirement / work item / task は `REQ-*` / `WORK-*` / `TASK-*` ID-as-ref により Design Records MCP の public record / resolver / declared relation validation 対象となる。一方、MVP は `requirement:` / `work-item:` / `task:` semantic prefix を定義しない。
+Requirement / work item / task become public record / resolver / declared relation validation targets of Design Records MCP via `REQ-*` / `WORK-*` / `TASK-*` ID-as-refs. However, the MVP does not define `requirement:` / `work-item:` / `task:` semantic prefixes.
 
-Workflow artifact support に関して、以下は MVP 外である。
+The following are outside MVP scope for workflow artifact support:
 
-- orphan requirement / orphan work item / orphan task diagnostics
-- task status から work item progress を導出する projection
-- workflow 専用 traversal / tree / graph query tool
-- task dependency cycle detection / execution order projection
-- investigation metadata による `TASK-*` canonical reference
+- Orphan diagnostics for requirement / work item / task
+- Projection deriving work item progress from task status
+- Workflow-dedicated traversal / tree / graph query tools
+- Task dependency cycle detection / execution order projection
+- `TASK-*` canonical references in investigation metadata
 
-これらは declared relation integrity validation または direct ID-as-ref resolution の成立条件ではなく、具体的な運用要件が確認された時点で判断する。
+These are not prerequisites for declared relation integrity validation or direct ID-as-ref resolution, and will be decided when concrete operational requirements are confirmed.
 
 ## Full MCP writer tools
 
-MVP では MCP writer tool の request / response schema を定義しない。
+The MVP does not define request/response schemas for MCP writer tools.
 
 Future candidates:
 
-- create requirement / work item
-- register `spec:` semantic ref
-- update section mapping
-- update investigation reference metadata
+- Create requirement / work item
+- Register `spec:` semantic refs
+- Update section mappings
+- Update investigation reference metadata
 
-Writer tool を導入する場合は、dry-run diff、user confirmation、conflict handling、format preservation、write permission boundary を別 spec / ADR で定義する。
+If writer tools are introduced, dry-run diff, user confirmation, conflict handling, format preservation, and write permission boundaries will be defined in a separate spec / ADR.
 
 ## Future extensions
 
 | extension | trigger |
 |---|---|
-| `internal-design:` active 化 | internal design の canonical navigation / validation が concrete requirement になった場合 |
-| realization relation | spec と implementation-facing artifact 間の machine-readable relation が必要になった場合 |
-| external relation artifact | gap / evidence / sign-off / lifecycle の中央管理が必要になった場合 |
-| `yaml:` active 化 | YAML entity ref / cross-layer trace が必要になった場合 |
-| fixture-level traceability | golden fixture と docs/spec の対応を長期管理する必要が生じた場合 |
-| workflow semantic prefix | `REQ-*` / `WORK-*` / `TASK-*` ID-as-ref では不足する section-level addressing requirement が生じた場合 |
-| workflow orphan / progress / traversal capability | 未接続診断、status 集約 view、専用 graph traversal の concrete requirement が生じた場合 |
-| MCP resolve contract refinement | 採用済み canonical reference / workflow relation validation contract の追加 refinement が必要になった場合 |
-| MCP writer tools | canonical metadata を tool で生成・更新する必要が生じた場合 |
+| `internal-design:` activation | Internal design canonical navigation/validation becomes a concrete requirement |
+| realization relation | Machine-readable relation between spec and implementation-facing artifacts becomes necessary |
+| external relation artifact | Central management of gap / evidence / sign-off / lifecycle becomes necessary |
+| `yaml:` activation | YAML entity refs / cross-layer trace becomes necessary |
+| fixture-level traceability | Long-term management of golden fixture and docs/spec correspondence becomes necessary |
+| workflow semantic prefix | Section-level addressing requirement emerges that `REQ-*` / `WORK-*` / `TASK-*` ID-as-refs cannot satisfy |
+| workflow orphan / progress / traversal capability | Concrete requirements for disconnected artifact diagnostics, status aggregation views, or dedicated graph traversal emerge |
+| MCP resolve contract refinement | Additional refinement of the adopted canonical reference / workflow relation validation contract becomes necessary |
+| MCP writer tools | Generating or updating canonical metadata via tools becomes necessary |
 
 ## Follow-up artifact placement
 
-Future extension が必要になった場合、要求・判断・進捗・contract の owner は既存 artifact boundary に従う。
+When future extensions are needed, the owners of requirements, decisions, progress, and contracts follow the existing artifact boundary.
 
-- 要求・不足・要望: `docs/requirements/`
-- 判断: `docs/adr/`
-- 横断進捗: `docs/work-items/`
-- 具体作業: `docs/tasks/`
-- internal wiring route: `docs/internal-design/`
-- canonical reference / tool-independent trace contract: `docs/spec/concepts/traceability/`
-- MCP tool contract: `docs/spec/design-records-mcp/`
+- Requirements / gaps / requests: `product/records/requirements/`
+- Decisions: `product/records/adr/`
+- Cross-cutting progress: `product/records/work-items/`
+- Concrete work: `product/records/tasks/`
+- Canonical reference / tool-independent trace contract: `product/records/spec/concepts/traceability/`
+- Internal design artifacts *(planned)*: no canonical path yet — placement will be decided when `internal-design:` activation is triggered
+- Implementation follow-up notes *(planned)*: `docs/impl/` is the current convention; canonical `<namespace>/records/` path not yet assigned
 
-> 由来: V01-ADR-082, V01-ADR-083, V01-ADR-084, V01-ADR-087, V01-ADR-088, V01-ADR-091, V01-ADR-092; V01-INV-DOCS-002; V01-INV-DOCS-003
+## Sources
+
+V01-ADR-082, V01-ADR-083, V01-ADR-084, V01-ADR-087, V01-ADR-088, V01-ADR-091, V01-ADR-092; V01-INV-DOCS-002; V01-INV-DOCS-003

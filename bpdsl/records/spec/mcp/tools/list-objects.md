@@ -1,34 +1,23 @@
----
-scope: docs/spec/mcp/tools/list-objects.md
-status: draft
-last_updated: 2026-06-07
-summary: >
-  list_objects toolの仕様を定義する。
-  project内のsemantic object一覧を返す探索用tool。
-  詳細情報は他toolで取得する前提とする。
-depends_on:
-  - docs/adr/054-mcp-query-coverage-for-design-conversation.md
----
+# Contract: `list_objects`
 
-# `list_objects`
+- **id**: `spec:bpdsl.mcp.tools.list_objects`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.mcp.overview`
+- **contract_class**: `interface`
 
-## 1. Purpose
+## What this is
 
-`list_objects` は、project内のsemantic object一覧を返す。
+`list_objects` returns a list of semantic objects in the project.
 
-返す対象:
+Returned object kinds: `node`, `view`, `transition`, `field`. `asset` / `file` / `primitive` are not listed by `list_objects` — they are handled as reference targets, selector targets, or file-inspect targets.
 
-- `node`
-- `view`
-- `transition`
-- `field`
+`list_objects` is an exploration tool — it does not return detailed signature / references / inspect information for each object. When detail is needed, call `get_signature` / `get_references` / `inspect` using the returned `object` / `kind` / `id` as a selector.
 
-`asset` / `file` / `primitive` は `list_objects` の一覧対象外とする。
-これらは reference target、selector target、または file inspect target として扱う。
+> Source: V01-ADR-054
 
-`list_objects` は探索用toolであり、各objectの詳細なsignature / references / inspect情報は返さない。詳細が必要な場合は、返された `object` / `kind` / `id` をselectorとして `get_signature` / `get_references` / `inspect` を呼ぶ。
+## Request
 
-## 2. Input
 ```json
 {
   "object": "node",
@@ -38,20 +27,17 @@ depends_on:
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `object` | 任意 | `node` / `view` / `transition` / `field` |
-| `kind` | 任意 | object-dependent kind filter。値集合は `docs/spec/mcp/schema.md` の object-dependent kind vocabulary に従う |
-| `module` | 任意 | module path。例: `order`, `payment.webhooks` |
-| `file` | 任意 | FileID |
+| `object` | optional | `node` / `view` / `transition` / `field`. |
+| `kind` | optional | Object-dependent kind filter. Value set follows the object-dependent kind vocabulary in [`spec:bpdsl.mcp.schema`](../schema.md). |
+| `module` | optional | Module path, e.g. `order`, `payment.webhooks`. |
+| `file` | optional | FileID. |
 
-`object` を省略した場合は、`node` / `view` / `transition` / `field` の全 listable object を対象にする。
-`kind` は指定された `object` に依存する filter である。
-`object` 省略時に `kind` を指定した場合は、listable object 全体の中でその `kind` に一致するものだけを返す。
-例えば `kind: task` は `node: task`、`kind: api_table` は `view: api_table` に一致する。
-未知の `object` または `kind` は `invalid_args` tool error とする。
+When `object` is omitted, all listable objects across `node` / `view` / `transition` / `field` are targeted. `kind` is a filter dependent on the given `object`. If `kind` is specified while `object` is omitted, only listable objects matching that `kind` across all object types are returned — e.g. `kind: task` matches `node: task`, `kind: api_table` matches `view: api_table`. An unknown `object` or `kind` is an `invalid_args` tool error.
 
-## 3. Output
+## Response
+
 ```json
 {
   "objects": [
@@ -70,4 +56,16 @@ depends_on:
 }
 ```
 
----
+## Errors
+
+| code | condition |
+|---|---|
+| `invalid_args` | Unknown `object` or `kind` value. |
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.mcp.overview` | Parent overview; tool catalog and selection guidance. |
+| `spec:bpdsl.mcp.schema` | Object-dependent kind vocabulary used by the `kind` filter. |
+| `spec:bpdsl.mcp.errors` | Error code catalog. |

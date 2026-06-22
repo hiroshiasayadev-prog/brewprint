@@ -1,24 +1,20 @@
----
-scope: docs/spec/mcp/tools/get-references.md
-status: draft
-last_updated: 2026-06-07
-summary: >
-  get_references toolの仕様を定義する。
-  対象objectの直接referenceを返す。
-  directionとreference kind filter、およびdepthの扱いを規定する。
-depends_on:
-  - docs/adr/049-mcp-query-reference-vocabulary.md
----
+# Contract: `get_references`
 
-# `get_references`
+- **id**: `spec:bpdsl.mcp.tools.get_references`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.mcp.overview`
+- **contract_class**: `interface`
 
-## 1. Purpose
+## What this is
 
-`get_references` は、対象objectの直接referenceを返す。
+`get_references` returns a target object's direct references.
 
-MCP v1ではdirect referencesのみを返す。
+MCP v1 returns direct references only.
 
-## 2. Input
+> Source: V01-ADR-049
+
+## Request
 
 ```json
 {
@@ -30,21 +26,17 @@ MCP v1ではdirect referencesのみを返す。
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `selector` | ✓ | Object selector |
-| `direction` | 任意 | `out` / `in` / `both`。省略時は `out` |
-| `kinds` | 任意 | reference kind filter。省略時は全kind |
+| `selector` | ✓ | Object selector. |
+| `direction` | optional | `out` / `in` / `both`. Defaults to `out` when omitted. |
+| `kinds` | optional | Reference-kind filter. All kinds when omitted. |
 
-`direction` が省略された場合、toolは `out` を使用し、response の `direction` には実際に使用した `out` を返す。
-`direction` が `out` / `in` / `both` 以外の場合は `unsupported_direction` tool error とする。
-この default は MCP tool contract の実行時挙動であり、DATA DSL の default 構文としては扱わない。
+When `direction` is omitted, the tool uses `out`, and the response's `direction` field reports the `out` actually used. A `direction` value outside `out` / `in` / `both` is an `unsupported_direction` tool error. This default is MCP tool-contract runtime behavior, not a DATA DSL default construct.
 
-`selector` の object / kind 対応範囲は `docs/spec/mcp/schema.md` の selector support matrix を正本とする。
-`get_references` で matrix が `no` の selector を受け取った場合は、原則として `unsupported_object` tool error とする。
-`limited` の selector は同matrixと本toolの tool-specific section に従って、返却対象referenceを限定してよい。
+The selector's object/kind support range is governed by the selector support matrix in [`spec:bpdsl.mcp.schema`](../schema.md). If `get_references` receives a selector marked `no` in the matrix, it returns `unsupported_object` tool error in principle. A `limited` selector may have its returned references restricted per that matrix and this tool's tool-specific section below.
 
-## 3. Output
+## Response
 
 ```json
 {
@@ -88,16 +80,19 @@ MCP v1ではdirect referencesのみを返す。
 }
 ```
 
-## 4. depth
+`depth` always returns `1`. MCP v1's `get_references` request has no `depth` field — transitive reference traversal is handled by the separate [`get_reference_tree`](get-reference-tree.md) tool per V01-ADR-055.
 
-`depth` は常に `1` を返す。
+## Errors
 
-MCP v1では、`get_references` inputに `depth` を持たない。
-transitive reference traversal は、V01-ADR-055に従い、別tool `get_reference_tree` ([get-reference-tree.md](./get-reference-tree.md)) で扱う。
+| code | condition |
+|---|---|
+| `unsupported_object` | Selector resolves to an object/kind marked `no` in the selector support matrix. |
+| `unsupported_direction` | `direction` value outside `out` / `in` / `both`. |
+| `not_found` | Selector does not resolve to any object. |
+| `ambiguous` | Selector resolves to multiple candidates. |
+| `kind_mismatch` | Resolved kind does not match `selector.kind`. |
 
-## 5. Selector support
-
-`get_references` の selector support は `docs/spec/mcp/schema.md` の selector support matrix を正本とする。
+## Selector support
 
 Supported selectors:
 
@@ -110,7 +105,7 @@ Supported selectors:
 - `view: sequence_diagram`
 - `transition`
 - `field` / `model_field`
-- `file: node` limited
+- `file: node` (limited)
 - `file: state_file`
 - `asset`
 - private sub node
@@ -131,4 +126,11 @@ Unsupported selectors:
 
 For unsupported selectors, `get_references` returns an `unsupported_object` tool error.
 
----
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.mcp.overview` | Parent overview; tool catalog and selection guidance. |
+| `spec:bpdsl.mcp.schema` | Selector support matrix, Reference / Reference kind shapes. |
+| `spec:bpdsl.mcp.errors` | Error code catalog. |
+| `spec:bpdsl.mcp.tools.get_reference_tree` | Handles transitive traversal beyond direct references. |

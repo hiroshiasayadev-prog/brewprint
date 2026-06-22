@@ -1,115 +1,110 @@
----
-scope: docs/spec/views/wireframe.md
-status: confirmed
-last_updated: 2026-04-26
-summary: >
-  wireframe DSLのrenderルール定義。
-  stateノードに付属するwireframeセクションをHTML+最小CSSで出力する際の
-  要素種別・フィールド制約・layout object・renderルールを定義する。
-depends_on:
-  - docs/adr/019-state-node.md
-  - docs/adr/018-event-node.md
-  - docs/adr/029-wireframe-dsl.md
-  - docs/adr/042-wireframe-main-and-layout.md
----
+# Contract: Wireframe render rules
 
-# wireframe renderルール
+- **id**: `spec:bpdsl.views.wireframe`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.views.overview`
+- **contract_class**: `format`
 
-## スコープ
+## What this is
 
-このspecはbrewprint YAMLの`wireframe`セクションのrenderルールを定義する。
+Render rules for the wireframe DSL — the `wireframe` section attached to a `state` node — output as HTML plus minimal CSS.
 
-- **対象ノード**: `type: state` のノードのみ
-- **入力**: `state.wireframe` 以下の単一root wireframe tree
-- **出力形式**: HTML fragment + fixed CSS profile（`.wf-*` namespace）
-- **対象**: 画面構造、semantic container、構造layout
-- **対象外**: 視覚style（色・フォント・border/radius/shadow等）、任意CSS、class直指定、JS生成、データバインディング
+- **Target node**: only `type: state` nodes.
+- **Input**: the single root wireframe tree under `state.wireframe`.
+- **Output format**: HTML fragment + fixed CSS profile (the `.wf-*` namespace).
+- **In scope**: screen structure, semantic containers, structural layout.
+- **Out of scope**: visual style (color, font, border-radius, shadow, etc.), arbitrary CSS, direct class assignment, JS generation, data binding.
 
-`layout`で扱うのは、画面構造を成立させるための構造的layout情報に限定する。色・フォント・枠線・角丸・影などの視覚styleはwireframe DSLでは扱わない。
+`layout` is limited to structural layout information needed to establish screen structure — visual style (color, font, border, radius, shadow) is not handled by the wireframe DSL.
 
-## 要素の分類
+> Source: V01-ADR-018, V01-ADR-019, V01-ADR-029, V01-ADR-042
 
-wireframeの要素は **container** と **leaf** に分類される。
+## Current contract
 
-### containerノード
+### Element classification
 
-子要素（`children`）を持つ要素。`children`は必須。
+Wireframe elements are classified as **container** or **leaf**.
 
-| type | 説明 | HTML element |
+#### container nodes
+
+An element with children (`children`). `children` is required.
+
+| type | description | HTML element |
 |------|------|--------------|
-| `col` | 縦並び（stack相当） | `div.wf-col` |
-| `row` | 横並び | `div.wf-row` |
-| `grid` | グリッドレイアウト。`cols`で列数指定（必須） | `div.wf-grid` |
-| `card` | 意味的なまとまり | `section.wf-card` |
-| `sidebar` | サイドバー領域 | `aside.wf-sidebar` |
-| `header` | ヘッダー領域 | `header.wf-header` |
-| `footer` | フッター領域 | `footer.wf-footer` |
-| `main` | 主要コンテンツ領域 | `main.wf-main` |
+| `col` | Vertical stack. | `div.wf-col` |
+| `row` | Horizontal stack. | `div.wf-row` |
+| `grid` | Grid layout. Column count via `cols` (required). | `div.wf-grid` |
+| `card` | A semantic grouping. | `section.wf-card` |
+| `sidebar` | Sidebar region. | `aside.wf-sidebar` |
+| `header` | Header region. | `header.wf-header` |
+| `footer` | Footer region. | `footer.wf-footer` |
+| `main` | Main content region. | `main.wf-main` |
 
-`main` は主要コンテンツ領域を表すcontainerであり、HTML renderでは `<main class="wf-main">` に対応する。
+`main` is a container representing the primary content region, corresponding to `<main class="wf-main">` in HTML render.
 
-### leafノード
+#### leaf nodes
 
-`children`を持てない要素。
+An element that cannot have `children`.
 
-**interactive（`fires`を持てる）**
+**interactive (may have `fires`)**
 
-| type | 説明 |
+| type | description |
 |------|------|
-| `button` | ボタン。`label`必須 |
-| `input` | テキスト入力。`label`必須、`placeholder`任意 |
-| `password` | パスワード入力。`label`必須、`placeholder`任意 |
-| `select` | ドロップダウン。`label`必須 |
-| `checkbox` | チェックボックス。`label`必須 |
-| `radio` | ラジオボタン。`label`必須 |
+| `button` | Button. `label` required. |
+| `input` | Text input. `label` required, `placeholder` optional. |
+| `password` | Password input. `label` required, `placeholder` optional. |
+| `select` | Dropdown. `label` required. |
+| `checkbox` | Checkbox. `label` required. |
+| `radio` | Radio button. `label` required. |
 
-**non-interactive（`fires`を持たない）**
+**non-interactive (no `fires`)**
 
-| type | 説明 |
+| type | description |
 |------|------|
-| `text` | テキスト・ラベル。`label`必須 |
-| `badge` | バッジ・タグ。`label`必須 |
-| `image` | 画像プレースホルダー |
-| `icon` | アイコンプレースホルダー |
-| `divider` | 区切り線 |
+| `text` | Text/label. `label` required. |
+| `badge` | Badge/tag. `label` required. |
+| `image` | Image placeholder. |
+| `icon` | Icon placeholder. |
+| `divider` | Divider line. |
 
-## フィールド定義
+### Field definitions
 
-### 全要素共通
+**Common to all elements**
 
-| フィールド | 型 | 説明 |
+| field | type | description |
 |-----------|-----|------|
-| `type` | string | 要素種別（必須） |
-| `id` | string | コンポーネントID。HTMLでは`id`属性ではなく`data-wf-id`へ出力する |
-| `label` | string | 表示テキスト。type依存で意味が変わる。image/icon/divider/containerノードでは不要 |
-| `layout` | object | 構造layout指定。全要素で任意だが、指定可能fieldはcontainer/leafで異なる |
+| `type` | string | Element kind (required). |
+| `id` | string | Component ID. Output to HTML as `data-wf-id`, not the `id` attribute. |
+| `label` | string | Display text. Meaning depends on `type`. Not needed for image/icon/divider/container nodes. |
+| `layout` | object | Structural layout designation. Optional for all elements; which fields are allowed differs between container and leaf. |
 
-### containerノード専用
+**container-only**
 
-| フィールド | 対象 | 型 | 説明 |
+| field | applies to | type | description |
 |-----------|------|----|------|
-| `children` | 全container | array | 子ノードのリスト（必須） |
-| `cols` | grid | integer | グリッドの列数（必須） |
+| `children` | all containers | array | List of child nodes (required). |
+| `cols` | grid | integer | Number of grid columns (required). |
 
-### interactive要素専用
+**interactive-only**
 
-| フィールド | 対象 | 型 | 説明 |
+| field | applies to | type | description |
 |-----------|------|----|------|
-| `fires` | button/input/password/select/checkbox/radio | string | 操作時に発火するevent ID。HTMLでは`data-wf-fires`へ出力する |
-| `disabled` | button/input/password/select/checkbox/radio | boolean | 非活性フラグ |
-| `placeholder` | input/password | string | 入力欄のプレースホルダーテキスト |
+| `fires` | button/input/password/select/checkbox/radio | string | Event ID fired on interaction. Output to HTML as `data-wf-fires`. |
+| `disabled` | button/input/password/select/checkbox/radio | boolean | Inactive flag. |
+| `placeholder` | input/password | string | Placeholder text for the input field. |
 
-### gridレイアウト用
+**for grid layout**
 
-| フィールド | 型 | 説明 |
+| field | type | description |
 |-----------|-----|------|
-| `span` | integer | grid内で何列分を占有するか。gridの子ノードに記述する |
+| `span` | integer | How many grid columns to occupy. Written on a grid's child node. |
 
-`span` は `grid` の直接子でのみrenderに反映する。`grid` 外の `span` は意味を持たないが、v1ではparser errorにはしない。
+`span` only affects rendering as a direct child of `grid`. `span` outside `grid` has no meaning, but is not a parser error in v1.
 
-## layout object
+### layout object
 
-`layout` は全wireframe要素で任意に指定できる。ただしv1では、扱うfieldを構造layoutに限定する。
+`layout` may be optionally specified on any wireframe element. In v1, the fields it handles are limited to structural layout.
 
 ```yaml
 layout:
@@ -125,30 +120,30 @@ layout:
   scroll: y
 ```
 
-### layout field一覧
+#### layout field catalog
 
-| フィールド | 型 | 対象 | 内容 |
+| field | type | applies to | content |
 |---|---|---|---|
-| `width` | size | 全要素 | 幅。数値はpx。予約語として `fill` / `fit` を許可 |
-| `height` | size | 全要素 | 高さ。数値はpx。予約語として `fill` / `fit` を許可 |
-| `min_width` | int | 全要素 | 最小幅px。`fill` / `fit` は不可 |
-| `min_height` | int | 全要素 | 最小高さpx。`fill` / `fit` は不可 |
-| `grow` | bool | row/colの直接子 | `true`で残り領域を占有 |
-| `gap` | int | container | 子要素間のgap px |
-| `padding` | int or object | container | container内側の構造的余白。leafではv1非対応 |
-| `align` | enum | container | 交差軸方向の配置。`start` / `center` / `end` / `stretch` |
-| `justify` | enum | container | 主軸方向の配置。`start` / `center` / `end` / `between` |
-| `scroll` | enum | container | `none` / `x` / `y` / `both` |
+| `width` | size | all elements | Width. Numbers are px. Reserved words `fill` / `fit` allowed. |
+| `height` | size | all elements | Height. Numbers are px. Reserved words `fill` / `fit` allowed. |
+| `min_width` | int | all elements | Minimum width in px. `fill` / `fit` not allowed. |
+| `min_height` | int | all elements | Minimum height in px. `fill` / `fit` not allowed. |
+| `grow` | bool | direct child of row/col | When `true`, occupies the remaining space. |
+| `gap` | int | container | Gap in px between children. |
+| `padding` | int or object | container | Structural inner padding of the container. Not supported on leaf in v1. |
+| `align` | enum | container | Cross-axis alignment: `start` / `center` / `end` / `stretch`. |
+| `justify` | enum | container | Main-axis alignment: `start` / `center` / `end` / `between`. |
+| `scroll` | enum | container | `none` / `x` / `y` / `both`. |
 
-### size値
+#### size values
 
-`width` / `height` の値は以下のいずれか。
+`width` / `height` accept one of:
 
-| 値 | 意味 | HTML/CSS変換 |
+| value | meaning | HTML/CSS conversion |
 |---|---|---|
-| number | px固定値 | `Npx` |
-| `fill` | 親の利用可能サイズに対する100% | `width: 100%` / `height: 100%` |
-| `fit` | 内容サイズ | widthでは `fit-content`、heightでは `auto` |
+| number | Fixed px value. | `Npx` |
+| `fill` | 100% of the parent's available size. | `width: 100%` / `height: 100%` |
+| `fit` | Content size. | `fit-content` for width; `auto` for height. |
 
 ```yaml
 layout:
@@ -156,8 +151,7 @@ layout:
   height: 56       # height: 56px; min-height: 56px
 ```
 
-`height` の固定値は、header/footer/imageなどの縦方向の占有領域を保つため、`height` と `min-height` の両方へ変換する。
-`width` の固定値は `min-width` を自動付与せず、必要な場合は `min_width` を明示する。
+A fixed `height` converts to both `height` and `min-height`, to preserve vertical occupied space for header/footer/image etc. A fixed `width` does not auto-add `min-width` — specify `min_width` explicitly if needed.
 
 ```yaml
 layout:
@@ -165,13 +159,13 @@ layout:
   height: fit      # height: auto
 ```
 
-数値はpxとして扱う。`"80%"` / `"12rem"` / `"calc(...)"` のような任意CSS文字列は許可しない。
+Numbers are always treated as px. Arbitrary CSS strings like `"80%"` / `"12rem"` / `"calc(...)"` are not allowed.
 
-`min_width` / `min_height` はpx整数のみ。`fill` / `fit` は許可しない。
+`min_width` / `min_height` accept px integers only — `fill` / `fit` are not allowed.
 
-### padding object
+#### padding object
 
-`padding` はcontainerでのみ指定できる。数値またはobjectで指定する。
+`padding` may only be specified on a container. It accepts a number or an object.
 
 ```yaml
 layout:
@@ -194,8 +188,7 @@ layout:
     left: 16
 ```
 
-`x` は left/right、`y` は top/bottom の省略形。
-補完順序は、まず `top` / `right` / `bottom` / `left` を0で初期化し、`x` があれば left/right に適用し、`y` があれば top/bottom に適用し、最後に `top` / `right` / `bottom` / `left` の個別指定で上書きする。
+`x` is shorthand for left/right; `y` is shorthand for top/bottom. Resolution order: initialize `top` / `right` / `bottom` / `left` to 0, apply `x` to left/right if present, apply `y` to top/bottom if present, then apply any individual `top` / `right` / `bottom` / `left` overrides last.
 
 ```yaml
 layout:
@@ -204,15 +197,15 @@ layout:
     top: 8
 ```
 
-上記は `padding: 8px 16px 0px 16px` に変換する。
+The above converts to `padding: 8px 16px 0px 16px`.
 
-leaf要素のpaddingはv1では扱わない。button/input/text等の見た目調整になりやすく、構造layoutと視覚styleの境界が曖昧になるため。
+Leaf-element padding is not handled in v1 — it tends to become a button/input/text visual-tuning concern, blurring the boundary between structural layout and visual style.
 
-### fill と grow
+#### fill vs. grow
 
-`width: fill` / `height: fill` は、親の利用可能サイズに対する `100%` 指定である。flexの残り領域占有は意味しない。
+`width: fill` / `height: fill` means `100%` relative to the parent's available size. It does not mean occupying flex remaining space.
 
-`grow: true` は、`row` / `col` の子として残り領域を占有する指定である。HTML/CSSでは `flex: 1 1 0%; min-width: 0; min-height: 0` を基本変換とする。
+`grow: true` means occupying the remaining space as a child of `row` / `col`. The base HTML/CSS conversion is `flex: 1 1 0%; min-width: 0; min-height: 0`.
 
 ```yaml
 - type: row
@@ -228,32 +221,11 @@ leaf要素のpaddingはv1では扱わない。button/input/text等の見た目�
       children: [...]
 ```
 
-画面の残り領域を取らせたい場合は `fill` ではなく `grow: true` を使う。
-`row` / `col` の直接子に `width: fill` / `height: fill` を指定しても、flexの残り領域占有にはならない。
-特に `row` の直接子に `width: fill` を指定すると兄弟要素を押し出す可能性があるため、残り領域の占有には `grow: true` を使う。
+To make an element take up the screen's remaining space, use `grow: true`, not `fill`. Specifying `width: fill` / `height: fill` on a direct child of `row` / `col` does not produce flex remaining-space occupation. In particular, specifying `width: fill` on a direct child of `row` risks pushing out sibling elements — use `grow: true` for remaining-space occupation instead.
 
-## validation方針
+### Root structure
 
-parser / validator は以下を検証する。
-
-- `wireframe:` 直下は単一のcontainerノード。複数rootは不可。
-- containerノードは `children` 必須。
-- leafノードは `children` を持てない。
-- `main` はcontainerなので `children` 必須。
-- `grid` は `cols` 必須。`cols` は1以上の整数。
-- `layout` は全要素で任意。
-- `width` / `height` / `min_width` / `min_height` はcontainer/leafのどちらにも指定可能。
-- `grow` フィールドはcontainer/leafのどちらにも書けるが、`grow: true` が有効なのは `row` / `col` の直接子のみ。
-- `gap` / `padding` / `align` / `justify` / `scroll` はcontainerでのみ有効。leafで指定した場合はparser error。
-- `grow: true` を `row` / `col` の直接子以外に指定した場合はparser error。
-- `layout` に未定義fieldがある場合はparser error。
-- `style` / `class` / `css` 等、HTML/CSS実装詳細を直接指定するfieldはparser error。
-- `fires` はinteractive leafでのみ指定可能。
-- `id` / `label` / `placeholder` / `fires` はHTML出力時にescapeする。
-
-## ルート構造
-
-`wireframe:`直下は**単一のcontainerノード**。複数rootは不可。
+Directly under `wireframe:` is a **single container node**. Multiple roots are not allowed.
 
 ```yaml
 # OK
@@ -261,7 +233,7 @@ wireframe:
   type: col
   children: [...]
 
-# NG（複数root）
+# NG (multiple roots)
 wireframe:
   - type: col
     children: [...]
@@ -269,20 +241,19 @@ wireframe:
     children: [...]
 ```
 
-## 状態ごとの表示差分
+### Per-state display differences
 
-`loading`・`error`などの状態は**別stateノードとして定義**し、それぞれに`wireframe`を持たせる。
-同一`wireframe`内での表示条件フィールド（`visible_when`など）は存在しない。
+States like `loading` / `error` are each defined as a **separate state node**, each with its own `wireframe`. There is no display-condition field (e.g. `visible_when`) within a single `wireframe`.
 
 ```yaml
-# OK: stateノードを分ける
+# OK: separate state nodes
 - id: login_screen
   type: state
   wireframe:
     type: col
     children:
       - type: button
-        label: ログイン
+        label: Log in
         fires: submit_clicked
 
 - id: login_loading
@@ -291,37 +262,37 @@ wireframe:
     type: col
     children:
       - type: text
-        label: 送信中...
+        label: Submitting...
       - type: button
-        label: ログイン
+        label: Log in
         disabled: true
 
-# NG: wireframe内で状態を条件分岐
+# NG: conditionally branching state within wireframe
 wireframe:
   type: col
   children:
     - type: text
-      label: 送信中...
-      state: login_loading   # このフィールドは存在しない
+      label: Submitting...
+      state: login_loading   # this field does not exist
 ```
 
-## HTML/CSS render profile
+### HTML/CSS render profile
 
-HTML rendererは、wireframe treeをHTML fragmentとして出力する。DOCTYPE、`html`、`head`、`body`は生成しない。
+The HTML renderer outputs the wireframe tree as an HTML fragment. It does not generate `DOCTYPE`, `html`, `head`, or `body`.
 
-### 出力契約
+#### Output contract
 
-- 全wireframe要素に `.wf-*` namespaceのclassを付与する。
-- YAMLの `id` はHTMLの `id` 属性にはせず、`data-wf-id` に出力する。これは複数wireframe fragmentを同一ページに表示した場合のHTML `id` 衝突を避けるためである。
-- YAMLの `fires` は `data-wf-fires` に出力する。
-- `label` / `placeholder` / `id` / `fires` はHTML escapeする。
-- JSは生成しない。
-- 任意CSSは受け付けない。
-- `layout` は決定的なinline styleへ変換する。実装が固定utility classを使う場合も、同じ意味に変換される必要がある。
+- Every wireframe element gets a `.wf-*` namespaced class.
+- YAML `id` is not output to HTML's `id` attribute — it goes to `data-wf-id`. This avoids HTML `id` collisions when multiple wireframe fragments are shown on the same page.
+- YAML `fires` is output to `data-wf-fires`.
+- `label` / `placeholder` / `id` / `fires` are HTML-escaped.
+- No JS is generated.
+- Arbitrary CSS is not accepted.
+- `layout` converts to deterministic inline style. Even if an implementation uses fixed utility classes, they must convert to the same meaning.
 
-### HTML element対応
+#### HTML element mapping
 
-| type | 出力 |
+| type | output |
 |---|---|
 | `col` | `<div class="wf-col">` |
 | `row` | `<div class="wf-row">` |
@@ -343,11 +314,9 @@ HTML rendererは、wireframe treeをHTML fragmentとして出力する。DOCTYPE
 | `icon` | `<span class="wf-icon">[icon]</span>` |
 | `divider` | `<hr class="wf-divider" />` |
 
-### fixed CSS profile
+#### fixed CSS profile
 
-rendererは以下の意味を持つ固定CSSを前提としてよい。
-reference CSS file は `docs/spec/views/wireframe.css` とする。
-以下のCSSは主要ルールの抜粋であり、完全なreference CSSは `docs/spec/views/wireframe.css` を正とする。
+The renderer may assume the following fixed CSS as meaning. The reference CSS file is `wireframe.css` (in this same `views/` directory). The excerpt below shows the main rules; the full reference CSS in that file is authoritative.
 
 ```css
 .wf-col { display: flex; flex-direction: column; gap: 8px; }
@@ -357,21 +326,19 @@ reference CSS file は `docs/spec/views/wireframe.css` とする。
 .wf-field { display: flex; flex-direction: column; gap: 4px; }
 ```
 
-これはrender profile側の固定CSSであり、YAMLから任意に指定するstyleではない。
-`docs/spec/views/wireframe.css` は構造CSSのみを含み、色・border・radius・shadow・font指定・背景色・preview専用装飾は含めない。
+This is the render profile's own fixed CSS, not a style arbitrarily specified from YAML. `wireframe.css` contains structural CSS only — no color, border, radius, shadow, font, background-color, or preview-only decoration.
 
-### preview CSS
+#### preview CSS
 
-目視確認用のpreview CSS file は `docs/spec/views/wireframe.preview.css` とする。
+The CSS file for visual confirmation is `wireframe.preview.css` (in this same `views/` directory).
 
-`wireframe.preview.css` は、HTML fragmentをブラウザで確認しやすくするための補助CSSであり、wireframe DSLの意味論には含めない。
-このファイルには、薄い枠線、背景色、角丸、button/input/selectの最低限の見た目など、preview専用の視覚styleを含めてよい。
+`wireframe.preview.css` is auxiliary CSS to make the HTML fragment easier to check in a browser — it is not part of the wireframe DSL's semantics. It may include preview-only visual style: thin borders, background colors, rounded corners, minimal button/input/select appearance, etc.
 
-Go rendererのHTML fragment出力やgolden testの期待値は `wireframe.preview.css` に依存しない。
+The Go renderer's HTML fragment output and golden-test expected values do not depend on `wireframe.preview.css`.
 
-### layout変換
+#### layout conversion
 
-| YAML | HTML/CSS上の意味 |
+| YAML | HTML/CSS meaning |
 |---|---|
 | `layout.width: 220` | `width: 220px` |
 | `layout.width: fill` | `width: 100%` |
@@ -385,7 +352,7 @@ Go rendererのHTML fragment出力やgolden testの期待値は `wireframe.previe
 | `layout.gap: 16` | `gap: 16px` |
 | `layout.padding: 16` | `padding: 16px` |
 | `layout.padding.x: 16` + `layout.padding.y: 8` | `padding: 8px 16px 8px 16px` |
-| `layout.padding.top/right/bottom/left` | `padding: {top}px {right}px {bottom}px {left}px`。補完順序は `0` 初期化 → `x` / `y` 適用 → 個別方向指定で上書き |
+| `layout.padding.top/right/bottom/left` | `padding: {top}px {right}px {bottom}px {left}px`. Resolution order: `0` init → apply `x` / `y` → override with individual sides. |
 | `layout.align: start` | `align-items: flex-start` |
 | `layout.align: center` | `align-items: center` |
 | `layout.align: end` | `align-items: flex-end` |
@@ -399,29 +366,28 @@ Go rendererのHTML fragment出力やgolden testの期待値は `wireframe.previe
 | `layout.scroll: y` | `overflow-y: auto` |
 | `layout.scroll: both` | `overflow: auto` |
 
-`grow: true` と `min_width` / `min_height` を同時指定した場合、明示された `min_width` / `min_height` を優先する。
+When `grow: true` and `min_width` / `min_height` are both specified, the explicit `min_width` / `min_height` takes precedence.
 
-### grid render
+#### grid render
 
-`grid` の基礎displayは fixed CSS profile の `.wf-grid { display: grid; ... }` が担う。
-`grid.cols` は `grid-template-columns` に変換し、inline styleへ出力する。
-`display: grid` はinline styleへ重複出力しない。
+`grid`'s base display comes from the fixed CSS profile's `.wf-grid { display: grid; ... }`. `grid.cols` converts to `grid-template-columns`, output as inline style. `display: grid` is not duplicated into inline style.
 
 ```css
 grid-template-columns: repeat({cols}, 1fr)
 ```
 
-子ノードに `span` がある場合は、その子のstyleへ以下を出力する。
+A child node with `span` gets the following added to its own style:
 
 ```css
 grid-column: span {span}
 ```
 
-## render例
+### Render example
 
-### main + layoutを含む画面
+**A screen with `main` + `layout`**
 
 YAML:
+
 ```yaml
 - id: cart
   type: state
@@ -433,7 +399,7 @@ YAML:
           height: 56
         children:
           - type: text
-            label: ショッピングカート
+            label: Shopping Cart
       - type: row
         layout:
           grow: true
@@ -443,29 +409,61 @@ YAML:
               width: 220
             children:
               - type: text
-                label: 注文サマリー
+                label: Order Summary
           - type: main
             layout:
               grow: true
               scroll: y
             children:
               - type: text
-                label: カート内アイテム
+                label: Cart Items
 ```
 
-HTML出力:
+HTML output:
+
 ```html
 <div class="wf-col">
   <header class="wf-header" style="height: 56px; min-height: 56px;">
-    <span class="wf-text">ショッピングカート</span>
+    <span class="wf-text">Shopping Cart</span>
   </header>
   <div class="wf-row" style="flex: 1 1 0%; min-width: 0; min-height: 0;">
     <aside class="wf-sidebar" style="width: 220px;">
-      <span class="wf-text">注文サマリー</span>
+      <span class="wf-text">Order Summary</span>
     </aside>
     <main class="wf-main" style="flex: 1 1 0%; min-width: 0; min-height: 0; overflow-y: auto;">
-      <span class="wf-text">カート内アイテム</span>
+      <span class="wf-text">Cart Items</span>
     </main>
   </div>
 </div>
 ```
+
+## Rules
+
+- `layout` field applicability (container-only vs. all-elements vs. row/col-direct-child-only) follows §layout field catalog above; the renderer must not silently accept a field outside its applicable scope.
+- `wireframe.css` defines structural CSS only; visual style belongs exclusively to `wireframe.preview.css`, and golden-test expected output never depends on the preview file.
+
+## Validation rules
+
+The parser/validator checks the following:
+
+- Directly under `wireframe:` is a single container node. Multiple roots are invalid.
+- A container node requires `children`.
+- A leaf node cannot have `children`.
+- `main` is a container, so it requires `children`.
+- `grid` requires `cols`; `cols` must be an integer ≥ 1.
+- `layout` is optional on all elements.
+- `width` / `height` / `min_width` / `min_height` may be specified on either container or leaf.
+- `grow` may be written on either container or leaf, but `grow: true` only takes effect as a direct child of `row` / `col`.
+- `gap` / `padding` / `align` / `justify` / `scroll` are valid only on a container. Specifying them on a leaf is a parser error.
+- Specifying `grow: true` on anything other than a direct child of `row` / `col` is a parser error.
+- An undefined field under `layout` is a parser error.
+- Fields that directly specify HTML/CSS implementation detail (`style` / `class` / `css` etc.) are a parser error.
+- `fires` may only be specified on an interactive leaf.
+- `id` / `label` / `placeholder` / `fires` are escaped on HTML output.
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.views.overview` | Parent overview; view kind catalog. |
+| `spec:bpdsl.dsl.nodes.application` | `state` node definition that `wireframe` attaches to. |

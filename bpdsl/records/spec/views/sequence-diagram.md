@@ -1,35 +1,25 @@
----
-scope: docs/spec/views/sequence-diagram.md
-status: confirmed
-last_updated: 2026-04-25
-summary: >
-  Sequence DiagramのシナリオファイルYAML schemaとrenderルールを定義する。
-  as: sequence_diagram のview定義ファイルを入力とし、
-  Mermaid sequenceDiagram形式を生成するルールを記述する。
-depends_on:
-  - docs/adr/004-sequence-diagram-participants.md
-  - docs/adr/017-diagram-layers-and-scope.md
-  - docs/adr/018-event-node.md
-  - docs/adr/019-state-node.md
-  - docs/adr/030-yaml-file-type-declaration.md
-  - docs/adr/031-actor-global-definition.md
-  - docs/adr/032-sequence-diagram-scenario-schema.md
-  - docs/adr/034-internal-event-source.md
-  - docs/adr/035-fsm-guard-branch-and-transition-identification.md
-  - docs/adr/036-sequence-diagram-arrow-rules-per-source.md
-  - docs/adr/037-sequence-diagram-action-less-transition.md
-  - docs/adr/038-sequence-diagram-sub-task-traversal.md
-  - docs/adr/041-sequence-diagram-message-rendering.md
----
+# Contract: Sequence Diagram render rules
 
-# Sequence Diagram renderルール
+- **id**: `spec:bpdsl.views.sequence_diagram`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.views.overview`
+- **contract_class**: `format`
 
-## シナリオファイルの構造
+## What this is
+
+YAML schema and render rules for the Sequence Diagram scenario file. Takes an `as: sequence_diagram` view definition file as input and generates Mermaid in `sequenceDiagram` form.
+
+> Source: V01-ADR-004, V01-ADR-017, V01-ADR-018, V01-ADR-019, V01-ADR-030, V01-ADR-031, V01-ADR-032, V01-ADR-034, V01-ADR-035, V01-ADR-036, V01-ADR-037, V01-ADR-038, V01-ADR-041
+
+## Current contract
+
+### Scenario file structure
 
 ```yaml
 as: sequence_diagram
 id: login_flow
-title: "ログインフロー"
+title: "Login flow"
 state_file: auth/state.yaml
 steps:
   - from_state: idle
@@ -39,54 +29,48 @@ steps:
     via: login_submitted
 ```
 
-### フィールド定義
+| field | required | content |
+|---|---|---|
+| `as` | ✓ | Fixed: `sequence_diagram` (V01-ADR-030). |
+| `id` | ✓ | Scenario ID, unique within the project. |
+| `title` | optional | Human-facing title. |
+| `state_file` | ✓ | Path to the referenced state-definition file. |
+| `steps` | ✓ | List of steps (one or more). |
 
-| フィールド | 必須 | 内容 |
-|-----------|------|------|
-| `as` | ✓ | `sequence_diagram` 固定（V01-ADR-030） |
-| `id` | ✓ | シナリオID。プロジェクト内でユニーク |
-| `title` | 任意 | 人間向けタイトル |
-| `state_file` | ✓ | 参照するstate定義ファイルのパス |
-| `steps` | ✓ | ステップリスト（1件以上） |
+### step object
 
-### step オブジェクト
+| field | required | content |
+|---|---|---|
+| `from_state` | ✓ | State ID before the transition. Not omittable. |
+| `via` | ✓ | The event ID that fires. |
+| `guard` | optional | Guard string to uniquely pin down the transition (V01-ADR-035). |
 
-| フィールド | 必須 | 内容 |
-|-----------|------|------|
-| `from_state` | ✓ | 遷移前のstate ID。省略不可 |
-| `via` | ✓ | 発火するevent ID |
-| `guard` | 任意 | transitionを一意特定するためのguard文字列（V01-ADR-035） |
+### transition resolution rule
 
-### transition解決ルール
+`(from_state, via)` narrows down candidate transitions within `state_file`, then `step.guard` and `transition.guard` are compared by **exact match** to uniquely pin one down (V01-ADR-035).
 
-`(from_state, via)` で `state_file` 内の候補transitionを絞り込み、`step.guard` と `transition.guard` の**完全一致**で一意特定する（V01-ADR-035）。
+| candidate count | `step.guard` | behavior |
+|---|---|---|
+| 0 | any | Parser error: no corresponding transition exists. |
+| 1 | omitted | Adopt the candidate transition. |
+| 1 | specified | Adopt if it exact-matches `transition.guard`; mismatch is an error. |
+| 2+ | omitted | Parser error: ambiguous (guard must be specified). |
+| 2+ | specified | Adopt the one exact match; zero or multiple matches is an error. |
 
-| 候補数 | `step.guard` | 挙動 |
-|-------|--------------|------|
-| 0 | 任意 | パーサーエラー：対応transitionが存在しない |
-| 1 | 省略 | 候補のtransitionを採用 |
-| 1 | 指定 | `transition.guard` と完全一致なら採用。不一致はエラー |
-| 2以上 | 省略 | パーサーエラー：曖昧（guard指定必須） |
-| 2以上 | 指定 | 完全一致する1件を採用。0件または複数一致はエラー |
+**Guard string comparison is exact match.** Since brewprint never evaluates guard expressions (V01-ADR-019), superficial differences like whitespace are treated as different strings. Authors should copy the guard string verbatim from `state_file`.
 
-**guardの文字列比較はexact match。** brewprintはguard式を評価しない（V01-ADR-019）ため、空白の有無などの表記揺れは別物として扱われる。ユーザーは `state_file` 側のguard文字列をそのままコピーして使う運用とする。
+### step continuity
 
-### stepの連続性
+`steps` represents the chronological sequence of FSM transitions for a single scenario. The renderer outputs arrows in `steps` declaration order.
 
-`steps` は単一シナリオにおける時系列の FSM transition 列を表す。
-Renderer は `steps` の定義順に矢印を出力する。
+Each step resolves uniquely to a transition within `state_file`. The `to` of the transition resolved by `step[i]` must match `step[i+1].from_state` — a mismatch is a parser error.
 
-各 step は `state_file` 内の transition を一意に解決する。
-step[i] が解決した transition の `to` は、step[i+1].from_state と一致しなければならない。
-一致しない場合は parser error とする。
+Independent scenarios must not be mixed into the same sequence diagram. Represent a separate scenario as a separate `as: sequence_diagram` file.
 
-独立したシナリオを同一 sequence diagram に混在させてはならない。
-別シナリオとして表現する場合は、別の `as: sequence_diagram` ファイルを作成する。
-
-### guard分岐を含むシナリオの例
+### Example: a scenario with a guard branch
 
 ```yaml
-# order/state.yaml（抜粋）
+# order/state.yaml (excerpt)
 transitions:
   - from: processing
     on: payment_webhook_received
@@ -104,7 +88,7 @@ transitions:
 # scenarios/payment_webhook_success.yaml
 as: sequence_diagram
 id: payment_webhook_success
-title: "決済ウェブフック成功フロー"
+title: "Payment webhook success flow"
 state_file: order/state.yaml
 steps:
   - from_state: processing
@@ -112,129 +96,118 @@ steps:
     guard: "payload.status == 'succeeded'"
 ```
 
-候補は2件だが `step.guard` により `confirmed` へのtransitionが一意に特定される。
+There are 2 candidates, but `step.guard` uniquely pins down the transition to `confirmed`.
 
----
+### Participants
 
-## participants
+Four participant kinds appear in a sequence diagram (V01-ADR-004 / V01-ADR-036):
 
-sequence diagramに登場するparticipantは以下の4種（V01-ADR-004 / V01-ADR-036）。
-
-| participant | 生成条件 | brewprintの実体 |
+| participant | generation condition | brewprint entity |
 |---|---|---|
-| Actor | `source=external` のeventを参照するstepが1つでもある場合 | `type: actor` ノード（V01-ADR-031） |
-| UI | `source=ui` のeventを参照するstepが1つでもある場合に暗黙生成 | YAMLに明示ノードなし |
-| API | シナリオのstepが参照するtaskのendpoint | `type: task`（endpoint=true） |
-| DB | 以下いずれかでstepが `store.kind=db` を参照する場合<br>・taskと**同一ファイル内の全task**（main + sub）の `reads` / `writes`（V01-ADR-038）<br>・`source=er` eventの `watches`（V01-ADR-036） | `type: store`（kind=db）を「DB」1列に集約 |
+| Actor | At least one step references an event with `source=external`. | `type: actor` node (V01-ADR-031). |
+| UI | Implicitly generated if at least one step references an event with `source=ui`. | No explicit node in YAML. |
+| API | An endpoint of a task referenced by a scenario step. | `type: task` (`endpoint=true`). |
+| DB | A step references `store.kind=db` via either: all tasks in the same file as the task (main + sub) `reads` / `writes` (V01-ADR-038); or a `source=er` event's `watches` (V01-ADR-036). | `type: store` (`kind=db`), aggregated into a single "DB" column. |
 
-participantの表示順（左→右）: `Actor → UI → API → DB`（存在するもののみ）
+Participant display order (left → right): `Actor → UI → API → DB` (only those present).
 
-### DB participantの粒度
+#### DB participant granularity
 
-`store.kind=db` のstoreは全て「DB」1列にまとめる。
-`kind=session` / `kind=collection` / `kind=context` はparticipant列に出ない。
+Every `store.kind=db` store is collapsed into a single "DB" column. `kind=session` / `kind=collection` / `kind=context` never appear as a participant column.
 
-`store` はテーブル粒度の定義であり、スキーマ・DB単位の概念を持たないため、store IDごとに列を分けることはできない（V01-ADR-004）。
+`store` is a table-granularity definition with no schema/DB-level concept, so columns can't be split per store ID (V01-ADR-004).
 
----
+### Arrow labels
 
-## 矢印ラベル
+Event-driven origin arrows follow these patterns based on `event.source` and whether `transition.action` is present (V01-ADR-036 / V01-ADR-037):
 
-event駆動の起点矢印は `event.source` と `transition.action` の有無によって以下のパターン（V01-ADR-036 / V01-ADR-037）:
-
-| `event.source` | `transition.action` | 起点→終点 | ラベル | API応答矢印 |
+| `event.source` | `transition.action` | origin→destination | label | API response arrow |
 |---|---|---|---|---|
-| `ui` | あり | `UI→API` | `METHOD path`（例: `POST /login`） | `API→UI`: `returns.name` / `200 OK` |
-| `ui` | **なし** | **`UI->>UI`（self-message）** | **event ID** | **なし** |
-| `external` | あり | `Actor→API` | `METHOD path`（例: `POST /webhooks/stripe`） | `API→Actor`: `returns.name` / `200 OK` |
-| `internal` | — | `API→API`（self-message） | event ID | なし |
-| `er`（`watches`先が `store.kind=db`） | — | `DB→API` | event ID | なし |
-| `er`（`watches`先が `store.kind≠db`） | — | `API→API`（self-message） | event ID | なし |
+| `ui` | present | `UI→API` | `METHOD path` (e.g. `POST /login`) | `API→UI`: `returns.name` / `200 OK` |
+| `ui` | **absent** | **`UI->>UI`** (self-message) | **event ID** | **none** |
+| `external` | present | `Actor→API` | `METHOD path` (e.g. `POST /webhooks/stripe`) | `API→Actor`: `returns.name` / `200 OK` |
+| `internal` | — | `API→API` (self-message) | event ID | none |
+| `er` (`watches` target is `store.kind=db`) | — | `DB→API` | event ID | none |
+| `er` (`watches` target is not `store.kind=db`) | — | `API→API` (self-message) | event ID | none |
 
-`source=ui` かつ action なし の step では API participant を生成しない。DB 操作 table への出力もなし。
+A step with `source=ui` and no action generates no API participant. Nothing is output to the DB-operations table either.
 
-task実行に伴うDBアクセスは上記と独立:
+DB access from task execution is independent of the above:
 
-| 矢印 | ラベル |
-|------|--------|
-| API → DB | `reads` または `writes` |
+| arrow | label |
+|---|---|
+| API → DB | `reads` or `writes` |
 
-DBアクセスは `API->>DB` の片方向のみ描画し、`DB-->>API` の戻り矢印は描画しない。戻り値の詳細はDB操作table側で確認する。
+DB access is drawn as a one-way `API->>DB` only — no return arrow `DB-->>API` is drawn. Return-value detail is checked in the DB-operations table instead.
 
-すべてのmessage labelには、シナリオ `steps:` の1-origin indexを `{step_index}. {label}` 形式でprefixする。これはMermaidの `autonumber` ではなくbrewprint rendererが付与する。
+Every message label is prefixed with the scenario `steps:` 1-origin index, in `{step_index}. {label}` form. This is not Mermaid's `autonumber` — it's assigned by the brewprint renderer.
 
-### ラベル選択の原則
+#### Label selection principle
 
-- **`METHOD path`（`ui` action あり / `external`）**: HTTPリクエストの物理的到達を表す。呼び出し元（UI / Actor）が存在し、応答矢印 `API→UI` / `API→Actor` も描画する
-- **event ID（`ui` action なし / `internal` / `er`）**: HTTP呼び出しを伴わないため `METHOD path` のソースが存在しない。「何が駆動したか」を event ID で示す。応答矢印は描画しない（V01-ADR-037）
+- **`METHOD path` (`ui` with action / `external`)**: represents the physical arrival of an HTTP request. A caller (UI / Actor) exists, and a response arrow `API→UI` / `API→Actor` is also drawn.
+- **event ID (`ui` without action / `internal` / `er`)**: no HTTP call is involved, so there's no `METHOD path` source. The event ID shows "what drove this." No response arrow is drawn (V01-ADR-037).
 
-### happy pathのみ
+#### Happy path only
 
-sequence diagramはhappy pathのみを描画する。例外・エラーフローはnoteまたは別シナリオファイルで表現する（V01-ADR-004）。
+The sequence diagram draws the happy path only. Exception/error flows are expressed via `note` or a separate scenario file (V01-ADR-004).
 
-### event.payloadはMermaid図に出力しない
+#### `event.payload` is not output to the Mermaid diagram
 
-`event.payload` はLLM向けのメタ情報（コード生成時の型参照）として定義ファイルに存在するが、Mermaid図には出力しない。`event.payload` から `task.params` への変換はUIコンポーネントの責務であり、brewprintのスコープ外。
+`event.payload` exists in the definition file as LLM-facing meta information (type reference for code generation), but is never output to the Mermaid diagram. Converting `event.payload` to `task.params` is a UI component's responsibility, outside brewprint's scope.
 
----
+### Backend auto-resolution
 
-## バックエンドによる自動解決
+The scenario YAML only declares `(from_state, via, guard?)` explicitly. The backend auto-resolves the following by consulting `state_file`:
 
-シナリオYAMLに明示するのは `(from_state, via, guard?)` のみ。以下はバックエンドが `state_file` を参照して自動解決する。
+| information | resolved from |
+|---|---|
+| Origin arrow pattern | Branches on the event's `source` and presence of `transition.action` (V01-ADR-036 / V01-ADR-037). |
+| Actor participant generation | `event.actor` of an event with `source=external` referenced by a step. |
+| UI participant generation | Implicitly generated if any step references an event with `source=ui`. |
+| DB participant generation | All tasks in the same file (main + sub) `reads` / `writes`, or a `source=er` event's `watches` containing `store.kind=db` (V01-ADR-038). |
+| Task being called | The transition's `action`. |
+| `UI→API` / `Actor→API` label | The task's `method` / `path`. |
+| API → DB arrow / direction | All tasks in the same file (main + sub) `reads` / `writes` (`kind=db` only, V01-ADR-038). |
+| `API→UI` / `API→Actor` label | The task's `returns.name` (or `200 OK` if absent). |
+| `DB→API` origin | The `watches` target of a `source=er` event (when `kind=db`). |
+| Self-loop occurrence | `source=internal`, or `source=er` whose `watches` target is not `store.kind=db`. |
 
-| 情報 | 解決元 |
-|------|--------|
-| 起点矢印のパターン | event の `source` と `transition.action` の有無で分岐（V01-ADR-036 / V01-ADR-037） |
-| Actor participantの生成 | `source=external` のeventを参照するstepの `event.actor` |
-| UI participantの生成 | `source=ui` のeventを参照するstepが1つでもある場合に暗黙生成 |
-| DB participantの生成 | taskと同一ファイル内の全task（main + sub）の `reads` / `writes`、または `source=er` eventの `watches` が `store.kind=db` を含む場合（V01-ADR-038） |
-| 呼び出されるtask | transition の `action` |
-| `UI→API` / `Actor→API` のラベル | task の `method` / `path` |
-| API → DB の矢印・方向 | taskと同一ファイル内の全task（main + sub）の `reads` / `writes`（kind=dbのみ、V01-ADR-038） |
-| `API→UI` / `API→Actor` のラベル | task の `returns.name`（なければ `200 OK`） |
-| `DB→API` の起点 | `source=er` eventの `watches` 先（kind=db時） |
-| 自己ループの発生 | `source=internal`、または `source=er` で `watches` 先が `store.kind≠db` |
-
----
-
-## 出力フォーマット
+### Output format
 
 ````markdown
-# {title または id}
+# {title or id}
 
 ```mermaid
 sequenceDiagram
-  [participants: 必要なもののみ宣言（Actor / UI / API / DB）]
+  [participants: declare only what's needed (Actor / UI / API / DB)]
 
-  [起点→API矢印: event.source に応じて分岐 →「矢印ラベル」表参照。labelは {step_index}. {label}]
-  API->>DB: {step_index}. reads   # reads がある場合
-  API->>DB: {step_index}. writes  # writes がある場合
-  [API応答矢印: source=ui / external のみ描画。internal / er は描画しない。labelは {step_index}. {label}]
+  [origin→API arrow: branches per event.source — see §Arrow labels. label is {step_index}. {label}]
+  API->>DB: {step_index}. reads   # if reads is present
+  API->>DB: {step_index}. writes  # if writes is present
+  [API response arrow: drawn only for source=ui / external. Not drawn for internal / er. label is {step_index}. {label}]
 ```
 
-## DB操作
+## DB operations
 
-| step | task | sub_task | store | 操作 |
+| step | task | sub_task | store | operation |
 |------|------|----------|-------|------|
 | 1 | auth.task.login | - | user_db | reads |
 | 1 | auth.task.login | - | session_store | writes |
 ````
 
-- `step` 列はシナリオの `steps:` の1-originインデックス
-- `task` 列は `transition.action` が指すmain taskのqualified ID（V01-ADR-038）
-- `sub_task` 列はsub taskのshort ID。main task自身の `reads` / `writes` による行は `-`（V01-ADR-038）
-- `kind=session` / `kind=collection` / `kind=context` のstoreはDB操作tableにも出力しない
+- `step` column = 1-origin index of the scenario's `steps:`.
+- `task` column = the qualified ID of the main task pointed to by `transition.action` (V01-ADR-038).
+- `sub_task` column = the sub task's short ID; a row from the main task's own `reads` / `writes` shows `-` (V01-ADR-038).
+- A store with `kind=session` / `kind=collection` / `kind=context` is never output to the DB-operations table either.
 
----
+### Mermaid output image
 
-## Mermaid出力イメージ
+**Login flow (source=ui)**
 
-### ログインフロー（source=ui）
-
-#### YAMLの入力例
+Input YAML example:
 
 ```yaml
-# auth/state.yaml（抜粋）
+# auth/state.yaml (excerpt)
 nodes:
   - id: idle
     type: state
@@ -268,14 +241,14 @@ transitions:
 # scenarios/login_flow.yaml
 as: sequence_diagram
 id: login_flow
-title: "ログインフロー"
+title: "Login flow"
 state_file: auth/state.yaml
 steps:
   - from_state: idle
     via: login_submitted
 ```
 
-#### 期待するMermaid出力
+Expected Mermaid output:
 
 ```mermaid
 sequenceDiagram
@@ -288,20 +261,18 @@ sequenceDiagram
   API-->>UI: 1. auth_token
 ```
 
-#### DB操作table
+DB-operations table:
 
-| step | task | sub_task | store | 操作 |
+| step | task | sub_task | store | operation |
 |------|------|----------|-------|------|
 | 1 | auth.task.login | - | user_db | reads |
 
----
+**Webhook flow (source=external)**
 
-### Webhookフロー（source=external）
-
-「シナリオファイルの構造 > guard分岐を含むシナリオの例」の `scenarios/payment_webhook_success.yaml` に対応するMermaid出力。task定義は以下を想定する:
+Mermaid output corresponding to the `scenarios/payment_webhook_success.yaml` example above. Assume the task definition:
 
 ```yaml
-# payment/webhooks/task/process_payment.yaml（抜粋）
+# payment/webhooks/task/process_payment.yaml (excerpt)
 nodes:
   - id: process_payment
     type: task
@@ -312,7 +283,7 @@ nodes:
       - order_db
 ```
 
-#### 期待するMermaid出力
+Expected Mermaid output:
 
 ```mermaid
 sequenceDiagram
@@ -325,19 +296,33 @@ sequenceDiagram
   API-->>Stripe: 1. 200 OK
 ```
 
-- `Stripe` participant はeventの `actor: stripe`（V01-ADR-031のglobal actor）から解決
-- UI participantは `source=external` のため生成されない
-- API応答矢印 `API→Actor` のラベルは `returns` 未定義のため `200 OK`
+- The `Stripe` participant resolves from the event's `actor: stripe` (V01-ADR-031 global actor).
+- No UI participant is generated, since `source=external`.
+- The `API→Actor` response label is `200 OK` since `returns` is undefined.
 
-#### DB操作table
+DB-operations table:
 
-| step | task | sub_task | store | 操作 |
+| step | task | sub_task | store | operation |
 |------|------|----------|-------|------|
 | 1 | payment.webhooks.task.process_payment | - | order_db | writes |
 
----
+## Rules
 
-## 図の生成元
+Sequence Diagram is generated by brewprint's MCP tool (`render_sequence_diagram`) after loading the YAML. Hand-written Mermaid never exists for this view.
 
-Sequence DiagramはYAMLを読み込んだbrewprintのMCPツール（`render_sequence_diagram`）が生成する。
-手書きのMermaid記述は存在しない。
+## Validation rules
+
+- Zero matching transition candidates for `(from_state, via)` is a parser error.
+- `step.guard` not exact-matching `transition.guard` when exactly one candidate exists is a parser error.
+- Ambiguous candidates (2+) with `step.guard` omitted is a parser error.
+- A `step[i]` transition's `to` not matching `step[i+1].from_state` is a parser error.
+- Mixing independent scenarios into one sequence diagram file is invalid — use a separate `as: sequence_diagram` file per scenario.
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.views.overview` | Parent overview; view kind catalog. |
+| `spec:bpdsl.dsl.nodes.application` | `event` node and `source` field definitions. |
+| `spec:bpdsl.dsl.edges.state_transitions` | `transitions:` syntax this render resolves steps against. |
+| `spec:bpdsl.dsl.naming` | Actor global namespace, used for the Actor participant. |

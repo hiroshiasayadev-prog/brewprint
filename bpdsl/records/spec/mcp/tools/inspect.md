@@ -1,34 +1,20 @@
----
-scope: docs/spec/mcp/tools/inspect.md
-status: draft
-last_updated: 2026-06-07
-summary: >
-  inspect toolの仕様を定義する。
-  対象objectの実装判断に必要な周辺文脈をkind別に返す。
-  task / store / model / state / event / view / fileなどのinspect形を規定する。
-depends_on:
-  - docs/adr/021-model-field-structure.md
-  - docs/adr/026-fk-cardinality-and-nm-relation.md
-  - docs/adr/028-api-table-route-composition.md
-  - docs/adr/031-actor-global-definition.md
-  - docs/adr/032-sequence-diagram-scenario-schema.md
-  - docs/adr/035-fsm-guard-branch-and-transition-identification.md
-  - docs/adr/036-sequence-diagram-arrow-rules-per-source.md
-  - docs/adr/038-sequence-diagram-sub-task-traversal.md
-  - docs/adr/039-er-diagram-composed-view.md
-  - docs/adr/062-task-return-source.md
-  - docs/adr/063-task-return-source-initialized-store.md
----
+# Contract: `inspect`
 
-# `inspect`
+- **id**: `spec:bpdsl.mcp.tools.inspect`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.mcp.overview`
+- **contract_class**: `interface`
 
-## 1. Purpose
+## What this is
 
-`inspect` は、対象objectの実装判断に必要な周辺文脈をkind別にまとめて返す。
+`inspect` returns, per object kind, the surrounding context an implementer needs in order to make implementation decisions.
 
-`get_signature` が薄い外形確認であるのに対し、`inspect` はLLMが実装・修正・レビュー時に読む濃い文脈取得toolである。
+Where `get_signature` is a thin external-shape check, `inspect` is the dense-context tool an LLM reads when implementing, fixing, or reviewing.
 
-## 2. Input
+> Source: V01-ADR-021, V01-ADR-026, V01-ADR-028, V01-ADR-031, V01-ADR-032, V01-ADR-035, V01-ADR-036, V01-ADR-038, V01-ADR-039, V01-ADR-062, V01-ADR-063
+
+## Request
 
 ```json
 {
@@ -39,29 +25,26 @@ depends_on:
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `selector` | ✓ | Object selector |
-| `detail` | 任意 | `brief` / `normal` / `full`。省略時は `normal` |
+| `selector` | ✓ | Object selector. |
+| `detail` | optional | `brief` / `normal` / `full`. Defaults to `normal` when omitted. |
 
-`detail` の意味:
+`detail` meaning:
 
-| detail | 内容 |
+| detail | content |
 |---|---|
-| `brief` | signature + 主要referencesのみ |
-| `normal` | 実装判断に必要な標準文脈 |
-| `full` | source / members / references / diagnosticsを可能な範囲で最大限返す |
+| `brief` | signature + main references only. |
+| `normal` | Standard context needed for implementation decisions. |
+| `full` | Returns source / members / references / diagnostics as fully as feasible. |
 
-MCP v1では、`detail` による厳密な返却差分は実装任意とする。
-`detail` が省略された場合、toolは `normal` を使用する。
-`detail` が `brief` / `normal` / `full` 以外の場合は `unsupported_detail` tool error とする。
-この default は MCP tool contract の実行時挙動であり、DATA DSL の default 構文としては扱わない。
+MCP v1 leaves the exact return-shape difference per `detail` to implementation discretion. When `detail` is omitted, the tool uses `normal`. A `detail` value outside `brief` / `normal` / `full` is an `unsupported_detail` tool error. This default is MCP tool-contract runtime behavior, not a DATA DSL default construct.
 
-`selector` の object / kind 対応範囲は `docs/spec/mcp/schema.md` の selector support matrix を正本とする。
-`inspect` で matrix が `no` の selector を受け取った場合は、原則として `unsupported_object` tool error とする。
-`limited` の selector は同matrixと本toolの kind-specific section に従って、返却する `members` / `references` / `diagnostics` の情報量を限定してよい。
+The selector's object/kind support range is governed by the selector support matrix in [`spec:bpdsl.mcp.schema`](../schema.md). If `inspect` receives a selector marked `no` in the matrix, it returns `unsupported_object` tool error in principle. A `limited` selector may have the information volume of returned `members` / `references` / `diagnostics` restricted per that matrix and this tool's kind-specific sections below.
 
-## 3. Common output shape
+## Response
+
+Common output shape:
 
 ```json
 {
@@ -75,28 +58,28 @@ MCP v1では、`detail` による厳密な返却差分は実装任意とする�
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `object` | ✓ | ObjectRef |
-| `signature` | ✓ | `get_signature` 相当の外形 |
-| `doc` | 任意 | note由来の説明 |
-| `source` | 任意 | SourceLocation |
-| `members` | 任意 | objectが内包する要素 |
-| `references` | 任意 | 主要reference |
-| `diagnostics` | ✓ | Diagnostic list |
+| `object` | ✓ | ObjectRef. |
+| `signature` | ✓ | Equivalent to `get_signature`'s external shape. |
+| `doc` | optional | Description derived from `note`. |
+| `source` | optional | SourceLocation. |
+| `members` | optional | Elements the object contains. |
+| `references` | optional | Main references. |
+| `diagnostics` | ✓ | Diagnostic list. |
 
-## 4. task inspect
+### task inspect
 
-`task` の `inspect` は以下を返す。
+`inspect` on a `task` returns:
 
 - signature
-- endpoint情報
+- endpoint info
 - reads / writes
-- 同一ファイル内sub task
-- flow内での位置
-- task return source（`returns.source`）の raw / resolved 情報
-- このtaskをactionとして呼ぶtransition
-- このtaskが生成するasset
+- sub tasks within the same file
+- position within the flow
+- raw / resolved info for the task return source (`returns.source`)
+- transitions that call this task as an action
+- assets this task produces
 - source
 - doc
 
@@ -217,27 +200,27 @@ MCP v1では、`detail` による厳密な返却差分は実装任意とする�
       "to": { "object": "node", "kind": "task", "id": "order.task.checkout" }
     }
   ],
-  "doc": "チェックアウトを開始し、注文をpendingで作成する",
+  "doc": "Start checkout and create the order as pending",
   "source": { "file": "order/task/checkout.yaml" },
   "diagnostics": []
 }
 ```
 
-### flow.entries schema status
+#### flow.entries schema status
 
-M11で `members.flow.entries` の最小schemaを確定する。
+M11 fixes the minimum schema of `members.flow.entries`.
 
-MCP v1で保証するのは以下。
+MCP v1 guarantees the following:
 
-- `members.flow.file` はflow定義元FileID
-- `members.flow.entries[]` はflow内に登場するentryの概略順序を保持する
-- 各entryは少なくとも `kind` を持つ
-- `step` / `branch` / `fork` / `foreach` のflow構文は、QueryService側で正規化したflow entryとして返す
-- wiring情報は `entries[].params[]` / `entries[].over` / `entries[].cases[]` など、flow inspect用schemaに閉じる
-- flow inspect用の語彙として `flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over` を使ってよい
-- 上記語彙は `Reference.kind` ではなく、`get_references` の返却対象にはしない
+- `members.flow.file` is the FileID where the flow is defined.
+- `members.flow.entries[]` preserves the approximate appearance order of entries in the flow.
+- Each entry has at least `kind`.
+- `step` / `branch` / `fork` / `foreach` flow constructs are returned as QueryService-normalized flow entries.
+- Wiring info stays scoped within flow-inspect schema: `entries[].params[]` / `entries[].over` / `entries[].cases[]` etc.
+- `flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over` may be used as flow-inspect vocabulary.
+- The above vocabulary is not `Reference.kind` and is not part of `get_references`'s return scope.
 
-`entries[].params[]` は、task paramへのwiringを表す。
+`entries[].params[]` represents wiring into a task param.
 
 ```json
 {
@@ -246,20 +229,20 @@ MCP v1で保証するのは以下。
 }
 ```
 
-`source.kind` は以下を使う。
+`source.kind` uses one of:
 
-| source.kind | 意味 |
+| source.kind | meaning |
 |---|---|
-| `node_return` | 同一flow内の前段nodeの `returns` 全体 |
-| `collected_asset` | `foreach.returns` で宣言された collected asset source |
-| `initialized_source` | `initializes[].name` で宣言された initialized source |
-| `main_param` | `$params.<field>` によるmain task param参照 |
-| `foreach_item` | `$item` によるforeach current item参照 |
-| `implicit_join` | fork join.params の同名解決 |
+| `node_return` | The entire `returns` of a preceding node in the same flow. |
+| `collected_asset` | A collected asset source declared via `foreach.returns`. |
+| `initialized_source` | An initialized source declared via `initializes[].name`. |
+| `main_param` | A main task param reference via `$params.<field>`. |
+| `foreach_item` | The current foreach item via `$item`. |
+| `implicit_join` | Same-name resolution of a fork join's params. |
 
-`node_return` はreturns内部のfieldを直接参照しない。flow wiringの単位は `docs/spec/edges.md` と同じくtaskのreturns全体とする。
+`node_return` does not reference a field inside `returns` directly. The flow-wiring unit is the entire task `returns`, matching [`spec:bpdsl.dsl.edges.data_flow`](../../dsl/edges/data-flow.md).
 
-`returns.source` が指定されているtaskでは、`inspect(task)` は `members.return_source` を返す。`get_signature` は外向きcontractのみを返すため `returns.source` を含めない。
+For a task with `returns.source` specified, `inspect(task)` returns `members.return_source`. `get_signature` returns only the outward contract and does not include `returns.source`.
 
 ```json
 {
@@ -276,18 +259,17 @@ MCP v1で保証するのは以下。
 }
 ```
 
-`members.return_source.raw` は YAML 上の `returns.source` 文字列を保持する。`members.return_source.source` は ResolvedProject 上で解決済みの source を表し、`kind` は `node_return` / `collected_asset` / `initialized_source` / `main_param` のいずれかとする。`$item` は task return source として不正なため `invalid_return_source` diagnostic の対象であり、resolved source にはならない。
+`members.return_source.raw` preserves the `returns.source` string as written in YAML. `members.return_source.source` represents the source resolved on `ResolvedProject`; `kind` is one of `node_return` / `collected_asset` / `initialized_source` / `main_param`. `$item` is invalid as a task return source — it is subject to the `invalid_return_source` diagnostic and never becomes a resolved source.
 
-`returns.source` が未指定、またはtaskが `returns` を持たない場合、`members.return_source` は省略する。source が未解決または不正な場合は diagnostics を優先し、実装は `raw` のみを返して resolved `source` を省略してよい。
+When `returns.source` is unspecified, or the task has no `returns`, `members.return_source` is omitted. When the source is unresolved or invalid, diagnostics take priority and the implementation may return only `raw`, omitting the resolved `source`.
 
-`branch` / `fork` / `foreach` は制御フロー構文であり、flow inspectではentryとして返してよい。ただし、それ自体をMCP selector化することはM11の範囲外とする。
+`branch` / `fork` / `foreach` are control-flow constructs and may be returned as flow-inspect entries. Making them individually selectable as MCP selectors is out of M11 scope.
 
-### sub task reads/writes
+#### sub task reads/writes
 
-V01-ADR-038により、Sequence Diagram生成ではmain taskと同一ファイル内のsub taskのreads/writesを集約する。
-`inspect(task)` でも、`detail=normal` 以上ではsub taskのreads/writesを辿れるようにする。
+Per V01-ADR-038, Sequence Diagram generation aggregates the reads/writes of sub tasks within the same file as the main task. `inspect(task)` should also let sub-task reads/writes be traced at `detail=normal` or above.
 
-推奨形:
+Recommended shape:
 
 ```json
 {
@@ -307,15 +289,15 @@ V01-ADR-038により、Sequence Diagram生成ではmain taskと同一ファイ�
 }
 ```
 
-## 5. store inspect
+### store inspect
 
-`store` の `inspect` は以下を返す。
+`inspect` on a `store` returns:
 
 - store signature
-- `of` modelのsignature概要
-- このstoreを読むtask
-- このstoreを書くtask
-- kind=dbの場合、ER上のmodel field / FK概要
+- summary signature of the `of` model
+- tasks that read this store
+- tasks that write this store
+- for `kind=db`, an ER-level model field / FK summary
 
 ```json
 {
@@ -353,20 +335,20 @@ V01-ADR-038により、Sequence Diagram生成ではmain taskと同一ファイ�
       "to": { "object": "node", "kind": "store", "id": "order.store.order_db" }
     }
   ],
-  "doc": "注文テーブル",
+  "doc": "Order table",
   "diagnostics": []
 }
 ```
 
-## 6. model inspect
+### model inspect
 
-`model` の `inspect` は以下を返す。
+`inspect` on a `model` returns:
 
 - model signature
 - fields
 - pk / fk / unique
-- このmodelを `store.of` で使うstore
-- このmodelをparam / returns / payload / field typeで参照するobject
+- stores that use this model via `store.of`
+- objects that reference this model via param / returns / payload / field type
 
 ```json
 {
@@ -394,15 +376,15 @@ V01-ADR-038により、Sequence Diagram生成ではmain taskと同一ファイ�
 }
 ```
 
-## 7. state inspect
+### state inspect
 
-`state` の `inspect` は以下を返す。
+`inspect` on a `state` returns:
 
 - state signature
 - incoming transitions
 - outgoing transitions
-- action task付きtransition
-- wireframe有無
+- transitions with an action task
+- whether a wireframe exists
 
 ```json
 {
@@ -445,17 +427,16 @@ V01-ADR-038により、Sequence Diagram生成ではmain taskと同一ファイ�
 }
 ```
 
-state inspectでは、incoming / outgoing transitions が中心情報であるため `members` に置く。
-一方、`get_references(state)` は `transition_from` / `transition_to` を `references` として返す。
+State inspect places incoming/outgoing transitions in `members` since they are the central information. By contrast, `get_references(state)` returns `transition_from` / `transition_to` as `references`.
 
-## 8. event inspect
+### event inspect
 
-`event` の `inspect` は以下を返す。
+`inspect` on an `event` returns:
 
 - event signature
 - source / actor / payload / watches
-- このeventをtriggerとして使うtransition
-- source種別に基づくSequence Diagram上の補助hint
+- transitions that use this event as a trigger
+- Sequence Diagram auxiliary hints based on source kind
 
 ```json
 {
@@ -498,13 +479,11 @@ state inspectでは、incoming / outgoing transitions が中心情報である�
 }
 ```
 
-`members.sequence_hints` はV01-ADR-036のSequence Diagram render ruleから導ける補助情報である。
-これはLLMがeventのsequence上の意味を理解するためのadvisory情報であり、ResolvedProjectの中核semantic relationではない。
-Rendererのnormativeな出力規則は `docs/spec/views/sequence-diagram.md` に従う。
+`members.sequence_hints` is supplementary info derivable from the V01-ADR-036 Sequence Diagram render rule. It is advisory information helping the LLM understand an event's sequence meaning, not a core ResolvedProject semantic relation. The renderer's normative output rule follows [`spec:bpdsl.views.sequence_diagram`](../../views/sequence-diagram.md).
 
-## 9. scenario inspect
+### scenario inspect
 
-Sequence Diagram scenarioはview objectとしてinspectできる。
+A Sequence Diagram scenario can be inspected as a view object.
 
 ```json
 {
@@ -516,14 +495,14 @@ Sequence Diagram scenarioはview objectとしてinspectできる。
 }
 ```
 
-返す内容:
+Returns:
 
 - scenario ID / title
 - state_file
 - resolved steps
-- 各stepが解決したtransition
-- 各stepのaction task
-- guard exact match結果
+- the transition each step resolves to
+- each step's action task
+- guard exact-match result
 
 ```json
 {
@@ -534,7 +513,7 @@ Sequence Diagram scenarioはview objectとしてinspectできる。
   },
   "signature": {
     "state_file": "order/state.yaml",
-    "title": "チェックアウトフロー"
+    "title": "Checkout flow"
   },
   "members": {
     "steps": [
@@ -583,9 +562,9 @@ Sequence Diagram scenarioはview objectとしてinspectできる。
 }
 ```
 
-## 10. transition inspect
+### transition inspect
 
-Transitionはsynthetic objectとしてinspectできる。
+A transition can be inspected as a synthetic object.
 
 ```json
 {
@@ -596,15 +575,15 @@ Transitionはsynthetic objectとしてinspectできる。
 }
 ```
 
-返す内容:
+Returns:
 
 - transition signature
-- 解決済みfrom state
-- 解決済みevent
-- 解決済みto state
-- 解決済みaction task
-- transitionが持つdirect references
-- scenario step等からtransitionへのincoming references
+- resolved from state
+- resolved event
+- resolved to state
+- resolved action task
+- direct references this transition holds
+- incoming references from scenario steps etc. to this transition
 
 ```json
 {
@@ -624,26 +603,10 @@ Transitionはsynthetic objectとしてinspectできる。
     "action": "payment.webhooks.task.process_payment"
   },
   "members": {
-    "from_state": {
-      "object": "node",
-      "kind": "state",
-      "id": "order.state.processing"
-    },
-    "event": {
-      "object": "node",
-      "kind": "event",
-      "id": "order.event.payment_webhook_received"
-    },
-    "to_state": {
-      "object": "node",
-      "kind": "state",
-      "id": "order.state.confirmed"
-    },
-    "action_task": {
-      "object": "node",
-      "kind": "task",
-      "id": "payment.webhooks.task.process_payment"
-    }
+    "from_state": { "object": "node", "kind": "state", "id": "order.state.processing" },
+    "event": { "object": "node", "kind": "event", "id": "order.event.payment_webhook_received" },
+    "to_state": { "object": "node", "kind": "state", "id": "order.state.confirmed" },
+    "action_task": { "object": "node", "kind": "task", "id": "payment.webhooks.task.process_payment" }
   },
   "references": [
     {
@@ -655,36 +618,6 @@ Transitionはsynthetic objectとしてinspectできる。
         "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
       },
       "to": { "object": "node", "kind": "state", "id": "order.state.processing" }
-    },
-    {
-      "kind": "transition_event",
-      "direction": "out",
-      "from": {
-        "object": "transition",
-        "kind": "transition",
-        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
-      },
-      "to": { "object": "node", "kind": "event", "id": "order.event.payment_webhook_received" }
-    },
-    {
-      "kind": "transition_to",
-      "direction": "out",
-      "from": {
-        "object": "transition",
-        "kind": "transition",
-        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
-      },
-      "to": { "object": "node", "kind": "state", "id": "order.state.confirmed" }
-    },
-    {
-      "kind": "transition_action",
-      "direction": "out",
-      "from": {
-        "object": "transition",
-        "kind": "transition",
-        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
-      },
-      "to": { "object": "node", "kind": "task", "id": "payment.webhooks.task.process_payment" }
     },
     {
       "kind": "scenario_step_transition",
@@ -705,9 +638,9 @@ Transitionはsynthetic objectとしてinspectできる。
 }
 ```
 
-## 11. field inspect
+### field inspect
 
-Model fieldはsynthetic objectとしてinspectできる。
+A model field can be inspected as a synthetic object.
 
 ```json
 {
@@ -719,14 +652,14 @@ Model fieldはsynthetic objectとしてinspectできる。
 }
 ```
 
-返す内容:
+Returns:
 
 - field signature
 - parent model
 - field type
-- FK指定
-- fieldが持つdirect references
-- 他fieldからのincoming FK references
+- FK designation
+- direct references this field holds
+- incoming FK references from other fields
 
 ```json
 {
@@ -808,15 +741,15 @@ Model fieldはsynthetic objectとしてinspectできる。
       }
     }
   ],
-  "doc": "注文ID（PK）。order_item.order_id / payment_event.order_id のFK参照先",
+  "doc": "Order ID (PK). FK target of order_item.order_id / payment_event.order_id",
   "source": { "file": "order/model/order.yaml" },
   "diagnostics": []
 }
 ```
 
-## 12. API Table inspect
+### API Table inspect
 
-API Table viewはview objectとしてinspectできる。
+An API Table view can be inspected as a view object.
 
 ```json
 {
@@ -828,12 +761,12 @@ API Table viewはview objectとしてinspectできる。
 }
 ```
 
-返す内容:
+Returns:
 
 - API Table ID / `http_root_path`
-- 対象modules / `include_submodules`
-- moduleごとのendpoint件数
-- `list_endpoints` と同じroute合成規則で計算したsections / endpoints
+- target modules / `include_submodules`
+- endpoint count per module
+- `sections` / `endpoints` computed with the same route-composition rule as `list_endpoints`
 
 ```json
 {
@@ -881,15 +814,13 @@ API Table viewはview objectとしてinspectできる。
 }
 ```
 
-`inspect(view: api_table)` は、view定義が何を集約しているかを説明するための文脈取得である。
-実装やroute確認でcomputed endpoint一覧だけが必要な場合は、`list_endpoints` を使う。
+`inspect(view: api_table)` is context retrieval explaining what the view definition aggregates. When only the computed endpoint list is needed for implementation or route checking, use `list_endpoints` instead.
 
-収集対象endpointが0件のmodule-entryは、API Table render / `list_endpoints` と同様に `sections` には出さない。
-ただし `members.modules[]` には `endpoint_count: 0` として残してよい。
+A module-entry with zero collected endpoints is not shown in `sections`, matching API Table render / `list_endpoints` behavior. It may still appear in `members.modules[]` with `endpoint_count: 0`.
 
-## 13. ER Diagram inspect
+### ER Diagram inspect
 
-ER Diagram viewはview objectとしてinspectできる。
+An ER Diagram view can be inspected as a view object.
 
 ```json
 {
@@ -901,14 +832,14 @@ ER Diagram viewはview objectとしてinspectできる。
 }
 ```
 
-返す内容:
+Returns:
 
 - ER Diagram ID
-- 対象modules
+- target modules
 - included stores
 - included models
-- view内でrelationとして描画されるFK relations
-- view対象外のmodelへ向くFKのsummary
+- FK relations drawn as relations within the view
+- a summary of FKs pointing to models outside the view
 
 ```json
 {
@@ -952,18 +883,13 @@ ER Diagram viewはview objectとしてinspectできる。
 }
 ```
 
-view YAMLによる横断ERでは、`modules[]` に明示されたmodule直下の `store.kind: db` のみを対象にする。
-サブモジュールは自動では含めない。
-view内に含まれないmodelへのFKは `fk_relations` には含めず、`excluded_refs_summary` に入れる。
+A cross-module ER view defined by a view YAML targets only `store.kind: db` directly under modules explicitly listed in `modules[]`. Submodules are not automatically included. FKs pointing to a model not included in the view are not added to `fk_relations` — they go into `excluded_refs_summary`.
 
----
+### file inspect
 
-## 14. file inspect
+`inspect(file)` returns FileID-granularity context for implementation decisions. It does not return the raw YAML AST — it summarizes already-built semantic information per file.
 
-`inspect(file)` は、FileID単位の実装判断用コンテキストを返す。
-Raw YAML ASTは返さず、ResolvedProject上に構築済みのsemantic情報をfile単位に要約する。
-
-input例:
+Input example:
 
 ```json
 {
@@ -975,25 +901,45 @@ input例:
 }
 ```
 
-node fileでは以下を返す。
+A node file returns:
 
-- `members.nodes`: file内のnode一覧
-- `members.main_node`: main nodeがある場合のObjectRef
-- `members.flow`: flow entry summaryがある場合
+- `members.nodes`: list of nodes in the file.
+- `members.main_node`: ObjectRef of the main node, if present.
+- `members.flow`: flow entry summary, if present.
 
-state fileでは以下を返す。
+A state file returns:
 
 - `members.states`
 - `members.events`
 - `members.transitions`
-- `members.wireframes`: stateごとのwireframe有無
+- `members.wireframes`: whether a wireframe exists, per state.
 
-view fileでは、view種別に応じて以下を返す。
+A view file returns, depending on view kind:
 
-- `sequence_diagram`: `view`, `state_file`, `steps`
-- `api_table`: `view`, `http_root_path`, `modules`
-- `er_diagram`: `view`, `modules`
+- `sequence_diagram`: `view`, `state_file`, `steps`.
+- `api_table`: `view`, `http_root_path`, `modules`.
+- `er_diagram`: `view`, `modules`.
 
-render index fileでは `members.groups` を返す。
+A render index file returns `members.groups`.
 
----
+## Errors
+
+| code | condition |
+|---|---|
+| `unsupported_object` | Selector resolves to an object/kind marked `no` in the selector support matrix. |
+| `unsupported_detail` | `detail` value outside `brief` / `normal` / `full`. |
+| `not_found` | Selector does not resolve to any object. |
+| `ambiguous` | Selector resolves to multiple candidates. |
+| `kind_mismatch` | Resolved kind does not match `selector.kind`. |
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.mcp.overview` | Parent overview; tool catalog and selection guidance. |
+| `spec:bpdsl.mcp.schema` | Selector support matrix, ObjectRef, AssetRef, TransitionRef shapes. |
+| `spec:bpdsl.mcp.errors` | Error code catalog. |
+| `spec:bpdsl.mcp.tools.get_signature` | Thin external-shape counterpart this tool extends with dense context. |
+| `spec:bpdsl.mcp.tools.list_endpoints` | Computed endpoint list, used instead of `inspect(view: api_table)` for route-only needs. |
+| `spec:bpdsl.dsl.edges.data_flow` | Flow wiring unit (`returns` as a whole) referenced by `members.flow.entries`. |
+| `spec:bpdsl.views.sequence_diagram` | Normative Sequence Diagram render rule that `members.sequence_hints` is advisory to. |

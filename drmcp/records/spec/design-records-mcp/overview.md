@@ -1,220 +1,64 @@
----
-scope: docs/spec/design-records-mcp/overview.md
-status: draft
-last_updated: 2026-06-09
-summary: >
-  Design Records MCP の目的、対象範囲、既存 brewprint MCP との責務境界、
-  MVP の非目標を定義する。
-depends_on:
-  - docs/adr/076-design-records-mcp.md
-  - docs/adr/077-design-records-mcp-mvp-boundary-and-tool-prioritization.md
-  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
-  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
-  - docs/adr/090-design-records-mcp-batch-retrieval-tool-boundary.md
-  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
-design_record:
-  id: V01-SPEC-design-records-mcp-overview
-  kind: spec
-  status: draft
-  depends_on:
-    - V01-ADR-076
-    - V01-ADR-077
-    - V01-ADR-087
-    - V01-ADR-088
-    - V01-ADR-090
-    - V01-ADR-092
-    - V01-ADR-097
-    - V01-ADR-099
----
+# Overview: Design Records MCP
 
-# Design Records MCP overview
+- **id**: `spec:drmcp.design_records_mcp.overview`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `-`
 
-## 目的
+## What this is
 
-Design Records MCP は、brewprint の design record / workflow artifact 運用を machine-readable metadata と MCP query / validation で支援する補助 MCP である。ADR / spec / investigation に加え、requirement / work item / task も対象とする。
+Design Records MCP is an auxiliary MCP server that supports operation of brewprint design records and workflow artifacts through machine-readable metadata, MCP query tools, and validation. Targets ADR, spec, investigation, requirement, work item, and task records.
 
-主目的は以下である。
+Primary objectives:
 
-- ADR / spec / investigation / requirement / work item / task の record index を構築する
-- record の ID / kind / status / path と kind 固有 metadata を構造化して取得できるようにする
-- 選択済みの複数 record ID について detail representation をまとめて取得できるようにする
-- record metadata の基本不整合を検出する
-- docs artifact 間の semantic/artifact ref を解決し、参照切れ検査に利用できるようにする
-- 別セッションの LLM が、読むべき design record を本文読解前に絞り込めるようにする
+- Build a record index for ADR / spec / investigation / requirement / work item / task.
+- Return structured record ID / kind / status / path and kind-specific metadata.
+- Return detail representations for a selected set of record IDs in one batch.
+- Detect basic metadata inconsistencies in records.
+- Resolve semantic/artifact refs between docs artifacts and enable broken-reference checking.
+- Allow an LLM in a separate session to narrow down which design records to read before reading their full body.
 
-Design Records MCP は、spec-first ドキュメント運用を置き換えない。
-現行仕様の唯一の正は引き続き `drmcp/records/spec/**` であり、ADR は設計判断の根拠記録である。
-Design Records MCP は、その関係を機械的に辿りやすくする query / validation layer として扱う。
+Design Records MCP does not replace spec-first documentation practice. The sole source of truth for current specifications remains `drmcp/records/spec/**`; ADRs are the authoritative record of design decisions. Design Records MCP is a query/validation layer that makes those relationships mechanically traversable.
 
-> 由来: V01-ADR-076 §決定, V01-ADR-076 §理由
+> Source: V01-ADR-076
 
-## 対象 record
+## Current contract
 
-index / query / validation 対象は以下とする。パスは `<records_root>` からの相対。`records_root` と `namespace_prefix` は app namespace ディレクトリから導出される。public ID 例は `namespace_prefix = V01-` の場合。
+### Record scope
 
-| kind | discovery パス | public ID 例 |
+DRMCP indexes the following record kinds. Paths are relative to `<records_root>`; `records_root` and `namespace_prefix` are derived from the app namespace directory (see `spec:drmcp.design_records_mcp.namespace_scanning`).
+
+| kind | discovery path | public ID example (`namespace_prefix = V01-`) |
 |---|---|---|
 | `decision` | `<records_root>/adr/*.md` | `V01-ADR-076` |
-| `spec` | `<records_root>/spec/**/*.md`（`design_record.id` + `design_record.kind` を持つ file のみ） | `V01-SPEC-design-records-mcp-overview` |
+| `spec` | `<records_root>/spec/**/*.md` (files with `design_record.id` + `design_record.kind` only) | `V01-SPEC-design-records-mcp-overview` |
 | `investigation` | `<records_root>/investigations/<domain>/<namespace_prefix>INV-*-*.md` | `V01-INV-MCP-001` |
 | `requirement` | `<records_root>/requirements/<domain>/<namespace_prefix>REQ-*-*.md` | `V01-REQ-MCP-001` |
 | `work_item` | `<records_root>/work-items/<domain>/<namespace_prefix>WORK-*-*.md` | `V01-WORK-DRMCP-001` |
 | `task` | `<records_root>/tasks/<domain>/<namespace_prefix>TASK-*-*.md` | `V01-TASK-MCP-001-01` |
 
-`design_record` を持たない既存 spec は index 対象外とし、`missing_design_record` diagnostic も出さない。
-legacy M-series は`task` record discovery の対象に含めない。
+Existing specs without a `design_record` block are not indexed; no `missing_design_record` diagnostic is issued for them. Legacy M-series task records are excluded from `task` discovery. The record kind set is not a closed enumeration — additional artifact kinds may be added by subsequent decisions. UC docs and impl notes are excluded from record kind indexing in MVP.
 
-本specは record kind 全体を閉じた列挙として確定しない。後続判断により他の artifact kind を追加しうる。
-MVP では UC docs / impl notes は record kind として index 対象に含めない。
+> Source: V01-ADR-076, V01-ADR-087, V01-ADR-091, V01-ADR-092
 
-> 由来: V01-ADR-076 §MVP対象, V01-ADR-087 §1, V01-ADR-091 §1〜§6, V01-ADR-092 §1
+### Tool boundary
 
-## 既存 brewprint MCP との責務境界
+Design Records MCP operates on a separate data source from the existing brewprint MCP. For the authoritative cross-app artifact model governing this boundary, see `spec:product.concepts.project_artifact_model`.
 
-Design Records MCP は、既存 brewprint MCP とは別の対象データソースを扱う。
-
-| MCP | 対象 | 主な責務 |
+| MCP | data source | primary responsibility |
 |---|---|---|
-| brewprint MCP | brewprint YAML から構築された `ResolvedProject` | semantic object の query / inspect / impact analysis |
-| Design Records MCP | `<records_root>/adr/**` / `<records_root>/investigations/**` / `<records_root>/requirements/**` / `<records_root>/work-items/**` / `<records_root>/tasks/**` の箇条書きmetadata と、`design_record` を持つ `<records_root>/spec/**` の YAML front matter | design record / workflow artifact の index / read / validation、および traceability spec に従う semantic/artifact ref resolve |
+| brewprint MCP | `ResolvedProject` built from brewprint YAML | semantic object query / inspect / impact analysis |
+| Design Records MCP | bullet metadata in `adr/`, `investigations/`, `requirements/`, `work-items/`, `tasks/`; YAML front matter in `design_record`-bearing `spec/` files | design record / workflow artifact index / read / validation; semantic/artifact ref resolve per traceability spec |
 
-Design Records MCP は、既存 brewprint MCP とは独立して起動・検証できる構成を第一候補とする。
-既存 `QueryService` の責務を docs 管理へそのまま拡張しない。
+> Source: V01-ADR-076
 
-この spec は既存 brewprint MCP の `docs/spec/mcp/tools/**` には混ぜず、`drmcp/records/spec/design-records-mcp/**` に置く。
+## Topics
 
-> 由来: V01-ADR-076 §既存brewprint MCPとの関係
-
-## Resolver responsibility
-
-Design Records MCP は、traceability spec が定める canonical reference model に従い、ref の resolve とその結果を用いた validation を担う。
-
-V01-ADR-088 / V01-ADR-092 により、MVP で必須とする resolver input は active `spec:` semantic ref、Design Records MCP が扱う record の public ID-as-ref（namespace_prefix 付き完全形。MVP では `V01-ADR-*` / `V01-SPEC-*` / `V01-INV-*` / `V01-REQ-*` / `V01-WORK-*` / `V01-TASK-*` 等）、investigation canonical reference validation、および workflow relation integrity validation とする。
-
-Investigation metadata が canonical reference として追加利用できる workflow の public ID-as-ref は requirement / work item 系（MVP では `V01-REQ-*` / `V01-WORK-*`）に限定し、task 系（`V01-TASK-*`）は direct resolver input および workflow artifact 間 relation のみで support する。
-
-`internal-design:` / `coverage:` / `COV-*`、coverage mapping、semantic realization relation は MVP required resolver scope に含めない。Orphan workflow artifact diagnostics、task status 由来 progress projection、workflow 専用 traversal tool も MVP に含めない。
-
-resolver が lookup source として読む artifact と、`list_records` / `get_record` が record kind として公開する artifact は同一集合である必要はない。
-
-Resolver の public tool 名は `resolve_reference` とし、active `spec:` semantic ref と namespace_prefix 付き public record ID-as-ref（`tools.md` 参照）を active lookup input として扱う。`internal-design:` / `coverage:` / `COV-*`、physical path、および未採用 ID form は `unsupported` response とする。Reserved prefix である `yaml:` の public resolver input / direct query response behavior は MVP で定義しない。
-
-> 由来: V01-ADR-087 §4, V01-ADR-088, V01-ADR-092 §3〜§7
-
-## Record scanning と namespace prefix
-
-Design Records MCP は、リポジトリ内の複数の app namespace records ツリーをスキャンして統合 index を構築する。
-
-デフォルト動作: `design-records-mcp --root <repo>` の単一起動で、リポジトリ内の全 `*/records/` ディレクトリを自動検出し、各 namespace prefix を導出して統合 index を構築する。
-
-`--records-root <path>` を明示した場合は、指定した単一 records ツリーだけを対象とする単一 root モードとして動作する（backward compat）。
-
-### records_root と namespace prefix 導出
-
-`records_root` は、リポジトリルートからの相対パスで `<app-namespace>/records` の形をとる。app namespace ディレクトリ名（`records/` の親）から namespace prefix を機械的に導出する。
-
-導出式: `namespace_prefix = strings.ToUpper(appNamespaceDir) + "-"`
-
-適用例:
-
-| records_root | appNamespaceDir | namespace_prefix |
-|---|---|---|
-| `v01/records` | `v01` | `V01-` |
-| `drmcp/records` | `drmcp` | `DRMCP-` |
-
-### kind 別 prefix 適用箇所
-
-records ツリー内の artifact は record kind ごとに以下の箇所に namespace prefix を持つ。
-
-| kind | ファイル名 | H1 | metadata id |
+| title | kind | ref | summary |
 |---|---|---|---|
-| ADR | ✓ `V01-ADR-NNN-slug.md` | ✓ `# V01-ADR-NNN: title` | なし（箇条書き metadata に `id:` フィールドなし） |
-| Spec | なし（slug のみ） | なし（任意 title） | ✓ front matter `design_record.id: V01-SPEC-slug` |
-| Investigation | ✓ `V01-INV-DOMAIN-NNN-slug.md` | ✓ `# V01-INV-DOMAIN-NNN: title` | なし |
-| Workflow (REQ / WORK / TASK) | ✓ `V01-WORK-DOMAIN-NNN-slug.md` | ✓ `# V01-WORK-DOMAIN-NNN: title` | ✓ 箇条書き `- **id**: V01-WORK-DOMAIN-NNN` |
-
-parser は kind 別の適用箇所から namespace prefix をストリップして bare ID を抽出・検証し、prefix を付与した完全 ID を `record.ID` として返す。bare ID 文法の検証（`ADR-NNN` 形式・`WORK-DOMAIN-NNN` 形式等）は prefix ストリップ後の文字列に対して行う。完全 ID が tools で公開される public record ID となる。
-
-### multi-root スキャン
-
-`design-records-mcp --root <repo>` を起動すると、リポジトリ内の全 `*/records/` ディレクトリを自動検出して統合 index を構築する。各 records ツリーの namespace prefix はディレクトリ名から機械的に導出され、record は自身の namespace prefix を持つ public ID で識別される。異なる app namespace の record を同一クエリで取得・参照解決できる。
-
-`--records-root <path>` を明示した場合は、指定した単一 records ツリーのみを対象とする単一 root モードとして動作する。
-
-cross-namespace relation（例: V01 の record が DRMCP namespace の record を参照する）は index が保持し、`resolve_reference` / `validate_records` が解決できる。
-
-namespace prefix が異なる record 間で public ID は衝突しない。
-
-> 由来: V01-ADR-097, V01-ADR-099
-
-## MVP tool set
-
-MVP の P0 tool は以下である。
-
-- `list_records`
-- `get_record`
-- `get_records`
-- `validate_records`
-- `resolve_reference`
-
-P1 の任意補助 tool として、以下を許容する。
-
-- `suggest_next_record`
-
-P0 tool は read-only であり、record 本文を読む前の候補絞り込みと metadata 整合性検証を目的とする。
-
-> 由来: V01-ADR-077 §P0: MVP必須tool, V01-ADR-077 §P1: MVPに含めてもよい補助tool, V01-ADR-090 §決定
-
-## MVP 外
-
-MVP では以下を扱わない。
-
-- `trace_record`
-- `list_gaps`
-- `create_record`
-- `update_record`
-- `set_evidence`
-- その他の write 系 tool
-- 自然言語本文から依存関係を推定すること
-- spec 本文との厳密な意味照合
-- git 履歴解析
-- code static analysis
-- Web UI
-- 複数プロジェクト横断管理
-- 汎用 OSS CLI としての公開 contract
-- section 単位の完全な traceability
-- `topics` / `affects` / `refines` / `conflicts_with` metadata
-- legacy M-series task record / UC docs / impl notes の record kind としての index 化
-- `internal-design:` / `coverage:` / `COV-*` の resolve と semantic realization relation validation
-- coverage mapping query
-- orphan requirement / orphan work item / orphan task diagnostics
-- task status から work item progress を導出する projection
-- workflow 専用 traversal / tree / graph query tool
-- task dependency cycle detection / execution order projection
-- investigation metadata から `TASK-*` を canonical reference として辿ること
-
-MVP は ADR / investigation / requirement / work item / task の箇条書きmetadata、spec の YAML front matter、H1、path から得られる明示情報だけを扱う。
-自然言語本文の推定や運用 gap 診断は、MVP の validator を実データへ当てた後に追加可否を判断する。
-
-> 由来: V01-ADR-076 §MVPスコープ外, V01-ADR-077 §MVP外, V01-ADR-092 §7
-
-## filesystem tool との責務境界
-
-Design Records MCP は汎用 filesystem tool の代替ではない。
-
-Design Records MCP が扱うもの:
-
-- 単一または明示された複数の record ID から metadata / path / headings / raw body を取得する
-- record 一覧を構造化して返す
-- record metadata の基本不整合を検証する
-- 次の ADR 番号と推奨 path を提案する
-
-Design Records MCP が扱わないもの:
-
-- 任意ファイルの読み書き
-- Markdown 一般編集
-- ADR 本文の自動生成・自動更新
-- commit hash の自動書き換え
-- git 操作
-
-> 由来: V01-ADR-077 §filesystemとの責務境界, V01-ADR-090 §決定
+| Responsibility boundary | Reference | `spec:drmcp.design_records_mcp.responsibility_boundary` | Boundary against existing brewprint MCP and against general-purpose filesystem tools. |
+| Resolver responsibility | Reference | `spec:drmcp.design_records_mcp.resolver` | Canonical reference model this MCP implements; resolver input/output scope and MVP required inputs. |
+| Namespace scanning | Reference | `spec:drmcp.design_records_mcp.namespace_scanning` | Multi-root scan behavior, namespace_prefix derivation, and kind-level prefix application. |
+| MVP scope | Reference | `spec:drmcp.design_records_mcp.mvp_scope` | P0/P1 tool set and items explicitly outside MVP. |
+| Schema | Overview | `spec:drmcp.design_records_mcp.schema.overview` | Record data model, metadata grammar, field definitions, ID normalization, discovery, and authoring schema. |
+| Tools | Overview | `spec:drmcp.design_records_mcp.tools.overview` | Full MCP tool set: read/navigation tools, authoring transaction tools, and shared response conventions. |

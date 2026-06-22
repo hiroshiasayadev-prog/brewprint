@@ -1,44 +1,22 @@
----
-scope: docs/spec/mcp/tools/get-signature.md
-status: draft
-last_updated: 2026-06-07
-summary: >
-  get_signature toolの仕様を定義する。
-  対象object単体の外形、signature、doc、diagnosticsを返す。
-  kind別signatureの返却形を規定する。
-depends_on:
-  - docs/adr/018-event-node.md
-  - docs/adr/021-model-field-structure.md
-  - docs/adr/026-fk-cardinality-and-nm-relation.md
-  - docs/adr/028-api-table-route-composition.md
-  - docs/adr/031-actor-global-definition.md
-  - docs/adr/035-fsm-guard-branch-and-transition-identification.md
-  - docs/adr/062-task-return-source.md
----
+# Contract: `get_signature`
 
-# `get_signature`
+- **id**: `spec:bpdsl.mcp.tools.get_signature`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.mcp.overview`
+- **contract_class**: `interface`
 
-## 1. Purpose
+## What this is
 
-`get_signature` は、対象object単体の外形を返す。
+`get_signature` returns the external shape of a single target object.
 
-返すもの:
+Returns: object identity, kind, source, signature, doc, diagnostics.
 
-- object identity
-- kind
-- source
-- signature
-- doc
-- diagnostics
+Does not return: deep surrounding context, transitive references, full inspect information, render output.
 
-返さないもの:
+> Source: V01-ADR-018, V01-ADR-021, V01-ADR-026, V01-ADR-028, V01-ADR-031, V01-ADR-035, V01-ADR-062
 
-- 深い周辺文脈
-- transitive references
-- full inspect情報
-- render出力
-
-## 2. Input
+## Request
 
 ```json
 {
@@ -48,15 +26,15 @@ depends_on:
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `selector` | ✓ | Object selector |
+| `selector` | ✓ | Object selector. |
 
-`selector` の object / kind 対応範囲は `docs/spec/mcp/schema.md` の selector support matrix を正本とする。
-`get_signature` で matrix が `no` の selector を受け取った場合は、原則として `unsupported_object` tool error とする。
-`view: api_table` の route一覧取得は `list_endpoints` の責務であり、`get_signature` では扱わない。
+The selector's object/kind support range is governed by the selector support matrix in [`spec:bpdsl.mcp.schema`](../schema.md). If `get_signature` receives a selector marked `no` in the matrix, it returns `unsupported_object` tool error in principle. Retrieving the route list for `view: api_table` is `list_endpoints`'s responsibility, not `get_signature`'s.
 
-## 3. Output envelope
+## Response
+
+Output envelope:
 
 ```json
 {
@@ -72,12 +50,12 @@ depends_on:
     }
   },
   "signature": {},
-  "doc": "認証情報を検証しトークンを発行する",
+  "doc": "Validate credentials and issue a token",
   "diagnostics": []
 }
 ```
 
-## 4. task signature
+### task signature
 
 ```json
 {
@@ -115,20 +93,18 @@ depends_on:
       "leaf_path": "login"
     }
   },
-  "doc": "認証情報を検証しトークンを発行する",
+  "doc": "Validate credentials and issue a token",
   "diagnostics": []
 }
 ```
 
-`endpoint` でないtaskでは、`signature.endpoint` フィールド自体を省略する。
-`endpoint.enabled: false` / `endpoint: null` は使わない。
+For a task that is not an endpoint, the `signature.endpoint` field is omitted entirely — `endpoint.enabled: false` / `endpoint: null` are not used.
 
-`signature.endpoint.leaf_path` はtask側のleaf pathであり、API Tableで合成されたfull pathではない。
-full pathは `list_endpoints` の `endpoints[].path` で返す。
+`signature.endpoint.leaf_path` is the task's own leaf path, not the full path composed by the API Table. The full path is returned via `list_endpoints`'s `endpoints[].path`.
 
-`get_signature` は task の外向き contract を返す軽量toolであるため、`returns.source` は返さない。`returns.source` は task 内部の return wiring であり、必要な場合は `inspect(task).members.return_source` で確認する。
+`get_signature` is a lightweight tool returning a task's outward contract, so it does not return `returns.source`. `returns.source` is internal return wiring within the task; check `inspect(task).members.return_source` if needed.
 
-## 5. model signature
+### model signature
 
 ```json
 {
@@ -144,14 +120,14 @@ full pathは `list_endpoints` の `endpoints[].path` で返す。
         "name": "id",
         "type": "str",
         "pk": true,
-        "doc": "ユーザーID"
+        "doc": "User ID"
       },
       {
         "name": "role_id",
         "type": "str",
         "fk": "auth.model.role.id",
         "unique": false,
-        "doc": "ロールID"
+        "doc": "Role ID"
       }
     ]
   },
@@ -160,7 +136,7 @@ full pathは `list_endpoints` の `endpoints[].path` で返す。
 }
 ```
 
-## 6. store signature
+### store signature
 
 ```json
 {
@@ -173,13 +149,12 @@ full pathは `list_endpoints` の `endpoints[].path` で返す。
     "store_kind": "db",
     "of": "auth.model.user"
   },
-  "doc": "ユーザーテーブル",
+  "doc": "User table",
   "diagnostics": []
 }
 ```
 
-`signature.store_kind` はYAMLの `store.kind` に由来し、`db` / `session` / `collection` / `context` の4種を返しうる。
-いずれも `of` を持つ場合はmodel QualifiedIDを返す。
+`signature.store_kind` derives from YAML `store.kind` and may be one of `db` / `session` / `collection` / `context`. When a `of` is present, it is returned as the model QualifiedID.
 
 ```json
 {
@@ -192,15 +167,14 @@ full pathは `list_endpoints` の `endpoints[].path` で返す。
     "store_kind": "session",
     "of": "cart.model.cart"
   },
-  "doc": "カートのセッション状態",
+  "doc": "Cart session state",
   "diagnostics": []
 }
 ```
 
-`store_kind=collection` のquery仕様は `doc` に自然言語で含める。
-`store_kind=context` の追加固有フィールドはMCP v1では定義しない。
+The query spec for `store_kind=collection` is included in `doc` as natural language. MCP v1 defines no additional dedicated fields for `store_kind=context`.
 
-## 7. event signature
+### event signature
 
 ```json
 {
@@ -216,12 +190,12 @@ full pathは `list_endpoints` の `endpoints[].path` で返す。
       "model": "payment.model.payment_event"
     }
   },
-  "doc": "Stripeからの決済完了通知",
+  "doc": "Payment-completed notification from Stripe",
   "diagnostics": []
 }
 ```
 
-## 8. state signature
+### state signature
 
 ```json
 {
@@ -237,15 +211,14 @@ full pathは `list_endpoints` の `endpoints[].path` で返す。
       "present": true
     }
   },
-  "doc": "チェックアウト画面",
+  "doc": "Checkout screen",
   "diagnostics": []
 }
 ```
 
-## 9. transition signature
+### transition signature
 
-Transitionはnodeではなくsynthetic objectとして問い合わせる。
-selectorには `object: "transition"` とTransitionIDを指定する。
+A transition is queried as a synthetic object, not a node. The selector specifies `object: "transition"` and the TransitionID.
 
 ```json
 {
@@ -277,19 +250,18 @@ selectorには `object: "transition"` とTransitionIDを指定する。
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `state_file` | ✓ | transition定義元のstate FileID |
-| `from` | ✓ | 遷移元state local ID |
-| `on` | ✓ | event local ID |
-| `to` | ✓ | 遷移先state local ID |
-| `guard` | 任意 | guard文字列 |
-| `action` | 任意 | 解決済みaction task QualifiedID |
+| `state_file` | ✓ | State FileID where the transition is defined. |
+| `from` | ✓ | Source state local ID. |
+| `on` | ✓ | Event local ID. |
+| `to` | ✓ | Target state local ID. |
+| `guard` | optional | Guard string. |
+| `action` | optional | Resolved action task QualifiedID. |
 
-## 10. field signature
+### field signature
 
-Model fieldはsynthetic objectとして問い合わせる。
-selectorには `object: "field"`、親model QualifiedID、field local IDを指定する。
+A model field is queried as a synthetic object. The selector specifies `object: "field"`, the parent model QualifiedID, and the field local ID.
 
 ```json
 {
@@ -317,17 +289,34 @@ selectorには `object: "field"`、親model QualifiedID、field local IDを指�
     "type": "str",
     "pk": true
   },
-  "doc": "注文ID（PK）。order_item.order_id / payment_event.order_id のFK参照先",
+  "doc": "Order ID (PK). FK target of order_item.order_id / payment_event.order_id",
   "diagnostics": []
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `name` | ✓ | field local ID |
-| `type` | ✓ | YAML上のfield type |
-| `pk` | 任意 | primary keyならtrue |
-| `fk` | 任意 | YAML上のFK指定。bare FKの場合も元の記述を返す |
-| `unique` | 任意 | uniqueならtrue |
+| `name` | ✓ | Field local ID. |
+| `type` | ✓ | Field type as written in YAML. |
+| `pk` | optional | `true` if primary key. |
+| `fk` | optional | FK designation as written in YAML; returns the original bare form even if bare. |
+| `unique` | optional | `true` if unique. |
 
----
+## Errors
+
+| code | condition |
+|---|---|
+| `unsupported_object` | Selector resolves to an object/kind marked `no` in the selector support matrix. |
+| `not_found` | Selector does not resolve to any object. |
+| `ambiguous` | Selector resolves to multiple candidates. |
+| `kind_mismatch` | Resolved kind does not match `selector.kind`. |
+| `invalid_selector` | Selector shape is malformed. |
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.mcp.overview` | Parent overview; tool catalog and selection guidance. |
+| `spec:bpdsl.mcp.schema` | Selector support matrix, ObjectRef, TransitionRef, AssetRef shapes. |
+| `spec:bpdsl.mcp.errors` | Error code catalog. |
+| `spec:bpdsl.mcp.tools.list_endpoints` | Owns full-path computation for endpoint tasks. |

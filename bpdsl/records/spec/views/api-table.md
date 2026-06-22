@@ -1,37 +1,27 @@
----
-scope: docs/spec/views/api-table.md
-status: draft
-last_updated: 2026-04-25
-summary: >
-  API Table viewのYAML schemaとrenderルール定義。
-  endpoint taskの収集範囲・route構成・Markdown table出力形式を定義する。
-depends_on:
-  - docs/adr/002-folder-as-namespace.md
-  - docs/adr/005-class-diagram-as-endpoint-view.md
-  - docs/adr/009-task-io-design.md
-  - docs/adr/017-diagram-layers-and-scope.md
-  - docs/adr/028-api-table-route-composition.md
-  - docs/adr/030-yaml-file-type-declaration.md
----
+# Contract: API Table render rules
 
-# API Table仕様
+- **id**: `spec:bpdsl.views.api_table`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.views.overview`
+- **contract_class**: `format`
 
-## スコープ
+## What this is
 
-API TableはApplicationレイヤーのviewであり、`endpoint: true` なtaskを人間とLLMが俯瞰するための一覧を提供する。
-Mermaid描画は持たず、Markdownとしてrenderし、`list_endpoints` MCPツールで出力する。
+API Table is an Application-layer view that gives humans and LLMs an overview list of all tasks with `endpoint: true`. It has no Mermaid rendering — it renders as Markdown and is also exposed via the `list_endpoints` MCP tool.
 
-API Tableは独立ノードではないが、暗黙集約でもない。API Table自身のYAMLを持ち、
-どのmodule群をどう集計し、どのHTTP root配下として見せるかを明示する。
+API Table is not an independent node and not an implicit aggregation either. It has its own YAML, which explicitly states which modules are aggregated, how, and under which HTTP root they are shown.
 
----
+> Source: V01-ADR-002, V01-ADR-005, V01-ADR-009, V01-ADR-017, V01-ADR-028, V01-ADR-030
 
-## YAML Schema
+## Current contract
+
+### YAML schema
 
 ```yaml
 as: api_table
 id: auth_api
-note: 認証API一覧
+note: Authentication API listing
 http_root_path: /api
 modules:
   - module: app.auth
@@ -40,118 +30,22 @@ modules:
     include_submodules: false
 ```
 
-### フィールド定義
-
-| フィールド | 必須 | 型 | 内容 |
+| field | required | type | content |
 |---|---|---|---|
-| `as` | ✓ | string | ファイル種別宣言。view定義ファイルの識別に使う。`api_table` 固定（V01-ADR-030） |
-| `id` | ✓ | string | API Tableの識別子。MarkdownのH1に使う |
-| `note` | 任意 | string | API Table全体の説明。H1直下に出力する |
-| `http_root_path` | ✓ | string | このAPI Tableが担当するHTTP root path。`/api` のように先頭 `/` を含む |
-| `modules` | ✓ | list\<module-entry\> | 集計対象moduleの一覧 |
+| `as` | ✓ | string | File-kind declaration, used to identify a view definition file. Fixed: `api_table` (V01-ADR-030). |
+| `id` | ✓ | string | API Table identifier. Used as the Markdown H1. |
+| `note` | optional | string | Description of the API Table as a whole. Output directly under the H1. |
+| `http_root_path` | ✓ | string | HTTP root path this API Table is responsible for, e.g. `/api` (includes the leading `/`). |
+| `modules` | ✓ | list\<module-entry\> | List of modules to aggregate. |
 
-### module-entry オブジェクト
+### module-entry object
 
-| フィールド | 必須 | 型 | 内容 |
+| field | required | type | content |
 |---|---|---|---|
-| `module` | ✓ | string | 絶対module path |
-| `include_submodules` | 任意 | bool | `true` の場合、配下submoduleのendpoint taskも収集する。省略時は `false` |
+| `module` | ✓ | string | Absolute module path. |
+| `include_submodules` | optional | bool | When `true`, also collects endpoint tasks from submodules. Defaults to `false`. |
 
----
-
-## 収集ルール
-
-### 対象
-
-以下をすべて満たすtaskのみをAPI Tableに含める。
-
-- `type: task`
-- `endpoint: true`
-- `modules[]` で指定されたmoduleに属する
-- `include_submodules: true` の場合は、その配下submoduleも含む
-
-`endpoint: true` でないtaskは完全に除外する。
-
-### module単位のsection
-
-API Tableの出力sectionは `modules[]` の各要素ごとに1つ持つ。
-
-- `include_submodules: false` の場合、そのmodule直下のendpoint taskのみを対象にする
-- `include_submodules: true` の場合、配下submoduleのendpoint taskも同一sectionに含める
-- submoduleごとに別sectionは切らない
-- 収集対象endpointが0件のmodule-entryはsectionを出力しない。parser error / warning にはしない
-
-例: `app.auth` をsection起点moduleとし、`app.auth.oauth` を含む場合
-
-- `login`
-- `oauth/start`
-- `oauth/callback`
-
-を同じsectionに出力する。
-
----
-
-## route構成ルール
-
-endpoint taskの `path` はfull pathではなくleaf pathである。
-`path` は省略可能で、省略時は `task.id` をleaf nameとして使う。
-`path` は `/` を含まないsingle segmentのみ許容する（例: `stripe`、`login`）。`/` を含む複数セグメントは不正であり、URL階層はmoduleディレクトリ構造で表現する。
-
-API Tableは各endpointの最終routeを以下の要素から構成する。
-
-```text
-{http_root_path}/{section起点moduleからの相対module path}/{task.path}
-```
-
-- `http_root_path` はAPI Table YAMLから取得する
-- `section起点moduleからの相対module path` は、section対象moduleを起点に算出する
-- `task.path` はendpoint taskが持つleaf pathを使う
-
-### route構成例
-
-前提:
-
-```yaml
-http_root_path: /api
-modules:
-  - module: app.auth
-    include_submodules: true
-```
-
-収集対象task:
-
-```yaml
-# app.auth
-- id: login
-  type: task
-  endpoint: true
-  method: POST
-  path: login
-
-# app.auth.oauth
-- id: start
-  type: task
-  endpoint: true
-  method: GET
-  path: start
-```
-
-renderされるroute:
-
-- `login` → `/api/login`
-- `oauth/start` → `/api/oauth/start`
-
-### 表示名のルール
-
-section内でのtask表示名は、section起点moduleからの相対pathを使う。
-
-- 同一module直下: `login`
-- submodule配下: `oauth/start`
-- section起点moduleから相対化できないものを同一sectionで扱う場合: 絶対path表示
-
----
-
-## 出力フォーマット
+### Output format
 
 ```markdown
 # {id}
@@ -177,52 +71,25 @@ section内でのtask表示名は、section起点moduleからの相対pathを使�
 | list_logs | GET | /api/admin/audit/list_logs | - | audit_log_list |
 ```
 
-- H1は `id`
-- `note` がある場合はH1直下に出力。ない場合は省略
-- `## Routes` を先頭に置き、各sectionへのリンク一覧を出す
-- 本文は `modules[]` の順に `##` section を並べる
-- 各sectionにはそのmodule-entryに対応するendpoint一覧tableを置く
+- H1 is `id`.
+- If `note` is present, it is output directly under the H1; omitted otherwise.
+- `## Routes` comes first, listing links to each section.
+- The body lists `##` sections in `modules[]` order.
+- Each section has the endpoint table for its corresponding module-entry.
 
-### Routes一覧
+### table column rendering
 
-`## Routes` には、各sectionの見出しリンクを列挙する。
-リンクの表示名はsection見出しと同じ値を使う。
-Routes一覧の順序は、出力されるsectionの順序と同じく `modules[]` の記述順に従う。収集対象endpointが0件で省略されたsectionはRoutes一覧にも出力しない。
-リンク先anchorは、Markdown rendererの見出しID生成規則に従う。
-
-### section見出し
-
-section見出しは `modules[].module` の絶対module pathを使う。
-
-例:
-
-- `## app.auth`
-- `## app.admin.audit`
-
----
-
-## table列のrender
-
-| 列 | 内容 |
+| column | content |
 |---|---|
-| `task id` | section起点moduleからの相対path。必要に応じて絶対path |
-| `method` | endpoint taskの `method` |
-| `path` | API Tableが構成したfull route |
-| `params` | `params[].model` を `<br/>` 区切りで列挙 |
-| `returns` | `returns.model` を表示 |
+| `task id` | Path relative to the section's anchor module (absolute path if needed). |
+| `method` | The endpoint task's `method`. |
+| `path` | The full route composed by the API Table (see §Route composition rule). |
+| `params` | `params[].model` listed in declaration order, joined by `<br/>`. |
+| `returns` | `returns.model` (single value). |
 
-### absent値
+Missing values render as `-` for both `params` (absent) and `returns` (absent).
 
-以下の欠損値はすべて `-` で表示する。
-
-- `params` がない
-- `returns` がない
-
-### paramsのrender
-
-`params` は `params[].model` を宣言順に `<br/>` 区切りで表示する。
-
-例:
+`params` example: declaring
 
 ```yaml
 params:
@@ -232,74 +99,25 @@ params:
     model: client_info
 ```
 
-→ `refresh_token<br/>client_info`
+renders as `refresh_token<br/>client_info`.
 
-`params` がない場合は `-` を表示する。
+`returns` is single-valued; only `returns.model` is shown. Example: `returns: { name: auth_token, model: token }` renders as `token`.
 
-### returnsのrender
+### Render example
 
-`returns` は単一のみなので、`returns.model` のみを表示する。
-
-例:
-
-```yaml
-returns:
-  name: auth_token
-  model: token
-```
-
-→ `token`
-
-`returns` がない場合は `-` を表示する。
-
----
-
-## ソート順
-
-各section内の行は `task id` のASCII昇順で並べる。
-
-- `login`
-- `oauth/callback`
-- `oauth/start`
-
-の順になる。
-
-`modules[]` 自体のsection順はYAML記述順を維持する。
-
----
-
-## 除外ルール
-
-以下はAPI Tableに含めない。
-
-- `endpoint: true` でないtask
-- `model`
-- `store`
-- `actor`
-- `event`
-- `state`
-- `branch`
-- `fork`
-- `join`
-- `asset`（taskの `returns` から導出されるがtable対象ではない）
-
----
-
-## render例
-
-### YAML
+YAML:
 
 ```yaml
 as: api_table
 id: auth_api
-note: 認証API一覧
+note: Authentication API listing
 http_root_path: /api
 modules:
   - module: app.auth
     include_submodules: true
 ```
 
-対象endpoint task:
+Target endpoint tasks:
 
 ```yaml
 # app.auth
@@ -341,12 +159,12 @@ modules:
     model: token
 ```
 
-### Markdown出力
+Markdown output:
 
 ```markdown
 # auth_api
 
-認証API一覧
+Authentication API listing
 
 ## Routes
 
@@ -360,3 +178,102 @@ modules:
 | oauth/callback | GET | /api/oauth/callback | oauth_code<br/>oauth_state | token |
 | oauth/start | GET | /api/oauth/start | - | oauth_redirect |
 ```
+
+## Rules
+
+### Collection rule
+
+Only tasks satisfying all of the following are included in the API Table:
+
+- `type: task`
+- `endpoint: true`
+- Belongs to a module listed in `modules[]`.
+- If `include_submodules: true`, submodules under that module are included too.
+
+A task without `endpoint: true` is excluded entirely.
+
+### Per-module sections
+
+The API Table output has one section per `modules[]` entry.
+
+- If `include_submodules: false`, only endpoint tasks directly under that module are targeted.
+- If `include_submodules: true`, endpoint tasks of submodules are included in the same section — submodules never get their own separate section.
+- A module-entry with zero collected endpoints does not output a section. This is not a parser error or warning.
+
+Example: with `app.auth` as the section's anchor module and `app.auth.oauth` included, `login`, `oauth/start`, and `oauth/callback` all render into the same section.
+
+### Route composition rule
+
+An endpoint task's `path` is a leaf path, not a full path. `path` is optional; when omitted, `task.id` is used as the leaf name. `path` allows only a single segment with no `/` (e.g. `stripe`, `login`) — a multi-segment path containing `/` is invalid; URL hierarchy is expressed via the module directory structure instead.
+
+The API Table composes each endpoint's final route from:
+
+```text
+{http_root_path}/{module path relative to the section's anchor module}/{task.path}
+```
+
+- `http_root_path` comes from the API Table YAML.
+- The relative module path is computed from the section's anchor module.
+- `task.path` is the endpoint task's leaf path.
+
+Example: with `http_root_path: /api` and section anchor `app.auth` (`include_submodules: true`):
+
+```yaml
+# app.auth
+- id: login
+  type: task
+  endpoint: true
+  method: POST
+  path: login
+
+# app.auth.oauth
+- id: start
+  type: task
+  endpoint: true
+  method: GET
+  path: start
+```
+
+renders routes `login` → `/api/login` and `oauth/start` → `/api/oauth/start`.
+
+### Display name rule
+
+A task's display name within a section uses the path relative to the section's anchor module:
+
+- Directly under the same module: `login`.
+- Under a submodule: `oauth/start`.
+- If something in the same section can't be relativized from the anchor module, show its absolute path.
+
+### Routes listing
+
+`## Routes` enumerates heading links for each section, using the same display text as the section heading. The order matches the order sections are output, i.e. `modules[]` declaration order. A section omitted because it has zero collected endpoints is also omitted from the Routes listing. Anchor targets follow the Markdown renderer's heading-ID generation rule.
+
+### Section heading
+
+A section heading uses the absolute module path of `modules[].module`, e.g. `## app.auth`, `## app.admin.audit`.
+
+### Sort order
+
+Rows within each section are sorted by `task id` in ASCII ascending order, e.g. `login`, `oauth/callback`, `oauth/start`. The section order itself (`modules[]` order) follows YAML declaration order, not sorting.
+
+### Exclusion rule
+
+The following are never included in the API Table:
+
+- A task without `endpoint: true`.
+- `model`, `store`, `actor`, `event`, `state`, `branch`, `fork`, `join`.
+- `asset` (derived from a task's `returns`, but not a table target).
+
+## Validation rules
+
+- `path` containing `/` is invalid — single-segment leaf paths only.
+- A module-entry with zero collected endpoints is not an error or warning — it simply produces no section and no Routes row.
+- `modules[]` entries are processed in declaration order; this order is never re-sorted by the renderer.
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.views.overview` | Parent overview; view kind catalog. |
+| `spec:bpdsl.dsl.nodes.processing` | `task` node definition including `endpoint` field. |
+| `spec:bpdsl.mcp.tools.list_endpoints` | MCP tool exposing the same route-composition rule. |

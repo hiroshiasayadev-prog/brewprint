@@ -1,47 +1,24 @@
----
-scope: docs/spec/mcp/tools/analyze-impact.md
-status: draft
-last_updated: 2026-06-07
-summary: >
-  analyze_impact toolの仕様を定義する。
-  対象objectとchange kindから影響範囲を解釈付きで返す。
-  severity / fixability / coverage / suggested_fixes を規定する。
-depends_on:
-  - docs/adr/049-mcp-query-reference-vocabulary.md
-  - docs/adr/054-mcp-query-coverage-for-design-conversation.md
-  - docs/adr/055-mcp-reference-tree-traversal.md
-  - docs/adr/056-mcp-analyze-impact-tool-design.md
----
+# Contract: `analyze_impact`
 
-# `analyze_impact`
+- **id**: `spec:bpdsl.mcp.tools.analyze_impact`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.mcp.overview`
+- **contract_class**: `interface`
 
-## 1. Purpose
+## What this is
 
-`analyze_impact` は、対象 object と変更種別（`change`）を受け取り、 影響範囲を **意味づけ済みの impact list** として返す。
+`analyze_impact` takes a target object and a change kind (`change`), and returns the impact range as an **interpreted impact list**.
 
-`get_references` / `get_reference_tree` が返す raw な reference 情報の上に、 change kind ごとの解釈、severity 判定、 修正可能性、推奨アクションを載せる。
+On top of the raw reference information `get_references` / `get_reference_tree` return, it layers per-change-kind interpretation, severity judgment, fixability, and recommended action.
 
-返すもの:
+Returns: `summary` (counts by severity/kind/fixability), `impacts[]` (interpreted entries per affected location), `coverage` (what was analyzed / not analyzed), `assumptions` (the tool's premises/limits), `truncated` (truncation info from the return cap), `diagnostics`.
 
-- `summary` — severity / kind / fixability ごとの件数集計
-- `impacts[]` — 各影響箇所の意味づけ済み entry
-- `coverage` — 何を分析したか / 何を分析していないか
-- `assumptions` — tool 側の前提・限界
-- `truncated` — 返却上限による打ち切り情報
-- `diagnostics` — diagnostic list
+Does not return: the full YAML snippet (that's `get_source`'s responsibility), the raw reference graph (that's `get_reference_tree`'s responsibility), presentation detail inside rendered output markdown, semantic-contract compatibility judgment.
 
-返さないもの:
+> Source: V01-ADR-056 §Decision §1
 
-- 完全な YAML snippet（`get_source` の責務）
-- raw な reference graph（`get_reference_tree` の責務）
-- renderer 出力 md 内の presentation 詳細
-- semantic contract の意味互換性判断
-
-> 由来: V01-ADR-056 §決定 §1
-
----
-
-## 2. Input
+## Request
 
 ```json
 {
@@ -58,27 +35,22 @@ depends_on:
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `selector` | ✓ | 対象 object selector |
-| `change` | ✓ | 変更種別。discriminated object（§3 参照） |
-| `scope_modules` | 任意 | 分析範囲を絞る module list |
-| `max_impacts` | 任意 | impact 返却上限。省略時 `200` |
+| `selector` | ✓ | Target object selector. |
+| `change` | ✓ | Change kind — a discriminated object (see §`change` discriminated object). |
+| `scope_modules` | optional | Module list narrowing the analysis scope. |
+| `max_impacts` | optional | Impact return cap. Defaults to `200`. |
 
-`depth` は input に持たない。
-影響範囲の探索深さは change kind ごとに tool 側が決める。
+There is no `depth` field in the request. The traversal depth of impact exploration is decided per change kind by the tool itself.
 
-`selector` の object / kind 対応範囲は `docs/spec/mcp/schema.md` の selector support matrix を正本とする。
-`analyze_impact` で matrix が `no` の selector を受け取った場合は、tool error ではなく、空 `impacts`、`coverage`、および `unsupported_selector` diagnostic を含む通常responseとして返す。
+The selector's object/kind support range is governed by the selector support matrix in [`spec:bpdsl.mcp.schema`](../schema.md). If `analyze_impact` receives a selector marked `no` in the matrix, it does **not** return a tool error — it returns a normal response with empty `impacts`, a `coverage`, and an `unsupported_selector` diagnostic.
 
-> 由来: V01-ADR-056 §決定 §2
+> Source: V01-ADR-056 §Decision §2
 
----
+## `change` discriminated object
 
-## 3. `change` discriminated object
-
-`change` は `kind` を discriminator とする object とする。
-v1 で扱う `kind` は以下。
+`change` is an object discriminated by `kind`. v1 handles the following kinds.
 
 ```jsonc
 // rename
@@ -87,46 +59,43 @@ v1 で扱う `kind` は以下。
 // remove
 { "kind": "remove" }
 
-// change_type （field の type 変更）
+// change_type (a field's type change)
 { "kind": "change_type", "new_type": "auth.model.account" }
 
-// change_contract （task の params / returns 等の構造変更）
-{ "kind": "change_contract", "note": "params に session_id を追加" }
+// change_contract (structural change to a task's params / returns etc.)
+{ "kind": "change_contract", "note": "add session_id to params" }
 
-// change_transition_target （transition の to / action 変更）
+// change_transition_target (change to a transition's to / action)
 {
   "kind": "change_transition_target",
   "new_to": "order.state.shipped",
   "new_action": "order.task.notify_user"
 }
 
-// add （新規追加。既存影響というより整合性分析）
+// add (new addition — more a consistency analysis than existing-impact)
 { "kind": "add", "added_id": "auth.model.user.locale" }
 ```
 
-`add` を投げた場合、 `coverage.analyzed` は他 kind と異なる（§7 参照）。
+When `add` is given, `coverage.analyzed` differs from the other kinds (see §coverage).
 
-### validation
+### Validation
 
-`change.kind` ごとの必須payloadは以下とする。
+Required payload per `change.kind`:
 
-| kind | 必須payload | optional payload | validation |
+| kind | required payload | optional payload | validation |
 |---|---|---|---|
-| `rename` | `new_id` | - | `new_id` が空なら `invalid_change_payload` |
-| `remove` | - | - | 追加payloadは無視せず `invalid_change_payload` |
-| `change_type` | `new_type` | - | `new_type` が空なら `invalid_change_payload` |
-| `change_contract` | - | `note` | payloadなしでも有効 |
-| `change_transition_target` | - | `new_to`, `new_action` | `new_to` / `new_action` の少なくとも一方が必要 |
-| `add` | `added_id` | - | `added_id` が空なら `invalid_change_payload` |
+| `rename` | `new_id` | - | `invalid_change_payload` if `new_id` is empty. |
+| `remove` | - | - | Extra payload is not ignored — it's `invalid_change_payload`. |
+| `change_type` | `new_type` | - | `invalid_change_payload` if `new_type` is empty. |
+| `change_contract` | - | `note` | Valid even with no payload. |
+| `change_transition_target` | - | `new_to`, `new_action` | At least one of `new_to` / `new_action` is required. |
+| `add` | `added_id` | - | `invalid_change_payload` if `added_id` is empty. |
 
-kind と payload の不正な組み合わせは tool error として `invalid_change_payload` を返す。
-unsupported selector は tool error ではなく、空 `impacts`、`unsupported_selector` diagnostic、coverage を含む通常responseとして返す。
+An invalid kind/payload combination is a `invalid_change_payload` tool error. An unsupported selector is not a tool error — it returns a normal response with empty `impacts`, an `unsupported_selector` diagnostic, and `coverage`.
 
-> 由来: V01-ADR-056 §決定 §2
+> Source: V01-ADR-056 §Decision §2
 
----
-
-## 4. Output
+## Response
 
 ```json
 {
@@ -167,7 +136,7 @@ unsupported selector は tool error ではなく、空 `impacts`、`unsupported_
         "kind": "task",
         "id": "auth.task.login"
       },
-      "reason": "auth.task.login が field 'email' を reads しているため、rename後に参照解決できなくなる",
+      "reason": "auth.task.login reads field 'email', so reference resolution will break after the rename",
       "via": ["reads", "model_field"],
       "source": {
         "file": "auth/task/login.yaml",
@@ -176,7 +145,7 @@ unsupported selector は tool error ではなく、空 `impacts`、`unsupported_
         "end_line": 42,
         "end_column": 18
       },
-      "recommended_action": "reads field reference を email_address へ更新する",
+      "recommended_action": "Update the reads field reference to email_address",
       "suggested_fixes": [
         {
           "kind": "replace_reference",
@@ -207,11 +176,11 @@ unsupported selector は tool error ではなく、空 `impacts`、`unsupported_
       "render_presentation_details",
       "wireframe_element_binding"
     ],
-    "note": "v1では reference 経路の到達可能性と型 signature identity のみを判定する。"
+    "note": "v1 judges only reference-path reachability and type-signature identity."
   },
   "assumptions": [
-    "rename後のID衝突は検証対象外",
-    "note内の自然言語参照は解析対象外"
+    "ID collisions after rename are not validated",
+    "Natural-language references inside notes are not analyzed"
   ],
   "truncated": false,
   "truncated_reasons": [],
@@ -219,23 +188,21 @@ unsupported selector は tool error ではなく、空 `impacts`、`unsupported_
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `target` | ✓ | 分析対象 ObjectRef |
-| `change` | ✓ | input で指定された change（そのまま返す） |
-| `summary` | ✓ | severity / fixability / kind ごとの件数集計 |
-| `impacts` | ✓ | 影響箇所一覧 |
-| `coverage` | ✓ | 分析範囲の明示 |
-| `assumptions` | ✓ | tool の前提・限界 |
-| `truncated` | ✓ | `max_impacts` により打ち切ったか |
-| `truncated_reasons` | ✓ | 打ち切り理由 |
-| `diagnostics` | ✓ | Diagnostic list |
+| `target` | ✓ | Target ObjectRef. |
+| `change` | ✓ | The `change` given in the request, returned as-is. |
+| `summary` | ✓ | Counts by severity / fixability / kind. |
+| `impacts` | ✓ | List of affected locations. |
+| `coverage` | ✓ | Explicit statement of analysis scope. |
+| `assumptions` | ✓ | The tool's premises/limits. |
+| `truncated` | ✓ | Whether truncated by `max_impacts`. |
+| `truncated_reasons` | ✓ | Truncation reason. |
+| `diagnostics` | ✓ | Diagnostic list. |
 
----
+## Impact entry
 
-## 5. Impact entry
-
-各 `impacts[]` entry は以下の形を持つ。
+Each `impacts[]` entry has the shape:
 
 ```jsonc
 {
@@ -252,67 +219,62 @@ unsupported selector は tool error ではなく、空 `impacts`、`unsupported_
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `id` | ✓ | response 内 unique な impact id |
-| `kind` | ✓ | impact の semantic kind |
-| `severity` | ✓ | §6 参照 |
-| `fixability` | ✓ | §6 参照 |
-| `object` | ✓ | 影響を受ける ObjectRef または render output |
-| `reason` | ✓ | なぜ影響するかの自然言語説明 |
-| `via` | ✓ | rootから到達した reference kind の経路 |
-| `source` | ✓ | 影響箇所の SourceLocation |
-| `recommended_action` | ✓ | 人間向け推奨アクション |
-| `suggested_fixes` | 任意 | 機械的修正候補（§8 参照） |
+| `id` | ✓ | Unique impact ID within the response. |
+| `kind` | ✓ | Semantic kind of the impact. |
+| `severity` | ✓ | See §severity / fixability. |
+| `fixability` | ✓ | See §severity / fixability. |
+| `object` | ✓ | Affected ObjectRef, or a render output. |
+| `reason` | ✓ | Natural-language explanation of why it's affected. |
+| `via` | ✓ | Reference-kind path reached from root. |
+| `source` | ✓ | SourceLocation of the affected spot. |
+| `recommended_action` | ✓ | Human-facing recommended action. |
+| `suggested_fixes` | optional | Mechanical fix candidates (see §recommended_action / suggested_fixes). |
 
-`via` は最短到達経路のみを表す軽量表現とする。
-完全な経路復元が必要な場合は、別途 `get_reference_tree` を呼ぶ。
+`via` is a lightweight representation showing only the shortest reachable path. Call [`get_reference_tree`](get-reference-tree.md) separately if full path reconstruction is needed.
 
-> 由来: V01-ADR-056 §決定 §5, §9
+> Source: V01-ADR-056 §Decision §5, §9
 
----
+## severity / fixability
 
-## 6. severity / fixability
-
-severity と fixability は別軸として独立に判定する。
+`severity` and `fixability` are independent axes, judged separately.
 
 ### severity
 
-| 値 | 意味 |
+| value | meaning |
 |---|---|
-| `breaking` | そのまま変更すると semantic build / validation / render / query のいずれかが失敗する可能性が高い |
-| `warning` | 壊れるとは限らないが、意味・到達経路・表示・設計意図が変わる可能性がある |
-| `info` | 関連情報として提示するが、変更対応は不要または低優先 |
+| `breaking` | Making the change as-is is likely to cause semantic build / validation / render / query to fail. |
+| `warning` | Won't necessarily break, but meaning, reachability, display, or design intent may change. |
+| `info` | Presented as related information, but no action is needed or it's low priority. |
 
 ### fixability
 
-| 値 | 意味 |
+| value | meaning |
 |---|---|
-| `mechanical` | source location と置換内容が一意に決まり、機械的に直せる |
-| `suggested` | 修正方針は提案できるが、人間レビュー前提 |
-| `manual_review` | 設計判断が必要で、tool では直し方を決めない方がよい |
-| `unknown` | tool が判断できない（情報不足、coverage 外、source range 欠落 等） |
+| `mechanical` | Source location and replacement content are uniquely determined; can be fixed mechanically. |
+| `suggested` | A fix direction can be suggested, but assumes human review. |
+| `manual_review` | Requires a design decision; the tool should not decide how to fix it. |
+| `unknown` | The tool cannot judge (insufficient info, out of coverage, missing source range, etc.). |
 
-### change kind ごとの典型的組み合わせ（参考）
+### Typical combinations by change kind (reference)
 
 | change kind | typical severity | typical fixability |
 |---|---|---|
 | `rename` | breaking | mechanical |
 | `remove` | breaking | manual_review |
-| `change_type`（primitive） | breaking または warning | suggested |
-| `change_contract` | breaking | suggested または manual_review |
+| `change_type` (primitive) | breaking or warning | suggested |
+| `change_contract` | breaking | suggested or manual_review |
 | `change_transition_target` | warning | manual_review |
-| `add` | info または warning | manual_review |
+| `add` | info or warning | manual_review |
 
-これは目安であり、 個別状況に応じて実装が判断する。
+This is a guideline — the implementation judges per individual situation.
 
-> 由来: V01-ADR-056 §決定 §3
+> Source: V01-ADR-056 §Decision §3
 
----
+## coverage
 
-## 7. coverage
-
-`coverage` は output 必須フィールドとする。
+`coverage` is a required output field.
 
 ```jsonc
 {
@@ -324,12 +286,11 @@ severity と fixability は別軸として独立に判定する。
 }
 ```
 
-`analyzed` / `not_analyzed` は文字列列挙。
-LLM はこの内容を人間に提示することで、 「分析対象だが結果0件」 と 「分析していない」 を区別できる。
+`analyzed` / `not_analyzed` are string enumerations. They let an LLM distinguish "analyzed but zero results" from "not analyzed" when presenting to a human.
 
-### v1 標準セット
+### v1 standard set
 
-`coverage.analyzed` の v1 標準語彙:
+`coverage.analyzed` v1 standard vocabulary:
 
 - `direct_references`
 - `reference_tree`
@@ -341,59 +302,55 @@ LLM はこの内容を人間に提示することで、 「分析対象だが結
 - `type_signature_identity`
 - `render_output_files`
 
-`coverage.not_analyzed` の v1 標準語彙:
+`coverage.not_analyzed` v1 standard vocabulary:
 
 - `type_structural_compatibility`
 - `semantic_contract_compatibility`
 - `render_presentation_details`
 - `wireframe_element_binding`
 
-### change.kind ごとの coverage サブセット
+### coverage subsets per change.kind
 
-`change.kind` や対象 object kind により、 `coverage.analyzed` はサブセットになってよい。
+`coverage.analyzed` may be a subset depending on `change.kind` and the target object kind.
 
-例:
+Examples:
 
-- `change.kind = "rename"` の field 対象 → `direct_references`, `reference_tree`, `model_field_resolution`, `flow_param_field_resolution`, `render_output_files`
-- `change.kind = "remove"` の task 対象 → `direct_references`, `reference_tree`, `transition_action_resolution`, `flow_step_task_resolution`, `sequence_step_task_resolution`, `render_output_files`
-- `change.kind = "add"` の field 対象 → name collision check / type resolution / writer coverage 等。`direct_references` ではない
+- `change.kind = "rename"` on a field target → `direct_references`, `reference_tree`, `model_field_resolution`, `flow_param_field_resolution`, `render_output_files`.
+- `change.kind = "remove"` on a task target → `direct_references`, `reference_tree`, `transition_action_resolution`, `flow_step_task_resolution`, `sequence_step_task_resolution`, `render_output_files`.
+- `change.kind = "add"` on a field target → name-collision check / type resolution / writer coverage etc. — not `direct_references`.
 
-`add` を投げた場合の `coverage.analyzed` v1 最小実装:
+`coverage.analyzed` minimum for v1 when `add` is given:
 
 - `name_collision`
 
-`type_resolution` / `writer_coverage` は `add` 専用の将来 coverage 語彙だが、M13 v1 では実体 collector を持たないため `coverage.not_analyzed` に入れる。
+`type_resolution` / `writer_coverage` are future `coverage` vocabulary specific to `add`, but since M13 v1 has no collector implementation for them, they go into `coverage.not_analyzed`.
 
-### coverage 必須化のルール
+### coverage mandatory rules
 
-- 分析対象0件で返す場合も `coverage` は必須
-- `not_analyzed` が空でも、 array としては必ず返す（省略不可）
-- `note` は任意。 LLM 向けに補足説明を入れたいときに使う
+- `coverage` is required even when zero analysis targets are returned.
+- `not_analyzed` must always be returned as an array, even if empty (cannot be omitted).
+- `note` is optional, for supplementary explanation aimed at the LLM.
 
-> 由来: V01-ADR-056 §決定 §6, §7
+> Source: V01-ADR-056 §Decision §6, §7
 
----
+## recommended_action / suggested_fixes
 
-## 8. recommended_action / suggested_fixes
-
-各 impact は `recommended_action`（人間向け）と `suggested_fixes[]`（機械的候補）を二段で返す。
+Each impact returns a two-tier recommendation: `recommended_action` (human-facing) and `suggested_fixes[]` (mechanical candidates).
 
 ### recommended_action
 
-人間向けの自然言語推奨アクション。 多少抽象でもよい。
-LLM が人間に提示する文言の素材となる。
+A human-facing natural-language recommended action. May be somewhat abstract — it's material the LLM uses to phrase what it tells the human.
 
 ### suggested_fixes
 
-機械的に直せそうな修正候補。
-`fixability` の値により出力可否が変わる。
+Mechanically-fixable candidate fixes. Whether they're emitted depends on `fixability`.
 
 | fixability | suggested_fixes |
 |---|---|
-| `mechanical` | source location 付きの具体的 fix を出してよい |
-| `suggested` | confidence 付きで概念的 fix を出してよい。 source 必須ではない |
-| `manual_review` | 空、または非破壊的 advisory のみ |
-| `unknown` | 空 |
+| `mechanical` | May emit a concrete fix with source location. |
+| `suggested` | May emit a conceptual fix with confidence; source is not required. |
+| `manual_review` | Empty, or non-destructive advisory only. |
+| `unknown` | Empty. |
 
 ### SuggestedFix shape
 
@@ -412,39 +369,34 @@ LLM が人間に提示する文言の素材となる。
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `kind` | ✓ | fix kind（実装裁量。例: `replace_reference`, `update_param_model`） |
-| `confidence` | ✓ | `high` / `medium` / `low` |
-| `source` | 条件付き | `mechanical` のときは必須。 それ以外は任意 |
-| `note` | 任意 | 補足説明 |
+| `kind` | ✓ | Fix kind (implementation's discretion, e.g. `replace_reference`, `update_param_model`). |
+| `confidence` | ✓ | `high` / `medium` / `low`. |
+| `source` | conditional | Required when `mechanical`; optional otherwise. |
+| `note` | optional | Supplementary explanation. |
 
-`from` / `to` 等の payload は `kind` 依存。
+Payload like `from` / `to` is `kind`-dependent.
 
-### `fixability=mechanical` の必要条件
+### Requirements for `fixability=mechanical`
 
-`fixability=mechanical` を返してよいのは、 以下を**すべて**満たす場合のみとする。
+`fixability=mechanical` may be returned only if **all** of the following hold:
 
-1. 置換対象 source location が一意に特定できる（file / line / column range）
-2. 置換前 token が source 上で一意（誤一致しない）
-3. 置換後 token が明確に1つに定まる（衝突なし）
-4. 置換後の reference 解決先が変わらない
-5. YAML 構造を変えない単純 token 置換である
+1. The replacement-target source location is uniquely identifiable (file / line / column range).
+2. The pre-replacement token is unique at the source location (no mismatched match).
+3. The post-replacement token resolves unambiguously to exactly one value (no collision).
+4. The post-replacement reference resolves to the same target.
+5. It is a simple token replacement that doesn't change YAML structure.
 
-ひとつでも欠ければ、 最低でも `suggested` に下げる。
-不確実性が高い場合は `manual_review` または `unknown` を返す。
+If even one is unmet, downgrade to at least `suggested`. Use `manual_review` or `unknown` if uncertainty is high.
 
-実装はこの5要件を judgement gate として持つこと。
-個別 change kind ごとの追加 heuristic は実装裁量とする。
+Implementations must treat these five requirements as a judgment gate. Additional heuristics per individual change kind are implementation discretion.
 
-> 由来: V01-ADR-056 §決定 §4, §5
+> Source: V01-ADR-056 §Decision §4, §5
 
----
+## SourceLocation
 
-## 9. SourceLocation
-
-`source` は file / line / column を inline で持つ。
-YAML snippet 全文は含めない。
+`source` carries file / line / column inline. It does not include the full YAML snippet.
 
 ```jsonc
 {
@@ -456,125 +408,107 @@ YAML snippet 全文は含めない。
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `file` | ✓ | project root 相対 path |
-| `line` | 条件付き | 1-based line number。取得できる場合は必ず返す |
-| `column` | 条件付き | 1-based column number。取得できる場合は必ず返す |
-| `end_line` | 任意 | range end |
-| `end_column` | 任意 | range end |
+| `file` | ✓ | Project-root-relative path. |
+| `line` | conditional | 1-based line number; always returned when obtainable. |
+| `column` | conditional | 1-based column number; always returned when obtainable. |
+| `end_line` | optional | Range end. |
+| `end_column` | optional | Range end. |
 
-実装が line / column を取得できない場合も、impact 自体は落とさず `source.file` だけで返してよい。
-その場合、該当impactは `fixability=unknown` または `manual_review` に下げ、`diagnostics[]` に `source_location_unavailable` を含める。
-`fixability=mechanical` を返すには、file / line / column range が一意に特定できている必要がある。
+When line/column cannot be obtained, the impact itself is not dropped — `source.file` alone may be returned, in which case that impact's `fixability` should be downgraded to `unknown` or `manual_review`, and `diagnostics[]` should include `source_location_unavailable`. `fixability=mechanical` requires the file/line/column range to be uniquely identifiable.
 
-完全な YAML snippet が必要な場合、 LLM は `get_source` を別途呼ぶ。
-`source_preview` として短い行範囲を optional に持ってもよいが、 `analyze_impact` v1 では必須としない。
+When the full YAML snippet is needed, the LLM calls `get_source` separately. A `source_preview` short line-range field may optionally be added, but is not required by `analyze_impact` v1.
 
-> 由来: V01-ADR-056 §決定 §9
+> Source: V01-ADR-056 §Decision §9
 
----
+## coverage scope details
 
-## 10. coverage scope details
+### Flow wiring handling
 
-### flow wiring の扱い
+`analyze_impact` v1 includes flow wiring in coverage. Specifically, it analyzes:
 
-`analyze_impact` v1 は flow wiring を coverage に含める。
-具体的には以下を分析する。
+- A flow step's task reference (`flow_step_task_resolution`).
+- A flow param's field reference (`flow_param_field_resolution`).
 
-- flow step の task 参照（`flow_step_task_resolution`）
-- flow param の field 参照（`flow_param_field_resolution`）
+M13 v1's `flow_param_field_resolution` is minimum scope: limited to cases where the flow param wiring's target/source/return-asset name, or the source task/join's return-model identity, can be determined to relate to the target field / field model. Structural compatibility between models, or arbitrary expression analysis, is not performed.
 
-M13 v1 の `flow_param_field_resolution` は最小範囲とする。
-対象は、flow param wiring の target/source/return asset 名や source task/join の return model identity が、対象 field / field model に関係すると判定できるケースに限る。
-model 間の structural compatibility や、任意の式解析は行わない。
+The implementation internally reads a path equivalent to `inspect(task).members.flow.entries`. `get_reference_tree`'s reference kinds are not extended (V01-ADR-055 is maintained).
 
-実装は `inspect(task).members.flow.entries` 相当の経路を内部的に読む。
-`get_reference_tree` の reference kind は拡張しない（V01-ADR-055 維持）。
+### Sequence step handling
 
-### sequence step の扱い
+`analyze_impact` v1 includes sequence steps in coverage. Specifically, it analyzes:
 
-`analyze_impact` v1 は sequence step を coverage に含める。
-具体的には以下を分析する。
+- A sequence step's task reference (`sequence_step_task_resolution`).
 
-- sequence step の task 参照（`sequence_step_task_resolution`）
+### Render output handling
 
-### render output の扱い
+`analyze_impact` v1 handles render output at **file granularity**:
 
-`analyze_impact` v1 は render output を **file 粒度** で扱う。
+- Identifying the render group containing the changed target.
+- Returning the corresponding render output file path.
 
-- 変更対象を含む render group の特定
-- 該当 render output file path の返却
+Presentation detail inside the markdown (DAG node shape changes, ER line changes, etc.) is excluded from v1, explicit in `coverage.not_analyzed` as `render_presentation_details`.
 
-md 内の presentation 詳細（DAG node shape の変化、ER の線の変化、等）は v1 除外。
-`coverage.not_analyzed` に `render_presentation_details` として明示する。
+### Type-compatibility handling
 
-### 型整合性の扱い
+`analyze_impact` v1 covers up to **type-signature identity comparison**.
 
-`analyze_impact` v1 は **型 signature の identity 比較** までを対象とする。
+Included (`type_signature_identity`):
 
-含まれるもの（`type_signature_identity`）:
+- Primitive type match (comparing `str` / `int` / `bool` etc.).
+- Model type match (comparing model-id identity).
 
-- primitive 型一致（`str` / `int` / `bool` 等の比較）
-- model 型一致（model id の identity 比較）
+Not included (explicit in `not_analyzed` as `type_structural_compatibility`):
 
-含まれないもの（`type_structural_compatibility` として `not_analyzed` に明示）:
+- Subtyping judgment between models.
+- Structural compatibility of model fields.
+- Nullable / optional / required compatibility judgment.
+- Semantic-contract compatibility.
 
-- model 間の subtyping 判定
-- model fields の structural 互換性
-- nullable / optional / required の互換性判定
-- semantic contract 互換性
+> Source: V01-ADR-056 §Decision §7, §8
 
-> 由来: V01-ADR-056 §決定 §7, §8
+## M13 v1 implementation constraints
 
----
+M13 closes not by satisfying the full spec at once, but as a v1 minimum implementation that upholds a strong public contract.
 
-## 11. M13 v1 implementation constraints
+Implemented in M13 v1:
 
-M13 は full spec を一度に満たすのではなく、強い public contract を守った上での v1 最小実装として close する。
+- `change` discriminated-object validation.
+- Normal response + `unsupported_selector` diagnostic for unsupported selectors.
+- Transition-action / flow-step / sequence-step impact for task rename/remove/change_contract.
+- Direct/reference-tree-based impact for field rename/remove/change_type.
+- Minimum `flow_param_field_resolution` for field changes.
+- Resolution check of `new_to` / `new_action` for transition `change_transition_target`.
+- File-granularity render-output impact.
+- `name_collision` for `add`.
+- The common judgment gate for `fixability=mechanical`.
 
-M13 v1 で実装するもの:
+M13 v1 known limitations:
 
-- `change` discriminated object validation
-- unsupported selector の normal response + `unsupported_selector` diagnostic
-- task rename/remove/change_contract の transition action / flow step / sequence step impact
-- field rename/remove/change_type の direct/reference-tree based impact
-- field 変更に対する最小 `flow_param_field_resolution`
-- transition `change_transition_target` の `new_to` / `new_action` 解決チェック
-- render output file 粒度 impact
-- add の `name_collision`
-- `fixability=mechanical` の共通 judgement gate
+- Field rename falls to `unknown` / `manual_review` rather than `mechanical` when source line/column is insufficient.
+- `fixability=mechanical` is returned only when the gate is satisfied; a rename that doesn't satisfy it is `suggested` or `unknown`.
+- Flow param analysis is limited to a minimum wiring-identity judgment.
+- `add`'s `type_resolution` / `writer_coverage` remain in `coverage.not_analyzed`.
+- Dedicated analyze collectors for state / event / actor / store are limited in M13 v1, handled mainly via the reference/render path.
 
-M13 v1 の known limitations:
+## assumptions
 
-- field rename は source line/column が不足する場合、`mechanical` ではなく `unknown` / `manual_review` に落とす。
-- `fixability=mechanical` は gate を満たす場合のみ返す。gate を満たさない rename は `suggested` または `unknown` とする。
-- flow param 解析は wiring identity の最小判定に限る。
-- add の `type_resolution` / `writer_coverage` は `coverage.not_analyzed` に残す。
-- state / event / actor / store に対する専用 analyze collector は M13 v1 では限定的であり、主に reference/render 経路で扱う。
+`assumptions` enumerates the tool's own premises/limits as strings.
 
----
+Examples:
 
-## 12. assumptions
+- `"ID collisions after rename are not validated"`
+- `"Natural-language references inside notes are not analyzed"`
+- `"Transitive flow-wiring impact is limited to depth 1"`
 
-`assumptions` は tool 側の前提・限界を文字列で列挙する。
+These are information the LLM uses to tell a human "this analysis assumes X." Implementation-driven constraints are also made explicit, so the LLM doesn't give a human false confidence.
 
-例:
+## Selector support
 
-- `"rename後のID衝突は検証対象外"`
-- `"note内の自然言語参照は解析対象外"`
-- `"transitive な flow wiring 影響は depth 1 までのみ"`
+`analyze_impact`'s target selectors start from the set [`get_references`](get-references.md) supports.
 
-これらは LLM が人間に「**こういう前提で分析しています**」と伝えるための情報。
-implementation 都合の制約も、 LLM が誤った安心感を人間に与えないために明示する。
-
----
-
-## 13. Selector support
-
-`analyze_impact` の対象 selector は、 [`get_references`](./get-references.md) で supported な selector を起点にする。
-
-v1 で supported:
+Supported in v1:
 
 - `node: task`
 - `node: model`
@@ -585,7 +519,7 @@ v1 で supported:
 - `transition`
 - `field` / `model_field`
 
-v1 で unsupported（`coverage.not_analyzed` に該当 kind を含めて空 impact を返す）:
+Unsupported in v1 (returns empty impacts with the relevant kind included in `coverage.not_analyzed`):
 
 - `view: api_table`
 - `view: er_diagram`
@@ -595,7 +529,27 @@ v1 で unsupported（`coverage.not_analyzed` に該当 kind を含めて空 impa
 - `primitive`
 - `render_index`
 
-この一覧は共有 selector support matrix の `analyze_impact` 列と一致させる。
-unsupported selector が来た場合、 `diagnostics[]` に `unsupported_selector` を含めて返す。
+This list matches the `analyze_impact` column of the shared selector support matrix. When an unsupported selector arrives, `diagnostics[]` includes `unsupported_selector`.
 
----
+## Errors
+
+| code | condition |
+|---|---|
+| `invalid_change_payload` | `change.kind`/payload combination is invalid, or a required payload field is missing. |
+| `invalid_args` | Other malformed input. |
+| `not_found` | Selector does not resolve to any object. |
+| `ambiguous` | Selector resolves to multiple candidates. |
+| `kind_mismatch` | Resolved kind does not match `selector.kind`. |
+
+Unsupported selectors are **not** an error for this tool — see §Request and §Selector support.
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.mcp.overview` | Parent overview; tool catalog and selection guidance. |
+| `spec:bpdsl.mcp.schema` | Selector support matrix, ObjectRef, Reference shapes. |
+| `spec:bpdsl.mcp.errors` | Error code catalog. |
+| `spec:bpdsl.mcp.tools.get_reference_tree` | Raw reference graph this tool interprets on top of. |
+| `spec:bpdsl.mcp.tools.get_source` | Full YAML snippet retrieval, not duplicated by this tool. |
+| `spec:bpdsl.mcp.versioning` | Records `analyze_impact`'s promotion to v1. |

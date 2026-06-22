@@ -1,37 +1,25 @@
----
-scope: docs/spec/concepts/traceability/semantic-ref.md
-status: draft
-last_updated: 2026-05-25
-summary: >
-  semantic ref の grammar、安定性、document-level / section-level ref、
-  redirect / superseded の基本方針を定義する。
-depends_on:
-  - docs/adr/081-requirement-artifacts-and-spec-traceability.md
-  - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
-  - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
-  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
-  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
-semantic_refs:
-  - spec:trace.semantic-ref
-sections:
-  spec:trace.semantic-ref.definition: Semantic ref definition
-  spec:trace.semantic-ref-grammar: Semantic ref grammar
-  spec:trace.semantic-ref-stability: Stability rules
----
+# Reference: Semantic ref
 
-# Semantic ref
+- **id**: `spec:product.concepts.traceability.semantic_ref`
+- **status**: draft
+- **date**: 2026-06-22
+- **parent**: `spec:product.concepts.traceability`
+
+## What this is
+
+Defines the `spec:` semantic ref grammar, stability rules, and document/section ref model for the traceability MVP.
 
 ## Semantic ref definition
 
-Semantic ref は、brewprint docs artifact が表す概念を安定して参照するための identifier である。
+A semantic ref is an identifier that stably references the concept represented by a brewprint docs artifact.
 
-Semantic ref は physical path ではない。
-Markdown heading でもない。
-Directory layout でもない。
+A semantic ref is not a physical path.
+It is not a Markdown heading.
+It is not a directory layout.
 
-File rename、document split、document merge、section move が発生しても、同一概念を指す限り semantic ref は維持されるべきである。
+When file rename, document split, document merge, or section move occurs, a semantic ref should be maintained as long as it refers to the same concept.
 
-MVP で active に扱う例:
+MVP examples of active semantic refs:
 
 ```text
 spec:trace
@@ -40,19 +28,19 @@ spec:trace.resolve-and-validation
 spec:project-artifact-model
 ```
 
-Semantic ref と artifact ID-as-ref は区別する。`ADR-*` / `SPEC-*` / `INV-*` は design record artifact を指す ID-as-ref であり、`spec:` のような semantic ref prefix ではない。`internal-design:` / `coverage:` は V01-ADR-088 により MVP active scope から外れ、将来 requirement とともに再判断する。
+Semantic refs and artifact ID-as-refs are distinct. `ADR-*` / `SPEC-*` / `INV-*` are ID-as-refs pointing to design record artifacts — they are not semantic ref prefixes like `spec:`. Per V01-ADR-088, `internal-design:` and `coverage:` are outside the MVP active scope and will be reconsidered together with future requirements.
 
-V01-ADR-087 により、investigation の `source_refs` および記載済み `follow_up_results` は、対象に応じて artifact ID-as-ref または semantic ref を canonical reference として用いる。physical path は canonical reference として用いない。
+Per V01-ADR-087, investigation `source_refs` and recorded `follow_up_results` use artifact ID-as-refs or semantic refs as canonical references depending on the target. Physical paths are not used as canonical references.
 
 ## Semantic ref grammar
 
-MVP の prefix-ref grammar は以下とする。
+The MVP prefix-ref grammar is:
 
 ```text
 <prefix>:<domain>[.<concept>[.<subconcept>...]]
 ```
 
-MVP で active に扱う例:
+MVP examples of active semantic refs:
 
 ```text
 spec:trace
@@ -65,41 +53,36 @@ spec:project-artifact-model.responsibilities
 
 ### Character rules
 
-MVP の semantic ref は以下の文字だけを使う。
+| constraint | rule |
+|---|---|
+| allowed characters | `a-z 0-9 - . :` |
+| prefix | lowercase ASCII |
+| domain / concept / subconcept | lowercase ASCII |
+| word separator | hyphen `-` |
+| namespace separator | dot `.` |
+| prefix separator | colon `:` |
+| whitespace | not used |
+| slash `/` | not used |
+| file extension | not included |
+| physical path | not included |
 
-```text
-a-z 0-9 - . :
-```
-
-制約:
-
-- prefix は lowercase ASCII とする
-- domain / concept / subconcept は lowercase ASCII とする
-- word separator は hyphen `-` とする
-- namespace separator は dot `.` とする
-- prefix separator は colon `:` とする
-- whitespace は使わない
-- slash `/` は使わない
-- file extension は含めない
-- physical path は含めない
-
-MVP では non-ASCII semantic ref を許可しない。
-Human-readable title は Markdown heading や metadata field に置く。
+Non-ASCII semantic refs are not permitted in the MVP.
+Human-readable titles go in Markdown headings or metadata fields.
 
 ## Document-level ref and section-level ref
 
-Semantic ref schema は document-level と section-level の表現を持つ。
+The semantic ref schema has both document-level and section-level forms.
 
-Document-level ref は、artifact 全体が表す概念を指す。
-Section-level ref は、artifact 内の特定 section が表す概念を指す。
+A document-level ref points to the concept represented by an entire artifact.
+A section-level ref points to the concept represented by a specific section within an artifact.
 
-Root document ref は `<prefix>:<domain>` の形を取り、concept set または root document 全体を指す。
-Dot 付き ref は、その配下の nested document または section identity を指す。
-どちらも `spec:` の active semantic ref として canonical である。
+A root document ref takes the form `<prefix>:<domain>` and points to a concept set or the whole root document.
+A dot-notation ref points to a nested document or section identity beneath it.
+Both are canonical as active `spec:` semantic refs.
 
-MVP で active に用いる semantic ref は `spec:` のみであり、document-level と section-level の双方を扱う。`internal-design:` / `coverage:` は endpoint identity 自体を後続判断へ送り、MVP では解決対象としない。
+The MVP only uses `spec:` as an active semantic ref, covering both document-level and section-level. `internal-design:` and `coverage:` have their endpoint identity deferred to a future decision and are not resolved in the MVP.
 
-例:
+Example:
 
 ```yaml
 semantic_refs:
@@ -112,32 +95,32 @@ sections:
   spec:project-artifact-model.responsibilities: Artifact responsibility matrix
 ```
 
-`semantic_refs` は document-level ref を宣言する。
-`sections` は section-level ref と Markdown heading text の対応を宣言する。
+`semantic_refs` declares document-level refs.
+`sections` declares the mapping between section-level refs and Markdown heading text.
 
-Section-level ref は Markdown heading に `{#anchor}` を直接書かない。
-Section anchor は front matter の `sections` mapping で管理する。
+Do not write `{#anchor}` directly on Markdown headings as canonical identity.
+Section anchors are managed via the `sections` mapping in front matter.
 
 ## Stability rules
 
-Semantic ref は append-only に扱う。
+Semantic refs are treated as append-only.
 
-- 一度発行した semantic ref は別概念に再利用しない
-- heading rename では semantic ref を維持する
-- section move では semantic ref を維持する
-- file rename では semantic ref を維持する
-- document split では既存 semantic ref を最も近い後継 document / section に残す
-- section split では既存 semantic ref を最も近い後継 section に残し、新しい概念には新しい semantic ref を発行する
-- section merge では複数 semantic ref が同一 section を指してよい
+- A once-issued semantic ref must not be reused for a different concept
+- When a heading is renamed, the semantic ref is preserved
+- When a section is moved, the semantic ref is preserved
+- When a file is renamed, the semantic ref is preserved
+- When a document is split, the existing semantic ref is left with the closest successor document/section
+- When a section is split, the existing semantic ref is left with the closest successor section; a new semantic ref is issued for the new concept
+- When sections are merged, multiple semantic refs may point to the same section
 
-この rule は、physical layout 変更と trace の安定性を分離するためのものである。
+These rules separate physical layout changes from trace stability.
 
-## Redirect / superseded mapping
+## Redirect and superseded mapping
 
-Semantic ref の削除や意味変更が必要になった場合、既存 ref を別概念へ再利用してはならない。
+When a semantic ref needs to be deleted or its meaning changed, the existing ref must not be reused for a different concept.
 
-MVP では redirect / superseded mapping の完全 schema は定義しない。
-ただし、後続 spec で以下を扱う余地を予約する。
+The MVP does not define a complete schema for redirect/superseded mapping.
+However, the following is reserved for handling in subsequent specs:
 
 ```yaml
 redirects:
@@ -148,17 +131,17 @@ superseded:
     reason: optional
 ```
 
-Redirect / superseded mapping が導入されるまで、MVP では既存 semantic ref entry を削除して別概念に再割り当てしてはならない。
-参照対象の名称変更・移動・分割があった場合も、旧 semantic ref entry は最も近い後継 document / section に残し、新しい概念には新しい semantic ref を発行する。
+Until redirect/superseded mapping is introduced, existing semantic ref entries must not be deleted and reassigned to different concepts in the MVP.
+When a reference target is renamed, moved, or split, the old semantic ref entry remains with the closest successor document/section; new concepts receive new semantic refs.
 
 ## Out of scope
 
-この file では以下を定義しない。
+This file does not define:
 
-- active / reserved prefix の完全一覧
-- semantic realization mapping schema
-- resolver request / response
+- Complete list of active/reserved prefixes
+- Semantic realization mapping schema
+- Resolver request/response
 - MCP tool contract
-- brewprint DSL YAML entity-level ref
+- Brewprint DSL YAML entity-level refs
 
-これらは sibling spec files で扱う。
+These are covered in sibling spec files.

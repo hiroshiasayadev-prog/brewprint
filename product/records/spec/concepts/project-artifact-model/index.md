@@ -1,276 +1,141 @@
----
-scope: docs/spec/concepts/project-artifact-model/index.md
-status: draft
-last_updated: 2026-06-02
-summary: >
-  brewprint project に存在する design / operation artifact の責務境界、
-  artifact 間の意味関係、および traceability / MCP の位置付けを定義する。
-depends_on:
-  - docs/adr/081-requirement-artifacts-and-spec-traceability.md
-  - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
-  - docs/adr/085-investigation-artifact-boundary.md
-  - docs/adr/086-investigation-artifact-format-and-lifecycle.md
-  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
-  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
-  - docs/adr/091-workflow-artifact-work-item-task-milestone.md
-  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
-semantic_refs:
-  - spec:project-artifact-model
-sections:
-  spec:project-artifact-model.responsibilities: Artifact responsibility matrix
-  spec:project-artifact-model.design-flow: Design artifact flow
-  spec:project-artifact-model.change-flow: Change and investigation flow
-  spec:project-artifact-model.trace-flow: Traceability and tool boundary
----
+# Overview: Project artifact model
 
-# Project artifact model
+- **id**: `spec:product.concepts.project_artifact_model`
+- **status**: draft
+- **date**: 2026-06-22
+- **parent**: `root`
 
-## 目的
+## What this is
 
-この concept spec は、brewprint project にどのような artifact が存在し、それぞれが何を所有し、相互にどのような意味関係を持つかを定義する。
+Defines the artifact system of the brewprint project: what artifact layers exist, what each owns, and how the design, decision, and tooling mechanisms relate. The map for deciding where to place information, which layer a change affects, and where Design Records MCP fits.
 
-この document は、個別 artifact の書式を網羅するためのものではない。artifact system 全体の地図として、次を判断できる状態にする。
+## Current contract
 
-- ある情報をどの artifact に置くべきか
-- ある変更がどの artifact / layer に影響しうるか
-- semantic trace が何を結び、何を結ばないか
-- Design Records MCP が artifact system 上でどの責務を担うか
+The artifact system consists of three groups: design/implementation artifacts, decision/discovery/execution artifacts, and trace/tooling mechanisms. The responsibility matrix and flows are defined in child specs. MVP trace/tooling scope is limited to canonical reference resolution foundation — see `spec:product.concepts.traceability`.
 
-## この concept が所有するもの / 所有しないもの
+## Boundary
 
-この concept が所有するもの:
+What this concept owns:
 
-- artifact layer の種類と責務境界
-- artifact 間の意味関係と source of truth boundary
-- design flow / change flow / traceability flow の全体像
-- traceability spec、Design Records MCP spec、authoring guide ID / directory entrypoint の位置付け
+- The kinds and responsibility boundaries of artifact layers
+- Semantic relationships between artifacts and source-of-truth boundaries
+- The overall picture of design flow / change flow / traceability flow
+- The positioning of the traceability spec, Design Records MCP spec, and authoring guide IDs / directory entrypoints
 
-この concept が所有しないもの:
+What this concept does not own:
 
-- front matter / bullet metadata の完全 schema
-- semantic ref grammar、coverage mapping schema、resolver / validation rule の詳細
-- MCP request / response schema と diagnostic category の詳細
-- 各 artifact の authoring template、file naming、lifecycle 運用手順の詳細
-- legacy M-series record の migration 状態、implementation follow-up
+- Complete schema for front matter / bullet metadata
+- Details of semantic ref grammar, coverage mapping schema, and resolver/validation rules
+- Details of MCP request/response schemas and diagnostic categories
+- Details of authoring templates, file naming, and lifecycle procedures for each artifact
+- Migration state of legacy M-series records, implementation follow-ups
 
-詳細 contract と authoring guidance は、本 document が示す ownership boundary に従って leaf spec / authoring guide ID / task が所有する。
+Detail contracts and authoring guidance are owned by leaf specs / authoring guide IDs / tasks, in accordance with the ownership boundary shown in this document.
 
 ## Artifact classes
 
-brewprint の artifact system は、大きく以下の3群から成る。
+The brewprint artifact system consists of three main groups.
 
 ### Design and implementation artifacts
 
-対象 system / design model と、その実現経路を表す artifact 群である。
+The group of artifacts representing the target system / design model and the path to its realization.
 
 | artifact | role |
 |---|---|
-| `docs/spec/` | 現行 design specification の正本 |
-| `docs/internal-design/` | spec を実装へ落とす internal wiring / route |
-| `yaml/` | brewprint DSL による対象 design model の primary implementation source |
-| `renders/` | brewprint DSL YAML から導出される human / AI readable view |
-| target implementation | YAML と internal design を踏まえて構築される対象 system の実装成果物 |
+| `<namespace>/records/spec/` | Canonical authority for current design specifications |
+| `docs/internal-design/` | Internal wiring / route from spec to implementation |
+| `yaml/` | Primary implementation source for the target design model in brewprint DSL |
+| `renders/` | Human / AI readable views derived from brewprint DSL YAML |
+| target implementation | Implementation artifact of the target system built from YAML and internal design |
 
 ### Decision, discovery, and execution artifacts
 
-設計変更を発見し、判断し、実行へ送るための artifact 群である。
+The group of artifacts for discovering design changes, making decisions, and dispatching them to execution.
 
 | artifact | role |
 |---|---|
-| `docs/adr/` | 設計判断と理由の記録 |
-| `docs/investigations/` | 調査結果、根拠、不確実性、選択肢、後続 artifact 候補の記録 |
-| `docs/requirements/` | 要求、不足、要望の stable identity |
-| `docs/work-items/` | requirement 由来の解消フロー、到達点、横断進捗、layer 別影響追跡、task graph |
-| `docs/tasks/` | 短期に閉じられる具体作業、完了条件、検証 evidence |
-| `docs/impl/` | 実装完了後の引継ぎ・レビューメモ |
+| `<namespace>/records/adr/` | Records of design decisions and their rationale |
+| `<namespace>/records/investigations/` | Records of research results, evidence, uncertainties, options, and follow-up artifact candidates |
+| `<namespace>/records/requirements/` | Stable identity for requirements, gaps, and requests |
+| `<namespace>/records/work-items/` | Resolution flow from requirements, goal state, cross-cutting progress, layer-by-layer impact tracking, task graph |
+| `<namespace>/records/tasks/` | Concrete work closeable in the short term, completion conditions, and verification evidence |
+| `docs/impl/` | Handover and review notes after implementation completion |
 
 ### Trace and tooling mechanisms
 
-他 artifact の意味を置き換えず、関係を記録・探索・検証可能にする mechanism / tool boundary である。
+The mechanism / tool boundary that records, explores, and validates relationships without replacing the meaning of other artifacts.
 
 | mechanism | role |
 |---|---|
-| trace metadata | `spec:` semantic ref、investigation canonical reference、workflow ID-as-ref relation を宣言・参照する metadata |
-| semantic ref / ID-as-ref | path に依存しない参照 identity |
-| Design Records MCP | design record / workflow artifact の探索と canonical ref / declared workflow relation の resolve / validation を担う tool boundary |
+| trace metadata | Metadata for declaring and referencing `spec:` semantic refs, investigation canonical references, and workflow ID-as-ref relations |
+| semantic ref / ID-as-ref | Reference identity independent of path |
+| Design Records MCP | Tool boundary responsible for exploring design records / workflow artifacts and resolving / validating canonical refs / declared workflow relations |
 
-MVP は canonical reference resolution foundation に限定する。Active semantic ref は `spec:` とし、record artifact ID-as-ref、investigation の `source_refs` / 記載済み `follow_up_results` の resolve / validation、および workflow artifact の宣言済み ID-as-ref relation integrity validation を扱う。Investigation metadata から workflow artifact への canonical reference は `REQ-*` / `WORK-*` に限定し、`TASK-*` は workflow artifact 間 relation と direct resolver input に限る。
+The MVP is limited to the canonical reference resolution foundation. The active semantic ref is `spec:`; it handles record artifact ID-as-refs, resolve/validation of investigation `source_refs` / recorded `follow_up_results`, and integrity validation of declared ID-as-ref relations among workflow artifacts. Canonical references from investigation metadata to workflow artifacts are limited to `REQ-*` / `WORK-*`; `TASK-*` is limited to workflow artifact inter-relations and direct resolver inputs.
 
-`docs/internal-design/` layer は存続するが、`internal-design:` endpoint、semantic realization relation、および external relation / assurance artifact は MVP の operational trace mechanism として扱わない。これらは navigation / impact analysis、YAML cross-layer trace、gap / evidence / sign-off / lifecycle 管理などの concrete requirement が成立した場合に、配置と責務を含めて新設判断する future candidate とする。
+The `docs/internal-design/` layer continues to exist, but the `internal-design:` endpoint, semantic realization relations, and external relation / assurance artifacts are not treated as operational trace mechanisms in the MVP. These are future candidates to be decided with placement and responsibility if concrete requirements emerge for navigation/impact analysis, YAML cross-layer trace, gap/evidence/sign-off/lifecycle management, etc.
 
-`trace metadata`、`semantic ref`、Design Records MCP は新たな source of truth layer ではない。既存 artifact の責務を機械的に辿るための mechanism / tool boundary である。
+`trace metadata`, `semantic ref`, and Design Records MCP are not new source-of-truth layers. They are mechanism / tool boundaries for mechanically traversing the responsibilities of existing artifacts.
 
-## Artifact responsibility matrix
-
-| artifact | owns | does not own |
-|---|---|---|
-| ADR | 設計判断、採用理由、却下した代替案 | 現行仕様、探索ログ、進捗管理 |
-| investigation | 調査結果、根拠、未確定点、選択肢、後続 artifact 候補 | 決定、現行仕様、横断進捗、完了状態 |
-| requirement | 必要性、不足、要望、stable requirement identity | 調査過程、実装手順、設計判断 |
-| work item | requirement を解決するための作業フロー全体、到達点、横断進捗、layer 別影響追跡、task graph | 現行仕様本文、判断履歴、調査レポート、配下 task の status 正本 |
-| task | 短期に閉じられる concrete work、完了条件、個別 status、検証 evidence | 要求の正本、設計判断、現行仕様、work item 全体の到達点・task graph |
-| spec | 現行仕様、適用範囲、現在有効な contract | 判断経緯、調査ログ、進捗状態 |
-| internal design | spec semantics を implementation へ落とす wiring / route | spec semantics の正本、対象 model の primary source |
-| brewprint DSL YAML | 対象 design model の primary implementation source | 設計判断履歴、docs artifact の責務境界 |
-| render | YAML から導出された view | 編集可能な source of truth |
-| target implementation | 対象 system の実装成果物 | design contract の正本 |
-| impl note | 実装済み内容の引継ぎ・レビューメモ | 現行仕様、将来 task |
-
-External relation / assurance artifact は MVP の active artifact ではない。将来、endpoint metadata のみでは表現しにくい completeness / evidence / sign-off / approval 管理が必要になった場合に、配置・名称・責務を含めて独立 artifact を導入するか判断する。
-
-## Design artifact flow
-
-Design / implementation の source of truth と導出関係は以下である。
-
-```mermaid
-flowchart TD
-  ADR["ADR<br/>設計判断と理由"]
-  SPEC["docs/spec<br/>現行仕様の正本"]
-  INTERNAL["docs/internal-design<br/>internal wiring / route"]
-  YAML["yaml/<br/>brewprint DSL YAML<br/>design model implementation source"]
-  RENDER["renders/<br/>derived views"]
-  IMPL["target implementation"]
-
-  ADR -->|"仕様変更の根拠"| SPEC
-  SPEC -->|"internal route を制約"| INTERNAL
-  SPEC -->|"DSL semantics を制約"| YAML
-  INTERNAL -.->|"実装写像を補足"| YAML
-  INTERNAL -.->|"実装 route を補足"| IMPL
-  YAML -->|"render"| RENDER
-  YAML -->|"implementation source"| IMPL
-```
-
-- `docs/spec/` は現行 design contract の正本である。
-- `yaml/` は対象 design model の primary implementation source である。
-- `docs/internal-design/` は spec / YAML を target implementation に落とす route を補足し、spec または YAML の代替 source of truth ではない。
-- MVP では `docs/internal-design/` を semantic trace endpoint とせず、spec との realization relation も operationalize しない。
-- External relation / assurance artifact は MVP の operational scope に設けない。Internal-design navigation、YAML trace、completeness / evidence / sign-off、中央管理すべき relation set の実需が生じた場合に、配置を含めて新設判断する。
-
-> 由来: V01-ADR-083 §0, §1, §2, §6〜§8; V01-ADR-084; V01-ADR-088; V01-INV-DOCS-002; V01-INV-DOCS-003
-
-## Change and investigation flow
-
-設計変更の発見・判断・実行への流れは以下である。
-
-```mermaid
-flowchart TD
-  INV["investigation<br/>調査・根拠・選択肢"]
-  ADR["ADR<br/>設計判断"]
-  REQ["requirement<br/>必要性・不足"]
-  WORK["work item<br/>到達点・task graph・横断進捗"]
-  TASK["task<br/>短期の具体作業"]
-  SPEC["spec<br/>現行仕様"]
-  INTERNAL["internal-design"]
-  YAML["YAML"]
-
-  INV -.->|"判断候補"| ADR
-  INV -.->|"要求候補"| REQ
-  INV -.->|"更新候補"| SPEC
-  INV -.->|"後続候補"| WORK
-  ADR -->|"採用判断を反映"| SPEC
-  REQ -->|"解決対象"| WORK
-  WORK -->|"短期作業へ分解"| TASK
-  WORK -.->|"必要な更新を追跡"| SPEC
-  WORK -.->|"必要な更新を追跡"| INTERNAL
-  WORK -.->|"必要な更新を追跡"| YAML
-```
-
-- investigation は、複雑な変更における調査結果を保存するが、すべての変更の必須 gate ではない。
-- investigation は判断を所有しない。判断が必要な場合は ADR に送る。
-- requirement は何が必要かを所有し、work item はそれを満たすために必要な investigation / decision / spec / implementation / verification 等の作業フロー全体と横断進捗を所有する。
-- task は原則 0.5〜3日程度で閉じられる具体作業を所有し、設計判断や現行仕様の正本にはならない。
-- task の status の正本は各 task artifact が持ち、work item は checkbox 等で配下 task の完了状態を手動複製しない。
-- 従来 `milestone` と呼んでいた実行計画の役割は新形式では work item が担う。Milestone を新しい artifact layer または canonical relation として追加しない。
-- Workflow artifact 間の恒常参照は `REQ-*` / `WORK-*` / `TASK-*` ID-as-ref を用い、physical path は supported canonical relation としない。
-
-> 由来: V01-ADR-081, V01-ADR-083, V01-ADR-085, V01-ADR-086, V01-ADR-091
-
-## Traceability and tool boundary
-
-Traceability は独立した design source layer ではなく、MVP では上記 artifact の canonical identity と reference を安定して記録・解決・検証する mechanism である。
-
-```mermaid
-flowchart LR
-  ART["docs artifacts<br/>spec / ADR / investigation 等"]
-  META["trace metadata<br/>semantic ref / ID-as-ref / canonical refs"]
-  TRACE["traceability spec<br/>identity / resolve / validation model"]
-  MCP["Design Records MCP<br/>index / resolve / validate"]
-
-  ART -->|"declare / reference"| META
-  TRACE -->|"defines contract for"| META
-  MCP -->|"reads and validates"| META
-  MCP -.->|"resolves back to"| ART
-```
-
-MVP における traceability の範囲:
-
-| item | MVP treatment |
-|---|---|
-| active semantic prefix | `spec:` のみ |
-| ID-as-ref | Design Records MCP は `ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` の canonical resolution を扱う。Workflow artifact 間の declared relation integrity validation も扱うが、physical path、orphan diagnostics、progress projection、workflow traversal は含めない。`COV-*` は MVP 外 |
-| MVP semantic realization relation | 扱わない。`internal-design:` endpoint とともに future decision へ送る |
-| external coverage artifact | MVP では operational に扱わない。導入 trigger が満たされた場合に再判断する |
-| investigation trace | `source_refs` / 記載済み `follow_up_results` の resolve validation。`follow_up_candidates` は canonical form を検査するが存在は要求しない。Workflow ID-as-ref 拡張は `REQ-*` / `WORK-*` に限定し、`TASK-*` は investigation metadata の canonical reference 対象外 |
-| implementation boundary | Design Records MCP が resolve / validation を担い、concrete contract / implementation は M19 で追跡する |
-
-`docs/spec/concepts/traceability/` は、この mechanism の semantic ref grammar、canonical metadata boundary、resolve / validation rule を定義する下位 concept spec set である。本 document が所有する artifact system 全体の責務境界を置き換えない。Semantic realization mapping と external coverage artifact は V01-ADR-088 により MVP 外である。
-
-`docs/spec/design-records-mcp/` は、Design Records MCP がこの mechanism をどの record / tool contract として提供するかを定義する tool spec である。Traceability 自体の意味モデルの owner ではない。
-
-> 由来: V01-ADR-084, V01-ADR-087, V01-ADR-088
-
-## Source of truth and documentation ownership boundary
+## Source of truth and documentation ownership
 
 | concern | current owner | note |
 |---|---|---|
-| artifact layer の存在意義・責務・関係 | 本 concept spec | project artifact system の地図 |
-| 現行 design specification | `docs/spec/**` | spec-first policy に従う |
-| semantic ref / canonical reference / resolve / validation model | `docs/spec/concepts/traceability/**` | canonical reference foundation の leaf spec |
-| Design Records MCP record / tool contract | `docs/spec/design-records-mcp/**` | implementation follow-up は M19 |
-| ADR の書き方 | guide ID `adr-authoring` | Design Records MCP authoring guidance |
-| artifact responsibility / boundary 判断 | guide ID `artifact-boundary` | Design Records MCP authoring guidance |
-| investigation の format / lifecycle / authoring guidance | guide ID `investigation-authoring` | Design Records MCP authoring guidance |
-| requirements / work-items / tasks の authoring guidance | guide IDs `requirement-authoring` / `work-item-authoring` / `task-authoring` | Design Records MCP authoring guidance |
-| internal-design の authoring guidance | phase 1 guide なし | 必要な場合は関連 README / task / spec を読む |
-| external relation / assurance artifact | MVP owner / directory なし | completeness / evidence / sign-off 等の導入 trigger が確認された場合に、配置と責務を含めて新設判断 |
-| 判断理由 | `docs/adr/**` | historical decision snapshot |
-| task の具体作業・個別 status / evidence | `docs/tasks/**` | 短期作業単位。仕様の正本ではない |
-| legacy M-series record とその migration | `docs/TASKS.md` / migration work item | 既存 `docs/tasks/m*.md` は移行まで legacy milestone-shaped work record として扱い、新しい artifact layer とはしない |
-| implementation follow-up | `docs/impl/**` | 仕様の正本ではない |
+| Existence, responsibilities, and relationships of artifact layers | This concept spec | Map of the project artifact system |
+| Current design specifications | `<namespace>/records/spec/**` | Follows spec-first policy |
+| Semantic ref / canonical reference / resolve / validation model | `product/records/spec/concepts/traceability/**` | Leaf specs of the canonical reference foundation |
+| Design Records MCP record / tool contracts | `drmcp/records/spec/design-records-mcp/**` | |
+| ADR authoring | guide ID `adr-authoring` | Design Records MCP authoring guidance |
+| Artifact responsibility / boundary decisions | guide ID `artifact-boundary` | Design Records MCP authoring guidance |
+| Investigation format / lifecycle / authoring guidance | guide ID `investigation-authoring` | Design Records MCP authoring guidance |
+| Requirements / work-items / tasks authoring guidance | guide IDs `requirement-authoring` / `work-item-authoring` / `task-authoring` | Design Records MCP authoring guidance |
+| Internal-design authoring guidance | No phase-1 guide | Read related tasks / specs as needed |
+| External relation / assurance artifacts | No MVP owner / directory | Will be decided with placement and responsibility when completeness / evidence / sign-off triggers are confirmed |
+| Rationale for decisions | `<namespace>/records/adr/**` | Historical decision snapshots |
+| Concrete work / individual status / evidence for tasks | `<namespace>/records/tasks/**` | Short-term work units; not source of truth for specs |
+| Legacy M-series records and their migration | migration work item | Existing `docs/tasks/m*.md` are treated as legacy milestone-shaped work records until migration; they do not become a new artifact layer |
+| Implementation follow-up | `docs/impl/**` | Not source of truth for specs |
 
-Authoring guidance canonicalization 後は、investigation の format / lifecycle authoring guidance は guide ID `investigation-authoring` が扱う。本 concept は authoring format schema を複製しない。将来、全 artifact format を spec 配下へ集約する判断を行う場合は、この ownership boundary 自体を refinement 対象とする。
+After authoring guidance canonicalization, investigation format / lifecycle authoring guidance is handled by guide ID `investigation-authoring`. This concept does not duplicate authoring format schemas. If a future decision consolidates all artifact formats under spec, this ownership boundary itself becomes a refinement target.
 
-## Detail specifications and authoring guides
+## Navigation
 
-| 読みたいこと | 参照先 |
+| topic | reference |
 |---|---|
-| 全 artifact の責務と関係 | 本 document |
-| semantic ref / canonical reference / validation の詳細 | [`../traceability/index.md`](../traceability/index.md) |
-| Design Records MCP の record / tool contract | [`../../design-records-mcp/overview.md`](../../design-records-mcp/overview.md) |
-| investigation の書き方と lifecycle | [`../../../investigations/README.md`](../../../investigations/README.md) |
-| internal design の書き方 | [`../../../internal-design/README.md`](../../../internal-design/README.md) |
-| external coverage artifact の再検討根拠 | [`../../../investigations/docs/INV-DOCS-002-external-coverage-artifact-necessity.md`](../../../investigations/docs/INV-DOCS-002-external-coverage-artifact-necessity.md) |
-| requirements / work-items / tasks の authoring entrance | [`../../../requirements/README.md`](../../../requirements/README.md), [`../../../work-items/README.md`](../../../work-items/README.md), [`../../../tasks/README.md`](../../../tasks/README.md) |
-| なぜこの boundary になったか | V01-ADR-081, V01-ADR-083, V01-ADR-085〜V01-ADR-088, V01-ADR-091 |
+| Responsibilities and relationships of all artifacts | This document |
+| Details of semantic ref / canonical reference / validation | `spec:product.concepts.traceability` |
+| Rationale for this boundary | V01-ADR-081, V01-ADR-083, V01-ADR-085–V01-ADR-088, V01-ADR-091 |
+| Design Records MCP record and tool contracts | `drmcp/records/spec/` — *(planned; drmcp spec not yet canonicalized)* |
+| Internal-design layer artifacts and authoring guidance | no canonical path yet — *(planned; will be decided when `internal-design:` activation is triggered)* |
+| Investigation, workflow artifact, and authoring guides | guide IDs `investigation-authoring` / `requirement-authoring` / `work-item-authoring` / `task-authoring` — *(planned; accessible via Design Records MCP once guides are canonicalized)* |
 
 ## MVP scope and future extensions
 
-M18 / M19 boundary において、artifact layer は上記の責務で存続する。一方、trace / tooling の operational scope は canonical reference resolution foundation に限定する。
+At the M18 / M19 boundary, the artifact layers continue with the responsibilities above. However, the operational scope of trace / tooling is limited to the canonical reference resolution foundation.
 
-Future extension として判断を延期しているもの:
+Items whose decisions are deferred as future extensions:
 
-- `internal-design:` endpoint と spec / internal-design realization relation の導入（canonical navigation / impact analysis が実務要件になった場合）
-- external relation / assurance artifact の新設（completeness / evidence / sign-off / central matrix / relation lifecycle が実務要件になった場合）
-- `yaml:` semantic ref の active 化と YAML relation ownership
-- `maps_to` / `covers` relation の operational 導入
-- mapping group
-- fixture / golden traceability
-- workflow artifact の orphan diagnostics / task status 由来 progress projection / workflow 専用 traversal query / task dependency cycle or execution order projection
+- Introducing the `internal-design:` endpoint and the spec / internal-design realization relation (when canonical navigation / impact analysis becomes an operational requirement)
+- Creating external relation / assurance artifacts (when completeness / evidence / sign-off / central matrix / relation lifecycle becomes an operational requirement)
+- Activating the `yaml:` semantic ref and YAML relation ownership
+- Operationally introducing `maps_to` / `covers` relations
+- Mapping groups
+- Fixture / golden traceability
+- Orphan diagnostics for workflow artifacts, task-status-derived progress projection, workflow-dedicated traversal queries, task dependency cycle / execution order projection
 - MCP writer tools
 
-これらは将来の必要性を否定するものではなく、machine-readable trace / tool contract と external artifact の採否・配置を後続判断へ送るものである。MVP は external artifact 用 directory や authoring entrance を設けない。
+These are not a denial of future necessity — they defer decisions on machine-readable trace / tool contracts and external artifact adoption/placement to subsequent decisions. The MVP does not provide directories or authoring entrypoints for external artifacts.
 
-## 由来
+## Topics
+
+| title | kind | ref | summary |
+|---|---|---|---|
+| Artifact responsibility matrix | Reference | `spec:product.concepts.project_artifact_model.artifact_responsibility_matrix` | What each artifact layer owns and does not own. |
+| Design artifact flow | Reference | `spec:product.concepts.project_artifact_model.design_flow` | Source-of-truth flow and derivation relationships among design and implementation artifacts. |
+| Change and investigation flow | Reference | `spec:product.concepts.project_artifact_model.change_and_investigation_flow` | Change discovery, decision, and execution flow among design record and workflow artifacts. |
+| Traceability boundary | Reference | `spec:product.concepts.project_artifact_model.traceability_boundary` | Traceability and tool boundary layer and its MVP scope. |
+
+## Sources
 
 - V01-ADR-081: requirement artifacts and spec traceability
 - V01-ADR-083: project artifact boundary and YAML as primary implementation source
@@ -278,7 +143,7 @@ Future extension として判断を延期しているもの:
 - V01-ADR-086: investigation artifact format and lifecycle
 - V01-ADR-087: Design Records MCP investigation support and semantic ref resolve
 - V01-ADR-088: Reduce semantic trace MVP to a canonical reference resolution foundation
-- V01-ADR-091: Workflow artifact の work item / task 責務分離と legacy milestone 移行
+- V01-ADR-091: Work item / task responsibility separation and legacy milestone migration
 - V01-ADR-092: Design Records MCP workflow artifact record and relation boundary
 - V01-INV-DOCS-002: external coverage artifact necessity for semantic trace MVP
 - V01-INV-DOCS-003: internal-design endpoint necessity for semantic trace MVP

@@ -1,39 +1,45 @@
----
-scope: docs/spec/mcp/versioning.md
-status: draft
-last_updated: 2026-04-30
-summary: >
-  MCP v1で未定義とする範囲と将来拡張候補を定義する。
-  設計対話coverageを広げるための候補toolやselectorを整理する。
-depends_on:
-  - docs/adr/054-mcp-query-coverage-for-design-conversation.md
-  - docs/adr/055-mcp-reference-tree-traversal.md
-  - docs/adr/056-mcp-analyze-impact-tool-design.md
----
+# Reference: Versioning / future extensions
 
-# Versioning / future extensions
+- **id**: `spec:bpdsl.mcp.versioning`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.mcp.overview`
 
-MCP v1では以下を未定義とする。
+## What this is
 
-- unbounded transitive references
-- reference graphの永続cache
-- renderer outputを返すMCP tool
-- code generation用tool
+What MCP v1 leaves undefined, and the candidate tools/selectors under consideration for extending design-conversation coverage in future versions.
 
-設計対話coverageを広げるための将来候補:
+> Source: V01-ADR-054, V01-ADR-055, V01-ADR-056
 
-| 候補tool / selector | 目的 | 優先度 |
+## Undefined in v1
+
+MCP v1 leaves the following undefined:
+
+- Unbounded transitive references.
+- A persistent cache of the reference graph.
+- An MCP tool that returns renderer output.
+- A code-generation tool.
+
+## Future candidates for design-conversation coverage
+
+| candidate tool / selector | purpose | priority |
 |---|---|---:|
-| `list_objects` | project内objectの検索・一覧。LLMがquery対象を発見する入口 | high |
-| `inspect(file)` | YAML file単位で定義内容・main node・sub node・view種別・diagnosticsを把握する | high |
-| `inspect(view: api_table)` | API Table viewが集約するmodules / endpoints / computed routesを把握する | high |
-| `inspect(view: er_diagram)` | ER Diagram viewが集約するmodules / stores / models / FKを把握する | high |
-| flow wiring references | DAG上のflow step / param wiringをreferenceとして扱う | medium |
-| `search_notes` | note/docに対するsemantic search | low |
+| `list_objects` | Search / list objects in the project. Entry point for an LLM to discover query targets. | high |
+| `inspect(file)` | Grasp a YAML file's definition contents, main node, sub nodes, view kind, and diagnostics at file granularity. | high |
+| `inspect(view: api_table)` | Grasp the modules / endpoints / computed routes aggregated by an API Table view. | high |
+| `inspect(view: er_diagram)` | Grasp the modules / stores / models / FKs aggregated by an ER Diagram view. | high |
+| flow wiring references | Treat DAG flow-step / param wiring as a reference. | medium |
+| `search_notes` | Semantic search over note/doc text. | low |
 
-これらは必要になった時点で `docs/spec/mcp/overview.md` または該当する `docs/spec/mcp/tools/*.md` を更新し、実装タスクは `docs/TASKS.md` で管理する。
-既存ADRの方針を変更するほどの設計転換がある場合のみ、新ADRを起票する。
+When any of these becomes needed, update `bpdsl/records/spec/mcp/overview.md` or the relevant `bpdsl/records/spec/mcp/tools/*.md` and track the implementation task separately. Only file a new ADR if the change represents a design shift significant enough to alter an existing ADR's policy.
 
-## v1に昇格済みの記録
+## Already promoted to v1
 
-- `analyze_impact` — V01-ADR-056で v1 採用。 仕様は [`tools/analyze-impact.md`](./tools/analyze-impact.md) 参照
+- `analyze_impact` — adopted into v1 by V01-ADR-056. Spec: [`tools/analyze-impact.md`](tools/analyze-impact.md).
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.mcp.overview` | Parent overview; tool catalog. |
+| `spec:bpdsl.mcp.tools.analyze_impact` | Tool spec promoted to v1, referenced here as a precedent. |

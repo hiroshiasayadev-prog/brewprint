@@ -1,71 +1,65 @@
----
-scope: docs/spec/concepts/traceability/index.md
-status: draft
-last_updated: 2026-05-27
-summary: >
-  semantic traceability spec の入口。
-  canonical reference resolution foundation と future realization scope の境界を定義する。
-depends_on:
-  - docs/adr/081-requirement-artifacts-and-spec-traceability.md
-  - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
-  - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
-  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
-  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
-  - docs/adr/091-workflow-artifact-work-item-task-milestone.md
-  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
-semantic_refs:
-  - spec:trace
----
+# Overview: Traceability
 
-# Traceability spec index
+- **id**: `spec:product.concepts.traceability`
+- **status**: draft
+- **date**: 2026-06-22
+- **parent**: `root`
 
-## 目的
+## What this is
 
-この spec set は、brewprint docs の semantic trace MVP を定義する。
+Entry point for the brewprint traceability spec set. Defines the canonical reference resolution foundation MVP scope, out-of-scope boundary, and the set of child specs that own the detail contracts.
 
-V01-ADR-088 / V01-ADR-092 により、MVP の目的は artifact 間の realization graph を先取りすることではなく、設計 record、investigation、および workflow artifact が physical path に依存せず canonical reference と宣言済み relation を解決・検証できる **canonical reference resolution foundation** を提供することになった。
+## Current contract
+
+MVP covers `spec:` semantic ref canonical resolution, record ID-as-ref resolution, investigation reference validation, and workflow artifact declared relation integrity validation. The boundary is defined under `## MVP scope` and `## Out of MVP scope`. Child specs in `## Topics` own the detail rules.
+
+## Purpose
+
+This spec set defines the semantic trace MVP for brewprint docs.
+
+Per V01-ADR-088 and V01-ADR-092, the goal of the MVP is not to pre-build a realization graph across artifacts, but to provide a **canonical reference resolution foundation** that lets design records, investigations, and workflow artifacts resolve and validate canonical references and declared relations without depending on physical paths.
 
 ## MVP scope
 
-MVP が扱うもの:
+What the MVP covers:
 
-- `spec:` semantic ref の宣言、安定性、document / section 解決
-- `ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` record ID-as-ref の解決
-- investigation の `source_refs` および記載済み `follow_up_results` の canonical reference 解決と unresolved error。追加 workflow ID-as-ref は `REQ-*` / `WORK-*` に限定する
-- `follow_up_candidates` に artifact reference を記載する場合の canonical form 検査。追加 workflow ID-as-ref は `REQ-*` / `WORK-*` に限定し、未作成候補の存在は要求しない
-- workflow artifact 間の宣言済み ID-as-ref relation の存在確認と双方向整合性確認
-- physical path を canonical reference としない boundary
+- Declaration, stability, and document/section resolution of `spec:` semantic refs
+- Resolution of `ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` record ID-as-refs
+- Canonical reference resolution and unresolved errors for investigation `source_refs` and recorded `follow_up_results`. Additional workflow ID-as-ref support is limited to `REQ-*` / `WORK-*`
+- Canonical form check for artifact references in `follow_up_candidates`. Additional workflow ID-as-ref support limited to `REQ-*` / `WORK-*`; unresolved candidates are not required to exist
+- Existence check and bidirectional consistency check for declared ID-as-ref relations between workflow artifacts
+- Boundary that excludes physical paths as canonical references
 
-MVP の active semantic ref prefix は以下に限定する。
+The active semantic ref prefix for the MVP is limited to:
 
 ```yaml
 active_prefixes:
   - spec
 ```
 
-`yaml:` は brewprint DSL YAML 用に reserve するが active 化しない。
+`yaml:` is reserved for brewprint DSL YAML but is not activated.
 
-## MVP で扱わないもの
+## Out of MVP scope
 
-MVP は以下を operational mechanism として扱わない。
+The MVP does not treat the following as operational mechanisms:
 
 - `internal-design:` semantic endpoint
 - `coverage:` semantic endpoint
 - `COV-*` mapping identity
-- external relation / assurance artifact とその配置
-- `maps_to` / `covers` / `validates` relation
+- External relation / assurance artifacts and their placement
+- `maps_to` / `covers` / `validates` relations
 - `spec:` → `internal-design:` realization mapping
-- YAML endpoint、fixture / golden traceability、coverage / evidence matrix
-- workflow artifact の orphan diagnostics、task status 由来 progress projection、workflow 専用 traversal query、task dependency cycle / execution order projection
-- investigation metadata における `TASK-*` canonical reference support
+- YAML endpoint, fixture/golden traceability, coverage/evidence matrix
+- Workflow artifact orphan diagnostics, task-status-derived progress projection, workflow-dedicated traversal queries, task dependency cycle / execution order projection
+- `TASK-*` canonical reference support in investigation metadata
 
-`docs/internal-design/` artifact layer 自体は存続する。MVP 外なのは、同 layer を semantic trace endpoint として resolve / validate する contract である。External relation / assurance artifact は必要性が成立した時点で配置と責務を含めて新設判断し、MVP layout には directory を予約しない。
+The `docs/internal-design/` artifact layer itself continues to exist. What is out of MVP scope is the contract for resolving and validating that layer as a semantic trace endpoint. External relation / assurance artifacts will be introduced with placement and responsibility decisions when the need is established; no directory is reserved in the MVP layout.
 
-## 用語
+## Terms
 
 ### semantic ref
 
-Physical path、Markdown heading、directory layout ではなく、artifact が表す概念を安定して参照する identifier。
+An identifier that stably references the concept represented by a brewprint docs artifact, independent of physical path, Markdown heading, or directory layout.
 
 MVP example:
 
@@ -77,7 +71,7 @@ spec:trace.resolve-and-validation
 
 ### record ID-as-ref
 
-Design Records MCP が扱う record artifact を指す stable ID。
+A stable ID pointing to a record artifact handled by Design Records MCP.
 
 ```text
 V01-ADR-088
@@ -90,36 +84,35 @@ V01-TASK-MCP-003-01
 
 ### brewprint DSL YAML
 
-対象 system / design model を brewprint DSL で表す primary implementation source。`yaml:` semantic endpoint の active 化は future decision とする。
+The primary implementation source for the target system / design model expressed in brewprint DSL. Activating the `yaml:` semantic endpoint is a future decision.
 
 ### trace metadata
 
-Canonical reference を宣言・参照するための metadata。brewprint DSL YAML とは別責務である。MVP では spec front matter および investigation metadata の canonical reference rule を中心に扱う。
+Metadata for declaring and referencing canonical references. Separate from brewprint DSL YAML responsibilities. The MVP focuses on canonical reference rules in spec front matter and investigation metadata.
 
-## 分割 spec
+## Topics
 
-| file | owns |
-|---|---|
-| `index.md` | scope と spec set の入口 |
-| `semantic-ref.md` | `spec:` grammar、安定性、document / section ref |
-| `artifact-refs.md` | active / reserved / deferred ref と ID-as-ref 方針 |
-| `metadata-schema.md` | MVP trace metadata と investigation reference boundary |
-| `coverage-mapping.md` | realization mapping を MVP 外へ送る境界と再導入 trigger |
-| `resolve-and-validation.md` | canonical resolve / validation 方針 |
-| `out-of-scope.md` | future extension 候補 |
+| title | kind | ref | summary |
+|---|---|---|---|
+| Semantic ref | Reference | `spec:product.concepts.traceability.semantic_ref` | `spec:` grammar, stability, document/section refs. |
+| Artifact refs | Reference | `spec:product.concepts.traceability.artifact_refs` | Active/reserved/deferred semantic ref prefixes and ID-as-ref scope. |
+| Metadata schema | Reference | `spec:product.concepts.traceability.metadata_schema` | Trace metadata fields, investigation reference boundary, workflow artifact relation boundary. |
+| Coverage mapping | Reference | `spec:product.concepts.traceability.coverage_mapping` | Realization mapping and external coverage boundary; reintroduction triggers. |
+| Resolve and validation | Reference | `spec:product.concepts.traceability.resolve_and_validation` | Canonical resolve and validation boundary; lookup sources. |
+| Out of scope | Reference | `spec:product.concepts.traceability.out_of_scope` | MVP out-of-scope items and future extension triggers. |
 
 ## Source of truth boundary
 
-Traceability spec は docs artifact の canonical reference model を所有する。Design Records MCP は V01-ADR-087 に従い、その resolve / validation を実装する tool boundary であるが、traceability の意味モデル自体の owner ではない。
+The traceability spec owns the canonical reference model for docs artifacts. Per V01-ADR-087, Design Records MCP is the tool boundary that implements resolve and validation, but it does not own the traceability semantic model itself.
 
-Artifact system 全体の責務境界は [`../project-artifact-model/index.md`](../project-artifact-model/index.md) が所有する。
+The responsibility boundary across the full artifact system is owned by `spec:product.concepts.project_artifact_model`.
 
-## 由来
+## Sources
 
-- V01-ADR-081: requirements layer と semantic traceability
-- V01-ADR-083: project artifact boundary と YAML as primary implementation source
-- V01-ADR-084: semantic trace MVP scope と artifact boundary
+- V01-ADR-081: requirements layer and semantic traceability
+- V01-ADR-083: project artifact boundary and YAML as primary implementation source
+- V01-ADR-084: semantic trace MVP scope and artifact boundary
 - V01-ADR-087: Design Records MCP investigation support and semantic ref resolve
 - V01-ADR-088: Reduce semantic trace MVP to a canonical reference resolution foundation
-- V01-ADR-091: Workflow artifact の work item / task 責務分離と legacy milestone 移行
+- V01-ADR-091: Work item / task responsibility separation and legacy milestone migration
 - V01-ADR-092: Design Records MCP workflow artifact record and relation boundary

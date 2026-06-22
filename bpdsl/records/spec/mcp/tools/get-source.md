@@ -1,38 +1,22 @@
----
-scope: docs/spec/mcp/tools/get-source.md
-status: draft
-last_updated: 2026-06-07
-summary: >
-  get_source toolの仕様を定義する。
-  semantic objectに対応するYAML source snippetを返す。
-  fallback時の挙動とselector supportを規定する。
-depends_on:
-  - docs/adr/054-mcp-query-coverage-for-design-conversation.md
----
+# Contract: `get_source`
 
-# `get_source`
+- **id**: `spec:bpdsl.mcp.tools.get_source`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.mcp.overview`
+- **contract_class**: `interface`
 
-## 1. Purpose
+## What this is
 
-`get_source` は、対象semantic objectに対応するYAML source snippetを返す。
+`get_source` returns the YAML source snippet corresponding to a target semantic object.
 
-返すもの:
+Returns: object identity, source file/range, YAML snippet, a diagnostic indicating the reason when a fallback occurred.
 
-- object identity
-- source file / range
-- YAML snippet
-- fallbackした場合の理由を示すdiagnostic
+Does not return: the raw YAML AST, the full unresolved structure before semantic build, the content of files outside the project, renderer output.
 
-返さないもの:
+Per V01-ADR-054, `get_source` is not a raw-YAML-AST-exposing API — it is treated as source auxiliary info attached to a semantic object on `ResolvedProject`.
 
-- Raw YAML AST
-- semantic build前の未解決構造全体
-- project外fileの内容
-- renderer output
-
-`get_source` はV01-ADR-054の方針に従い、Raw YAML AST公開APIではなく、ResolvedProject上のsemantic objectに紐づくsource補助情報として扱う。
-
-## 2. Input
+## Request
 
 ```json
 {
@@ -43,17 +27,14 @@ depends_on:
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `selector` | ✓ | Object selector |
-| `fallback` | 任意 | `file` / `error`。省略時は `file` と同等 |
+| `selector` | ✓ | Object selector. |
+| `fallback` | optional | `file` / `error`. Defaults to `file` when omitted. |
 
-`fallback=file` または省略時は、object単位のrangeが特定できない場合に、同じFileIDのYAML全体を返し、`fallback: "file"` と `diagnostics[]` の `source_range_unavailable` warningを入れる。
-`fallback=error` の場合は、object単位のrangeが特定できないと `source_range_unavailable` tool error を返し、file fallback response は返さない。
-`fallback` が `file` / `error` 以外の場合は `invalid_args` tool error とする。
-この default と fallback branch は MCP tool contract の実行時挙動であり、DATA DSL の default / fallback 構文としては扱わない。
+`fallback=file`, or omitted, returns the whole YAML file with the same FileID when the object-level range cannot be determined, with `fallback: "file"` and a `source_range_unavailable` warning in `diagnostics[]`. `fallback=error` returns a `source_range_unavailable` tool error instead of the file-fallback response when the object-level range cannot be determined. A `fallback` value outside `file` / `error` is an `invalid_args` tool error. This default and fallback branching is MCP tool-contract runtime behavior, not a DATA DSL default/fallback construct.
 
-## 3. Output
+## Response
 
 ```json
 {
@@ -80,29 +61,28 @@ depends_on:
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `object` | ✓ | 対象ObjectRef |
-| `source` | ✓ | SourceLocation。line / columnが取得できない場合は `file` のみでもよい |
-| `snippet` | ✓ | `language: yaml` と snippet text |
-| `fallback` | 任意 | fallbackした場合は `file`。`fallback=error` では fallback response を返さない |
-| `diagnostics` | ✓ | Diagnostic list |
+| `object` | ✓ | Target ObjectRef. |
+| `source` | ✓ | SourceLocation. May contain only `file` if line/column are unavailable. |
+| `snippet` | ✓ | `language: yaml` plus snippet text. |
+| `fallback` | optional | `file` if a fallback occurred. Absent when `fallback=error` (no fallback response is returned in that case). |
+| `diagnostics` | ✓ | Diagnostic list. |
 
-## 4. Selector support
+### Selector support
 
-`get_source` は、MCP v1でquery可能なsemantic objectを対象にする。
+`get_source` targets semantic objects queryable in MCP v1.
 
-初期実装でsnippet rangeを返す対象:
+Objects for which the initial implementation returns a snippet range:
 
-- `node` / private sub node: `nodes[]` 内の該当item
-- `field`: parent modelの `fields[]` 内の該当item
-- `transition`: `transitions[]` 内の該当item
-- `asset`: producer nodeの `returns` block。特定不能時はproducer nodeへfallbackしてよい
-- `view`: view file全体
-- `file`: file全体
+- `node` / private sub-node: the matching item within `nodes[]`.
+- `field`: the matching item within the parent model's `fields[]`.
+- `transition`: the matching item within `transitions[]`.
+- `asset`: the producer node's `returns` block. May fall back to the producer node if the asset itself can't be pinpointed.
+- `view`: the whole view file.
+- `file`: the whole file.
 
-source line/columnが取得できない実装、または対応objectの局所rangeを特定できない実装では、`fallback=file` により同一FileID全体を返してよい。
-この場合は `diagnostics[]` に以下を入れる。
+Implementations that cannot obtain line/column, or cannot pinpoint a local range for a supported object, may use `fallback=file` to return the whole file at the same FileID. In that case, include in `diagnostics[]`:
 
 ```json
 {
@@ -113,6 +93,21 @@ source line/columnが取得できない実装、または対応objectの局所ra
 }
 ```
 
-> 由来: V01-ADR-054 §決定 §5
+> Source: V01-ADR-054 §Decision §5
 
----
+## Errors
+
+| code | condition |
+|---|---|
+| `invalid_args` | `fallback` value outside `file` / `error`. |
+| `source_range_unavailable` | Object-level range cannot be determined and `fallback=error`. |
+| `unsupported_object` | Selector resolves to an object/kind marked `no` in the selector support matrix. |
+| `not_found` | Selector does not resolve to any object. |
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.mcp.overview` | Parent overview; tool catalog and selection guidance. |
+| `spec:bpdsl.mcp.schema` | Selector support matrix, ObjectRef, SourceLocation shapes. |
+| `spec:bpdsl.mcp.errors` | Error code catalog, `source_range_unavailable` severity/surface rules. |

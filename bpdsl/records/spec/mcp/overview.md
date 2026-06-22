@@ -1,191 +1,83 @@
----
-scope: docs/spec/mcp/overview.md
-status: draft
-last_updated: 2026-04-30
-summary: >
-  MCP spec全体の概要と設計原則、およびtoolの使い分けを定義する。
-  各toolへの導線とLLM向けの選択指針を提供する。
-depends_on:
-  - docs/adr/047-go-semantic-model-query-layer-boundary.md
-  - docs/adr/048-resolved-project-index-strategy.md
-  - docs/adr/049-mcp-query-reference-vocabulary.md
-  - docs/adr/054-mcp-query-coverage-for-design-conversation.md
-  - docs/adr/055-mcp-reference-tree-traversal.md
-  - docs/adr/056-mcp-analyze-impact-tool-design.md
----
+# Overview: MCP query layer
 
-# MCP仕様 Overview
+- **id**: `spec:bpdsl.mcp.overview`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.overview`
 
-## 1. Scope
+## What this is
 
-このspecは、brewprintがMCP経由でLLMへ提供するquery toolの**外部I/O契約**を定義する。
+External I/O contract for the MCP query tools brewprint exposes to LLMs. Covers MCP tool names, tool input schema, tool output schema, common ID representation, common response vocabulary, reference representation, diagnostic/error representation, and the intent behind how LLMs should use each tool.
 
-対象:
+Out of scope: Go package / struct / interface names, raw YAML decode structs, `ResolvedProject` internal map/index implementation, renderer Mermaid/HTML/Markdown output spec, MCP transport implementation details, transitive dependency graph pre-build strategy.
 
-- MCP tool名
-- tool input schema
-- tool output schema
-- 共通ID表現
-- 共通レスポンス語彙
-- reference表現
-- diagnostic / error表現
-- LLMが各toolをどう使うべきかの意図
+This spec assumes the Go implementation boundary defined in V01-ADR-047 / V01-ADR-048 and the reference-vocabulary unification defined in V01-ADR-049, and fixes the shape of information `QueryService` returns externally.
 
-対象外:
+## Current contract
 
-- Go package名 / struct名 / interface名
-- Raw YAML decode用struct
-- `ResolvedProject` 内部のmap/index具体実装
-- RendererのMermaid / HTML / Markdown出力仕様
-- MCP transport実装の詳細
-- transitive dependency graphの事前構築方式
+### Design principles
 
-本specは、V01-ADR-047 / V01-ADR-048で定義されたGo実装境界、およびV01-ADR-049で定義されたreference語彙統一を前提に、`QueryService` が外部へ返す情報の形を固定する。
-
----
-
-## 2. Design principles
-
-### 2.1 MCPはRaw YAML ASTを公開しない
-
-brewprint MCPは、Raw YAML ASTをLLMへ公開するためのAPIではない。
-
-MCP toolは常に、semantic buildを通過した `ResolvedProject` 上の情報を返す。
-
-```text
-YAML files
-  ↓ load / classify / decode
-Raw YAML structs
-  ↓ validate / name resolution / derived model build / index build
-ResolvedProject
-  ↓
-QueryService
-  ↓
-MCP response
-```
-
-MCP response内の参照は、原則として名前解決済みのIDを使う。
-Raw YAMLに書かれた未解決文字列は、diagnosticやsource表示のために必要な場合のみ補助情報として返す。
-
-### 2.2 Python inspect風の語彙を採用する
-
-LLMが既に学習している一般的な introspection 語彙に寄せるため、MCP responseはPythonの `inspect` に近い操作感を持つ。
-
-| 語彙 | 意味 |
+| principle | summary |
 |---|---|
-| `signature` | 対象objectの外形。params / returns / fields / endpoint等 |
-| `doc` | YAMLの `note` に由来する自然言語説明。semantic contractだが機械検証済み構造ではない |
-| `source` | 定義元file / line / column等 |
-| `members` | 対象objectが内包する要素。sub task / fields / transitions等 |
-| `references` | 対象objectが参照する、または対象objectを参照する関係 |
-| `diagnostics` | warning / error / hint 等の診断情報 |
+| MCP does not expose the raw YAML AST | MCP tools always return information from `ResolvedProject` after semantic build (load/classify/decode → validate/name-resolution/derived-model-build/index-build → `ResolvedProject` → `QueryService` → MCP response). References in MCP responses use resolved IDs by default; unresolved raw strings from YAML are returned only as auxiliary info when needed for diagnostics or source display. |
+| Adopt Python `inspect`-style vocabulary | MCP response shape mirrors Python's `inspect` introspection feel, so LLMs can reuse vocabulary they already know: `signature` (object's external shape — params/returns/fields/endpoint etc.), `doc` (natural-language description derived from YAML `note` — a semantic contract, not machine-verified structure), `source` (defining file/line/column etc.), `members` (elements the object contains — sub task/fields/transitions etc.), `references` (relations the object refers to or is referred by), `diagnostics` (warning/error/hint info). brewprint MCP is not a Python-AST-compatible API — it exposes semantic objects on `ResolvedProject`, not a syntax tree. |
+| Center on "references", not "dependencies" | MCP responses group dependency/reference/reverse-reference relations under the single term `references`. Rationale: `dependency` skews toward "build dependency" / "runtime dependency" / "type dependency"; brewprint relations like `reads` / `writes` / `transition.action` / `model field type` / `scenario step` read more naturally as references than dependencies; vocabulary close to the IDE/Python `references` concept is easier for an LLM to interpret. Per V01-ADR-049, the external MCP tool name is unified to `get_references` and the internal QueryService method to `GetReferences`; `get_deps` / `GetDeps` are not adopted. |
+| Separate structural info from doc | MCP responses separate mechanically-determined structural information from natural-language description derived from `note`. `doc` is an important semantic contract for the LLM but must not be treated as a machine-verified fact. |
+| v1 references are direct-only | Per V01-ADR-048 / V01-ADR-049, MCP v1 does not pre-build a full transitive dependency graph. `get_references` returns **direct references only** in the initial spec. Transitive closure / depth specification / dependency-graph caching are separate extensions to be added once real need emerges in the QueryService vertical slice. |
+| Design-conversation coverage drives extension | MCP / QueryService is not just an implementation-helper API — it is a query layer for design conversation with an LLM while looking at diagrams/views (DAG / State Diagram / Sequence Diagram / ER / API Table / Wireframe). Major semantic objects that appear in rendered diagrams/views should in principle be queryable from MCP (task / model / store / state / event / actor, model field, transition, sequence scenario view, API Table view, ER Diagram view, implicit asset, file-local sub task / branch / fork / join, flow entry / flow wiring, source file). Not everything needs immediate v1 implementation, but future MCP extension should prioritize "is this object visible to the user in a diagram/view and a plausible conversation subject." MCP responses continue to avoid exposing the raw YAML AST — even source-snippet retrieval is treated as source auxiliary info attached to a semantic object. |
 
-ただし、brewprint MCPはPython AST互換APIではない。
-公開対象はsyntax treeではなく、`ResolvedProject` 上のsemantic objectである。
+> Source: V01-ADR-054 §Decision
 
-### 2.3 dependenciesではなくreferencesを中心語彙にする
+### Tool overview
 
-MCP responseでは、依存・参照・逆参照をまとめて `references` と呼ぶ。
+MCP v1 defines the following 8 query tools.
 
-理由:
-
-- `dependency` は「ビルド依存」「実行依存」「型依存」などに意味が寄りやすい
-- brewprintでは `reads` / `writes` / `transition.action` / `model field type` / `scenario step` など、依存というより参照として読むべき関係が多い
-- Python / IDE文脈の `references` に近い語彙の方がLLMが解釈しやすい
-
-V01-ADR-049により、外部MCP tool名は `get_references`、内部QueryService method名は `GetReferences` に統一する。
-`get_deps` / `GetDeps` は採用しない。
-
-### 2.4 構造情報とdocを分離する
-
-MCP responseは、機械的に確定した構造情報と、`note` 由来の自然言語説明を分けて返す。
-
-```json
-{
-  "signature": {
-    "params": [
-      { "name": "credentials", "model": "auth.model.credential" }
-    ]
-  },
-  "doc": "認証情報を検証しトークンを発行する"
-}
-```
-
-`doc` はLLMへのsemantic contractとして重要だが、機械検証済みの事実として扱ってはならない。
-
-### 2.5 v1のreferencesはdirectのみ
-
-V01-ADR-048 / V01-ADR-049に従い、MCP v1では完全なtransitive dependency graphを事前構築しない。
-
-そのため `get_references` は、初期仕様では**直接referenceのみ**を返す。
-
-transitive closure / depth指定 / dependency graph cacheは、QueryService vertical sliceで実需が出た時点で別途拡張する。
-
-### 2.6 設計対話 coverage を拡張判断基準にする
-
-MCP / QueryService は、単なる実装補助APIではなく、DAG / State Diagram / Sequence Diagram / ER / API Table / Wireframe などの図・viewを見ながらLLMと設計対話するためのquery layerである。
-
-そのため、renderされた図やviewに現れる主要semantic objectは、原則としてMCPからquery可能にする。
-
-対象例:
-
-- task / model / store / state / event / actor
-- model field
-- transition
-- sequence scenario view
-- API Table view
-- ER Diagram view
-- implicit asset
-- file-local sub task / branch / fork / join
-- flow entry / flow wiring
-- source file
-
-すべてをMCP v1で即時実装する必要はない。ただし、今後のMCP拡張では「そのobjectが図やview上で利用者に見えており、会話対象になりうるか」を優先判断基準とする。
-
-MCP responseは引き続きRaw YAML ASTを公開せず、ResolvedProject上のsemantic object queryとして返す。source snippet取得が必要な場合も、semantic objectに対応するsource補助情報として扱う。
-
-> 由来: V01-ADR-054 §決定
-
----
-
-## 3. Tool overview
-
-MCP v1のquery toolは以下の8つとする。
-
-| tool | 目的 | 主な利用場面 |
+| tool | purpose | typical use |
 |---|---|---|
-| [`list_objects`](tools/list-objects.md) | project内のsemantic object一覧を取得する | 実装・設計対話の起点として対象objectを探す |
-| [`get_signature`](tools/get-signature.md) | object単体の外形を取得する | 実装前にtask/model/store等の型・I/Oを確認する |
-| [`get_source`](tools/get-source.md) | semantic objectに対応するYAML snippetを取得する | 設計対話中に定義元YAMLを確認する |
-| [`get_references`](tools/get-references.md) | objectの直接referenceを取得する | 影響範囲・依存・逆参照を確認する |
-| [`get_reference_tree`](tools/get-reference-tree.md) | objectからdepth制限つきでreference graphを辿る | 変更影響範囲や周辺objectをN hopで確認する |
-| [`analyze_impact`](tools/analyze-impact.md) | change kindを踏まえた意味づけ済み影響分析を取得する | 設計変更相談で「何が壊れるか / どう直すか」を判断する |
-| [`inspect`](tools/inspect.md) | object kind別に実装判断用の文脈を取得する | Claude Code等が実装・修正時に読む |
-| [`list_endpoints`](tools/list-endpoints.md) | API Table viewに基づくendpoint一覧を取得する | API実装・ルーティング確認 |
+| [`list_objects`](tools/list-objects.md) | Get a list of semantic objects in the project. | Starting point for implementation / design conversation — finding the target object. |
+| [`get_signature`](tools/get-signature.md) | Get the external shape of a single object. | Check a task/model/store's types and I/O before implementing. |
+| [`get_source`](tools/get-source.md) | Get the YAML snippet corresponding to a semantic object. | Check the defining YAML during design conversation. |
+| [`get_references`](tools/get-references.md) | Get an object's direct references. | Check impact range / dependencies / reverse references. |
+| [`get_reference_tree`](tools/get-reference-tree.md) | Walk the reference graph from an object with a depth limit. | Check change impact or surrounding objects N hops out. |
+| [`analyze_impact`](tools/analyze-impact.md) | Get an interpreted impact analysis based on a change kind. | Judge "what breaks / how to fix it" during a design-change discussion. |
+| [`inspect`](tools/inspect.md) | Get implementation-judgment context per object kind. | Read by Claude Code etc. when implementing/fixing. |
+| [`list_endpoints`](tools/list-endpoints.md) | Get the endpoint list based on the API Table view. | API implementation / routing check. |
 
----
+### Tool selection guidance for LLM
 
-## 4. Tool selection guidance for LLM
+LLMs should use the following basic decision rules.
 
-LLMは以下の使い分けを基本とする。
-
-| 状況 | 使うtool |
+| situation | tool to use |
 |---|---|
-| 対象nodeのI/Oだけ確認したい | [`get_signature`](tools/get-signature.md) |
-| 対象objectの定義元YAML snippetを確認したい | [`get_source`](tools/get-source.md) |
-| 何に依存しているか / 何から参照されているか確認したい | [`get_references`](tools/get-references.md) |
-| 変更影響範囲や周辺objectをN hopで確認したい | [`get_reference_tree`](tools/get-reference-tree.md) |
-| 設計変更（rename / remove / 型変更等）の影響と直し方を判断したい | [`analyze_impact`](tools/analyze-impact.md) |
-| 実装・修正・レビューのために周辺文脈が必要 | [`inspect`](tools/inspect.md) |
-| API route一覧が必要 | [`list_endpoints`](tools/list-endpoints.md) |
+| Just need to check a target node's I/O | [`get_signature`](tools/get-signature.md) |
+| Need to check the defining YAML snippet of a target object | [`get_source`](tools/get-source.md) |
+| Need to check what it depends on / what references it | [`get_references`](tools/get-references.md) |
+| Need to check change impact or surrounding objects N hops out | [`get_reference_tree`](tools/get-reference-tree.md) |
+| Need to judge the impact and fix of a design change (rename / remove / type change etc.) | [`analyze_impact`](tools/analyze-impact.md) |
+| Need surrounding context for implementation / fix / review | [`inspect`](tools/inspect.md) |
+| Need a list of API routes | [`list_endpoints`](tools/list-endpoints.md) |
 
-原則:
+Principles:
 
-- 実装前にはまず `inspect` を使う
-- 小さな型確認だけなら `get_signature` を使う
-- 直接参照確認では `get_references(direction="in")` または `both` を使う
-- N hopの影響範囲確認では `get_reference_tree` を使い、`direction` と `depth` を明示する
-- 設計変更相談では `analyze_impact` を使い、`change.kind` を明示する。 raw な reference 探索が必要な場合のみ `get_reference_tree` に降りる
-- Raw YAMLを直接読む前に、まず `get_source` でsemantic objectに対応するsnippetを確認する
+- Use `inspect` first, before implementing.
+- For a small type check only, use `get_signature`.
+- For direct-reference checks, use `get_references(direction="in")` or `both`.
+- For N-hop impact-range checks, use `get_reference_tree` and specify `direction` and `depth` explicitly.
+- For design-change discussions, use `analyze_impact` and specify `change.kind` explicitly; drop down to `get_reference_tree` only when raw reference exploration is needed.
+- Before reading raw YAML directly, first check the snippet corresponding to the semantic object via `get_source`.
 
----
+## Topics
+
+| title | kind | ref | summary |
+|---|---|---|---|
+| Error model | Reference | `spec:bpdsl.mcp.errors` | MCP-level error vs. diagnostic distinction, error code catalog, error payload shape. |
+| MCP schema | Reference | `spec:bpdsl.mcp.schema` | Common schema: selector, ObjectRef, Reference, Diagnostic, QualifiedID/FileID/synthetic ID representations. |
+| Versioning / future extensions | Reference | `spec:bpdsl.mcp.versioning` | What v1 leaves undefined and candidate future tools/selectors. |
+| `list_objects` | Contract | `spec:bpdsl.mcp.tools.list_objects` | Get a list of semantic objects in the project. |
+| `get_signature` | Contract | `spec:bpdsl.mcp.tools.get_signature` | Get the external shape of a single object. |
+| `get_source` | Contract | `spec:bpdsl.mcp.tools.get_source` | Get the YAML snippet corresponding to a semantic object. |
+| `get_references` | Contract | `spec:bpdsl.mcp.tools.get_references` | Get an object's direct references. |
+| `get_reference_tree` | Contract | `spec:bpdsl.mcp.tools.get_reference_tree` | Walk the reference graph from an object with a depth limit. |
+| `analyze_impact` | Contract | `spec:bpdsl.mcp.tools.analyze_impact` | Get an interpreted impact analysis based on a change kind. |
+| `inspect` | Contract | `spec:bpdsl.mcp.tools.inspect` | Get implementation-judgment context per object kind. |
+| `list_endpoints` | Contract | `spec:bpdsl.mcp.tools.list_endpoints` | Get the endpoint list based on the API Table view. |

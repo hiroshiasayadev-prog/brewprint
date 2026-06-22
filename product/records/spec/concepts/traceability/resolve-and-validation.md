@@ -1,51 +1,37 @@
----
-scope: docs/spec/concepts/traceability/resolve-and-validation.md
-status: draft
-last_updated: 2026-05-27
-summary: >
-  canonical semantic/artifact ref resolution、investigation reference validation、
-  noncanonical path diagnostic の MVP boundary を定義する。
-depends_on:
-  - docs/adr/081-requirement-artifacts-and-spec-traceability.md
-  - docs/adr/083-project-artifact-boundary-and-yaml-as-implementation-source.md
-  - docs/adr/084-semantic-trace-mvp-scope-and-artifact-boundary.md
-  - docs/adr/087-design-records-mcp-investigation-support-and-semantic-ref-resolve.md
-  - docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
-  - docs/adr/091-workflow-artifact-work-item-task-milestone.md
-  - docs/adr/092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md
-semantic_refs:
-  - spec:trace.resolve-and-validation
-sections:
-  spec:trace.resolve: Resolve
-  spec:trace.validation: Validation
-  spec:trace.validation-boundary: Validation boundary
----
+# Reference: Resolve and validation
 
-# Resolve and validation
+- **id**: `spec:product.concepts.traceability.resolve_and_validation`
+- **status**: draft
+- **date**: 2026-06-22
+- **parent**: `spec:product.concepts.traceability`
+
+## What this is
+
+Defines the canonical resolve and validation boundary for the traceability MVP: lookup sources, supported input forms, duplicate detection, declared relation integrity, and validation scope.
 
 ## Resolve
 
-Resolve は、canonical semantic ref または artifact ID-as-ref を実在 artifact / spec section へ解決する tool behavior である。Resolve は artifact 間 relation ではない。
+> **Drift guard:** PRODUCT owns canonical input semantics and tool behavior descriptions expressed in PRODUCT metadata. DRMCP may expose these as tool API — do not let DRMCP API vocabulary accumulate here.
 
-MVP example:
+Resolve is the tool behavior of resolving a canonical semantic ref or artifact ID-as-ref to an actual artifact / spec section. Resolve is not a relation between artifacts.
+
+MVP examples:
 
 ```text
-spec:trace -> docs/spec/concepts/traceability/index.md
-spec:trace.semantic-ref -> docs/spec/concepts/traceability/semantic-ref.md
-spec:trace.semantic-ref.definition -> docs/spec/concepts/traceability/semantic-ref.md § Semantic ref definition
-spec:project-artifact-model -> docs/spec/concepts/project-artifact-model/index.md
-V01-ADR-088 -> docs/adr/088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
-V01-INV-DOCS-003 -> docs/investigations/docs/INV-DOCS-003-internal-design-semantic-trace-mvp-necessity.md
-V01-REQ-MCP-003 -> docs/requirements/mcp/REQ-MCP-003-workflow-artifact-mcp-support.md
-V01-WORK-MCP-003 -> docs/work-items/mcp/WORK-MCP-003-workflow-artifact-mcp-support.md
-V01-TASK-MCP-003-01 -> docs/tasks/mcp/TASK-MCP-003-01-workflow-artifact-mcp-evidence-and-scope.md
+spec:product.concepts.traceability -> product/records/spec/concepts/traceability/index.md
+spec:product.concepts.traceability.semantic_ref -> product/records/spec/concepts/traceability/semantic-ref.md
+spec:product.concepts.project_artifact_model -> product/records/spec/concepts/project-artifact-model/index.md
+V01-ADR-088 -> v01/records/adr/V01-ADR-088-reduce-semantic-trace-mvp-to-canonical-reference-resolution-foundation.md
+V01-INV-DOCS-003 -> v01/records/investigations/docs/V01-INV-DOCS-003-internal-design-semantic-trace-mvp-necessity.md
 ```
 
-V01-ADR-087 により、investigation の `source_refs` および記載済み `follow_up_results` に現れる canonical reference は resolve / validation 対象である。V01-ADR-092 により、investigation metadata が追加で扱える workflow ID-as-ref は `REQ-*` / `WORK-*` に限定し、`TASK-*` は investigation metadata canonical reference に含めない。また、workflow artifact 間の declared relation integrity validation を MVP に含める。V01-ADR-088 により、MVP は realization relation や external coverage mapping の解決を要求しない。
+Per V01-ADR-087, canonical references in investigation `source_refs` and recorded `follow_up_results` are subject to resolve/validation. Per V01-ADR-092, the workflow ID-as-refs that investigation metadata may additionally handle are limited to `REQ-*` / `WORK-*`, and `TASK-*` is not included in investigation metadata canonical references. Declared relation integrity validation between workflow artifacts is included in the MVP. Per V01-ADR-088, the MVP does not require resolution of realization relations or external coverage mappings.
 
 ## Resolver input
 
-MVP resolver は少なくとも以下を扱う。
+> **Drift guard:** PRODUCT owns canonical input semantics and tool behavior descriptions expressed in PRODUCT metadata. DRMCP may expose these as tool API — do not let DRMCP API vocabulary accumulate here.
+
+The MVP resolver handles at minimum:
 
 ```text
 spec:...
@@ -57,9 +43,9 @@ WORK-...
 TASK-...
 ```
 
-`REQ-*` / `WORK-*` / `TASK-*` は workflow artifact record の direct resolver input として扱う。Workflow artifact 間 relation は metadata の ID-as-ref から検証し、ID 文字列または physical path から親 relation を推測しない。
+`REQ-*` / `WORK-*` / `TASK-*` are handled as direct resolver inputs for workflow artifact records. Workflow artifact inter-relations are validated from metadata ID-as-refs; parent relations are not inferred from ID strings or physical paths.
 
-以下は MVP resolver input として要求しない。
+The following are not required as MVP resolver inputs:
 
 ```text
 internal-design:...
@@ -68,114 +54,124 @@ COV-...
 yaml:...
 ```
 
-`yaml:` は reserve only である。その他は V01-ADR-088 により semantic trace endpoint / mapping mechanism の判断を defer した対象である。
+`yaml:` is reserve-only. The others are targets whose decision as semantic trace endpoints / mapping mechanisms was deferred per V01-ADR-088.
 
 ## Resolver output
 
-Resolver の concrete request / response field と status vocabulary は [`docs/spec/design-records-mcp/tools.md`](../../design-records-mcp/tools.md) が所有する。
+The concrete request/response fields and status vocabulary of the resolver are owned by the Design Records MCP spec.
 
-本 spec は supported canonical reference boundary、lookup source、validation responsibility、および MVP 外とする relation / diagnostic scope のみを定義する。
+This spec defines only the supported canonical reference boundary, lookup sources, validation responsibility, and the relation/diagnostic scope excluded from the MVP.
 
 ## Lookup sources
 
-MVP resolver の lookup source は以下である。
+> **Drift guard:** PRODUCT owns canonical input semantics and tool behavior descriptions expressed in PRODUCT metadata. DRMCP may expose these as tool API — do not let DRMCP API vocabulary accumulate here.
 
-- spec front matter の `semantic_refs`
-- spec front matter の `sections`
-- Design Records MCP が index する record artifact ID (`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*`)
+The MVP resolver's lookup sources are:
 
-Resolver は以下の investigation metadata field に記載された ref を validation input として扱う。
+| lookup source | role |
+|---|---|
+| spec front matter `semantic_refs` | registers document-level `spec:` refs |
+| spec front matter `sections` | maps section-level `spec:` refs to heading text |
+| record artifact IDs indexed by Design Records MCP | `ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` |
+
+The resolver treats refs in the following investigation metadata fields as validation inputs:
 
 - `source_refs`
 - `follow_up_results`
-- `follow_up_candidates` に artifact reference が記載された場合の canonical form、および unresolved candidate の `info` diagnostic
+- Canonical form of artifact references in `follow_up_candidates`, and `info` diagnostic for unresolved candidates
 
-Investigation metadata で workflow ID-as-ref を参照できる範囲は `REQ-*` / `WORK-*` に限る。`TASK-*` は同 field では unsupported とする。
+The workflow ID-as-refs referenceable in investigation metadata are limited to `REQ-*` / `WORK-*`. `TASK-*` is unsupported in those fields.
 
-Workflow relation validation は、requirement の `work_items`、work item の `source_requirement` / `tasks`、task の `work_item` / `source_requirement` / `depends_on` を validation input とする。
+Workflow relation validation uses requirement `work_items`, work item `source_requirement` / `tasks`, and task `work_item` / `source_requirement` / `depends_on` as validation inputs.
 
-Investigation metadata と workflow relation field は参照元であり、参照先を登録する lookup source ではない。
+Investigation metadata and workflow relation fields are the referring side and are not lookup sources that register reference targets.
 
-MVP では自然言語本文から ref を推定しない。Internal-design front matter や coverage mapping artifact から relation graph を構築しない。
+In the MVP, refs are not inferred from natural language body text. Relation graphs are not built from internal-design front matter or coverage mapping artifacts.
 
 ## Section anchor lookup
 
-Section-level semantic ref を active に resolve する対象は `spec:` のみであり、front matter の `sections` mapping により heading text と対応付ける。
+> **Drift guard:** PRODUCT owns canonical input semantics and tool behavior descriptions expressed in PRODUCT metadata. DRMCP may expose these as tool API — do not let DRMCP API vocabulary accumulate here.
 
-Resolver は以下を検査する。
+The only target for active resolution of section-level semantic refs is `spec:`, and heading text is mapped via the front matter `sections` mapping.
 
-- `sections` key が `spec:` grammar に従っている
-- `sections` value と一致する Markdown heading が存在する
-- 同一 file 内で解決先が一意である
+The resolver checks:
+
+- That `sections` keys conform to `spec:` grammar
+- That a Markdown heading matching the `sections` value exists
+- That the resolution target is unique within the same file
 
 ## Duplicate detection
 
-MVP で duplicate error 候補とするもの:
+> **Drift guard:** PRODUCT owns invalid conditions and scope boundary. DRMCP owns diagnostic category names, JSON response shape, and tool response vocabulary — do not let those accumulate here.
 
-- 同じ `spec:` document-level ref が複数 document の `semantic_refs` に現れる
-- 同じ `spec:` section-level ref が複数 `sections` key に現れる
-- 同じ Design Records MCP record ID (`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*`) が複数 record に現れる
+MVP duplicate error candidates:
 
-`COV-*`、`internal-design:`、`coverage:` の duplicate detection は MVP 対象外である。
+- The same `spec:` document-level ref appears in multiple documents' `semantic_refs`
+- The same `spec:` section-level ref appears in multiple `sections` keys
+- The same Design Records MCP record ID (`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*`) appears in multiple records
+
+Duplicate detection for `COV-*`, `internal-design:`, and `coverage:` is outside MVP scope.
 
 ## Unresolved reference and declared relation integrity
 
-MVP で unresolved error とするもの:
+> **Drift guard:** PRODUCT owns invalid conditions and scope boundary. DRMCP owns diagnostic category names, JSON response shape, and tool response vocabulary — do not let those accumulate here.
 
-- investigation metadata の `source_refs` が解決不能な supported record ID-as-ref または active `spec:` ref を指す
-- investigation metadata の記載済み `follow_up_results` が解決不能な supported record ID-as-ref または active `spec:` ref を指す
-- workflow relation field が解決不能な `REQ-*` / `WORK-*` / `TASK-*` を指す
+MVP unresolved error cases:
 
-`follow_up_candidates` は未作成 artifact を指しうる。Artifact reference を記載する場合の canonical form は検査するが、unresolved であること自体は error としない。Canonical form の unresolved candidate は、予定された後続 artifact がまだ存在しないことを可視化する `info` diagnostic として返す。
+- Investigation metadata `source_refs` points to an unresolvable supported record ID-as-ref or active `spec:` ref
+- Investigation metadata recorded `follow_up_results` points to an unresolvable supported record ID-as-ref or active `spec:` ref
+- A workflow relation field points to an unresolvable `REQ-*` / `WORK-*` / `TASK-*`
 
-MVP が integrity error とする declared workflow relation mismatch は以下である。
+`follow_up_candidates` may point to not-yet-created artifacts. When artifact references are recorded, the canonical form is checked, but being unresolved itself is not an error. Canonical-but-unresolved candidates are returned as `info` diagnostics indicating a planned follow-up artifact that does not yet exist.
 
-- `requirement.work_items` と `work_item.source_requirement` の不一致
-- `work_item.tasks` と `task.work_item` の不一致
-- `task.source_requirement` と parent work item の `source_requirement` の不一致
+Declared workflow relation mismatches treated as integrity errors in the MVP:
 
-これは metadata に宣言された relation の整合性検査であり、参照されていない requirement / work item / task を探索する orphan diagnostics ではない。Workflow orphan diagnostics は MVP 外とする。
+- Mismatch between `requirement.work_items` and `work_item.source_requirement`
+- Mismatch between `work_item.tasks` and `task.work_item`
+- Mismatch between `task.source_requirement` and the parent work item's `source_requirement`
 
-## Reserved / deferred ref handling
+This is a consistency check of relations declared in metadata, not a search for orphan requirements / work items / tasks that are not referenced. Workflow orphan diagnostics are outside MVP scope.
 
-`yaml:` は reserve only であり、MVP は記述許可や unresolved severity を固定しない。
+## Reserved and deferred ref handling
 
-`internal-design:` / `coverage:` / `COV-*` は V01-ADR-088 により MVP contract から defer された。既存 draft / example に存在する場合、それらを新規 MVP acceptance target として解決・検証してはならない。
+`yaml:` is reserve-only; the MVP does not fix whether it may be written or what severity unresolved carries.
+
+`internal-design:` / `coverage:` / `COV-*` were deferred from the MVP contract per V01-ADR-088. If they exist in current drafts/examples, they must not be resolved or validated as new MVP acceptance targets.
 
 ## Validation
 
-MVP validation は以下を扱う。
+The MVP handles:
 
-- `spec:` ref grammar / uniqueness / section lookup。Active `spec:` declaration grammar は root document ref (`spec:trace`) と dot 付き ref (`spec:trace.semantic-ref`) の双方を valid とする
-- record ID-as-ref resolution (`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*`)
-- investigation `source_refs` / 記載済み `follow_up_results` の canonicality と resolve。追加 workflow ID-as-ref は `REQ-*` / `WORK-*` に限定する
-- investigation `follow_up_candidates` の canonical form と、canonical だが unresolved な candidate の `info` diagnostic。追加 workflow ID-as-ref は `REQ-*` / `WORK-*` に限定する
-- investigation metadata に現れる `TASK-*` の unsupported diagnostic
-- workflow relation field の target kind / resolution / declared bidirectional consistency
-- physical path reference の noncanonical diagnostic。`source_refs` / `follow_up_results` に置かれた場合は error、`follow_up_candidates` に置かれた場合は `info` とする
+- `spec:` ref grammar / uniqueness / section lookup. Both root document refs (`spec:trace`) and dot-notation refs (`spec:trace.semantic-ref`) are valid in the active `spec:` declaration grammar
+- Record ID-as-ref resolution (`ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*`)
+- Canonicality and resolution of investigation `source_refs` / recorded `follow_up_results`. Additional workflow ID-as-refs limited to `REQ-*` / `WORK-*`
+- Canonical form of investigation `follow_up_candidates` and `info` diagnostic for canonical-but-unresolved candidates. Additional workflow ID-as-refs limited to `REQ-*` / `WORK-*`
+- Unsupported diagnostic for `TASK-*` in investigation metadata
+- Target kind / resolution / declared bidirectional consistency of workflow relation fields
+- Noncanonical diagnostic for physical path references: error when in `source_refs` / `follow_up_results`, `info` when in `follow_up_candidates`
 
-MVP validation は以下を扱わない。
+The MVP does not handle:
 
-- coverage mapping YAML schema
-- `maps_to` / `covers` / `validates` relation
-- `spec:` → `internal-design:` endpoint constraint
-- internal-design relation declaration / reverse graph
-- workflow orphan diagnostics / progress projection / workflow traversal query / task dependency cycle detection
+- Coverage mapping YAML schema
+- `maps_to` / `covers` / `validates` relations
+- `spec:` → `internal-design:` endpoint constraints
+- Internal-design relation declaration / reverse graph
+- Workflow orphan diagnostics / progress projection / workflow traversal queries / task dependency cycle detection
 
 ## Validation boundary
 
-`validates` relation を導入しないことは、resolve / schema validation を行わないことを意味しない。Validation は tool behavior / metadata contract として扱う。
+Not introducing the `validates` relation does not mean resolve/schema validation is not performed. Validation is treated as tool behavior / metadata contract.
 
 ## MCP writer contract placeholder
 
-MVP は writer tools の request / response schema を定義しない。将来 semantic ref registration や investigation metadata update を tool で行う場合は、dry-run diff、confirmation、conflict handling、format preservation を別 spec / ADR で定義する。
+The MVP does not define request/response schemas for writer tools. If semantic ref registration or investigation metadata updates are performed via tools in the future, dry-run diff, confirmation, conflict handling, and format preservation will be defined in a separate spec / ADR.
 
 ## Out of scope
 
-- concrete MCP request / response schema
-- writer tool args
-- internal-design / coverage / YAML endpoint resolution
-- realization relation validation
-- workflow orphan diagnostics / progress projection / traversal query / dependency graph projection
-- fixture / golden validation
-- brewprint DSL YAML schema validation
+- Concrete MCP request/response schema
+- Writer tool args
+- Internal-design / coverage / YAML endpoint resolution
+- Realization relation validation
+- Workflow orphan diagnostics / progress projection / traversal query / dependency graph projection
+- Fixture/golden validation
+- Brewprint DSL YAML schema validation

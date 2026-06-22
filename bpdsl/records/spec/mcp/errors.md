@@ -1,82 +1,79 @@
----
-scope: docs/spec/mcp/errors.md
-status: draft
-last_updated: 2026-06-07
-summary: >
-  MCP toolのerror modelを定義する。
-  tool errorとdiagnosticの使い分け、およびerror codeとpayloadを規定する。
-depends_on:
-  - docs/adr/054-mcp-query-coverage-for-design-conversation.md
----
+# Reference: Error model
 
-# Error model
+- **id**: `spec:bpdsl.mcp.errors`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.mcp.overview`
 
-## 1. MCP-level error vs diagnostic
+## What this is
 
-MCP toolの実行自体が成立しない場合はtool errorを返す。
+Error model for MCP tools: the distinction between a tool error and a diagnostic, the error code catalog, and the error payload shape.
 
-例:
+> Source: V01-ADR-054
 
-- projectがsemantic validationを通過していない
-- selectorの形式が壊れている
-- 対象objectが存在しない
-- guard未指定でtransitionが曖昧
+## MCP-level error vs. diagnostic
 
-一方、tool実行は成立したが注意すべき情報がある場合は `diagnostics` に入れる。
+When MCP tool execution itself cannot proceed, the tool returns a tool error.
 
-例:
+Examples:
+- The project has not passed semantic validation.
+- The selector is malformed.
+- The target object does not exist.
+- A transition is ambiguous because no guard was specified.
 
-- source lineが取得できない
-- uncovered moduleが暗黙groupになった
-- noteが存在しない
-- optionalな周辺情報が未実装
+When tool execution succeeded but there is information worth noting, it goes into `diagnostics` instead.
 
-## 2. Error code
+Examples:
+- A source line could not be obtained.
+- An uncovered module became an implicit group.
+- A `note` is absent.
+- An optional piece of surrounding info is not yet implemented.
 
-MCP v1で定義するerror code:
+## Error code
 
-| code | 意味 |
+MCP v1 defines the following error codes.
+
+| code | meaning |
 |---|---|
-| `project_invalid` | semantic buildに失敗しておりqueryできない |
-| `invalid_args` | tool input JSON または input schema が不正 |
-| `invalid_selector` | selectorの形式が不正 |
-| `invalid_change_payload` | `analyze_impact.change` の kind / payload の組み合わせが不正 |
-| `not_found` | 対象objectが存在しない |
-| `kind_mismatch` | selector.kind と解決結果のkindが一致しない |
-| `ambiguous` | 候補が複数あり一意に解決できない |
-| `unsupported_object` | v1ではquery対象外のobject |
-| `unsupported_detail` | `detail` の値が未対応 |
-| `unsupported_direction` | `direction` の値が未対応 |
-| `invalid_depth` | traversal depth が未対応範囲外 |
-| `source_range_unavailable` | object単位のsource rangeを特定できない |
-| `internal_error` | 実装内部エラー |
+| `project_invalid` | Semantic build failed; cannot query. |
+| `invalid_args` | Tool input JSON or input schema is invalid. |
+| `invalid_selector` | Selector is malformed. |
+| `invalid_change_payload` | `analyze_impact.change`'s kind/payload combination is invalid. |
+| `not_found` | Target object does not exist. |
+| `kind_mismatch` | `selector.kind` does not match the resolved kind. |
+| `ambiguous` | Multiple candidates resolve and cannot be disambiguated. |
+| `unsupported_object` | Object is out of query scope in v1. |
+| `unsupported_detail` | `detail` value is unsupported. |
+| `unsupported_direction` | `direction` value is unsupported. |
+| `invalid_depth` | Traversal depth is outside the supported range. |
+| `source_range_unavailable` | Cannot determine the source range for the object. |
+| `internal_error` | Internal implementation error. |
 
 Selector support behavior:
 
-- selectorの形が壊れている場合は `invalid_selector` を返す。
-- selectorが解決できない場合は `not_found` を返す。
-- selectorが複数候補に解決される場合は `ambiguous` を返す。
-- selector.kind と解決結果のkindが一致しない場合は `kind_mismatch` を返す。
-- selectorは解決できたが対象toolの selector support matrix で `no` の場合は、原則として `unsupported_object` を返す。
-- `analyze_impact` では、unsupported selector は tool error にしない。
-  空 `impacts`、`coverage`、および `unsupported_selector` diagnostic を含む通常responseとして返す。
+- If the selector shape is malformed, return `invalid_selector`.
+- If the selector cannot be resolved, return `not_found`.
+- If the selector resolves to multiple candidates, return `ambiguous`.
+- If `selector.kind` does not match the resolved kind, return `kind_mismatch`.
+- If the selector resolves but the target tool's selector support matrix marks it `no`, return `unsupported_object` in principle.
+- `analyze_impact` does not turn an unsupported selector into a tool error — it returns a normal response with empty `impacts`, `coverage`, and an `unsupported_selector` diagnostic.
 
-`change.kind` に対して必須payloadが欠けている場合や、kind と payload の組み合わせが不正な場合は `invalid_change_payload` を返す。
+When `change.kind` is missing a required payload field, or the kind/payload combination is invalid, return `invalid_change_payload`.
 
 Request option behavior:
 
-- enum-like request option が仕様上の値集合外の場合は、tool-specific code がある場合はそれを優先し、ない場合は `invalid_args` を返す。
-- `direction` の未知値は `unsupported_direction` を返す。
-- `detail` の未知値は `unsupported_detail` を返す。
-- `get_reference_tree.depth` が `0..4` の範囲外の場合は `invalid_depth` を返す。
-- `get_source.fallback` が `file` / `error` 以外の場合は `invalid_args` を返す。
-- `source_range_unavailable` は object単位のsource rangeを特定できない同じ根本条件を表す。
-- `get_source(fallback=file)` または `fallback` 省略時は、`source_range_unavailable` を warning diagnostic として返す。
-- `get_source(fallback=error)` では、`source_range_unavailable` を tool error として返す。
-- `source_range_unavailable` の surface / severity は request の `fallback` option により決まる。
-- request option の default / omitted behavior は各 tool spec の contract として扱い、DATA DSL の default 構文としては扱わない。
+- When an enum-like request option falls outside its specified value set, prefer a tool-specific code if one exists; otherwise return `invalid_args`.
+- An unknown `direction` value returns `unsupported_direction`.
+- An unknown `detail` value returns `unsupported_detail`.
+- `get_reference_tree.depth` outside `0..4` returns `invalid_depth`.
+- `get_source.fallback` outside `file` / `error` returns `invalid_args`.
+- `source_range_unavailable` represents the same underlying condition: the source range for an object cannot be determined.
+- `get_source(fallback=file)`, or `fallback` omitted, returns `source_range_unavailable` as a warning diagnostic.
+- `get_source(fallback=error)` returns `source_range_unavailable` as a tool error.
+- The surface / severity of `source_range_unavailable` is determined by the request's `fallback` option.
+- Request-option default / omitted behavior is treated as each tool spec's contract, not as a DATA DSL default construct.
 
-## 3. Error payload
+## Error payload
 
 ```json
 {
@@ -91,11 +88,16 @@ Request option behavior:
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `code` | ✓ | error code |
-| `message` | ✓ | human-readable message |
-| `selector` | 任意 | 入力selector |
-| `diagnostics` | 任意 | 関連diagnostic |
+| `code` | ✓ | Error code. |
+| `message` | ✓ | Human-readable message. |
+| `selector` | optional | The input selector. |
+| `diagnostics` | optional | Related diagnostics. |
 
----
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.mcp.overview` | Parent overview; tool catalog. |
+| `spec:bpdsl.mcp.schema` | Selector / ObjectRef / Diagnostic common schema referenced by error payloads. |

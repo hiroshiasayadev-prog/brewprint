@@ -1,45 +1,26 @@
----
-scope: docs/spec/mcp/tools/get-reference-tree.md
-status: draft
-last_updated: 2026-06-07
-summary: >
-  get_reference_tree toolの仕様を定義する。
-  対象objectからreferenceをBFSでtraversalし、bounded graphとして返却する。
-  入出力スキーマおよびtraversal semanticsを規定する。
-depends_on:
-  - docs/adr/049-mcp-query-reference-vocabulary.md
-  - docs/adr/054-mcp-query-coverage-for-design-conversation.md
-  - docs/adr/055-mcp-reference-tree-traversal.md
----
+# Contract: `get_reference_tree`
 
-# `get_reference_tree`
+- **id**: `spec:bpdsl.mcp.tools.get_reference_tree`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.mcp.overview`
+- **contract_class**: `interface`
 
-## 1. Purpose
+## What this is
 
-`get_reference_tree` は、対象objectをrootとして、direct referencesをdepth制限つきでBFS traversalする。
+`get_reference_tree` performs a depth-limited BFS traversal of direct references starting from a target object as root.
 
-tool名は `tree` だが、返却形式は純粋な木ではなく、`nodes[]` / `edges[]` からなる bounded reference graph とする。
+Although the tool is named "tree," the return shape is not a pure tree — it is a bounded reference graph composed of `nodes[]` / `edges[]`.
 
-返すもの:
+Returns: root object, traversal direction/depth, reached objects, traversed references, truncation info, diagnostics.
 
-- root object
-- traversal direction / depth
-- 到達したobjects
-- traversalで辿ったreferences
-- truncation情報
-- diagnostics
+Does not return: per-change-kind impact severity, recommended action, renderer output mapping, flow wiring references, the raw YAML AST.
 
-返さないもの:
+Change-kind-aware impact judgment is handled by [`analyze_impact`](analyze-impact.md).
 
-- 変更種別ごとのimpact severity
-- recommended action
-- renderer output mapping
-- flow wiring references
-- Raw YAML AST
+> Source: V01-ADR-049, V01-ADR-054, V01-ADR-055
 
-変更種別を含む影響判断は、将来の `analyze_impact`（[../versioning.md](../versioning.md)）で扱う。
-
-## 2. Input
+## Request
 
 ```json
 {
@@ -55,28 +36,22 @@ tool名は `tree` だが、返却形式は純粋な木ではなく、`nodes[]` /
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `selector` | ✓ | traversal root object |
-| `direction` | ✓ | `out` / `in` / `both` |
-| `depth` | ✓ | `0..4` |
-| `kinds` | 任意 | traversal / return対象のreference kind filter |
-| `max_nodes` | 任意 | node返却上限。省略時 `200` |
-| `max_edges` | 任意 | edge返却上限。省略時 `500` |
+| `selector` | ✓ | Traversal root object. |
+| `direction` | ✓ | `out` / `in` / `both`. |
+| `depth` | ✓ | `0..4`. |
+| `kinds` | optional | Reference-kind filter for traversal / return. |
+| `max_nodes` | optional | Node return cap. Defaults to `200`. |
+| `max_edges` | optional | Edge return cap. Defaults to `500`. |
 
-`depth < 0` または `depth > 4` は `invalid_depth` tool error とする。
-`depth` の範囲は MCP tool contract の実行時制約であり、DATA DSL の汎用 numeric range 構文としては扱わない。
-`direction` は探索範囲を暗黙化しないため必須とする。
-`direction` が `out` / `in` / `both` 以外の場合は `unsupported_direction` tool error とする。
+`depth < 0` or `depth > 4` is an `invalid_depth` tool error. This range is an MCP tool-contract runtime constraint, not a DATA DSL generic numeric-range construct. `direction` is required, since it must not implicitly default the search scope; a value outside `out` / `in` / `both` is an `unsupported_direction` tool error.
 
-`kinds` を指定した場合、指定されたreference kindのみを traversal 経路として辿り、`edges[]` に含める。
-指定外kindでしか到達できないobjectには到達しない。
+When `kinds` is specified, only the given reference kinds are traversed as path edges and included in `edges[]`. Objects reachable only via a non-listed kind are not reached.
 
-`selector` の object / kind 対応範囲は `docs/spec/mcp/schema.md` の selector support matrix を正本とする。
-`get_reference_tree` で matrix が `no` の selector を受け取った場合は、原則として `unsupported_object` tool error とする。
-`limited` の selector は同matrixと §7 Selector support に従って traversal root / edge expansion を限定してよい。
+The selector's object/kind support range is governed by the selector support matrix in [`spec:bpdsl.mcp.schema`](../schema.md). If `get_reference_tree` receives a selector marked `no` in the matrix, it returns `unsupported_object` tool error in principle. A `limited` selector may have its traversal-root / edge-expansion behavior restricted per that matrix and §Selector support below.
 
-## 3. Output
+## Response
 
 ```json
 {
@@ -107,33 +82,6 @@ tool名は `tree` だが、返却形式は純粋な木ではなく、`nodes[]` /
       },
       "depth": 1,
       "via": ["transition_from"]
-    },
-    {
-      "object": {
-        "object": "node",
-        "kind": "event",
-        "id": "order.event.payment_webhook_received"
-      },
-      "depth": 1,
-      "via": ["transition_event"]
-    },
-    {
-      "object": {
-        "object": "node",
-        "kind": "state",
-        "id": "order.state.confirmed"
-      },
-      "depth": 1,
-      "via": ["transition_to"]
-    },
-    {
-      "object": {
-        "object": "node",
-        "kind": "task",
-        "id": "payment.webhooks.task.process_payment"
-      },
-      "depth": 1,
-      "via": ["transition_action"]
     }
   ],
   "edges": [
@@ -151,51 +99,6 @@ tool名は `tree` だが、返却形式は純粋な木ではなく、`nodes[]` /
         "id": "order.state.processing"
       },
       "depth": 1
-    },
-    {
-      "kind": "transition_event",
-      "direction": "out",
-      "from": {
-        "object": "transition",
-        "kind": "transition",
-        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
-      },
-      "to": {
-        "object": "node",
-        "kind": "event",
-        "id": "order.event.payment_webhook_received"
-      },
-      "depth": 1
-    },
-    {
-      "kind": "transition_to",
-      "direction": "out",
-      "from": {
-        "object": "transition",
-        "kind": "transition",
-        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
-      },
-      "to": {
-        "object": "node",
-        "kind": "state",
-        "id": "order.state.confirmed"
-      },
-      "depth": 1
-    },
-    {
-      "kind": "transition_action",
-      "direction": "out",
-      "from": {
-        "object": "transition",
-        "kind": "transition",
-        "id": "order/state.yaml#processing:payment_webhook_received[payload.status == 'succeeded']"
-      },
-      "to": {
-        "object": "node",
-        "kind": "task",
-        "id": "payment.webhooks.task.process_payment"
-      },
-      "depth": 1
     }
   ],
   "truncated": false,
@@ -204,20 +107,20 @@ tool名は `tree` だが、返却形式は純粋な木ではなく、`nodes[]` /
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `root` | ✓ | traversal root ObjectRef |
-| `direction` | ✓ | 実際に使ったdirection |
-| `depth` | ✓ | 実際に使ったmax traversal depth |
-| `nodes` | ✓ | 到達object一覧 |
-| `edges` | ✓ | traversalで辿ったReference一覧 |
-| `truncated` | ✓ | `max_nodes` / `max_edges` により打ち切ったか |
-| `truncated_reasons` | ✓ | `max_nodes` / `max_edges` |
-| `diagnostics` | ✓ | Diagnostic list |
+| `root` | ✓ | Traversal root ObjectRef. |
+| `direction` | ✓ | Direction actually used. |
+| `depth` | ✓ | Max traversal depth actually used. |
+| `nodes` | ✓ | List of reached objects. |
+| `edges` | ✓ | List of References traversed. |
+| `truncated` | ✓ | Whether truncated by `max_nodes` / `max_edges`. |
+| `truncated_reasons` | ✓ | `max_nodes` / `max_edges`. |
+| `diagnostics` | ✓ | Diagnostic list. |
 
-## 4. Node entry
+### Node entry
 
-`nodes[]` の各entryは以下の形を持つ。
+Each entry of `nodes[]` has the shape:
 
 ```json
 {
@@ -231,40 +134,38 @@ tool名は `tree` だが、返却形式は純粋な木ではなく、`nodes[]` /
 }
 ```
 
-| フィールド | 必須 | 内容 |
+| field | required | content |
 |---|---:|---|
-| `object` | ✓ | 到達したObjectRef |
-| `depth` | ✓ | rootからの最短到達hop数 |
-| `via` | ✓ | rootから最初に到達したBFS経路のReference.kind列 |
+| `object` | ✓ | Reached ObjectRef. |
+| `depth` | ✓ | Shortest hop count from root. |
+| `via` | ✓ | Sequence of `Reference.kind` along the first/shortest BFS path discovered from root. |
 
-同一nodeへ複数経路が存在する場合、`nodes[].via` は最短かつ最初に探索された経路のみを表す。
-完全な経路復元には `edges[]` を使う。
+When multiple paths reach the same node, `nodes[].via` represents only the shortest, first-discovered path. Use `edges[]` for full path reconstruction.
 
-## 5. Edge entry
+### Edge entry
 
-`edges[]` は `Reference` と同じ基本形に `depth` を加えたものとする。
+`edges[]` uses the same base shape as `Reference`, plus `depth`.
 
-`edges[].depth` は、そのedgeを発見した traversal hop を表す。
-rootから1 hop目で発見されたedgeは `depth: 1` とする。
+`edges[].depth` is the traversal hop at which that edge was discovered. An edge discovered at hop 1 from root has `depth: 1`.
 
-## 6. Traversal semantics
+## Traversal semantics
 
-- traversal は BFS 固定とする
-- `depth=0` はrootのみを返す
-- `depth=N` は `0..N` hop までの到達nodeとedgeを返す
-- rootは常に `nodes[]` に含める
-- 同一objectへの再訪は行わない
-- 同一objectへの再訪停止は正常動作であり、`diagnostics[]` には記録しない
-- 循環の有無を知りたい場合は、返却された `edges[]` から推論する
-- `direction=out` は現在nodeがreferenceの `from` であるedgeを辿り、`to` へ進む
-- `direction=in` は現在nodeがreferenceの `to` であるedgeを辿り、`from` へ進む
-- `direction=both` は `out` / `in` の両方を辿る
+- Traversal is fixed BFS.
+- `depth=0` returns only the root.
+- `depth=N` returns nodes and edges reached within `0..N` hops.
+- Root is always included in `nodes[]`.
+- The same object is not revisited.
+- Revisit suppression is normal behavior and is not recorded in `diagnostics[]`.
+- Cycle presence, if needed, is inferred from the returned `edges[]`.
+- `direction=out` follows edges where the current node is the reference's `from`, advancing to `to`.
+- `direction=in` follows edges where the current node is the reference's `to`, advancing to `from`.
+- `direction=both` follows both `out` and `in`.
 
-## 7. Selector support
+## Selector support
 
-`get_reference_tree` のroot selectorは、基本的に [`get_references`](./get-references.md) の対応selectorを起点にする。
+`get_reference_tree`'s root selector is, in principle, the same selector set [`get_references`](get-references.md) supports as a starting point.
 
-起点として supported:
+Supported as a starting point:
 
 - `node: task`
 - `node: model`
@@ -275,12 +176,12 @@ rootから1 hop目で発見されたedgeは `depth: 1` とする。
 - `view: sequence_diagram`
 - `transition`
 - `field` / `model_field`
-- `file: node` limited
+- `file: node` (limited)
 - `file: state_file`
 - `asset`
 - private sub node
 
-起点として unsupported:
+Unsupported as a starting point:
 
 - `primitive`
 - `view: api_table`
@@ -290,19 +191,35 @@ rootから1 hop目で発見されたedgeは `depth: 1` とする。
 - `file: er_diagram`
 - `file: render_index`
 
-この一覧は共有 selector support matrix の `get_reference_tree` 列と一致させる。
-`primitive` は reference target として到達可能だが、traversal rootにはできない。
-`file: node` をrootにした場合は、`get_references(file: node)` の limited 対応範囲に従い、file内nodeへのreferenceのみ展開する。
+This list matches the `get_reference_tree` column of the shared selector support matrix. `primitive` is reachable as a reference target but cannot be used as a traversal root. With `file: node` as root, traversal follows `get_references(file: node)`'s limited range, expanding only references to in-file nodes.
 
-actorをrootにして `direction=in` を指定すると、多数の `event_actor` reference に到達しやすい。
-必要に応じて `kinds` / `max_nodes` / `max_edges` を指定する。
+Rooting at an actor with `direction=in` tends to reach many `event_actor` references — specify `kinds` / `max_nodes` / `max_edges` as needed.
 
-## 8. Flow wiring references
+## Flow wiring references
 
-`get_reference_tree` v1は、新しいreference kindを追加しない。
+`get_reference_tree` v1 does not add new reference kinds.
 
-flow wiring（`flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over`）は、引き続き `inspect(task).members.flow.entries` 内のflow inspect用語彙として扱い、`get_reference_tree` のtraversal対象には含めない。
+Flow wiring (`flow_step` / `flow_param` / `flow_branch_case` / `flow_foreach_over`) continues to be treated as flow-inspect vocabulary within `inspect(task).members.flow.entries`, and is not part of `get_reference_tree`'s traversal target.
 
-将来、flow wiringを影響分析に含める場合は、`get_reference_tree` のreference kind拡張、または `analyze_impact` 側の補完材料として扱う。
+If flow wiring is included in impact analysis in the future, it will be handled via a `get_reference_tree` reference-kind extension, or as supplementary material on the `analyze_impact` side.
 
----
+## Errors
+
+| code | condition |
+|---|---|
+| `invalid_depth` | `depth` outside `0..4`. |
+| `unsupported_direction` | `direction` value outside `out` / `in` / `both`. |
+| `unsupported_object` | Selector resolves to an object/kind marked `no` in the selector support matrix. |
+| `not_found` | Selector does not resolve to any object. |
+| `ambiguous` | Selector resolves to multiple candidates. |
+| `kind_mismatch` | Resolved kind does not match `selector.kind`. |
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.mcp.overview` | Parent overview; tool catalog and selection guidance. |
+| `spec:bpdsl.mcp.schema` | Selector support matrix, Reference shape. |
+| `spec:bpdsl.mcp.errors` | Error code catalog. |
+| `spec:bpdsl.mcp.tools.get_references` | Direct-references-only counterpart this tool extends with bounded traversal. |
+| `spec:bpdsl.mcp.tools.analyze_impact` | Adds change-kind-aware interpretation on top of raw traversal. |

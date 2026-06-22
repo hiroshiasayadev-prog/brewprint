@@ -121,6 +121,8 @@ When delegating, do not reply "ask someone else." Write a ready-to-run prompt th
 
 Always cross-check delegation results against docs / ADR / spec / user instructions and report any contradictions.
 
+**Model for review agents**: Do NOT use `model: "opus"` — the Agent tool's `"opus"` alias maps to Opus 4.8, which hallucinates (e.g. cites file contents it did not actually read, invents constraints). Use Opus 4.7 for independent spec reviews by giving the user a ready-to-run review prompt and asking them to run it externally (as done in T03). Never accept Opus review findings at face value regardless of model; always cross-check quoted text against the actual files before applying a fix.
+
 ## Judgment
 
 - Cross-check against: user / docs / ADR / spec / YAML.

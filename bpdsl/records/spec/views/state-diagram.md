@@ -1,49 +1,41 @@
----
-scope: docs/spec/views/state-diagram.md
-status: confirmed
-last_updated: 2026-04-24
-summary: >
-  State DiagramのrenderルールとMermaid出力仕様を定義する。
-  stateノード・eventノード・transitions:セクションを入力とし、
-  stateDiagram-v2形式のMermaidを生成するルールを記述する。
-depends_on:
-  - docs/adr/017-diagram-layers-and-scope.md
-  - docs/adr/018-event-node.md
-  - docs/adr/019-state-node.md
-  - docs/adr/035-fsm-guard-branch-and-transition-identification.md
----
+# Contract: State Diagram render rules
 
-# State Diagram renderルール
+- **id**: `spec:bpdsl.views.state_diagram`
+- **status**: draft
+- **date**: 2026-06-17
+- **parent**: `spec:bpdsl.views.overview`
+- **contract_class**: `format`
 
-## 対象ノード
+## What this is
 
-State Diagramに登場するノードは以下の2種のみ。
+Render rules and Mermaid output spec for the State Diagram. Takes `state` nodes, `event` nodes, and the `transitions:` section as input, and generates Mermaid in `stateDiagram-v2` form.
 
-| ノード | 役割 |
-|--------|------|
-| `state` | FSMの状態として描画 |
-| `event` | 遷移トリガーのラベルとして使用 |
+> Source: V01-ADR-017, V01-ADR-018, V01-ADR-019, V01-ADR-035
 
-`store` / `task` / `asset` 等はState Diagramに登場しない（V01-ADR-017）。
+## Current contract
 
----
+### Target nodes
 
-## renderスコープ
+Only two node kinds appear in a State Diagram:
 
-State DiagramはYAML**ファイル単位**で描画する。  
-1ファイル = 1FSM = 1枚の図。複数FSMを合成しない。
+| node | role |
+|---|---|
+| `state` | Drawn as an FSM state. |
+| `event` | Used as a transition-trigger label. |
 
----
+`store` / `task` / `asset` etc. do not appear in a State Diagram (V01-ADR-017).
 
-## stateの描画
+### Render scope
 
-### initial / final
+State Diagram renders at YAML **file granularity**. One file = one FSM = one diagram. Multiple FSMs are never composed into one diagram.
 
-| フィールド | Mermaid上の表現 |
-|-----------|----------------|
-| `initial: true` | `[*] --> <state-id>` として描画 |
-| `final: true` | `<state-id> --> [*]` として描画 |
-| どちらもなし | 通常のstate |
+### state rendering
+
+| field | Mermaid representation |
+|---|---|
+| `initial: true` | Drawn as `[*] --> <state-id>`. |
+| `final: true` | Drawn as `<state-id> --> [*]`. |
+| Neither | A normal state. |
 
 ```mermaid
 stateDiagram-v2
@@ -52,77 +44,60 @@ stateDiagram-v2
   error --> [*]
 ```
 
-### stateのラベル
+The state ID is shown as-is for its label. `note` is not output on the diagram (retained as LLM-facing semantic information).
 
-state IDをそのまま表示する。`note` は図上には出力しない（LLM向けのセマンティクス情報として保持）。
+### transition rendering
 
----
+Each entry in `transitions:` is drawn as one edge.
 
-## transitionの描画
+Edge label format:
 
-`transitions:` セクションの各エントリを1本のエッジとして描画する。
-
-### エッジラベルの構成
-
-エッジラベルは以下の形式で構成する：
-
-```
+```text
 <event-id> [<guard>] / <action>
 ```
 
-各要素の出力ルール：
-
-| 要素 | 出力条件 |
-|------|---------|
-| `<event-id>` | 常に出力（`on` フィールドの値） |
-| `[<guard>]` | `guard` フィールドがある場合のみ出力 |
-| `/ <action>` | `action` がクロスファイル参照（ドット区切り）の場合のみ出力。同一ファイル内参照は省略 |
-
-### クロスファイル参照の判定
-
-`action` フィールドの値にドット（`.`）が含まれる場合をクロスファイル参照とみなす。
-
-| action の値 | 判定 | ラベル出力 |
-|---|---|---|
-| `login_task` | 同一ファイル内参照 | 省略 |
-| `auth.task.login` | クロスファイル参照 | `/ auth.task.login` |
-
-### ラベルパターン例
-
-```
-login_submitted                                      ← guard/actionなし（同一ファイルactionまたはaction省略）
-login_submitted [retryCount < 3]                     ← guardのみ
-login_submitted / auth.task.login                    ← クロスファイルactionのみ
-login_submitted [retryCount < 3] / auth.task.login   ← guard + クロスファイルaction
-```
-
----
-
-## guard分岐の描画（choice pseudostate）
-
-同一 `(from, on)` に**複数のtransitionが存在する**場合、choice pseudostate（UML `<<choice>>`）を挿入して分岐を明示する（V01-ADR-035）。
-
-### 判定ルール
-
-| `(from, on)` 候補数 | 描画方式 |
+| element | output condition |
 |---|---|
-| 1件 | 通常の直接矢印（上記ラベルパターンに従う） |
-| 2件以上 | choice pseudostate経由で分岐 |
+| `<event-id>` | Always output (the `on` field value). |
+| `[<guard>]` | Output only if `guard` is present. |
+| `/ <action>` | Output only if `action` is a cross-file reference (dot-separated). Omitted for a same-file reference. |
 
-FSMパーサーは、同一 `(from, on)` に複数transitionが存在する場合、全エントリに `guard` があることを保証する（V01-ADR-019, V01-ADR-035）。guardなしと混在している場合はパーサーエラー。
+Cross-file determination: an `action` value containing a dot (`.`) is treated as a cross-file reference.
 
-### choice pseudostateの生成ルール
+| `action` value | judgment | label output |
+|---|---|---|
+| `login_task` | Same-file reference | Omitted. |
+| `auth.task.login` | Cross-file reference | `/ auth.task.login` |
 
-- **ID命名**: `_choice_{from}_{on}` の形式で自動生成。ユーザーはYAMLで意識しない
-- **宣言位置**: `stateDiagram-v2` 直下の**冒頭ブロックにまとめて**出力する  
-  （Mermaid仕様：`state X <<choice>>` は使用前に宣言する必要があるため）
-- **入る矢印**: `from → _choice_xxx`、ラベルは **event IDのみ**（guardは付けない）
-- **出る矢印**: `_choice_xxx → to`、ラベルは **`[guard文字列]` のみ**（event IDは付けない）
-- actionがあるtransitionの `/ action` は、choiceから出る矢印側に付与する（クロスファイル参照のみ）
+Label pattern examples:
 
-### 出力例
+```text
+login_submitted                                      ← no guard/action (same-file action or omitted)
+login_submitted [retryCount < 3]                     ← guard only
+login_submitted / auth.task.login                    ← cross-file action only
+login_submitted [retryCount < 3] / auth.task.login   ← guard + cross-file action
+```
 
-**入力YAML（抜粋）：**
+### Guard-branch rendering (choice pseudostate)
+
+When **multiple transitions exist for the same `(from, on)`**, a choice pseudostate (UML `<<choice>>`) is inserted to make the branch explicit (V01-ADR-035).
+
+| `(from, on)` candidate count | render method |
+|---|---|
+| 1 | Normal direct arrow (follows the label pattern above). |
+| 2+ | Branches via choice pseudostate. |
+
+When multiple transitions exist for the same `(from, on)`, the FSM parser guarantees all entries have a `guard` (V01-ADR-019, V01-ADR-035). Mixing guard-present and guard-absent entries is a parser error.
+
+Choice pseudostate generation rule:
+
+- **ID naming**: Auto-generated as `_choice_{from}_{on}`. Authors never write this in YAML.
+- **Declaration position**: Emitted together in a leading block directly under `stateDiagram-v2` (Mermaid requires `state X <<choice>>` to be declared before use).
+- **Incoming arrow**: `from → _choice_xxx`, labeled with **the event ID only** (no guard).
+- **Outgoing arrow**: `_choice_xxx → to`, labeled with **`[guard string]` only** (no event ID).
+- A transition's `/ action` (cross-file reference only) is attached to the outgoing arrow from the choice.
+
+Example input YAML (excerpt):
 
 ```yaml
 transitions:
@@ -138,7 +113,7 @@ transitions:
     guard: "payload.status == 'failed'"
 ```
 
-**期待するMermaid出力（該当部分のみ抜粋）：**
+Expected Mermaid output (relevant excerpt):
 
 ```mermaid
 stateDiagram-v2
@@ -149,24 +124,22 @@ stateDiagram-v2
   _choice_processing_payment_webhook_received --> failed : [payload.status == 'failed']
 ```
 
-冒頭の `state _choice_xxx <<choice>>` 宣言を後置するとdiamond形状にならず通常ノードとして描画されるため、**必ず冒頭ブロックに集約する**。
+If the leading `state _choice_xxx <<choice>>` declaration is placed after use instead, Mermaid draws it as a normal node rather than a diamond — it **must always be collected into the leading block**.
 
----
+### Mermaid output image
 
-## Mermaid出力イメージ
-
-### YAMLの入力例
+Input YAML example:
 
 ```yaml
 nodes:
   - id: idle
     type: state
     initial: true
-    note: "ユーザーが操作していない状態"
+    note: "User is not interacting"
 
   - id: loading
     type: state
-    note: "認証リクエスト処理中"
+    note: "Processing the authentication request"
 
   - id: authenticated
     type: state
@@ -175,7 +148,7 @@ nodes:
   - id: error
     type: state
     final: true
-    note: "認証エラー状態"
+    note: "Authentication error state"
 
   - id: session_expired
     type: state
@@ -189,12 +162,12 @@ nodes:
   - id: login_succeeded
     type: event
     source: internal
-    note: "auth.task.login 成功時にFSM runtimeが発火"
+    note: "Fired by FSM runtime on auth.task.login success"
 
   - id: login_failed
     type: event
     source: internal
-    note: "auth.task.login 失敗時にFSM runtimeが発火"
+    note: "Fired by FSM runtime on auth.task.login failure"
 
   - id: session_timeout
     type: event
@@ -205,12 +178,12 @@ transitions:
   - from: idle
     on: login_submitted
     to: loading
-    action: login_task              # 同一ファイル内 → ラベル省略
+    action: login_task              # same file → label omitted
 
   - from: session_expired
     on: login_submitted
     to: loading
-    action: auth.task.reauth        # クロスファイル → ラベル表示
+    action: auth.task.reauth        # cross-file → label shown
 
   - from: loading
     on: login_succeeded
@@ -226,7 +199,7 @@ transitions:
     to: session_expired
 ```
 
-### 期待するMermaid出力
+Expected Mermaid output:
 
 ```mermaid
 stateDiagram-v2
@@ -241,14 +214,12 @@ stateDiagram-v2
   authenticated --> session_expired : session_timeout
 ```
 
----
-
-## 出力フォーマット
+### Output format
 
 ````markdown
-# {ファイルID}
+# {file ID}
 
-{ファイルのnote（あれば）}
+{file-level note, if any}
 
 ```mermaid
 stateDiagram-v2
@@ -259,28 +230,40 @@ stateDiagram-v2
 
 | state | note |
 |-------|------|
-| idle | ユーザーが操作していない状態 |
+| idle | User is not interacting |
 | loading | — |
 
 ## Events
 
 | event | source | actor | note |
 |-------|--------|-------|------|
-| login_submitted | ui | - | ログインフォームのsubmit |
+| login_submitted | ui | - | Login form submit |
 | login_succeeded | internal | - | — |
 | login_failed | internal | - | — |
 | session_timeout | external | scheduler | — |
 ````
 
-- H1 = ファイルID
-- 説明文 = ファイルレベルの `note`。ない場合は省略
-- **States表** = `type: state` の全ノード。`note` がない場合は `—`
-- **Events表** = `type: event` の全ノード。`source` / `actor` / `note` を列挙。`actor` は `source=external` のみ記載、それ以外は `—`。`note` がない場合は `—`
-- Mermaid記法: `stateDiagram-v2`
+- H1 = file ID.
+- Description text = the file-level `note`; omitted if absent.
+- **States table** = all `type: state` nodes; `—` if `note` is absent.
+- **Events table** = all `type: event` nodes, listing `source` / `actor` / `note`. `actor` is shown only for `source=external`; otherwise `—`. `—` if `note` is absent.
+- Mermaid notation: `stateDiagram-v2`.
 
----
+## Rules
 
-## 図の生成元
+State Diagram is generated by brewprint's MCP tool (`render_state_diagram`) after loading the YAML. Hand-written Mermaid never exists for this view.
 
-State DiagramはYAMLを読み込んだbrewprintのMCPツール（`render_state_diagram`）が生成する。  
-手書きのMermaid記述は存在しない。
+## Validation rules
+
+- Mixing guard-present and guard-absent transitions for the same `(from, on)` pair is a parser error.
+- The choice pseudostate's leading declaration must precede all uses in the emitted Mermaid; placing it after use produces an incorrect (non-diamond) render shape, not a parser error, but is treated as a renderer bug if it occurs.
+- `note` on `state` / `event` nodes never appears on the diagram itself — only in the Markdown States/Events tables.
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:bpdsl.views.overview` | Parent overview; view kind catalog. |
+| `spec:bpdsl.dsl.nodes.application` | `state` and `event` node definitions. |
+| `spec:bpdsl.dsl.edges.state_transitions` | `transitions:` section syntax this render consumes. |
+| `spec:bpdsl.dsl.edges.cross_file_refs` | Cross-file vs. same-file reference rule used for `/ <action>` label output. |
