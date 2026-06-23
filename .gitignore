@@ -2,3 +2,5 @@
 bin/
 memory/
 __pycache__
+tools/
+tmp.py
