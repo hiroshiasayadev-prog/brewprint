@@ -2,53 +2,69 @@
 
 - **id**: `spec:product.concepts.project_artifact_model.design_flow`
 - **status**: draft
-- **date**: 2026-06-22
+- **date**: 2026-06-23
 - **parent**: `spec:product.concepts.project_artifact_model`
 
 ## What this is
 
-Defines the source-of-truth flow and derivation relationships among design and implementation artifacts in the brewprint project.
+Defines source-of-truth and derivation relationships among design contracts, DSL definitions, source implementation, and target implementation.
+
+The target DSL-generated flow and the current handwritten bootstrap path are both represented.
 
 ## Design artifact flow
-
-The source-of-truth and derivation relationships among design / implementation artifacts are as follows.
 
 ```mermaid
 flowchart TD
   ADR["ADR<br/>Design decisions and rationale"]
-  SPEC["records/spec<br/>Canonical authority for current specs"]
-  INTERNAL["docs/internal-design<br/>Internal wiring / route"]
-  YAML["yaml/<br/>Brewprint DSL YAML<br/>Design model implementation source"]
-  RENDER["renders/<br/>Derived views"]
+  SPEC["records/spec<br/>Canonical design contracts"]
+  INTERNAL["internal design<br/>Implementation wiring / route"]
+  DSL["<app>/dsl<br/>BPDSL definitions<br/>Target implementation source"]
+  SRC["<app>/src<br/>Generated source or handwritten bootstrap"]
+  RENDER["renders<br/>Derived views"]
   IMPL["Target implementation"]
 
   ADR -->|"Basis for spec changes"| SPEC
   SPEC -->|"Constrains internal routes"| INTERNAL
-  SPEC -->|"Constrains DSL semantics"| YAML
-  INTERNAL -.->|"Supplements implementation mapping"| YAML
-  INTERNAL -.->|"Supplements implementation route"| IMPL
-  YAML -->|"render"| RENDER
-  YAML -->|"implementation source"| IMPL
+  SPEC -->|"Constrains DSL semantics"| DSL
+  INTERNAL -.->|"Supplements DSL mapping"| DSL
+  DSL -->|"generate"| SRC
+  DSL -->|"render"| RENDER
+  SPEC -.->|"bootstrap while DSL support is insufficient"| SRC
+  INTERNAL -.->|"Supplements handwritten route"| SRC
+  SRC -->|"build / package"| IMPL
 ```
 
 ## Source of truth roles
 
-| artifact | source of truth role |
+| artifact | source-of-truth role |
 |---|---|
-| `records/spec/` | Canonical authority for current design contracts |
-| `yaml/` | Primary implementation source for the target design model |
-| `docs/internal-design/` | Supplements the route from spec/YAML to target implementation (not an alternative source of truth) |
-| `renders/` | Views derived from YAML (not source of truth) |
-| target implementation | Implementation artifact built from YAML and internal design (not source of truth) |
+| `<app>/records/spec/` | Canonical authority for current design contracts. |
+| `<app>/dsl/` | Target implementation source when the app's DSL pipeline is operational. |
+| `<app>/src/` | Generated realization of DSL definitions, or handwritten bootstrap implementation while DSL support is insufficient. |
+| internal design | Supplements the route from spec semantics to DSL or source implementation. |
+| renders | Views derived from DSL definitions; not editable source of truth. |
+| target implementation | Executable or deployable realization built from source implementation; not canonical design authority. |
 
 ## Rules
 
-- `records/spec/` is the canonical authority for current design contracts.
-- `yaml/` is the primary implementation source for the target design model.
-- `docs/internal-design/` supplements the route from spec / YAML to target implementation; it is not an alternative source of truth for spec or YAML.
-- In the MVP, `docs/internal-design/` is not a semantic trace endpoint and its realization relation with spec is not operationalized.
-- External relation / assurance artifacts are not part of the MVP operational scope. If concrete needs for internal-design navigation, YAML trace, completeness / evidence / sign-off, or centrally managed relation sets arise, placement will be decided at that time.
+- Current design meaning is owned by `<app>/records/spec/`.
+- For an app with an operational DSL pipeline, `<app>/dsl/` is the target implementation source and `<app>/src/` is generated from it.
+- While DSL support is insufficient, implementation may be handwritten in `<app>/src/` directly from current specs and internal design.
+- Handwritten source is a bootstrap path, not an alternative authority for design contracts.
+- An app without DSL or implementation concerns may remain records-only.
+- Internal design supplements implementation routing. It does not replace spec or DSL authority.
+- Placement, directory requiredness, and bootstrap states are defined in `spec:product.concepts.repository_layout`.
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:product.concepts.repository_layout` | Normative records/dsl/src model, bootstrap states, and design-record placement. |
+| `spec:product.brewprint.layout` | Current Brewprint repository inventory. |
 
 ## Sources
 
-V01-ADR-083 §0, §1, §2, §6–§8; V01-ADR-084; V01-ADR-088; V01-INV-DOCS-002; V01-INV-DOCS-003
+- V01-ADR-083: Project artifact boundary and YAML as primary implementation source.
+- V01-ADR-097: App namespace-first repository directory layout.
+- V01-ADR-084 and V01-ADR-088: Traceability and MVP boundary.
+- V01-INV-DOCS-002 and V01-INV-DOCS-003: Deferred relation and internal-design scope.

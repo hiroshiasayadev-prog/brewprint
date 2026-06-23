@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.concepts.project_artifact_model`
 - **status**: draft
-- **date**: 2026-06-22
+- **date**: 2026-06-23
 - **parent**: `root`
 
 ## What this is
@@ -42,11 +42,12 @@ The group of artifacts representing the target system / design model and the pat
 
 | artifact | role |
 |---|---|
-| `<namespace>/records/spec/` | Canonical authority for current design specifications |
-| `docs/internal-design/` | Internal wiring / route from spec to implementation |
-| `yaml/` | Primary implementation source for the target design model in brewprint DSL |
-| `renders/` | Human / AI readable views derived from brewprint DSL YAML |
-| target implementation | Implementation artifact of the target system built from YAML and internal design |
+| `<namespace>/records/spec/` | Canonical authority for current design specifications. |
+| internal design | Internal wiring / route from spec semantics to implementation. |
+| `<namespace>/dsl/` | Target implementation source when the app's DSL pipeline is operational. |
+| `<namespace>/src/` | Generated source, or handwritten bootstrap implementation while DSL support is insufficient. |
+| renders | Human / AI readable views derived from DSL definitions. |
+| target implementation | Executable or deployable realization built from source implementation. |
 
 ### Decision, discovery, and execution artifacts
 
@@ -82,7 +83,9 @@ The `docs/internal-design/` layer continues to exist, but the `internal-design:`
 | concern | current owner | note |
 |---|---|---|
 | Existence, responsibilities, and relationships of artifact layers | This concept spec | Map of the project artifact system |
-| Current design specifications | `<namespace>/records/spec/**` | Follows spec-first policy |
+| Current design specifications | `<namespace>/records/spec/**` | Follows spec-first policy. |
+| Repository layout contract | `spec:product.concepts.repository_layout` | Owns records/dsl/src concerns, bootstrap states, and design-record placement. |
+| Current Brewprint repository layout | `spec:product.brewprint.layout` | Inventory of directories currently present. |
 | Semantic ref / canonical reference / resolve / validation model | `product/records/spec/concepts/traceability/**` | Leaf specs of the canonical reference foundation |
 | Design Records MCP record / tool contracts | `drmcp/records/spec/design-records-mcp/**` | |
 | ADR authoring | guide ID `adr-authoring` | Design Records MCP authoring guidance |
@@ -104,6 +107,8 @@ After authoring guidance canonicalization, investigation format / lifecycle auth
 |---|---|
 | Responsibilities and relationships of all artifacts | This document |
 | Details of semantic ref / canonical reference / validation | `spec:product.concepts.traceability` |
+| Repository layout contract | `spec:product.concepts.repository_layout` |
+| Current Brewprint repository inventory | `spec:product.brewprint.layout` |
 | Rationale for this boundary | V01-ADR-081, V01-ADR-083, V01-ADR-085–V01-ADR-088, V01-ADR-091 |
 | Design Records MCP record and tool contracts | `drmcp/records/spec/` — *(planned; drmcp spec not yet canonicalized)* |
 | Internal-design layer artifacts and authoring guidance | no canonical path yet — *(planned; will be decided when `internal-design:` activation is triggered)* |

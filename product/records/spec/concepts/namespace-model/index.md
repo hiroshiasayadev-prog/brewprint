@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.concepts.namespace_model`
 - **status**: draft
-- **date**: 2026-06-22
+- **date**: 2026-06-23
 - **parent**: `root`
 
 ## What this is
@@ -27,7 +27,8 @@ What this spec does not own:
 - Machine-readable namespace registry formal schema, file format, or conversion implementation to physical placement
 - Machine-readable namespace registry formal schema, file format, or physical placement
 - Implementation specifications for namespace-aware MCP APIs
-- Physical directory layout specifications and migration plans (see the repository layout spec)
+- Repository directory concerns, requiredness, and placement contracts (see `spec:product.concepts.repository_layout`)
+- Current Brewprint repository inventory (see `spec:product.brewprint.layout`)
 
 ## Current placement and future layout
 
@@ -40,7 +41,9 @@ Intended future operational placement:
 
 Defining this formal schema and placement is outside the scope of this spec and is treated as a separate requirement/specification.
 
-The **physical directory structure of the repository itself** (app namespace-first layout) is defined in the repository layout spec.
+The normative repository layout model, including `records/`, `dsl/`, `src/`, and design-record placement, is defined in `spec:product.concepts.repository_layout`.
+
+The currently observed Brewprint repository tree is recorded in `spec:product.brewprint.layout`.
 
 ## App namespace and domain namespace
 

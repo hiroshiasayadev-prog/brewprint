@@ -5,23 +5,21 @@
 - repo root: `C:\Users\imved\projects\brewprint`
 - v01 records (read-only snapshot): `v01/records/`
 
-#### Active namespaces
+#### Canonical namespace and layout sources
 
-`product`, `drmcp`, `bpdsl`
+- Namespace model: `spec:product.concepts.namespace_model`
+- Repository layout contract: `spec:product.concepts.repository_layout`
+- Current Brewprint repository inventory: `spec:product.brewprint.layout`
 
-Each namespace uses this layout under `<namespace>/records/`:
+Resolve active namespaces and current placement rules from these canonical specs before creating or moving records.
 
-| directory | contents |
-|---|---|
-| `spec/` | Specifications, organized by topic area under `concepts/` |
-| `adr/` | Architecture decision records |
-| `investigations/<domain>/` | Investigation records by domain |
-| `requirements/` | Requirement records |
-| `work-items/<domain>/` | Work item records by domain |
-| `tasks/<domain>/` | Task records by domain |
-| `guides/` | Authoring guides |
+Filesystem fallback paths:
 
-New REQ / WORK / TASK / ADR must be created under an active namespace. Creating new files under `v01/records/` is prohibited.
+- `product/records/spec/concepts/namespace-model/index.md`
+- `product/records/spec/concepts/repository-layout/index.md`
+- `product/records/spec/brewprint/layout/index.md`
+
+New records must be created under an active app namespace. Creating new files under `v01/records/` is prohibited.
 
 ### Startup
 
