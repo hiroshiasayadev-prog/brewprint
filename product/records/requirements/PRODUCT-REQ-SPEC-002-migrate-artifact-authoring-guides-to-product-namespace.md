@@ -1,11 +1,13 @@
 # PRODUCT-REQ-SPEC-002: Migrate artifact authoring guides to product namespace
 
 - **id**: PRODUCT-REQ-SPEC-002
-- **status**: captured
-- **date**: 2026-06-15
+- **status**: accepted
+- **date**: 2026-06-23
 - **source_refs**:
   - PRODUCT-INV-SPEC-003
 - **work_items**:
+  - PRODUCT-WORK-SPEC-010
+  - PRODUCT-WORK-SPEC-011
 
 ## Requirement
 
@@ -17,6 +19,8 @@ Artifact authoring guides in `v01/records/guides/` use the v01 format and predat
 - v01 guides predate the v0.2.0 namespace model (product / drmcp / bpdsl / app). Authoring rules that are namespace-sensitive have no product-side documentation.
 - `v01/records/guides/` is a read-only snapshot and cannot be updated to reflect product namespace rules.
 - The app namespace is a v0.2.0 concept with no v01 counterpart; authoring rules for app-namespace artifacts are undocumented.
+- PRODUCT-WORK-SPEC-010 (writing standard) completed.
+- PRODUCT-WORK-SPEC-011 (per-artifact authoring guides) completed. Published guides for ADR, requirement, work item, task, and investigation under `spec:product.concepts.authoring_standards`; spec-authoring coverage at `product/records/guides/spec-authoring.md` verified complete.
 
 ## Required Outcome
 

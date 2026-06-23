@@ -11,7 +11,7 @@ Defines the DRMCP-specific index inclusion conditions per record kind. Kind-leve
 
 ## Current contract
 
-Path-pattern conventions by kind are defined in `spec:product.concepts.repository_layout.record_discovery_paths`. Note: the `decision` kind pattern was corrected to `<records_root>/adr/<namespace_prefix>ADR-*.md` in that spec — the prior `*.md` glob was a legacy artifact from the pre-migration DRMCP spec.
+Path-pattern conventions by kind are defined in `spec:product.concepts.repository_layout.record_discovery_paths`. New `decision` records use a domain subdirectory like other domain-scoped sequential artifacts: `<records_root>/adr/<domain>/<namespace_prefix>ADR-*-*.md`. Existing flat ADR records remain supported through the compatibility pattern `<records_root>/adr/<namespace_prefix>ADR-*.md`.
 
 DRMCP-specific index inclusion conditions:
 

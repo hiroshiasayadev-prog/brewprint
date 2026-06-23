@@ -13,15 +13,17 @@ Defines the v2 artifact ID grammar, sequence format, and mapping rule from exist
 
 The ID format for new artifacts is as follows.
 
-**REQ / WORK / INV:**
+**REQ / WORK / INV / ADR:**
 
 ```
 <APP_NAMESPACE>-<ARTIFACT_KIND>-<DOMAIN_NAMESPACE>-<SEQUENCE>
 ```
 
-Examples: `DRMCP-REQ-MCP-033`, `BPDSL-WORK-DATA-016`, `PRODUCT-REQ-NAMESPACE-003`
+Examples: `DRMCP-REQ-MCP-033`, `BPDSL-WORK-DATA-016`, `PRODUCT-REQ-NAMESPACE-003`, `DRMCP-ADR-MCP-001`
 
 > **Note**: The domain namespace tokens shown here (`MCP`, `DATA`, `NAMESPACE` etc.) are examples. Subdomains are not included as segments in the v2 ID grammar. For subdomain grouping definitions, see `spec:product.concepts.namespace_model.subdomain_model`.
+
+> **ADR note**: Existing ADRs retain `V01-ADR-NNN` per V01-ADR-099. The prior decision to maintain a global `ADR-NNN` sequence is superseded by V01-ADR-099, which adopts unified v2 grammar across all artifact kinds (including ADR) to remove form-branching logic in UI / MCP.
 
 **TASK:**
 
@@ -31,17 +33,21 @@ Examples: `DRMCP-REQ-MCP-033`, `BPDSL-WORK-DATA-016`, `PRODUCT-REQ-NAMESPACE-003
 
 Examples: `BPDSL-TASK-DATA-016-01`, `PRODUCT-TASK-NAMESPACE-002-01`
 
-**ADR:**
-
-ADRs maintain the current sequential format (`ADR-NNN`). ADRs are a chronological record of design decisions, and overall sequential reference takes priority over domain attribution. If the need to separate app-specific ADRs arises, it will be decided in a separate ADR.
-
 ## Sequence format
 
 | artifact | sequence format | example |
 |---|---|---|
-| REQ / WORK / INV | 3-digit zero-padded | `001`, `016` |
+| REQ / WORK / INV / ADR | 3-digit zero-padded | `001`, `016`, `099` |
 | TASK WORK_SEQUENCE | Inherits the parent WORK's 3-digit number | `016` |
 | TASK TASK_SEQUENCE | 2-digit zero-padded | `01`, `12` |
+
+For REQ, WORK, INV, and ADR, sequence allocation is scoped by:
+
+```text
+app namespace + artifact kind + domain namespace
+```
+
+TASK sequence allocation is scoped by its parent Work Item.
 
 ## Mapping rule from existing IDs
 

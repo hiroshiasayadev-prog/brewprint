@@ -13,12 +13,14 @@ Defines the path-pattern conventions for discovering record files within a `reco
 
 | kind | path pattern |
 |---|---|
-| `decision` | `<records_root>/adr/<namespace_prefix>ADR-*.md` |
+| `decision` | `<records_root>/adr/*/<namespace_prefix>ADR-*-*.md` |
 | `spec` | `<records_root>/spec/**/*.md` |
 | `investigation` | `<records_root>/investigations/*/<namespace_prefix>INV-*-*.md` |
 | `requirement` | `<records_root>/requirements/*/<namespace_prefix>REQ-*-*.md` |
 | `work_item` | `<records_root>/work-items/*/<namespace_prefix>WORK-*-*.md` |
 | `task` | `<records_root>/tasks/*/<namespace_prefix>TASK-*-*.md` |
+
+New ADRs use the domain-subdirectory pattern in the table. Existing flat ADR records remain discoverable through the compatibility pattern `<records_root>/adr/<namespace_prefix>ADR-*.md`.
 
 `<namespace_prefix>` is derived from the `records_root` per `spec:product.concepts.namespace_model.v1_namespace_algorithm`.
 

@@ -30,12 +30,14 @@ DRMCP indexes the following record kinds. Paths are relative to `<records_root>`
 
 | kind | discovery path | public ID example (`namespace_prefix = V01-`) |
 |---|---|---|
-| `decision` | `<records_root>/adr/*.md` | `V01-ADR-076` |
+| `decision` | `<records_root>/adr/<domain>/<namespace_prefix>ADR-*-*.md` | `V01-ADR-076` |
 | `spec` | `<records_root>/spec/**/*.md` (files with `design_record.id` + `design_record.kind` only) | `V01-SPEC-design-records-mcp-overview` |
 | `investigation` | `<records_root>/investigations/<domain>/<namespace_prefix>INV-*-*.md` | `V01-INV-MCP-001` |
 | `requirement` | `<records_root>/requirements/<domain>/<namespace_prefix>REQ-*-*.md` | `V01-REQ-MCP-001` |
 | `work_item` | `<records_root>/work-items/<domain>/<namespace_prefix>WORK-*-*.md` | `V01-WORK-DRMCP-001` |
 | `task` | `<records_root>/tasks/<domain>/<namespace_prefix>TASK-*-*.md` | `V01-TASK-MCP-001-01` |
+
+New ADRs use the domain-subdirectory path shown above. Existing flat V01 ADRs remain discoverable through the compatibility path `<records_root>/adr/<namespace_prefix>ADR-*.md`.
 
 Existing specs without a `design_record` block are not indexed; no `missing_design_record` diagnostic is issued for them. Legacy M-series task records are excluded from `task` discovery. The record kind set is not a closed enumeration — additional artifact kinds may be added by subsequent decisions. UC docs and impl notes are excluded from record kind indexing in MVP.
 
