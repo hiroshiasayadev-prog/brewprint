@@ -146,7 +146,7 @@ Relocated 4 deferred DRMCP sections to PRODUCT namespace. All deferred relocatio
 | -19 | `resolver.md` duplicated resolver semantics | — | Trimmed to pointer → `spec:product.concepts.traceability.resolve_and_validation`; DRMCP-specific sections retained |
 | -19 | drift guards | `traceability/resolve-and-validation.md` | Already present from WORK-009; no edits needed |
 
-ADR discovery pattern corrected during -20 review: `<records_root>/adr/*.md` → `<records_root>/adr/<namespace_prefix>ADR-*.md` in `record-discovery-paths.md` (legacy artifact from pre-migration DRMCP spec, not the intended format).
+ADR discovery pattern was corrected during -20 review from `<records_root>/adr/*.md` to the flat compatibility form `<records_root>/adr/<namespace_prefix>ADR-*.md`. PRODUCT-TASK-SPEC-011-08 later established domain-subdirectory placement for new ADRs while retaining the flat form for legacy compatibility.
 
 Independent Opus 4.7 review (PRODUCT-TASK-SPEC-005-20): **PASS** — 0 must-fix items, 2 defer items (stale `docs/spec/project-layout.md` path in `repository-layout/index.md`; task-spec wording on §MVP exclusions — implementation correct).
 

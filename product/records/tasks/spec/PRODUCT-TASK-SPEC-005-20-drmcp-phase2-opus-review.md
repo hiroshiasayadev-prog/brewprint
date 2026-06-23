@@ -49,7 +49,7 @@ Per Opus model policy (feedback memory): give user a ready-to-run Opus 4.7 promp
 
 2 defer items from Opus review (stale `docs/spec/project-layout.md` path refs in `repository-layout/index.md`; task-spec wording mismatch on §MVP exclusions — implementation correct). 2 additional corrections applied from user review:
 
-1. **ADR discovery pattern corrected**: `<records_root>/adr/*.md` → `<records_root>/adr/<namespace_prefix>ADR-*.md` in `record-discovery-paths.md`. The old glob was a legacy artifact from the pre-migration DRMCP spec; the intended format follows the same `<namespace_prefix>KIND-*` convention as all other kinds. Note added to `schema/discovery.md`.
+1. **Historical ADR discovery correction**: `<records_root>/adr/*.md` → `<records_root>/adr/<namespace_prefix>ADR-*.md` in `record-discovery-paths.md`. This was the accepted compatibility pattern at the time of this review. PRODUCT-TASK-SPEC-011-08 later established domain-subdirectory placement for new ADRs while retaining this flat pattern for legacy compatibility.
 2. **Hyphen in namespace_prefix**: confirmed correct — `namespace_prefix` includes the trailing hyphen (e.g. `V01-`), so `<namespace_prefix>INV-*-*.md` = `V01-INV-*-*.md`. No change needed.
 
 ### User sign-off
