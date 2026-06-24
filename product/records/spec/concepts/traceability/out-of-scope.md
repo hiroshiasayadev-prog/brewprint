@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.concepts.traceability.out_of_scope`
 - **status**: draft
-- **date**: 2026-06-22
+- **date**: 2026-06-23
 - **parent**: `spec:product.concepts.traceability`
 
 ## What this is
@@ -70,7 +70,7 @@ Out of scope:
 
 ## Workflow semantic prefixes and derived operations
 
-Requirement / work item / task become public record / resolver / declared relation validation targets of Design Records MCP via `REQ-*` / `WORK-*` / `TASK-*` ID-as-refs. However, the MVP does not define `requirement:` / `work-item:` / `task:` semantic prefixes.
+Requirement, work item, and task records are resolver and declared-relation validation targets through their complete public ID-as-refs. Existing issued records retain legacy public IDs; new records use canonical app-aware artifact IDs. The MVP does not define `requirement:` / `work-item:` / `task:` semantic prefixes.
 
 The following are outside MVP scope for workflow artifact support:
 
@@ -78,7 +78,7 @@ The following are outside MVP scope for workflow artifact support:
 - Projection deriving work item progress from task status
 - Workflow-dedicated traversal / tree / graph query tools
 - Task dependency cycle detection / execution order projection
-- `TASK-*` canonical references in investigation metadata
+- Task public ID-as-refs in investigation metadata
 
 These are not prerequisites for declared relation integrity validation or direct ID-as-ref resolution, and will be decided when concrete operational requirements are confirmed.
 
@@ -104,7 +104,7 @@ If writer tools are introduced, dry-run diff, user confirmation, conflict handli
 | external relation artifact | Central management of gap / evidence / sign-off / lifecycle becomes necessary |
 | `yaml:` activation | YAML entity refs / cross-layer trace becomes necessary |
 | fixture-level traceability | Long-term management of golden fixture and docs/spec correspondence becomes necessary |
-| workflow semantic prefix | Section-level addressing requirement emerges that `REQ-*` / `WORK-*` / `TASK-*` ID-as-refs cannot satisfy |
+| workflow semantic prefix | Section-level addressing requirement emerges that complete workflow public ID-as-refs cannot satisfy |
 | workflow orphan / progress / traversal capability | Concrete requirements for disconnected artifact diagnostics, status aggregation views, or dedicated graph traversal emerge |
 | MCP resolve contract refinement | Additional refinement of the adopted canonical reference / workflow relation validation contract becomes necessary |
 | MCP writer tools | Generating or updating canonical metadata via tools becomes necessary |
@@ -113,10 +113,10 @@ If writer tools are introduced, dry-run diff, user confirmation, conflict handli
 
 When future extensions are needed, the owners of requirements, decisions, progress, and contracts follow the existing artifact boundary.
 
-- Requirements / gaps / requests: `product/records/requirements/`
-- Decisions: `product/records/adr/`
-- Cross-cutting progress: `product/records/work-items/`
-- Concrete work: `product/records/tasks/`
+- Requirements / gaps / requests: `<app>/records/requirements/<domain>/`
+- Decisions: `<app>/records/adr/<domain>/`
+- Cross-cutting progress: `<app>/records/work-items/<domain>/`
+- Concrete work: `<app>/records/tasks/<domain>/`
 - Canonical reference / tool-independent trace contract: `product/records/spec/concepts/traceability/`
 - Internal design artifacts *(planned)*: no canonical path yet — placement will be decided when `internal-design:` activation is triggered
 - Implementation follow-up notes *(planned)*: `docs/impl/` is the current convention; canonical `<namespace>/records/` path not yet assigned

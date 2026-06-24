@@ -2,16 +2,16 @@
 
 - **id**: `spec:product.concepts.namespace_model`
 - **status**: draft
-- **date**: 2026-06-23
+- **date**: 2026-06-24
 - **parent**: `root`
 
 ## What this is
 
-Defines the app namespace and domain namespace model for brewprint, providing the foundation for v2 artifact ID grammar, namespace catalog, and future namespace-first layout migration.
+Defines the app namespace and domain namespace model for brewprint, providing the foundation for the artifact ID grammar, namespace catalog, and future namespace-first layout migration.
 
 ## Current contract
 
-Three app namespaces are active: `DRMCP`, `BPDSL`, `PRODUCT`. Each app namespace owns one or more domain namespaces. See `## Topics` child specs for domain catalog, subdomain model, v2 ID grammar, and existing artifact ownership.
+Three app namespaces are active: `DRMCP`, `BPDSL`, `PRODUCT`. Each app namespace owns one or more domain namespaces. See `## Topics` child specs for domain catalog, subdomain model, artifact ID grammar, and existing artifact ownership.
 
 ## Boundary
 
@@ -65,10 +65,9 @@ Current artifact IDs (`REQ-MCP-*` / `WORK-DATA-*`) are domain-first IDs from the
 | App namespaces | Reference | `spec:product.concepts.namespace_model.app_namespaces` | The three app namespaces (DRMCP, BPDSL, PRODUCT), their architecture overview, and domain namespace assignments. |
 | Domain catalog | Reference | `spec:product.concepts.namespace_model.domain_catalog` | Canonical domain namespace catalog and existing artifact prefixes outside the catalog. |
 | Subdomain model | Reference | `spec:product.concepts.namespace_model.subdomain_model` | Subdomain grouping model, representation, write-time advisory, and example. |
-| v2 grammar | Reference | `spec:product.concepts.namespace_model.v2_grammar` | v2 artifact ID grammar, sequence format, and mapping rule from existing IDs. |
-| Existing artifacts | Reference | `spec:product.concepts.namespace_model.existing_artifacts` | Namespace ownership of existing artifacts under V01-ADR-096. |
-| v1 namespace resolution algorithm | Reference | `spec:product.concepts.namespace_model.v1_namespace_algorithm` | namespace_prefix derivation formula, kind-level prefix table, and multi-root scan behavior. |
-| v1 record ID grammar | Reference | `spec:product.concepts.namespace_model.v1_id_grammar` | Public ID and bare ID grammar for v1 record kinds. |
+| Artifact ID grammar | Reference | `spec:product.concepts.namespace_model.artifact_id_grammar` | Canonical artifact ID grammar, sequence format, allocation scopes, and canonical-ref rule. |
+| Legacy ID compatibility | Reference | `spec:product.concepts.namespace_model.legacy_id_compatibility` | Issued V01-* legacy ID families, retention policy, and non-canonical status for new records. |
+| Existing artifacts | Reference | `spec:product.concepts.namespace_model.existing_artifacts` | Historical ownership under V01-ADR-096, effective app attribution, and new-artifact ownership policy. |
 
 ## Sources
 

@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.concepts.traceability.metadata_schema`
 - **status**: draft
-- **date**: 2026-06-22
+- **date**: 2026-06-23
 - **parent**: `spec:product.concepts.traceability`
 
 ## What this is
@@ -17,7 +17,7 @@ The metadata defined by this spec in the MVP is limited to:
 
 - `semantic_refs` / `sections` in spec front matter
 - Permitted forms and validation boundary for canonical references in investigation metadata
-- Validation boundary for declared `REQ-*` / `WORK-*` / `TASK-*` relations in workflow artifact metadata
+- Validation boundary for declared relations among complete requirement, work item, and task public IDs
 
 Internal-design relation metadata, coverage mapping YAML, and relation entry schemas are not defined in the MVP.
 
@@ -89,14 +89,16 @@ Workflow artifact inter-relations are declared via the following ID-as-ref field
 
 | source artifact | field | canonical target |
 |---|---|---|
-| requirement | `work_items` | `WORK-*` |
-| work item | `source_requirement` | `REQ-*` |
-| work item | `tasks` | `TASK-*` |
-| task | `work_item` | `WORK-*` |
-| task | `source_requirement` | `REQ-*` |
-| task | `depends_on` | `TASK-*` |
+| requirement | `work_items` | Complete work item public ID |
+| work item | `source_requirement` | Complete requirement public ID |
+| work item | `tasks` | Complete task public ID |
+| task | `work_item` | Complete work item public ID |
+| task | `source_requirement` | Complete requirement public ID |
+| task | `depends_on` | Complete task public ID |
 
-Workflow relations are read only from metadata ID-as-refs; parent relations are not inferred from physical paths or ID string structure. `req:` / `work:` / `task:` semantic prefixes are also not introduced.
+Workflow relations are read only from complete public ID-as-refs; parent relations are not inferred from physical paths or ID string structure. Bare kind forms are not accepted as external relation identities. `req:` / `work:` / `task:` semantic prefixes are also not introduced.
+
+Existing issued records retain their legacy public IDs. New workflow artifacts use `spec:product.concepts.namespace_model.artifact_id_grammar`.
 
 The MVP handles existence checks for the above fields and the following consistency checks for declared relations:
 
@@ -117,8 +119,8 @@ What this spec owns is the canonical reference rule based on V01-ADR-087 / V01-A
 - `source_refs` must use record ID-as-refs or active `spec:` semantic refs; recorded values must be resolvable
 - `follow_up_results`, when recorded, must use record ID-as-refs or active `spec:` semantic refs; recorded values must be resolvable
 - When artifact references are recorded in `follow_up_candidates`, canonical form must be used. Since they may point to not-yet-created artifact candidates, unresolved is not an error — it is surfaced as an `info` diagnostic
-- The workflow artifact ID-as-refs additionally usable by investigation metadata are limited to `REQ-*` / `WORK-*`
-- `TASK-*` is supported as a direct resolver input and in workflow artifact inter-relations, but is not included in investigation metadata canonical references. Appearance in `source_refs` / `follow_up_results` is an unsupported error; appearance in `follow_up_candidates` is unsupported info
+- The workflow artifact ID-as-refs additionally usable by investigation metadata are limited to complete requirement and work item public IDs
+- Complete task public IDs are supported as direct resolver inputs and workflow inter-relations, but are not included in investigation metadata canonical references. Appearance in `source_refs` / `follow_up_results` is an unsupported error; appearance in `follow_up_candidates` is unsupported info
 - Physical paths are not canonical references. Appearance in `source_refs` / `follow_up_results` is an error diagnostic; appearance in `follow_up_candidates` is an `info` diagnostic indicating a noncanonical candidate
 - Resolve/validation rules for `trigger` / `related_*` are defined in a subsequent contract
 
@@ -132,7 +134,7 @@ MVP validation is canonical reference validation and integrity validation of ID-
 - Match between `sections` values and actual headings
 - Canonicality and resolution of investigation `source_refs` / recorded `follow_up_results`
 - Canonical form of artifact references in investigation `follow_up_candidates` and `info` diagnostic for unresolved candidates
-- `REQ-*` / `WORK-*` permitted and `TASK-*` unsupported boundary in investigation metadata
+- Requirement and work item public IDs permitted, and task public IDs unsupported, in investigation metadata
 - Noncanonical diagnostic for physical paths: error for `source_refs` / `follow_up_results`, `info` for `follow_up_candidates`
 - Canonical target kind / resolution / declared bidirectional consistency of workflow relation fields
 

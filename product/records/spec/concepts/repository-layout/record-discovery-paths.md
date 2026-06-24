@@ -22,7 +22,7 @@ Defines the path-pattern conventions for discovering record files within a `reco
 
 New ADRs use the domain-subdirectory pattern in the table. Existing flat ADR records remain discoverable through the compatibility pattern `<records_root>/adr/<namespace_prefix>ADR-*.md`.
 
-`<namespace_prefix>` is derived from the `records_root` per `spec:product.concepts.namespace_model.v1_namespace_algorithm`.
+`<namespace_prefix>` is derived from the `records_root` per `spec:drmcp.design_records_mcp.namespace_scanning`.
 
 DRMCP-specific index inclusion conditions (e.g. whether a spec file is included based on its front-matter fields) are defined in `spec:drmcp.design_records_mcp.schema.discovery`.
 

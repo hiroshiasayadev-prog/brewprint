@@ -16,7 +16,7 @@ Catalogs the canonical domain namespaces assigned to each app namespace and the 
 | `DRMCP` | `MCP` | All tools, authoring, schema, and validation for Design Records MCP |
 | `BPDSL` | `DATA` | Data models, type system, rendering |
 | `BPDSL` | `RESOLVE` | Identity resolution, sub-node identity enforcement |
-| `PRODUCT` | `NAMESPACE` | Namespace model, catalog, v2 ID grammar |
+| `PRODUCT` | `NAMESPACE` | Namespace model, catalog, artifact ID grammar |
 | `PRODUCT` | `GOVERNANCE` | Cross-app governance (future) |
 | `PRODUCT` | `MIGRATION` | Migration policies (future) |
 

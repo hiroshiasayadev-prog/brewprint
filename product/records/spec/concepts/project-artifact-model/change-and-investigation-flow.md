@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.concepts.project_artifact_model.change_and_investigation_flow`
 - **status**: draft
-- **date**: 2026-06-22
+- **date**: 2026-06-23
 - **parent**: `spec:product.concepts.project_artifact_model`
 
 ## What this is
@@ -54,7 +54,7 @@ flowchart TD
 - Tasks own concrete work closeable in roughly 0.5–3 days and do not become the canonical authority for design decisions or current specs.
 - The canonical status of a task is held by each task artifact; work items do not manually replicate subordinate task completion state via checkboxes etc.
 - The execution-plan role previously called `milestone` is handled by work items in the new format. Milestones are not added as new artifact layers or canonical relations.
-- Persistent references between workflow artifacts use `REQ-*` / `WORK-*` / `TASK-*` ID-as-refs; physical paths are not supported canonical relations.
+- Persistent workflow relations use complete public requirement, work item, and task ID-as-refs. Existing issued records retain legacy public IDs; new records use canonical app-aware artifact IDs. Physical paths are not canonical relations.
 
 ## Sources
 

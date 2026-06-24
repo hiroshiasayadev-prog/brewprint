@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.concepts.traceability`
 - **status**: draft
-- **date**: 2026-06-22
+- **date**: 2026-06-23
 - **parent**: `root`
 
 ## What this is
@@ -24,9 +24,9 @@ Per V01-ADR-088 and V01-ADR-092, the goal of the MVP is not to pre-build a reali
 What the MVP covers:
 
 - Declaration, stability, and document/section resolution of `spec:` semantic refs
-- Resolution of `ADR-*` / `SPEC-*` / `INV-*` / `REQ-*` / `WORK-*` / `TASK-*` record ID-as-refs
-- Canonical reference resolution and unresolved errors for investigation `source_refs` and recorded `follow_up_results`. Additional workflow ID-as-ref support is limited to `REQ-*` / `WORK-*`
-- Canonical form check for artifact references in `follow_up_candidates`. Additional workflow ID-as-ref support limited to `REQ-*` / `WORK-*`; unresolved candidates are not required to exist
+- Resolution of complete public record ID-as-refs. Existing issued records retain legacy public IDs; new records use the namespace-aware v2 grammar
+- Canonical reference resolution and unresolved errors for investigation `source_refs` and recorded `follow_up_results`. Additional workflow ID-as-ref support is limited to requirement and work item public IDs
+- Canonical form checks for artifact references in `follow_up_candidates`. Additional workflow ID-as-ref support is limited to requirement and work item public IDs; unresolved candidates are not required to exist
 - Existence check and bidirectional consistency check for declared ID-as-ref relations between workflow artifacts
 - Boundary that excludes physical paths as canonical references
 
@@ -51,7 +51,7 @@ The MVP does not treat the following as operational mechanisms:
 - `spec:` → `internal-design:` realization mapping
 - YAML endpoint, fixture/golden traceability, coverage/evidence matrix
 - Workflow artifact orphan diagnostics, task-status-derived progress projection, workflow-dedicated traversal queries, task dependency cycle / execution order projection
-- `TASK-*` canonical reference support in investigation metadata
+- Task public ID-as-ref support in investigation metadata
 
 The `docs/internal-design/` artifact layer itself continues to exist. What is out of MVP scope is the contract for resolving and validating that layer as a semantic trace endpoint. External relation / assurance artifacts will be introduced with placement and responsibility decisions when the need is established; no directory is reserved in the MVP layout.
 
@@ -75,12 +75,13 @@ A stable ID pointing to a record artifact handled by Design Records MCP.
 
 ```text
 V01-ADR-088
-SPEC-<slug>
-V01-INV-DOCS-003
-V01-REQ-MCP-003
-V01-WORK-MCP-003
-V01-TASK-MCP-003-01
+DRMCP-INV-MCP-001
+DRMCP-REQ-MCP-002
+PRODUCT-WORK-SPEC-011
+PRODUCT-TASK-SPEC-011-08
 ```
+
+A record ID-as-ref always uses the complete public ID. Bare forms such as `REQ-...` are not external canonical references. New and migrated specs use path-derived `spec:` refs; legacy `SPEC-*` public IDs are compatibility-only.
 
 ### brewprint DSL YAML
 

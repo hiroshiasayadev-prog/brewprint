@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.concepts.traceability.semantic_ref`
 - **status**: draft
-- **date**: 2026-06-22
+- **date**: 2026-06-23
 - **parent**: `spec:product.concepts.traceability`
 
 ## What this is
@@ -28,7 +28,7 @@ spec:trace.resolve-and-validation
 spec:project-artifact-model
 ```
 
-Semantic refs and artifact ID-as-refs are distinct. `ADR-*` / `SPEC-*` / `INV-*` are ID-as-refs pointing to design record artifacts — they are not semantic ref prefixes like `spec:`. Per V01-ADR-088, `internal-design:` and `coverage:` are outside the MVP active scope and will be reconsidered together with future requirements.
+Semantic refs and record ID-as-refs are distinct. A record ID-as-ref is a complete public record ID, not a semantic prefix and not a bare kind form. Existing issued records retain legacy public IDs; new sequential records use `spec:product.concepts.namespace_model.artifact_id_grammar`. New and migrated specs use path-derived `spec:` refs, while legacy `SPEC-*` public IDs are compatibility-only. Per V01-ADR-088, `internal-design:` and `coverage:` are outside the MVP active scope and will be reconsidered with future requirements.
 
 Per V01-ADR-087, investigation `source_refs` and recorded `follow_up_results` use artifact ID-as-refs or semantic refs as canonical references depending on the target. Physical paths are not used as canonical references.
 

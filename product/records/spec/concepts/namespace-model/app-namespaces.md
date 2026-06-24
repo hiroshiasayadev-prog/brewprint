@@ -99,6 +99,6 @@ Responsible areas:
 
 | domain namespace | concern area | representative artifacts |
 |---|---|---|
-| `NAMESPACE` | Namespace model, catalog, v2 ID grammar | V01-REQ-PRODUCT-001 / V01-WORK-PRODUCT-001 |
+| `NAMESPACE` | Namespace model, catalog, artifact ID grammar | V01-REQ-PRODUCT-001 / V01-WORK-PRODUCT-001 |
 | `GOVERNANCE` | Cross-app governance rules (future) | — |
 | `MIGRATION` | Major-version migration policies (future) | — |

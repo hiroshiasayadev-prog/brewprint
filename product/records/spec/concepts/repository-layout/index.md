@@ -118,7 +118,7 @@ Not owned by this concept:
 |---|---|
 | `spec:product.brewprint.layout` | Current Brewprint repository inventory and observed app namespace states. |
 | `spec:product.concepts.namespace_model` | App and domain namespace semantics. |
-| `spec:product.concepts.namespace_model.v2_grammar` | Record ID grammar and sequence allocation scope. |
+| `spec:product.concepts.namespace_model.artifact_id_grammar` | Record ID grammar and sequence allocation scope. |
 | `spec:product.concepts.project_artifact_model.design_flow` | Design-to-DSL-to-source flow and bootstrap relationship. |
 | `spec:product.concepts.spec_format` | Path-derived identity and structure for spec records. |
 

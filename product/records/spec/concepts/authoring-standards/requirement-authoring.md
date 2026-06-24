@@ -30,7 +30,7 @@ This guide defines requirement IDs, paths, file shape, metadata, lifecycle, refe
 | Authors may use `<APP>-REQ-<DOMAIN>-new` when requesting automatic sequence allocation. | MAY |
 | Existing requirement IDs remain unchanged unless a separate migration decision requires changes. | MUST |
 
-The canonical grammar source is `spec:product.concepts.namespace_model.v2_grammar`.
+The canonical grammar source is `spec:product.concepts.namespace_model.artifact_id_grammar`.
 
 ### File path layout
 
@@ -174,7 +174,7 @@ Concrete tool contracts belong to DRMCP specs.
 | `spec:product.concepts.authoring_standards.writing_standard` | Design record prose rules. |
 | `spec:product.concepts.authoring_standards.artifact_boundary` | Authoring-time artifact selection boundary. |
 | `spec:product.concepts.project_artifact_model.artifact_responsibility_matrix` | Canonical artifact ownership. |
-| `spec:product.concepts.namespace_model.v2_grammar` | Requirement ID grammar. |
+| `spec:product.concepts.namespace_model.artifact_id_grammar` | Requirement ID grammar. |
 | `spec:product.concepts.repository_layout.record_discovery_paths` | Requirement discovery path rules. |
 | `spec:drmcp.design_records_mcp.schema.metadata_grammar` | Requirement metadata parsing grammar. |
 | `spec:drmcp.design_records_mcp.schema.authoring_transaction_schema` | Concrete authoring transaction contract. |

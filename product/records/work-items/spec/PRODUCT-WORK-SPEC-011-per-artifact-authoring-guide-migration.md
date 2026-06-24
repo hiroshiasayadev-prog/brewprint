@@ -7,7 +7,7 @@
 - **impact_refs**:
   - spec:product.concepts.authoring_standards
   - spec:product.concepts.project_artifact_model.artifact_responsibility_matrix
-  - spec:product.concepts.namespace_model.v2_grammar
+  - spec:product.concepts.namespace_model.artifact_id_grammar
 - **tasks**:
   - PRODUCT-TASK-SPEC-011-01
   - PRODUCT-TASK-SPEC-011-02
