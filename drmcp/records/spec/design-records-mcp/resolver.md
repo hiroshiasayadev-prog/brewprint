@@ -7,11 +7,11 @@
 
 ## What this is
 
-Defines DRMCP-specific resolver behavior: which tool exposes the resolver, which inputs return `unsupported`, and the lookup-source vs. record-kind boundary. The canonical reference model (supported input forms, MVP exclusions, validation scope) is owned by `spec:product.concepts.traceability.resolve_and_validation`.
+Defines DRMCP-specific resolver behavior: which tool exposes the resolver, which inputs return `unsupported`, and the lookup-source vs. record-kind boundary. The canonical reference model (supported input forms, MVP exclusions, validation scope) is owned by `spec:product.design_records.traceability.resolve_and_validation`.
 
 ## Current contract
 
-The canonical reference model — supported resolver inputs, workflow artifact ref handling, MVP exclusions, and validation scope — is defined in `spec:product.concepts.traceability.resolve_and_validation`.
+The canonical reference model — supported resolver inputs, workflow artifact ref handling, MVP exclusions, and validation scope — is defined in `spec:product.design_records.traceability.resolve_and_validation`.
 
 ### Public tool and unsupported inputs
 

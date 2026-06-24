@@ -9,7 +9,7 @@
 
 Records the current Brewprint repository layout.
 
-This file is an inventory reference, not the normative layout contract. Directory meaning, requiredness, record placement, and the DSL-to-source target are defined by `spec:product.concepts.repository_layout`.
+This file is an inventory reference, not the normative layout contract. Design Records directory meaning, requiredness, and record placement are defined by `spec:product.design_records.repository_layout`. The preserved DSL-to-source target is recorded in `spec:product.bpdsl.repository_implementation_flow`.
 
 ## Current app namespace layout
 
@@ -47,11 +47,12 @@ Root-level temporary, compatibility, or development files may exist. Their prese
 
 Update this reference when the observed repository tree changes materially.
 
-Do not define new required directories or generation semantics here. Change `spec:product.concepts.repository_layout` when the product contract changes.
+Do not define new required directories or generation semantics here. Change `spec:product.design_records.repository_layout` when the Design Records placement contract changes. BPDSL implementation-flow material remains under `spec:product.bpdsl.repository_implementation_flow` until BPDSL migration review.
 
 ## Related specs
 
 | ref | relation |
 |---|---|
-| `spec:product.concepts.repository_layout` | Normative `records/`, `dsl/`, `src/`, record placement, and DSL-to-source contract. |
-| `spec:product.concepts.namespace_model` | Active app and domain namespace semantics. |
+| `spec:product.design_records.repository_layout` | Normative Design Records `records/` placement contract. |
+| `spec:product.bpdsl.repository_implementation_flow` | Temporary preservation of the former `dsl/`, `src/`, and DSL-to-source model. |
+| `spec:product.design_records.namespace_model` | App-independent app and domain namespace semantics. |

@@ -5,9 +5,9 @@
 - **date**: 2026-06-22
 - **source_requirement**: PRODUCT-REQ-SPEC-002
 - **impact_refs**:
-  - spec:product.concepts.authoring_standards
-  - spec:product.concepts.project_artifact_model.artifact_responsibility_matrix
-  - spec:product.concepts.namespace_model.artifact_id_grammar
+  - spec:product.design_records.authoring_standards
+  - spec:product.design_records.artifact_model.artifact_responsibility_matrix
+  - spec:product.design_records.namespace_model.artifact_id_grammar
 - **tasks**:
   - PRODUCT-TASK-SPEC-011-01
   - PRODUCT-TASK-SPEC-011-02
@@ -31,7 +31,7 @@ The authoring boundary standard covers only DRMCP-managed design records:
 - work item
 - task
 
-It provides the minimum artifact-selection and ownership guidance needed before authoring. Canonical artifact ownership remains defined by `spec:product.concepts.project_artifact_model.artifact_responsibility_matrix`.
+It provides the minimum artifact-selection and ownership guidance needed before authoring. Canonical artifact ownership remains defined by `spec:product.design_records.artifact_model.artifact_responsibility_matrix`.
 
 Each per-artifact guide defines how authors should write that artifact. The guides do not document current DRMCP implementation status, migration gaps, follow-up work, or redesign plans.
 
@@ -47,7 +47,7 @@ Closes the per-artifact authoring scope of PRODUCT-REQ-SPEC-002.
 |---|---|---|
 | guide kind | Use `Reference` for the authoring boundary and all per-artifact guides. | These specs define fixed authoring rules, field semantics, lifecycle rules, and author-facing input requirements. They do not define an executable procedure. |
 | canonical artifact ownership | `spec:product.concepts.project_artifact_model.artifact_responsibility_matrix` remains the canonical ownership source. | The project artifact model covers the complete brewprint artifact system, including BPDSL and implementation-facing artifacts. |
-| authoring-time boundary projection | Add `spec:product.concepts.authoring_standards.artifact_boundary` as a lightweight projection for DRMCP-managed design records. | Authors need a small artifact-selection reference without loading the complete project artifact model. |
+| authoring-time boundary projection | Add `spec:product.design_records.authoring_standards.artifact_boundary` as a lightweight projection for DRMCP-managed design records. | Authors need a small artifact-selection reference without loading the complete project artifact model. |
 | projection authority | `artifact_boundary` summarizes the canonical responsibility matrix. It does not redefine canonical ownership. Conflicts are resolved in favor of the project artifact model. | This permits operational duplication without creating two equal sources of truth. |
 | per-artifact boundary | Each per-artifact guide cites `artifact_boundary` and records only kind-specific writing boundaries and commonly confused adjacent artifacts. | Full ownership matrices must not be copied into every guide. |
 | authoring standard scope | Authoring standards define how artifacts should be written. | Current implementation status, migration state, identified gaps, follow-up requirements, and redesign plans belong to other artifacts. |
@@ -98,7 +98,7 @@ Rules:
 
 ## Artifact boundary standard
 
-Create `spec:product.concepts.authoring_standards.artifact_boundary`.
+Create `spec:product.design_records.authoring_standards.artifact_boundary`.
 
 The standard covers:
 
@@ -215,8 +215,8 @@ Out of scope:
 
 | ref | impact |
 |---|---|
-| `spec:product.concepts.authoring_standards` | Add one shared boundary standard and five per-artifact guides. |
-| `spec:product.concepts.project_artifact_model.artifact_responsibility_matrix` | Referenced as canonical ownership source; no modification required unless review finds an actual canonical defect. |
+| `spec:product.design_records.authoring_standards` | Add one shared boundary standard and five per-artifact guides. |
+| `spec:product.design_records.artifact_model.artifact_responsibility_matrix` | Referenced as canonical ownership source; no modification required unless review finds an actual canonical defect. |
 | `spec:product.concepts.namespace_model.v2_grammar` | Correct new ADR grammar. |
 | `PRODUCT-REQ-SPEC-002` | Satisfy ADR, requirement, work item, task, and investigation authoring outcomes; verify spec coverage. |
 
@@ -247,7 +247,7 @@ Out of scope:
 ## Completion Condition
 
 - `spec:product.concepts.namespace_model.v2_grammar` defines the new ADR form as `<APP>-ADR-<DOMAIN>-<NNN>`.
-- `spec:product.concepts.authoring_standards.artifact_boundary` is published as a lightweight authoring-time projection.
+- `spec:product.design_records.authoring_standards.artifact_boundary` is published as a lightweight authoring-time projection.
 - The artifact boundary cites the canonical project artifact responsibility matrix.
 - The artifact boundary states precedence when the projection and canonical source conflict.
 - Five per-artifact Reference specs are published.
@@ -272,8 +272,8 @@ All completion conditions satisfied as of PRODUCT-TASK-SPEC-011-08.
 - `spec:product.concepts.namespace_model.v2_grammar` corrected for new ADR identifiers (`<APP>-ADR-<DOMAIN>-<NNN>`) in T01.
 
 **Authoring boundary standard:**
-- `spec:product.concepts.authoring_standards.artifact_boundary` published as a Reference spec in T02.
-- Cites `spec:product.concepts.project_artifact_model.artifact_responsibility_matrix` as the canonical ownership source.
+- `spec:product.design_records.authoring_standards.artifact_boundary` published as a Reference spec in T02.
+- Cites `spec:product.design_records.artifact_model.artifact_responsibility_matrix` as the canonical ownership source.
 - States precedence when the lightweight projection conflicts with the canonical source.
 - Covers all six DRMCP-managed design record kinds.
 - Excludes BPDSL YAML, render artifacts, internal design, and target implementation.

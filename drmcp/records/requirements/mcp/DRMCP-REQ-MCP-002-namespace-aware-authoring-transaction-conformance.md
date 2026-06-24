@@ -4,11 +4,11 @@
 - **status**: captured
 - **date**: 2026-06-23
 - **source_refs**:
-  - spec:product.concepts.authoring_standards
-  - spec:product.concepts.authoring_standards.adr_authoring
-  - spec:product.concepts.authoring_standards.investigation_authoring
-  - spec:product.concepts.namespace_model.artifact_id_grammar
-  - spec:product.concepts.repository_layout
+  - spec:product.design_records.authoring_standards
+  - spec:product.design_records.authoring_standards.adr_authoring
+  - spec:product.design_records.authoring_standards.investigation_authoring
+  - spec:product.design_records.namespace_model.artifact_id_grammar
+  - spec:product.design_records.repository_layout
   - PRODUCT-WORK-SPEC-011
 - **work_items**:
 
@@ -23,11 +23,11 @@ The redesigned contract must support namespace-aware IDs, generated placement, s
 ## Evidence
 
 - `PRODUCT-WORK-SPEC-011` defines shared and per-artifact authoring standards as the author-facing contract.
-- `spec:product.concepts.authoring_standards.adr_authoring` separates author-supplied values from generated H1 and file path values.
+- `spec:product.design_records.authoring_standards.adr_authoring` separates author-supplied values from generated H1 and file path values.
 - The ADR standard distinguishes create, partial update, and persisted metadata requirements.
 - The ADR standard defines `date` as the decision-validity date, not an automatic modification timestamp.
-- `spec:product.concepts.authoring_standards.investigation_authoring` defines conclusion readiness for Investigation records.
-- `spec:product.concepts.namespace_model.artifact_id_grammar` defines namespace-aware artifact IDs.
+- `spec:product.design_records.authoring_standards.investigation_authoring` defines conclusion readiness for Investigation records.
+- `spec:product.design_records.namespace_model.artifact_id_grammar` defines namespace-aware artifact IDs.
 - `DRMCP-REQ-MCP-001` explicitly excludes authoring routing and `suggest_next_record` replacement from its scope.
 
 ## Required Outcome

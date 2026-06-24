@@ -33,7 +33,7 @@ from pathlib import Path
 ACCEPTED_KINDS = {"Overview", "Index", "Concept", "Reference", "Contract"}
 CONTRACT_CLASSES = {"interface", "format"}
 
-# Section requirement matrix derived from spec:product.concepts.spec_format.document_shape
+# Section requirement matrix derived from spec:product.design_records.spec_format.document_shape
 # Values: "required" | "recommended" | "optional" | "prohibited"
 # Key: (section_heading, kind_key)
 # kind_key is one of: Overview Index Concept Reference Contract:interface Contract:format

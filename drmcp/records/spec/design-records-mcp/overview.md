@@ -45,7 +45,7 @@ Existing specs without a `design_record` block are not indexed; no `missing_desi
 
 ### Tool boundary
 
-Design Records MCP operates on a separate data source from the existing brewprint MCP. For the authoritative cross-app artifact model governing this boundary, see `spec:product.concepts.project_artifact_model`.
+Design Records MCP operates on a separate data source from the existing brewprint MCP. For the authoritative cross-app artifact model governing this boundary, see `spec:product.design_records.artifact_model`.
 
 | MCP | data source | primary responsibility |
 |---|---|---|

@@ -20,7 +20,7 @@ Artifact authoring guides in `v01/records/guides/` use the v01 format and predat
 - `v01/records/guides/` is a read-only snapshot and cannot be updated to reflect product namespace rules.
 - The app namespace is a v0.2.0 concept with no v01 counterpart; authoring rules for app-namespace artifacts are undocumented.
 - PRODUCT-WORK-SPEC-010 (writing standard) completed.
-- PRODUCT-WORK-SPEC-011 (per-artifact authoring guides) completed. Published guides for ADR, requirement, work item, task, and investigation under `spec:product.concepts.authoring_standards`; spec-authoring coverage at `product/records/guides/spec-authoring.md` verified complete.
+- PRODUCT-WORK-SPEC-011 (per-artifact authoring guides) completed. Published guides for ADR, requirement, work item, task, and investigation under `spec:product.design_records.authoring_standards`; spec-authoring coverage at `product/records/guides/spec-authoring.md` verified complete.
 
 ## Required Outcome
 

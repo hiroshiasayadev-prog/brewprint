@@ -7,11 +7,11 @@
 
 ## What this is
 
-Defines the DRMCP-specific index inclusion conditions per record kind. Kind-level path-pattern conventions have been relocated to `spec:product.concepts.repository_layout.record_discovery_paths` (Phase 2 relocation per PRODUCT-WORK-SPEC-004).
+Defines the DRMCP-specific index inclusion conditions per record kind. Kind-level path-pattern conventions have been relocated to `spec:product.design_records.repository_layout.record_discovery_paths` (Phase 2 relocation per PRODUCT-WORK-SPEC-004).
 
 ## Current contract
 
-Path-pattern conventions by kind are defined in `spec:product.concepts.repository_layout.record_discovery_paths`. New `decision` records use a domain subdirectory like other domain-scoped sequential artifacts: `<records_root>/adr/<domain>/<namespace_prefix>ADR-*-*.md`. Existing flat ADR records remain supported through the compatibility pattern `<records_root>/adr/<namespace_prefix>ADR-*.md`.
+Path-pattern conventions by kind are defined in `spec:product.design_records.repository_layout.record_discovery_paths`. New `decision` records use a domain subdirectory like other domain-scoped sequential artifacts: `<records_root>/adr/<domain>/<namespace_prefix>ADR-*-*.md`. Existing flat ADR records remain supported through the compatibility pattern `<records_root>/adr/<namespace_prefix>ADR-*.md`.
 
 DRMCP-specific index inclusion conditions:
 

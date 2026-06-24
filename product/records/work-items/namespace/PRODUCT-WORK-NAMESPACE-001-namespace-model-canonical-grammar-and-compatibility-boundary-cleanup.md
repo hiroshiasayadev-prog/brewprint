@@ -5,11 +5,12 @@
 - **date**: 2026-06-23
 - **source_requirement**: V01-REQ-PRODUCT-001
 - **impact_refs**:
-  - spec:product.concepts.namespace_model
-  - spec:product.concepts.namespace_model.artifact_id_grammar
-  - spec:product.concepts.namespace_model.legacy_id_compatibility
-  - spec:product.concepts.namespace_model.existing_artifacts
-  - spec:product.concepts.traceability.artifact_refs
+  - spec:product.design_records.namespace_model
+  - spec:product.design_records.namespace_model.artifact_id_grammar
+  - spec:product.brewprint.compatibility.legacy_id_compatibility
+  - spec:product.design_records.namespace_model.existing_artifacts
+  - spec:product.brewprint.compatibility.existing_artifacts
+  - spec:product.design_records.traceability.artifact_refs
   - spec:drmcp.design_records_mcp.namespace_scanning
   - spec:drmcp.design_records_mcp.schema.id_normalization
 - **tasks**:

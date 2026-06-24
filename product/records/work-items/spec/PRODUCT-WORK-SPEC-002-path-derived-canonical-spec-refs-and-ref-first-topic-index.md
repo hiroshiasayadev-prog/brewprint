@@ -44,8 +44,8 @@ This work exists because `spec-format` now treats location-derived refs as canon
 | dependency | reason |
 |---|---|
 | PRODUCT-WORK-SPEC-007 | Applies the corrected split spec-format contract that reframes this work item. |
-| `spec:product.concepts.spec_format.spec_id_as_ref` | Defines path-derived canonical refs and defers exceptional compatibility here. |
-| `spec:product.concepts.spec_format.topics_table` | Defines ref-first `## Topics` rows and ref-to-path resolution expectations. |
+| `spec:product.design_records.spec_format.spec_id_as_ref` | Defines path-derived canonical refs and defers exceptional compatibility here. |
+| `spec:product.design_records.spec_format.topics_table` | Defines ref-first `## Topics` rows and ref-to-path resolution expectations. |
 
 ## Done condition
 
