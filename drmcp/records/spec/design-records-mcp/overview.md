@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.overview`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-27
 - **parent**: `-`
 
 ## What this is
@@ -11,37 +11,40 @@ Design Records MCP is an auxiliary MCP server that supports operation of brewpri
 
 Primary objectives:
 
-- Build a record index for ADR / spec / investigation / requirement / work item / task.
-- Return structured record ID / kind / status / path and kind-specific metadata.
-- Return detail representations for a selected set of record IDs in one batch.
-- Detect basic metadata inconsistencies in records.
-- Resolve semantic/artifact refs between docs artifacts and enable broken-reference checking.
-- Allow an LLM in a separate session to narrow down which design records to read before reading their full body.
+- Build one active index over configured current records roots.
+- Cover ADR, spec, investigation, requirement, work-item, and task records.
+- Return query and retrieval projections under operation-specific contracts.
+- Retain source provenance for validation and repair.
+- Detect metadata and relation inconsistencies in records.
+- Resolve semantic and artifact refs under the resolver contract.
+- Allow an LLM to narrow the design records that require full-body reading.
 
-Design Records MCP does not replace spec-first documentation practice. The sole source of truth for current specifications remains `drmcp/records/spec/**`; ADRs are the authoritative record of design decisions. Design Records MCP is a query/validation layer that makes those relationships mechanically traversable.
+Design Records MCP does not replace spec-first documentation practice. Current specifications remain authoritative in each app namespace's `records/spec/**` tree. ADRs remain the authoritative record of design decisions. Design Records MCP makes those records mechanically discoverable and traversable.
 
-> Source: V01-ADR-076
+Historical source: V01-ADR-076. Current discovery and identity authority comes from `DRMCP-REQ-MCP-001`, W003 outputs, and the linked PRODUCT specifications.
 
 ## Current contract
 
 ### Record scope
 
-DRMCP indexes the following record kinds. Paths are relative to `<records_root>`; `records_root` and `namespace_prefix` are derived from the app namespace directory (see `spec:drmcp.design_records_mcp.namespace_scanning`).
+DRMCP builds one active index from explicit current-root configuration. Each entry pairs one `app_namespace` with its repository-relative `<app_namespace>/records` root. DRMCP does not auto-discover app directories or derive an app namespace from a path.
 
-| kind | discovery path | public ID example (`namespace_prefix = V01-`) |
+| kind | candidate path under `<records_root>` | current canonical identity |
 |---|---|---|
-| `decision` | `<records_root>/adr/<domain>/<namespace_prefix>ADR-*-*.md` | `V01-ADR-076` |
-| `spec` | `<records_root>/spec/**/*.md` (files with `design_record.id` + `design_record.kind` only) | `V01-SPEC-design-records-mcp-overview` |
-| `investigation` | `<records_root>/investigations/<domain>/<namespace_prefix>INV-*-*.md` | `V01-INV-MCP-001` |
-| `requirement` | `<records_root>/requirements/<domain>/<namespace_prefix>REQ-*-*.md` | `V01-REQ-MCP-001` |
-| `work_item` | `<records_root>/work-items/<domain>/<namespace_prefix>WORK-*-*.md` | `V01-WORK-DRMCP-001` |
-| `task` | `<records_root>/tasks/<domain>/<namespace_prefix>TASK-*-*.md` | `V01-TASK-MCP-001-01` |
+| `decision` | `adr/<domain>/<record_prefix>ADR-*-*.md`, plus the PRODUCT-defined flat ADR compatibility pattern | Complete app-aware artifact ID from H1. |
+| `spec` | `spec/**/*.md` | Path-derived canonical `spec:` ref. |
+| `investigation` | `investigations/<domain>/<record_prefix>INV-*-*.md` | Complete app-aware artifact ID from H1. |
+| `requirement` | `requirements/<domain>/<record_prefix>REQ-*-*.md` | Complete app-aware artifact ID from H1. |
+| `work_item` | `work-items/<domain>/<record_prefix>WORK-*-*.md` | Complete app-aware artifact ID from H1. |
+| `task` | `tasks/<domain>/<record_prefix>TASK-*-*.md` | Complete app-aware task ID from H1. |
 
-New ADRs use the domain-subdirectory path shown above. Existing flat V01 ADRs remain discoverable through the compatibility path `<records_root>/adr/<namespace_prefix>ADR-*.md`.
+PRODUCT repository-layout specifications own candidate path patterns. PRODUCT namespace and spec-format specifications own canonical identity semantics. DRMCP owns configured-root loading, parser mapping, source retention, and active-index construction.
 
-Existing specs without a `design_record` block are not indexed; no `missing_design_record` diagnostic is issued for them. Legacy M-series task records are excluded from `task` discovery. The record kind set is not a closed enumeration — additional artifact kinds may be added by subsequent decisions. UC docs and impl notes are excluded from record kind indexing in MVP.
+Current specs use H1-adjacent visible metadata. Their canonical identity comes from the configured app namespace and repository placement. Metadata `id` is a required consistency value. YAML front matter and legacy spec aliases are not active current metadata or identity inputs.
 
-> Source: V01-ADR-076, V01-ADR-087, V01-ADR-091, V01-ADR-092
+A candidate with one unique canonical ID remains addressable when other source content is invalid. A source without a determinable canonical ID remains validation-only. Duplicate canonical identity creates no winner. Current and optional legacy indexes remain separate operational scopes.
+
+Sources: `DRMCP-TASK-MCP-003-02`, `DRMCP-TASK-MCP-003-03`, `DRMCP-TASK-MCP-003-04`, and the PRODUCT authorities linked from their outputs.
 
 ### Tool boundary
 
@@ -50,9 +53,9 @@ Design Records MCP operates on a separate data source from the existing brewprin
 | MCP | data source | primary responsibility |
 |---|---|---|
 | brewprint MCP | `ResolvedProject` built from brewprint YAML | semantic object query / inspect / impact analysis |
-| Design Records MCP | bullet metadata in `adr/`, `investigations/`, `requirements/`, `work-items/`, `tasks/`; YAML front matter in `design_record`-bearing `spec/` files | design record / workflow artifact index / read / validation; semantic/artifact ref resolve per traceability spec |
+| Design Records MCP | Current Markdown records under explicitly configured app roots; H1-adjacent metadata; path-derived current spec identity; optional configured legacy archive sources in a separate index | Design record and workflow artifact discovery, indexing, read operations, validation execution, and reference resolution under their owning contracts |
 
-> Source: V01-ADR-076
+Normal list and exact-retrieval representation is owned by `DRMCP-WORK-MCP-004`. Diagnostic source-location and exceptional physical-path exposure are owned by `DRMCP-WORK-MCP-006`.
 
 ## Topics
 
@@ -60,7 +63,7 @@ Design Records MCP operates on a separate data source from the existing brewprin
 |---|---|---|---|
 | Responsibility boundary | Reference | `spec:drmcp.design_records_mcp.responsibility_boundary` | Boundary against existing brewprint MCP and against general-purpose filesystem tools. |
 | Resolver responsibility | Reference | `spec:drmcp.design_records_mcp.resolver` | Canonical reference model this MCP implements; resolver input/output scope and MVP required inputs. |
-| Namespace scanning | Reference | `spec:drmcp.design_records_mcp.namespace_scanning` | Multi-root scan behavior, namespace_prefix derivation, and kind-level prefix application. |
+| Namespace scanning | Reference | `spec:drmcp.design_records_mcp.namespace_scanning` | Explicit current-root configuration, app association, active-index construction, and current/legacy root separation. |
 | MVP scope | Reference | `spec:drmcp.design_records_mcp.mvp_scope` | P0/P1 tool set and items explicitly outside MVP. |
 | Schema | Overview | `spec:drmcp.design_records_mcp.schema.overview` | Record data model, metadata grammar, field definitions, ID normalization, discovery, and authoring schema. |
 | Tools | Overview | `spec:drmcp.design_records_mcp.tools.overview` | Full MCP tool set: read/navigation tools, authoring transaction tools, and shared response conventions. |
