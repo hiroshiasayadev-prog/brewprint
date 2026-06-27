@@ -1,8 +1,8 @@
 # DRMCP-WORK-MCP-006: Validation, diagnostics, and path-exposure contract realignment
 
 - **id**: DRMCP-WORK-MCP-006
-- **status**: not_started
-- **date**: 2026-06-27
+- **status**: in_progress
+- **date**: 2026-06-28
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **impact_refs**:
   - DRMCP-ADR-MCP-001
@@ -20,7 +20,8 @@
   - spec:drmcp.design_records_mcp.tools.list_records
   - spec:drmcp.design_records_mcp.tools.get_records
   - spec:drmcp.design_records_mcp.tools.validate_records
-- **tasks**: []
+- **tasks**:
+  - DRMCP-TASK-MCP-006-01
 
 ## Goal
 
@@ -32,7 +33,7 @@ Separate PRODUCT-owned semantic invalidity from DRMCP-owned validation execution
 
 This Work Item owns:
 
-- current active-index repository validation scope;
+- current repository validation over W003-retained current sources, addressable records, conflict groups, and active-index state;
 - current cross-namespace relation validation;
 - configured current-to-legacy relation validation;
 - behavior when a referenced legacy target is unavailable because fallback is disabled;
@@ -69,7 +70,7 @@ Diagnostic representation must not redefine those authorities.
 | `DRMCP-ADR-MCP-001` | Governs current validation scope, archive exclusion, and path hiding. |
 | `DRMCP-INV-MCP-002` | Supplies validation, diagnostic, and response-boundary findings. |
 | PRODUCT traceability and spec-format authorities | Supply semantic validity without defining DRMCP response representation. |
-| `DRMCP-WORK-MCP-003` | Supplies active-index, duplicate, and source-format outcomes. |
+| `DRMCP-WORK-MCP-003` | Supplies current source, addressable-record, validation-only source, duplicate-conflict, source-format, provenance, and active-index state. |
 | `DRMCP-WORK-MCP-004` | Supplies normal listing, retrieval, and operation warning boundaries. |
 | `DRMCP-WORK-MCP-005` | Supplies resolver outcomes and fallback states. |
 | `spec:drmcp.design_records_mcp.schema.diagnostics` | Correct common diagnostic representation and category ownership. |
@@ -81,8 +82,8 @@ Diagnostic representation must not redefine those authorities.
 
 | phase | dependency | outcome |
 |---|---|---|
-| A. Authority and affected-file confirmation | `DRMCP-WORK-MCP-003` through `DRMCP-WORK-MCP-005` | Confirm semantic authorities, operation inputs, and T07 exclusions. |
-| B. Validation execution contract | Phase A | Define current repository, cross-namespace, and current-to-legacy validation scope. |
+| A. Authority and affected-file confirmation | `DRMCP-WORK-MCP-003` through `DRMCP-WORK-MCP-005` | Confirm semantic authorities, operation inputs, and W007 exclusions. |
+| B. Validation execution contract | Phase A | Define current-source, current-record, conflict-state, cross-namespace, and current-to-legacy validation scope without validating legacy archive records as subjects. |
 | C. Diagnostic representation contract | Phases A-B | Define common machine-readable representation and semantic-invalidity mapping. |
 | D. Exceptional path-exposure contract | Phases A-C | Define source-location diagnostic, patch, debug, and emergency exposure without redefining W004-owned normal response hiding. |
 | E. Cross-spec synchronization and review | Phases B-D | Synchronize affected contracts, validate, review, correct, and close. |
@@ -93,17 +94,17 @@ Validation Work Item disposition proceeds through a separate cross-owner gate.
 
 | candidate | scope | dependency |
 |---|---|---|
-| T01 | Confirm affected specs, semantic authorities, W003-W005 inputs, and the T07 disposition boundary. | W003-W005 boundaries available. |
+| T01 | Confirm affected specs, semantic authorities, W003-W005 inputs, and the W007 disposition boundary. | W003-W005 boundaries available. |
 | T02 | Correct current repository and relation-validation execution contracts. | T01. |
 | T03 | Correct machine-readable diagnostic representation and semantic-invalidity mapping. | T01-T02. |
 | T04 | Correct source-location diagnostic, patch, debug, and emergency path-exposure exceptions while preserving W004-owned normal response hiding. | T02-T03. |
-| T05 | Synchronize contracts, confirm no T07 overlap, validate, review, correct, and close. | T04. |
+| T05 | Synchronize contracts, confirm no W007 overlap, validate, review, correct, and close. | T04. |
 
 ## Completion Condition
 
 This Work Item is complete when all of the following are true:
 
-- current repository validation operates on the active index only;
+- current repository validation consumes W003-retained current sources, addressable records, validation-only sources, conflict groups, and active-index state;
 - current cross-namespace relations resolve across configured current roots;
 - configured current-to-legacy relations have explicit validation behavior;
 - disabled legacy fallback produces an explicit diagnostic outcome;
@@ -112,7 +113,7 @@ This Work Item is complete when all of the following are true:
 - required failures have machine-readable diagnostics;
 - W004 remains the sole owner of physical-path hiding in normal listing and exact-retrieval responses;
 - W006 path exposure is limited to explicit source-location diagnostics, patch output, and debug or emergency surfaces;
-- T07 owns validation Work Item disposition and PRODUCT owner-pointer synchronization;
+- W007 owns DRMCP validation Work Item disposition; `PRODUCT-WORK-SPEC-015` owns PRODUCT validation-policy owner-pointer synchronization;
 - fixtures and implementation remain delegated;
 - all changed specs pass scoped validation;
 - independent review reports no blocking or major findings;
@@ -126,4 +127,21 @@ This Work Item is complete when all of the following are true:
 - `DRMCP-WORK-MCP-003` through `DRMCP-WORK-MCP-005`: Upstream contract owners.
 - `DRMCP-TASK-MCP-001-06`: Hub lifecycle gate for this Work Item.
 - 2026-06-27 planning-record correction: removed overlapping ownership of normal list and exact-retrieval path hiding; W004 remains the operation-response authority and W006 owns only exceptional path exposure.
-- Contract correction, validation, and independent-review evidence: pending Task execution.
+- `DRMCP-TASK-MCP-006-01` opened on 2026-06-28.
+  - Exact task-directory discovery found no existing `DRMCP-TASK-MCP-006-*` record.
+  - T01 records the authority matrix, W003-W005 ownership inputs, contradiction inventory, candidate changed-file manifest, recheck-only manifest, T02-T05 split, open design questions, and independent review prompt.
+  - T01 corrected the planning boundary from addressable active-index entries only to W003-retained current sources, records, conflict groups, and active-index state.
+  - Legacy archive records remain excluded as repository-validation subjects.
+  - No normative DRMCP spec changed during T01.
+  - T01 is `done`; its baseline is the accepted input to T02 through T05.
+- 2026-06-28 independent baseline review verdict: `NEEDS REVISION` with one minor finding, `F-MIN-01`.
+  - The finding identified four stale `T07` ownership labels in this Work Item.
+  - The four labels now identify `W007` as the DRMCP disposition boundary.
+  - The Completion Condition now separates `W007` ownership of DRMCP validation Work Item disposition from `PRODUCT-WORK-SPEC-015` ownership of the PRODUCT validation-policy owner-pointer update.
+  - Limited independent re-review verdict: `PASS`; `F-MIN-01` is closed with no remaining findings or advisories.
+  - External `git diff --check` passed for the T01 Task, this Work Item, and hub T06; the LF-to-CRLF message for this file is non-blocking.
+- T01 closure accepted on 2026-06-28.
+  - Authority, upstream ownership inputs, contradiction inventory, candidate manifests, and T02-T05 split are established.
+  - No normative DRMCP spec changed during T01.
+  - Repository-wide clean status was not asserted.
+- Contract correction, validation, and final independent-review evidence: pending T02 through T05.
