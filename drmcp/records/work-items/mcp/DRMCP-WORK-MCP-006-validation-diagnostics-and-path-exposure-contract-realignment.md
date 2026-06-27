@@ -22,6 +22,7 @@
   - spec:drmcp.design_records_mcp.tools.validate_records
 - **tasks**:
   - DRMCP-TASK-MCP-006-01
+  - DRMCP-TASK-MCP-006-02
 
 ## Goal
 
@@ -144,4 +145,39 @@ This Work Item is complete when all of the following are true:
   - Authority, upstream ownership inputs, contradiction inventory, candidate manifests, and T02-T05 split are established.
   - No normative DRMCP spec changed during T01.
   - Repository-wide clean status was not asserted.
+- `DRMCP-TASK-MCP-006-02` opened on 2026-06-28.
+  - Exact task-directory discovery confirmed that `DRMCP-TASK-MCP-006-01` was the only existing W006 child Task and that `DRMCP-TASK-MCP-006-02` did not exist.
+  - T02 owns the `validate_records` request, W003-retained validation-input selection, current cross-root relation execution, configured current-to-legacy relation execution, request-versus-diagnostic boundary, repository-validation wrapper, and `ok` execution semantics.
+  - D01 through D07 were accepted one at a time on 2026-06-28.
+  - Accepted request scopes are repository-wide empty request, one configured `app_namespace`, or one exact current canonical `ref`; `domain`, `kind`, `id_range`, legacy-ID, and physical-path selectors are excluded.
+  - Validation subjects are selected directly from W003-retained repository, app, or exact-ref state. Relation targets are looked up across all configured current roots or configured legacy lookup state but are not recursively added as validation subjects.
+  - Invalid mandatory current or configured legacy roots prevent trustworthy index construction and remain startup or execution failures; partial index validation is prohibited.
+  - Current relation existence uses exact repository-wide active-index lookup. Accepted legacy relations preserve disabled, unresolved, duplicate-conflict, unreadable, resolved, and unsupported distinctions as diagnostic inputs.
+  - Malformed scope requests and unresolved exact-ref selectors are request errors; source, record, duplicate, and relation invalidity after successful selection are validation diagnostics.
+  - The normal wrapper contains `ok`, effective `scope`, selected-subject `summary`, and one unified `diagnostics` collection. A separate validation `warnings` collection is not introduced.
+  - `tools/validate-records.md` was normatively realigned to the accepted T02 contract and now cites PRODUCT semantic authorities instead of copying obsolete V01 semantics.
+  - `schema/discovery.md` and `schema/record-model.md` were rechecked and require no T02 pointer change.
+  - T03 retains diagnostic envelope, category, severity, ordering, and deduplication ownership. T04 retains source-location and exceptional physical-path exposure ownership.
+  - External scoped strict validation passed for `tools/validate-records.md`: `[strict] All 1 file(s) OK.`
+  - External `git diff --check` passed for the two tracked T02 files: `tools/validate-records.md` and this Work Item.
+  - LF-to-CRLF warnings for those tracked files are non-blocking working-copy conversion notices.
+  - Targeted `git status --short` confirmed those two tracked modifications plus the untracked T02 Task.
+  - Independent review verdict: `NEEDS REVISION` with one minor finding, `F-MIN-01`.
+    - The normal tracked-file `git diff --check` did not inspect the untracked T02 Task.
+    - The earlier complete-manifest wording was corrected.
+  - `F-MIN-01` correction verification executed externally after the Evidence correction:
+    - tracked-file check returned `tracked_exit=0` with no whitespace error;
+    - untracked Task `git diff --no-index --check -- NUL <T02 Task>` returned `untracked_exit=1` with no whitespace error;
+    - exit code `1` is expected for a new file differing from `NUL`; no exit code `2` or greater occurred;
+    - targeted status remained two tracked modifications plus the untracked T02 Task.
+  - Limited independent re-review verdict: `PASS`.
+    - `F-MIN-01` is closed.
+    - No blocking, major, or minor findings remain.
+    - Recorded tracked and untracked whitespace evidence is sufficient.
+    - No regression was found in the normative contract or changed-file manifest.
+  - Review advisory `A-01` is carried into T03: kind-specific required metadata, lifecycle, and done-gated section diagnostics should cite the applicable authoring standards when category and severity behavior is defined.
+  - `DRMCP-TASK-MCP-006-02` closed as `done` on 2026-06-28.
+  - T02 supplies the accepted execution baseline to T03 and later W006 phases.
+  - Task and Work Item records are outside the strict spec-validator scope.
+  - No repository-wide clean working tree is inferred.
 - Contract correction, validation, and final independent-review evidence: pending T02 through T05.

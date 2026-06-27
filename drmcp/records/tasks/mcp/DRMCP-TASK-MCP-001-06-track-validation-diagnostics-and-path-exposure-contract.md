@@ -54,4 +54,10 @@ Selected child Work Item: `DRMCP-WORK-MCP-006`.
 
 The accepted T01 baseline supplies the authority matrix, W003-W005 ownership inputs, contradiction inventory, candidate manifests, and T02-T05 split.
 
+`DRMCP-TASK-MCP-006-02` closed on 2026-06-28 after defining the current repository and relation-validation execution contract.
+
+T02 established repository-wide, app-scoped, and exact-current-ref validation; W003-retained subject selection; current cross-root and configured legacy relation lookup; request, execution, and diagnostic boundaries; and the normal validation wrapper.
+
+The T02 limited re-review returned `PASS`, closed `F-MIN-01`, and left no blocking, major, or minor findings. Advisory `A-01` is delegated to T03.
+
 T06 remains `in_progress` until the child Work Item reaches `done`, its final independent review has no blocking or major finding, and the gate evidence is accepted here.
