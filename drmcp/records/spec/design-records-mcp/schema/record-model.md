@@ -2,59 +2,66 @@
 
 - **id**: `spec:drmcp.design_records_mcp.schema.record_model`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-27
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
 
 ## What this is
 
-Defines the internal record model and bootstrap record set for Design Records MCP.
+Defines how DRMCP retains discovered current sources and builds addressable active-index records.
 
 ## Current contract
 
-### Internal record model
+### Source retention
 
-The internal record model holds at least the following information:
+Every discovered current candidate retains source provenance:
 
-| field | source | meaning |
+| value | meaning |
+|---|---|
+| `app_namespace` | Configured app namespace for the current records root. |
+| `kind` | Record kind selected by the discovery path. |
+| `path` | Repository-relative Markdown source path. |
+
+The path is operational source data. Normal retrieval path exposure is owned by `DRMCP-WORK-MCP-004`; repair diagnostics are owned by `DRMCP-WORK-MCP-006`.
+
+### Index behavior
+
+| source state | active-index behavior | validation behavior |
 |---|---|---|
-| `id` | decision/investigation: H1; spec: `design_record.id` | Record ID |
-| `kind` | source kind; spec: `design_record.kind` | Record kind |
-| `title` | H1 | Human-readable title |
-| `status` | decision/investigation: bullet metadata; spec: top-level front matter | Record status |
-| `path` | Filesystem | Markdown file path |
-| `decision` | ADR bullet metadata | Decision-specific detail object |
-| `spec` | spec `design_record` metadata | Spec-specific detail object |
-| `investigation` | Investigation bullet metadata | Investigation-specific detail object |
-| `requirement` | Requirement bullet metadata | Requirement-specific detail object |
-| `work_item` | Work item bullet metadata | Work-item-specific detail object |
-| `task` | Task bullet metadata | Task-specific detail object |
-| `headings` | Markdown parse | Heading list for `get_record` |
-| `body` | Markdown file | Raw body; only fetched when requested by `get_record` or `get_records` |
+| One canonical ID is determined and all required content is valid. | Create a normal addressable record. | Validate normally. |
+| One canonical ID is determined but H1, metadata, or document content is invalid. | Keep the source addressable under that canonical ID. Preserve only values actually parsed; do not invent missing values. | Report the invalid source with provenance. |
+| No canonical ID can be determined. | Do not create an addressable record. | Retain the source path for validation and repair diagnostics. |
+| Multiple sources produce the same canonical ID. | Create no winner for that ID. Filesystem order must not choose one. | Retain every conflicting source path and report the conflict. |
 
-### get_records response item
+Unrelated valid records remain addressable when another source is invalid or conflicted.
 
-The `get_records` response item wrapper is not the record model itself. For a `retrieval_status: "found"` item, `record` returns the record model above. For a `retrieval_status: "not_found"` item, `record` is `null`. The retrieval-state field `retrieval_status` must not be conflated with the record lifecycle `status`.
+The canonical ID rules are defined by `spec:drmcp.design_records_mcp.schema.id_normalization`.
+The common and kind-specific parsed fields are defined by `spec:drmcp.design_records_mcp.schema.fields`.
 
-### Heading and body rules
+### Field availability
 
-`headings` covers ATX headings only. Lines beginning with `#` inside YAML front matter and fenced code blocks are not treated as headings. Setext headings are not handled in MVP.
+A valid record supplies every field required by PRODUCT authority for its kind.
+An invalid but addressable record may have missing or invalid fields.
 
-`body` is included only in the found record response of `get_record(include_body=true)` or `get_records(include_body=true)`. Body is returned verbatim without formatting, summarization, normalization, or truncation.
+- Canonical `id` and record `kind` exist for every addressable record.
+- A missing field remains missing.
+- A parsed invalid value remains available for validation; it is not replaced with a default.
+- DRMCP does not synthesize title text, lifecycle status, dates, or relation values from filenames or unrelated content.
 
-> Source: V01-ADR-077 §list_records の責務, V01-ADR-077 §get_record の責務
+Exact implementation types are not prescribed here.
+Public omission, null, warning, heading, and body representation are owned by `DRMCP-WORK-MCP-004`.
+Exact diagnostic identifiers, severity, and source-location fields are owned by `DRMCP-WORK-MCP-006`.
 
-### Bootstrap records
+## Related specs
 
-A small set of representative records is designated as bootstrap targets for MVP validation. ADR records use existing bullet metadata without adding YAML front matter. Spec records use `design_record` metadata in YAML front matter.
+| ref | relation |
+|---|---|
+| `spec:drmcp.design_records_mcp.schema.discovery` | Candidate discovery, invalid current spec behavior, and duplicate identity boundary. |
+| `spec:drmcp.design_records_mcp.schema.fields` | Common and kind-specific parsed field vocabulary. |
+| `spec:drmcp.design_records_mcp.schema.id_normalization` | Canonical identity mapping. |
+| `spec:drmcp.design_records_mcp.namespace_scanning` | Configured current roots and active-index construction. |
 
-Initial bootstrap candidates:
+## Sources
 
-- V01-ADR-050
-- V01-ADR-067 through V01-ADR-077
-- V01-ADR-086 through V01-ADR-088
-- `docs/investigations/docs/INV-DOCS-001-investigation-artifact-format-and-lifecycle.md`
-- `docs/spec/design-records-mcp/**`
-
-Records outside this set are not bulk-tagged. Tags are added incrementally when touched during consistency reviews, new ADR authoring, or related spec updates.
-
-> Source: V01-ADR-076 §bootstrap方針
+- `DRMCP-TASK-MCP-003-02`: Duplicate identity and active-index separation decisions.
+- `DRMCP-TASK-MCP-003-03`: Current spec invalid-source and identity decisions.
+- `DRMCP-TASK-MCP-003-04`: Shared record integration decisions.

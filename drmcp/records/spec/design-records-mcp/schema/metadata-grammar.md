@@ -2,142 +2,239 @@
 
 - **id**: `spec:drmcp.design_records_mcp.schema.metadata_grammar`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-27
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
 
 ## What this is
 
-Defines the bullet metadata grammar for ADR, investigation, and workflow artifact record kinds: how metadata blocks are delimited, which fields are recognized, and how values are parsed and normalized.
+Defines how DRMCP parses H1-adjacent visible metadata for current design records.
 
 ## Current contract
 
-### ADR bullet metadata grammar
+### Shared placement rule
 
-ADR bullet metadata is read from the metadata block that starts immediately after H1. In MVP, the metadata block spans from the line after H1 up to (but not including) the first H2 line or blockquote line. H2 lines begin with `## ` and blockquote lines begin with `>`. Blank lines within the metadata block are permitted.
+Current records use visible metadata immediately after the real ATX H1.
 
-ADR recognized metadata keys:
+- DRMCP counts H1 headings outside fenced code blocks.
+- Zero or more blank lines may appear between H1 and the first metadata marker.
+- The first non-blank line after H1 must be a recognized metadata marker for the record kind.
+- DRMCP does not search later body content for a replacement metadata block.
+- Body headings and prose are not metadata.
+- YAML front matter is not a current metadata source.
 
-| key | list value | normalization |
-|---|---|---|
-| `status` | no | trimmed string |
-| `date` | no | trimmed; parsed but not included in record response field |
-| `depends_on` | yes (comma-separated) | split and trimmed; empty → empty list |
-| `supersedes` | yes (comma-separated) | split and trimmed; empty → empty list |
-| `migrated_to_spec` | no | trimmed; empty/whitespace → `null` |
-
-Example:
-
-```markdown
-# V01-ADR-076: Design Records MCP
-
-- **status**: accepted
-- **date**: 2026-05-11
-- **depends_on**: V01-ADR-050, V01-ADR-068
-- **supersedes**:
-- **migrated_to_spec**:
-```
-
-Recognized metadata line format:
+The visible marker form is:
 
 ```text
 - **<key>**: <value>
 ```
 
-Constraints:
+- The line begins at column 1 with `- `.
+- The key is enclosed by `**` and is case-sensitive.
+- An ASCII colon immediately follows the closing `**`.
+- Leading and trailing whitespace in a scalar value is trimmed.
+- Alternate bullet markers, unbolded keys, case repair, and malformed markers are not normalized.
 
-- Bold marker `**` is required.
-- Keys are case-sensitive.
-- Recognized keys: `status` / `date` / `depends_on` / `supersedes` / `migrated_to_spec` only. Unrecognized keys are ignored in MVP.
-- `value` is whitespace-trimmed (leading and trailing).
-- Empty or whitespace-only `value` is treated as unspecified for that metadata field.
+### Scalar normalization
 
-List values use comma separation. `depends_on` / `supersedes` are split on commas when non-empty, with each value trimmed. Empty `depends_on` / `supersedes` normalize to an empty list. Empty `migrated_to_spec` normalizes to `null`.
-
-`date` may be parsed as ADR metadata but is not included in the MVP record field response.
-
-> Source: V01-ADR-086 §4–§5
-
-### Investigation bullet metadata grammar
-
-The investigation metadata block follows the same delimitation rule as ADR: H1-adjacent, ending before the first H2 or blockquote line.
-
-Required fields: `status` / `date` / `trigger` / `scope` / `non_scope` / `source_refs` / `follow_up_candidates`.
-
-Optional fields (read only when present): `supersedes` / `related_requirements` / `related_work_items` / `related_adrs` / `related_specs` / `related_internal_design` / `related_coverage` / `follow_up_results`.
-
-Example:
-
-```markdown
-# V01-INV-MCP-001: Design Records MCP investigation support
-
-- **status**: concluded
-- **date**: 2026-05-23
-- **trigger**: V01-ADR-087
-- **scope**: investigation MCP integration
-- **non_scope**: writer tools
-- **source_refs**:
-  - V01-ADR-087
-- **follow_up_candidates**:
-  - なし
-```
-
-Reference field rules:
-
-- `source_refs` and `follow_up_results` values must be canonical references: public ID-as-ref (`V01-ADR-*` / `V01-SPEC-*` / `V01-INV-*` etc.) or active `spec:` semantic ref. Unresolved supported refs are an error. Physical paths are read as compatibility input but are not canonical form and produce an error diagnostic.
-- `internal-design:` / `coverage:` / `COV-*` are not required as MVP canonical references / resolver inputs per V01-ADR-088.
-- `follow_up_candidates`: canonical form is the same as above. Unresolved refs indicate a planned artifact not yet created, returned as an `info` diagnostic (not an error). Physical path candidates produce a `noncanonical_follow_up_candidate` info diagnostic.
-- `trigger` / `related_*` resolve and validation rules are not finalized in this version.
-- Workflow artifact public IDs usable as canonical references in validated investigation reference fields: `V01-REQ-<DOMAIN>-NNN` / `V01-WORK-<DOMAIN>-NNN` etc. (full form with namespace_prefix). `TASK-*` types are supported for workflow artifact relations and direct resolver input only — they are not supported as canonical reference form in investigation metadata fields. `TASK-*` in `source_refs` / `follow_up_results` produces an `unsupported_reference` error; in `follow_up_candidates` produces `unsupported_reference` info.
-
-> Source: V01-ADR-086 §4–§7, V01-ADR-087 §5–§8, V01-ADR-091 §6, V01-ADR-092 §3–§6
-
-### Workflow artifact bullet metadata grammar
-
-Requirement / work item / task metadata blocks follow the same delimitation rule: H1-adjacent, ending before the first H2 or blockquote line. Recognized metadata lines are `- **<key>**: <value>` and indented list items directly below.
-
-Bare ID grammar (internal validation form after namespace_prefix stripping). Public IDs carry the namespace_prefix (e.g. `V01-WORK-DRMCP-001`).
+A scalar value may be written as plain text or as one complete inline-code span.
 
 ```text
-REQ-<DOMAIN>-NNN
-WORK-<DOMAIN>-NNN
-TASK-<DOMAIN>-<WORK-SEQUENCE>-<TASK-SEQUENCE>
+- **status**: accepted
+- **parent**: `spec:exampleapp.search`
 ```
 
-- `<DOMAIN>`: uppercase ASCII letters / digits / hyphens; must not begin or end with a hyphen.
-- `NNN` and `<WORK-SEQUENCE>`: 3-digit zero-padded decimal sequence.
-- `<TASK-SEQUENCE>`: 2-digit zero-padded decimal sequence.
-- Public ID (`metadata id`, H1 ID, and filename prefix) must all agree.
-- Workflow relations are read only from ID-as-refs declared in metadata fields — not inferred from task ID strings or paths.
+When the complete trimmed value is enclosed by one matching backtick pair, DRMCP removes only that pair. Partial wrapping, multiple spans, and unmatched backticks are invalid scalar forms.
 
-**Requirement** recognized fields:
+Dates use strict `YYYY-MM-DD` format when the owning PRODUCT authority defines a date field.
 
-- required: `id`, `status`, `date`, `source_refs`, `work_items`
-- optional: `subdomain`
+### List normalization
 
-**Work item** recognized fields:
+A declared list field may use either:
 
-- required: `id`, `status`, `date`, `source_requirement`, `impact_refs`, `tasks`
-- optional: `subdomain`
+```text
+- **field**: VALUE-1, VALUE-2
+```
 
-**Task** recognized fields:
+or:
 
-- required: `id`, `status`, `date`, `work_item`, `source_requirement`, `estimate`, `depends_on`, `outputs`
-- optional: `subdomain`
+```text
+- **field**:
+  - VALUE-1
+  - VALUE-2
+```
 
-`subdomain` is an optional string field representing a concept-area grouping within the domain namespace. It is not part of the artifact ID. Valid values are derived dynamically from existing records in the same domain (no pre-defined catalog). For the subdomain model, see the namespace-model spec.
+- Inline list items are comma-separated and individually trimmed.
+- Child list items must be directly indented below their parent marker.
+- An explicitly empty list field normalizes to an empty list when the owning PRODUCT rule allows an empty list.
+- Empty child items are invalid.
+- Scalar fields do not accept child list items.
 
-**Presence validation rules:**
+### Duplicate and unknown markers
 
-- Required scalar fields must exist and be non-empty.
-- Required list fields must exist.
-- Empty list for a required list field is valid unless the artifact-specific rule requires non-empty.
-- Empty items within a required list field are a validation error (`empty_required_metadata`).
-- `date` is a required scalar validated against strict `YYYY-MM-DD` format.
+A recognized field may appear at most once in one metadata block. Duplicate occurrences do not use first-wins or last-wins behavior.
 
-`task.depends_on`: when the field exists and both the value and direct child list items are empty, it normalizes to empty list `[]`. No workflow relation diagnostic is generated in this case.
+Only fields declared for the record kind are mapped into the current record model. Unknown-field validity is kind-specific; this shared rule does not introduce one rejection policy for every sequential kind. Exact diagnostics and severity are owned by `DRMCP-WORK-MCP-006`.
 
-`source_refs` / `impact_refs` / `outputs`: workflow-external reference rules follow the existing canonical reference policy. These fields are required list fields subject to presence validation.
+### Complete canonical artifact IDs
 
-`work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on`: workflow relation fields subject to relation integrity validation.
+Sequential artifact identity and relation values use complete canonical app-aware artifact IDs.
 
-> Source: V01-ADR-086 §4–§7, V01-ADR-091 §6, V01-ADR-092 §3–§6
+```text
+ADR / investigation / requirement / work item:
+<APP_NAMESPACE>-<ARTIFACT_KIND>-<DOMAIN_NAMESPACE>-<SEQUENCE>
+
+Task:
+<APP_NAMESPACE>-TASK-<DOMAIN_NAMESPACE>-<WORK_SEQUENCE>-<TASK_SEQUENCE>
+```
+
+DRMCP validates the complete value directly. It does not strip or reattach a runtime namespace prefix.
+
+Bare fragments such as `REQ-*`, `WORK-*`, or `TASK-*` may be used in explanatory grammar text, but they are not canonical current metadata values.
+
+### ADR metadata
+
+ADR metadata contains no `id` field. Identity comes from the complete canonical ID in H1.
+
+| field | form | required |
+|---|---|---:|
+| `status` | scalar | yes |
+| `date` | scalar date | yes |
+| `depends_on` | list of complete canonical artifact IDs | yes; empty allowed |
+| `supersedes` | list of complete canonical ADR IDs | yes; empty allowed |
+| `migrated_to_spec` | scalar date or empty | yes; empty normalizes to `null` |
+
+### Investigation metadata
+
+Investigation metadata contains no `id` field. Identity comes from the complete canonical ID in H1.
+
+Required fields:
+
+| field | form |
+|---|---|
+| `status` | scalar |
+| `date` | scalar date |
+| `trigger` | scalar |
+| `scope` | scalar |
+| `non_scope` | scalar |
+| `source_refs` | list |
+| `follow_up_candidates` | list |
+
+Optional fields:
+
+| field | form |
+|---|---|
+| `supersedes` | list of complete canonical investigation IDs |
+| `related_requirements` | list of complete canonical requirement IDs |
+| `related_work_items` | list of complete canonical work-item IDs |
+| `related_adrs` | list of complete canonical ADR IDs |
+| `related_specs` | list of active canonical `spec:` refs |
+| `related_internal_design` | auxiliary scalar or list as defined by the owning PRODUCT rule |
+| `related_coverage` | auxiliary scalar or list as defined by the owning PRODUCT rule |
+| `follow_up_results` | list of canonical artifact IDs or active canonical `spec:` refs |
+
+Investigation metadata does not use task IDs in `source_refs`, `follow_up_candidates`, or `follow_up_results` under current PRODUCT authoring authority.
+
+### Requirement metadata
+
+| field | form | required |
+|---|---|---:|
+| `id` | complete canonical requirement ID | yes |
+| `status` | scalar | yes |
+| `date` | scalar date | yes |
+| `source_refs` | list of canonical artifact IDs or active canonical `spec:` refs | yes; empty allowed |
+| `work_items` | list of complete canonical work-item IDs | yes; empty allowed |
+| `subdomain` | scalar | no |
+
+The metadata `id`, H1 ID, and filename ID prefix must agree exactly for a valid requirement. H1 remains the canonical identity authority; missing, malformed, or mismatched metadata `id` does not remove addressability when H1 contains one valid unique canonical ID.
+
+### Work-item metadata
+
+| field | form | required |
+|---|---|---:|
+| `id` | complete canonical work-item ID | yes |
+| `status` | scalar | yes |
+| `date` | scalar date | yes |
+| `source_requirement` | complete canonical requirement ID | yes |
+| `impact_refs` | list of canonical artifact IDs or active canonical `spec:` refs | yes; empty allowed |
+| `tasks` | list of complete canonical task IDs | yes; empty allowed |
+| `subdomain` | scalar | no |
+
+The metadata `id`, H1 ID, and filename ID prefix must agree exactly for a valid work item. H1 remains the canonical identity authority; missing, malformed, or mismatched metadata `id` does not remove addressability when H1 contains one valid unique canonical ID.
+
+### Task metadata
+
+| field | form | required |
+|---|---|---:|
+| `id` | complete canonical task ID | yes |
+| `status` | scalar | yes |
+| `date` | scalar date | yes |
+| `work_item` | complete canonical work-item ID | yes |
+| `source_requirement` | complete canonical requirement ID | yes |
+| `estimate` | scalar | yes |
+| `depends_on` | list of complete canonical task IDs | yes; empty allowed |
+| `outputs` | list of canonical artifact IDs, active canonical `spec:` refs, or declared output identifiers | yes; empty allowed |
+| `subdomain` | scalar | no |
+
+The metadata `id`, H1 ID, and filename ID prefix must agree exactly for a valid task. H1 remains the canonical identity authority; missing, malformed, or mismatched metadata `id` does not remove addressability when H1 contains one valid unique canonical ID.
+The task ID domain and work-sequence segments must agree with the parent Work Item ID.
+
+### Current spec metadata
+
+Current spec metadata is a contiguous scalar-only marker block after H1.
+
+- The first blank or non-marker line after the block starts ends the block.
+- Indented child-list items are not accepted.
+- DRMCP does not resume metadata parsing later in the file.
+- YAML front matter is invalid and is never used as fallback metadata.
+
+Recognized fields:
+
+| field | required | authority |
+|---|---:|---|
+| `id` | yes | Path-derived canonical `spec:` ref consistency value. |
+| `status` | yes | Required non-empty scalar; PRODUCT does not currently define a complete vocabulary. |
+| `date` | yes | Scalar date under PRODUCT spec-format authority. |
+| `parent` | yes | `root`, `-`, or active canonical parent `spec:` ref. |
+| `contract_class` | only for `Contract` | `interface` or `format`; prohibited on non-`Contract` specs. |
+
+The path-derived canonical spec ref is authoritative. A mismatched metadata `id` is invalid but does not replace the path-derived identity or become an alias.
+
+Any current spec metadata marker outside the recognized field set is a current source-format violation.
+
+- DRMCP does not ignore an unknown current spec marker.
+- DRMCP does not retain it as extension metadata.
+- DRMCP does not repair it into another field name.
+- The uniquely path-addressable source remains addressable and fails validation.
+
+Current specs do not define metadata fields named `depends_on`, `supersedes`, or `migrated_to_spec`. Those names are therefore unknown current spec markers and source-format violations. DRMCP does not read them from YAML or any obsolete nested metadata object.
+
+### Missing and invalid metadata
+
+A valid current record contains every field required by its PRODUCT authority.
+
+When one canonical ID is still determinable, missing or invalid metadata does not remove addressability. DRMCP retains values it parsed and does not invent replacements.
+
+When no canonical ID is determinable, the source remains validation-only and must retain its source path for repair diagnostics. Duplicate canonical identity creates no winner.
+
+Shared behavior is defined by:
+
+- `spec:drmcp.design_records_mcp.schema.record_model`;
+- `spec:drmcp.design_records_mcp.schema.discovery`;
+- `spec:drmcp.design_records_mcp.schema.id_normalization`.
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:product.design_records.namespace_model.artifact_id_grammar` | Current sequential artifact ID grammar. |
+| `spec:product.design_records.spec_format.document_shape` | Current spec H1 and metadata requiredness. |
+| `spec:product.design_records.spec_format.spec_id_as_ref` | Current spec identity and parent grammar. |
+| `spec:drmcp.design_records_mcp.schema.fields` | Parsed common and kind-specific field vocabulary. |
+| `spec:drmcp.design_records_mcp.schema.id_normalization` | Canonical identity mapping. |
+| `spec:drmcp.design_records_mcp.schema.record_model` | Invalid-source retention and active-index behavior. |
+
+## Sources
+
+- `DRMCP-TASK-MCP-003-03`: Current spec metadata decisions.
+- `DRMCP-TASK-MCP-003-04`: Shared field and current identity decisions.
+- PRODUCT authoring standards for ADR, investigation, requirement, work item, task, and spec records.
