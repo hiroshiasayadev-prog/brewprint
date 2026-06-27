@@ -51,12 +51,25 @@ An empty string remains a string-shaped item. It is processed as a malformed exa
 | input family | authority | lookup scope |
 |---|---|---|
 | Current sequential canonical ref | `spec:product.design_records.namespace_model.artifact_id_grammar` | Active index only. |
-| Active path-derived `spec:` ref | `spec:product.design_records.spec_format.spec_id_as_ref` | Active index only. |
+| Current path-derived document-level `spec:` grammar | `spec:product.design_records.spec_format.spec_id_as_ref` | Active index only. |
 | Accepted Brewprint legacy sequential ID | `spec:product.brewprint.compatibility.legacy_id_compatibility` | Configured legacy index only. |
 
-The PRODUCT compatibility authority defines the accepted legacy families. This contract does not copy or extend that grammar.
+The PRODUCT compatibility authority defines the accepted legacy families. This contract does not extend that family set.
+The exact legacy issued-ID lexical mapping is defined by `spec:drmcp.design_records_mcp.namespace_scanning`.
 
-`get_records` applies no current-first fallback sequence. Each exact input is classified once and queried only in the scope assigned to its accepted family.
+### Exact input classification order
+
+`get_records` applies no resolver-style current-first fallback sequence.
+Each first-occurrence input is classified exactly once in this order:
+
+1. If the input matches one exact issued-ID grammar from `spec:drmcp.design_records_mcp.namespace_scanning` for a PRODUCT-accepted legacy family, classify it as legacy and query only the configured legacy lookup map.
+2. Otherwise, if the input matches the active path-derived `spec:` grammar, classify it as a current spec and query only the active index.
+3. Otherwise, if the input matches the current sequential canonical grammar, classify it as current sequential and query only the active index.
+4. Otherwise, classify it as malformed or unsupported under the W004/W006 response boundary.
+
+Legacy-family precedence is an exact-retrieval classification rule, not reference fallback.
+It ensures that an overlapping value such as `V01-REQ-MCP-001` is classified as legacy and never queried against the active index by `get_records`.
+The operation does not invoke `resolve_reference`, run a second lookup after failure, or guess between scopes.
 
 ### Exactness and prohibited repair
 
@@ -73,6 +86,37 @@ The operation must not:
 - guess between current and legacy families;
 - invoke `resolve_reference`;
 - use metadata aliases or source paths as lookup keys.
+
+### Rejected string items
+
+The following table applies after request-shape validation.
+Duplicate handling still uses the exact ordered-deduplication contract below.
+Every listed value remains a string item and does not become an `invalid_request` condition.
+
+| input class | item behavior | lookup behavior |
+|---|---|---|
+| `V01-SPEC-*` | Malformed or unsupported item warning trigger. | No active-index or legacy lookup. |
+| App-prefixless sequential ID | Malformed or unsupported item warning trigger. | No app, domain, or prefix inference. |
+| Physical path | Malformed or unsupported item warning trigger. | No path-to-ref conversion or filesystem lookup. |
+| Fuzzy or partial reference | Malformed or unsupported item warning trigger. | No matching, completion, or second lookup. |
+| Legacy YAML-only alias spelling that fails current canonical grammar | Malformed or unsupported item warning trigger. | No front-matter alias lookup or repair. |
+| Direct `yaml:` input | Malformed or unsupported item warning trigger. | No YAML lookup surface is active. |
+| `fixture:` input | Malformed or unsupported item warning trigger. | No fixture lookup surface is active. |
+| `internal-design:` input | Malformed or unsupported item warning trigger. | No internal-design lookup surface is active. |
+| `coverage:` input | Malformed or unsupported item warning trigger. | No coverage lookup surface is active. |
+| `COV-*` input | Malformed or unsupported item warning trigger. | No coverage-ID lookup surface is active. |
+| Section-like `spec:` value that does not match current spec grammar | Malformed or unsupported item warning trigger. | No repair, section-target lookup, heading lookup, or alias lookup. |
+| Metadata-only alias spelling that fails current canonical grammar | Malformed or unsupported item warning trigger. | Referring metadata does not register a lookup alias. |
+| Value requiring whitespace, case, prefix, domain, or sequence repair | Malformed or unsupported item warning trigger. | No trimming, repair, completion, or second lookup. |
+| Empty string | Malformed item warning trigger. | No lookup. |
+
+Current spec classification is lexical and does not use semantic origin.
+A supplied `spec:` string that matches current spec grammar is classified as a current spec input and queries only the active index, even when an earlier document used the same string as a section alias.
+When that exact lookup finds no addressable target, the item produces the unresolved-current warning trigger already defined by the partial-success contract.
+The operation does not consult front-matter `semantic_refs`, front-matter `sections`, heading data, or alias registries and does not perform section-target or heading lookup.
+
+The table does not define warning category names, severity, messages, shared fields, ref association, or source-location representation.
+Those concerns remain owned by `DRMCP-WORK-MCP-006`.
 
 ### Ordered deduplication
 
@@ -157,14 +201,14 @@ The response does not contain `items`, `retrieval_status`, `record: null`, or pe
 | field | required | meaning |
 |---|---:|---|
 | `ref` | yes | Canonical public identity of the retrieved record. Legacy results preserve the issued legacy ID. |
-| `metadata` | yes | Parsed normalized metadata fields defined by `spec:drmcp.design_records_mcp.schema.fields`, excluding canonical identity because `ref` carries it. |
+| `metadata` | yes | Current normalized metadata, or the minimal legacy metadata defined below, excluding canonical identity because `ref` carries it. |
 | `headings` | yes | Real ATX headings in source order, represented as `level` and `text`. Empty when no heading was parsed. |
 | `body` | conditional | Complete source Markdown, present only when `include_body` is `true`. |
 
-`metadata` contains `kind` plus every parsed common and kind-specific field available for the record.
-Kind-specific fields appear directly in `metadata` under their normalized field names.
+For a current record, `metadata` contains `kind` plus every parsed common and kind-specific field available under `spec:drmcp.design_records_mcp.schema.fields`.
+Kind-specific current fields appear directly in `metadata` under their normalized field names.
 
-For an invalid but addressable record:
+For an invalid but addressable current record:
 
 - a missing parsed metadata field is omitted;
 - a parsed invalid value is returned unchanged;
@@ -174,6 +218,37 @@ For an invalid but addressable record:
 When `include_body` is `false`, the `body` field is omitted. The field is not returned as `null` or an empty string.
 
 When `include_body` is `true`, `body` contains the complete source Markdown verbatim. The operation must not format, summarize, normalize, or truncate the body.
+
+### Legacy exact retrieval
+
+An accepted legacy input queries only the separate configured legacy lookup map.
+The issued legacy ID is derived from the source filename and compared exactly and case-sensitively.
+`get_records` does not invoke current-first resolver orchestration, query the active index for that input, or normalize the archived source into the current record model.
+
+Legacy retrieval succeeds when exactly one indexed source exists and the source file can be read.
+Incomplete or malformed optional Markdown structure does not prevent source retrieval.
+
+A successful legacy record uses the common record wrapper with these rules:
+
+- `ref` preserves the exact issued legacy ID;
+- `metadata.kind` is required and is derived from the accepted legacy ID family;
+- `metadata.title` and `metadata.status` are included only when they can be parsed;
+- no current kind-specific metadata field is required for legacy compatibility;
+- `headings` contains parsed real ATX headings, or an empty array when none can be parsed;
+- `body` contains the complete source Markdown verbatim only when `include_body` is `true`.
+
+DRMCP does not repair, default, normalize, or validate archived metadata as a retrieval precondition.
+A missing H1, malformed bullet metadata, or mismatch between source content and the filename-derived ID does not block retrieval of a readable unique source and does not create an alias.
+
+A legacy input produces no successful record when:
+
+- no legacy lookup map is configured;
+- the exact issued ID is absent;
+- duplicate sources prevent one source from being selected; or
+- the indexed source cannot be read.
+
+These conditions remain normal partial-success warning triggers.
+Warning categories, severity, messages, and source-location representation remain owned by `DRMCP-WORK-MCP-006`.
 
 ### Path and internal-state boundary
 
@@ -202,15 +277,18 @@ Malformed, unsupported, unresolved, unavailable legacy, and duplicate string ite
 |---|---|
 | Current-root discovery, source parsing, identity, active-index construction, normalized fields, invalid-source retention, and duplicate conflicts | `DRMCP-WORK-MCP-003` |
 | Exact-retrieval request, ordering, partial success, warning placement, body inclusion, and normal record projection | `DRMCP-WORK-MCP-004` |
-| Resolver invocation, current-first resolution, configured legacy fallback, fallback order, and current/legacy orchestration | `DRMCP-WORK-MCP-005` |
+| Configured legacy roots, filename-derived legacy identity, separate lookup-map construction, duplicate legacy IDs, and legacy source readability | `DRMCP-WORK-MCP-005` |
 | Warning entry schema, category names, severity, shared fields, source locations, validation behavior, and exceptional path exposure | `DRMCP-WORK-MCP-006` |
 
 ## Related specs
 
 | ref | relation |
 |---|---|
-| `spec:drmcp.design_records_mcp.schema.fields` | Parsed normalized metadata vocabulary. |
-| `spec:drmcp.design_records_mcp.schema.record_model` | Addressability and invalid-source retention. |
-| `spec:drmcp.design_records_mcp.schema.record_source` | Heading and body source availability. |
+| `spec:drmcp.design_records_mcp.schema.fields` | Parsed normalized metadata vocabulary for current records. |
+| `spec:drmcp.design_records_mcp.schema.record_model` | Current-record addressability and invalid-source retention. |
+| `spec:drmcp.design_records_mcp.schema.record_source` | Current heading and body source availability. |
+| `spec:drmcp.design_records_mcp.namespace_scanning` | Configured legacy roots and exact legacy lookup-map construction. |
 | `spec:drmcp.design_records_mcp.tools.get_record` | Retired single-record operation. |
-| `DRMCP-TASK-MCP-004-03` | Exact batch-retrieval reflection owner. |
+| `DRMCP-TASK-MCP-004-03` | Exact batch-retrieval request and common response reflection owner. |
+| `DRMCP-TASK-MCP-005-03` | Minimal legacy source retrieval reflection owner. |
+| `DRMCP-TASK-MCP-005-04` | Rejected string-item and cross-spec pointer synchronization owner. |

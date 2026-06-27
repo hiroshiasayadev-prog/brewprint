@@ -2,100 +2,279 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.resolve_reference`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-27
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
 
 ## What this is
 
-`resolve_reference` resolves an MVP canonical reference to a single document / section / record target. Validation uses the same resolver lookup rules and must not have independent resolution logic.
+`resolve_reference` evaluates one reference through current canonical grammar and the active index before any configured legacy fallback.
+
+The operation returns one resolved target at most.
+It is separate from exact retrieval and validation execution.
 
 ## Request
 
 ```json
 {
-  "ref": "spec:trace.semantic-ref.definition"
+  "ref": "spec:drmcp.design_records_mcp.resolver"
 }
 ```
 
 | field | required | type | meaning |
 |---|---:|---|---|
-| `ref` | yes | string | Canonical reference candidate to resolve. Leading and trailing whitespace are not permitted; the input string is evaluated as-is. |
+| `ref` | yes | string | Reference candidate evaluated exactly as supplied. |
 
-Supported input forms. Record ID-as-ref uses the full ID as returned by the index (with namespace_prefix). MVP: `namespace_prefix = V01-`.
+Only `ref` is accepted as a top-level request field.
+A missing or non-string `ref`, or an unsupported top-level field, is an `invalid_request` condition.
 
-| input form | ref kind | lookup source |
+A string value is not trimmed or repaired.
+An empty string or a value with leading or trailing whitespace remains a string-shaped resolver input and does not become a request-shape error.
+
+## Current accepted input families
+
+| input family | authority | lookup scope |
 |---|---|---|
-| Active `spec:` document-level ref | `semantic_ref` | Spec front matter `semantic_refs` |
-| Active `spec:` section-level ref | `semantic_ref` | Spec front matter `sections` |
-| `<namespace_prefix>ADR-NNN` (e.g. `V01-ADR-097`) | `record_id` | `decision` record index |
-| `<namespace_prefix>SPEC-<slug>` (e.g. `V01-SPEC-design-records-mcp-overview`) | `record_id` | `spec` record index |
-| `<namespace_prefix>INV-<DOMAIN>-NNN` (e.g. `V01-INV-MCP-001`) | `record_id` | `investigation` record index |
-| `<namespace_prefix>REQ-<DOMAIN>-NNN` (e.g. `V01-REQ-MCP-001`) | `record_id` | `requirement` record index |
-| `<namespace_prefix>WORK-<DOMAIN>-NNN` (e.g. `V01-WORK-DRMCP-001`) | `record_id` | `work_item` record index |
-| `<namespace_prefix>TASK-<DOMAIN>-<WRK>-<TSK>` (e.g. `V01-TASK-MCP-001-01`) | `record_id` | `task` record index |
+| Current sequential canonical ref | `spec:product.design_records.namespace_model.artifact_id_grammar` | Active index only. |
+| Current path-derived document-level `spec:` ref | `spec:product.design_records.spec_format.spec_id_as_ref` | Active index only. |
 
-Workflow ID grammar: requirement / work item sequence and task work sequence are 3-digit zero-padded; task sequence is 2-digit zero-padded.
+Current sequential refs are complete app-aware canonical IDs for:
 
-`internal-design:` / `coverage:`, `COV-*`, physical paths, and grammar-invalid ID forms are not supported inputs. Direct query returns `status: "unsupported"` (not a tool execution error). `yaml:` is a reserved prefix; MVP does not define public resolver input or direct query response behavior for it.
+- decision;
+- investigation;
+- requirement;
+- work item;
+- task.
+
+Bare grammar fragments are not current canonical refs.
+The resolver does not infer an app namespace, domain namespace, or sequence segment.
+
+Current spec resolution uses lexical classification against the path-derived document-level `spec:` grammar.
+Any supplied string that matches that grammar is a current spec input and queries only the active index.
+When the exact identity is absent, the current stage remains `unresolved`.
+
+The resolver does not inspect front-matter `semantic_refs`, front-matter `sections`, heading data, or alias registries to determine the semantic origin of a string.
+A string historically used as a section alias but lexically accepted by current spec grammar remains a current spec input.
+Section targets, headings, and anchors are not separate lookup surfaces.
+
+The following values are not current lookup keys:
+
+- values from front-matter `semantic_refs` or `sections` that do not independently match current canonical grammar;
+- section-like `spec:` values that do not match current spec grammar;
+- legacy sequential spec IDs;
+- metadata aliases that do not independently match current canonical grammar;
+- source paths.
+
+## Current-first resolution sequence
+
+| step | condition | behavior |
+|---|---|---|
+| 1 | Request shape is valid. | Evaluate `ref` against current canonical grammar exactly as supplied. |
+| 2 | Current grammar accepts `ref`. | Query the active index by that exact canonical identity. |
+| 3 | One addressable current target exists. | Return `resolved` with the current target and stop. |
+| 4 | The current stage has no resolved target. | Evaluate accepted legacy-family grammar eligibility. |
+| 5 | Neither current grammar nor accepted legacy-family grammar accepts `ref`. | Return `unsupported`. |
+| 6 | Accepted legacy-family grammar accepts `ref`. | Continue under the configured legacy fallback contract below. |
+
+The current stage has no resolved target when current grammar does not accept the input or the active-index lookup has no addressable target.
+
+A resolved current target prevents:
+
+- legacy grammar evaluation;
+- configured legacy-index lookup;
+- current-to-legacy rewriting;
+- a second target selection pass.
+
+When one string can match both current and accepted legacy grammar, active-index lookup runs first.
+Legacy eligibility begins only after the current stage remains unresolved.
+
+When accepted legacy-family grammar matches, the resolver queries only the separate configured legacy lookup map defined by `spec:drmcp.design_records_mcp.namespace_scanning`.
+It does not scan unconfigured directories, query the active index again, invoke `get_records`, or normalize archived records into the current record model.
 
 ## Response
 
-All MVP direct query responses include these top-level fields:
+The public outcome vocabulary is fixed to three statuses:
 
-| field | required | meaning |
-|---|---:|---|
-| `ref` | yes | Input string from the request |
-| `ref_kind` | yes | `semantic_ref` / `record_id` / `unsupported` |
-| `status` | yes | `resolved` / `unresolved` / `unsupported` |
-| `target` | yes | Target object when `resolved`; `null` otherwise |
-| `diagnostics` | yes | Resolution diagnostic list; empty on successful resolution |
+| status | target | condition |
+|---|---|---|
+| `resolved` | Current or legacy target object. | One addressable current target is found, or one readable legacy source is found after accepted legacy fallback. |
+| `unresolved` | `null` | An accepted current or legacy input has no selectable readable target. |
+| `unsupported` | `null` | Neither current grammar nor accepted legacy-family grammar accepts `ref`. |
 
-Resolved section-level `spec:` example:
+The accepted family set is defined by `spec:product.brewprint.compatibility.legacy_id_compatibility`.
+Exact issued-ID lexical recognition uses the parser mapping in `spec:drmcp.design_records_mcp.namespace_scanning`.
+Grammar acceptance does not depend on whether `legacy_roots` is configured or usable.
+
+After accepted legacy grammar matches, each of the following returns `unresolved` with `target: null`:
+
+- `legacy_roots` is missing or empty;
+- the legacy lookup map contains no source for the exact issued ID;
+- duplicate sources prevent one source from being selected;
+- one indexed source exists but cannot be read.
+
+One readable source for the exact issued ID returns `resolved` with the legacy target defined below.
+The operation does not add statuses such as `disabled`, `unavailable`, or `conflicted`.
+
+Diagnostic and warning fields that distinguish disabled fallback, missing target, duplicate conflict, and unreadable source are owned by `DRMCP-WORK-MCP-006`.
+This contract does not define diagnostic object shape, category names, severity, messages, source locations, or exceptional path representation.
+
+## Current successful target projection
+
+A resolved current target uses this non-path projection:
+
+| field | required | type | meaning |
+|---|---:|---|---|
+| `target_type` | yes | string enum | `current_spec` or `current_sequential_record`. |
+| `ref` | yes | string | Resolved canonical current identity. |
+| `kind` | yes | string enum | `decision`, `spec`, `investigation`, `requirement`, `work_item`, or `task`. |
+| `title` | yes | string or null | Parsed title, or `null` when unavailable on an invalid but addressable source. |
+| `status` | yes | string or null | Parsed lifecycle status, or `null` when unavailable on an invalid but addressable source. |
+
+Parsed invalid `title` or `status` values remain unchanged when available.
+The operation does not repair, default, or infer those values.
+`null` represents unavailable parsed data and does not become normalized metadata.
+
+Current spec example:
 
 ```json
 {
-  "ref": "spec:trace.semantic-ref.definition",
-  "ref_kind": "semantic_ref",
+  "ref": "spec:drmcp.design_records_mcp.resolver",
   "status": "resolved",
   "target": {
-    "target_type": "section",
-    "path": "v01/records/spec/concepts/traceability/semantic-ref.md",
-    "section": "Semantic ref definition"
-  },
-  "diagnostics": []
+    "target_type": "current_spec",
+    "ref": "spec:drmcp.design_records_mcp.resolver",
+    "kind": "spec",
+    "title": "Resolver responsibility",
+    "status": "draft"
+  }
 }
 ```
 
-- Resolved document-level `spec:` target: `target_type: "document"`, `path`. No `section` field.
-- Resolved section-level `spec:` target: `target_type: "section"`, `path`, `section`. Input canonical ref is held in top-level `ref` and is not repeated in `target`.
-- MVP does not define a public parent-child relationship between section-level and document-level refs, and does not infer a parent document ref from a section-level ref's string prefix.
-- Resolved record ID-as-ref target: `target_type: "record"`, `path`, `record_id`, `record_kind`, `title`, `status`.
-
-When a supported form target does not exist: `status: "unresolved"`, `target: null`, `diagnostics` includes `unresolved_reference`.
-
-When the same `spec:` ref or record ID resolves to multiple targets, one must not be arbitrarily chosen. Returns `status: "unresolved"`, `target: null`, `diagnostics` includes `ambiguous_reference`. Validation reports the same cause as `duplicate_semantic_ref` or `duplicate_id` error.
-
-Unsupported example:
+Current sequential record example:
 
 ```json
 {
-  "ref": "internal-design:resolver.semantic-ref-index",
-  "ref_kind": "unsupported",
-  "status": "unsupported",
-  "target": null,
-  "diagnostics": [
-    {
-      "category": "unsupported_reference",
-      "severity": "info",
-      "message": "reference form is outside the MVP resolver contract"
-    }
-  ]
+  "ref": "DRMCP-WORK-MCP-005",
+  "status": "resolved",
+  "target": {
+    "target_type": "current_sequential_record",
+    "ref": "DRMCP-WORK-MCP-005",
+    "kind": "work_item",
+    "title": "Resolver and configured legacy-fallback contract realignment",
+    "status": "in_progress"
+  }
 }
 ```
 
-`unsupported_reference` in a direct query is `info` severity — it indicates an input boundary, not a resolver failure. When an unsupported input appears in an investigation metadata validation target field, the severity follows the `validate_records` contract (see `spec:drmcp.design_records_mcp.schema.diagnostics`).
+## Legacy successful target projection
+
+A resolved legacy target contains exactly:
+
+| field | required | type | meaning |
+|---|---:|---|---|
+| `target_type` | yes | string enum | Fixed value `legacy_sequential_record`. |
+| `ref` | yes | string | Exact issued legacy ID. |
+| `kind` | yes | string enum | `decision`, `investigation`, `requirement`, `work_item`, or `task`, derived from the accepted legacy family. |
+
+```json
+{
+  "ref": "V01-REQ-MCP-001",
+  "status": "resolved",
+  "target": {
+    "target_type": "legacy_sequential_record",
+    "ref": "V01-REQ-MCP-001",
+    "kind": "requirement"
+  }
+}
+```
+
+The legacy target does not contain `title`, lifecycle `status`, metadata, headings, or body.
+Callers use `get_records` with the returned `ref` when archived source content is required.
+
+A normal successful target must not include:
+
+- physical path;
+- source location;
+- active-index path;
+- source provenance;
+- section heading or section anchor;
+- resolver trace;
+- duplicate canonical identity fields such as `record_id` alongside `ref`.
+
+Exceptional path representation remains owned by `DRMCP-WORK-MCP-006`.
+
+## Exact-retrieval boundary
+
+`get_records` is the sole exact-retrieval operation.
+
+- `resolve_reference` does not call `get_records`.
+- `get_records` does not call `resolve_reference`.
+- `resolve_reference` does not redefine `get_records` request, partial-success, warning, heading, body, or successful-record projection.
+- `get_records` does not inherit current-first fallback orchestration.
+
+## Rejected input behavior
+
+The following table applies when the request shape is valid and `ref` is a string.
+Each value is evaluated exactly as supplied.
+
+| input class | resolver outcome | operation behavior |
+|---|---|---|
+| `V01-SPEC-*` | `unsupported` | No current or accepted legacy lookup. |
+| App-prefixless sequential ID | `unsupported` | No app, domain, or prefix inference. |
+| Physical path | `unsupported` | No path-to-ref conversion or filesystem lookup. |
+| Fuzzy or partial reference | `unsupported` | No matching, completion, or second candidate pass. |
+| Legacy YAML-only alias spelling that fails current canonical grammar | `unsupported` | No front-matter alias lookup or repair. |
+| Direct `yaml:` input | `unsupported` | No YAML lookup surface is active. |
+| `fixture:` input | `unsupported` | No fixture lookup surface is active. |
+| `internal-design:` input | `unsupported` | No internal-design lookup surface is active. |
+| `coverage:` input | `unsupported` | No coverage lookup surface is active. |
+| `COV-*` input | `unsupported` | No coverage-ID lookup surface is active. |
+| Section-like `spec:` value that does not match current spec grammar | `unsupported` | No repair, section-target lookup, heading lookup, or alias lookup. |
+| Metadata-only alias spelling that fails current canonical grammar | `unsupported` | Referring metadata does not register a target alias. |
+| Value requiring whitespace, case, prefix, domain, or sequence repair | `unsupported` | No trimming, case repair, completion, or sequence repair. |
+| Empty string | `unsupported` | The string remains an item input and is not promoted to a request-shape error. |
+
+These rejected strings are not repaired or redirected to the active index, legacy lookup map, filesystem scanning, fixture lookup, or validation execution.
+They produce `unsupported` with `target: null`.
+
+Classification does not use semantic origin.
+A supplied `spec:` string that matches current spec grammar queries only the active index, even when an earlier document used the same string as a section alias.
+When that exact lookup finds no addressable target, the operation returns `unresolved` with `target: null`.
+The operation does not consult front-matter alias registries or perform section-target or heading lookup.
+
+An exact current or accepted legacy input that has no selectable readable target produces `unresolved`, not `unsupported`.
+The accepted V01 decision, investigation, requirement, work-item, and task families therefore remain distinct from rejected `V01-SPEC-*` inputs.
+
+Diagnostic category, severity, message, source-location, and exceptional path representation remain owned by `DRMCP-WORK-MCP-006`.
 
 ## Errors
 
-No tool execution errors are defined for this tool beyond `invalid_request`. Unsupported and unresolved inputs produce diagnostic responses, not tool errors.
+| code | condition |
+|---|---|
+| `invalid_request` | The top-level request violates the request-shape rules. |
+
+Unsupported and unresolved string inputs are normal resolver outcomes, not tool execution errors.
+Their diagnostic representation remains delegated to `DRMCP-WORK-MCP-006`.
+
+## Boundary
+
+| concern | owner |
+|---|---|
+| Current-root discovery, current parsing, canonical identity, active-index construction, and addressability | `DRMCP-WORK-MCP-003` |
+| Exact retrieval and `get_records` response | `DRMCP-WORK-MCP-004` |
+| Current-first resolver orchestration, configured legacy lookup, final status mapping, and successful non-path target projection | `DRMCP-WORK-MCP-005` |
+| Diagnostic and warning representation, validation execution, source location, and exceptional path exposure | `DRMCP-WORK-MCP-006` |
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:drmcp.design_records_mcp.resolver` | Resolver responsibility and orchestration summary. |
+| `spec:drmcp.design_records_mcp.tools.get_records` | Sole exact-retrieval operation. |
+| `spec:drmcp.design_records_mcp.schema.id_normalization` | Current canonical identity mapping. |
+| `spec:drmcp.design_records_mcp.schema.record_model` | Current addressability and conflict behavior. |
+| `spec:drmcp.design_records_mcp.schema.fields` | Parsed current field vocabulary. |
+| `spec:drmcp.design_records_mcp.namespace_scanning` | Configured legacy-root validation and separate exact lookup map. |
+| `DRMCP-TASK-MCP-005-02` | Current-first normative reflection owner. |
+| `DRMCP-TASK-MCP-005-03` | Configured legacy fallback and final outcome reflection owner. |
+| `DRMCP-TASK-MCP-005-04` | Rejected-input and cross-spec pointer synchronization owner. |
