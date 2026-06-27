@@ -17,12 +17,17 @@
   - spec:drmcp.design_records_mcp.responsibility_boundary
   - spec:drmcp.design_records_mcp.schema.diagnostics
   - spec:drmcp.design_records_mcp.schema.record_model
+  - spec:drmcp.design_records_mcp.schema.authoring_transaction_schema
   - spec:drmcp.design_records_mcp.tools.list_records
   - spec:drmcp.design_records_mcp.tools.get_records
+  - spec:drmcp.design_records_mcp.tools.resolve_reference
   - spec:drmcp.design_records_mcp.tools.validate_records
+  - spec:drmcp.design_records_mcp.tools.propose_record_create
+  - spec:drmcp.design_records_mcp.tools.propose_record_update
 - **tasks**:
   - DRMCP-TASK-MCP-006-01
   - DRMCP-TASK-MCP-006-02
+  - DRMCP-TASK-MCP-006-03
 
 ## Goal
 
@@ -180,4 +185,50 @@ This Work Item is complete when all of the following are true:
   - T02 supplies the accepted execution baseline to T03 and later W006 phases.
   - Task and Work Item records are outside the strict spec-validator scope.
   - No repository-wide clean working tree is inferred.
-- Contract correction, validation, and final independent-review evidence: pending T02 through T05.
+- `DRMCP-TASK-MCP-006-03` opened on 2026-06-28.
+  - Exact Task inventory confirmed `DRMCP-TASK-MCP-006-01` and `DRMCP-TASK-MCP-006-02`; no T03 record existed before creation.
+  - T03 owns the shared machine-readable warning and diagnostic envelope, category mapping, severity, subject and occurrence associations, ordering, duplicate suppression, authoring-envelope compatibility, and the T04 handoff slot.
+  - PRODUCT remains the semantic authority for metadata, lifecycle, required sections, references, and current spec invalidity.
+  - T02 request forms, validation subjects, failure boundaries, relation lookup, response wrapper, and blocking-severity handoff are fixed inputs.
+  - D01 through D11 were accepted one at a time on 2026-06-28 and recorded immediately in the T03 Task.
+  - The accepted envelope requires `category`, `severity`, and `message`; structured optional associations are `subject`, `field`, `value`, `target`, `occurrence`, `conflict`, and the T04-owned `location` slot.
+  - Repository categories now use stable cause-oriented names instead of one category per PRODUCT rule. PRODUCT authorities still determine requiredness, allowed emptiness, lifecycle, gated sections, identity, and relation validity.
+  - Severity is `error`, `warning`, or `info`; `validate_records.ok` is false exactly when at least one returned diagnostic has severity `error`.
+  - Current identity conflicts and legacy issued-ID lookup conflicts remain separate and aggregate every repairable source or candidate location without selecting a winner.
+  - Repository and proposal-local diagnostics now have deterministic ordering and semantic duplicate suppression independent of traversal, map iteration, message wording, or detector path.
+  - Proposal-local validation uses the same repository taxonomy and structured associations as `validate_records`; authoring operation categories and trigger semantics remain operation-owned.
+  - `schema/diagnostics.md` was rewritten to remove stale resolver response names, `ids` and item-wrapper retrieval assumptions, scalar diagnostic shortcuts, obsolete YAML and section-ref categories, copied PRODUCT rules, and raw-path requiredness.
+  - `tools/validate-records.md` now states the accepted error-severity `ok` rule and points to the shared diagnostics contract and T04 location handoff.
+  - `tools/resolve-reference.md` now returns top-level `diagnostics` in every normal resolver response while preserving W005 statuses, current-first order, and successful target projection. Cause diagnostics distinguish malformed, unsupported, unresolved, disabled fallback, current conflict, legacy conflict, and unreadable legacy source states.
+  - `tools/propose-record-create.md` and `tools/propose-record-update.md` realign diagnostic examples from scalar `record_id`, `field`, `value`, and standalone diagnostic `path` to structured shared associations without changing proposal behavior.
+  - `schema/authoring-transaction-schema.md` and `tools/propose-record-update.md` replace retired proposal-local validation category names with `missing_required_field`, conditional `empty_required_field`, and `invalid_field_value`.
+  - Final T03 normative changed-spec set is `schema/diagnostics.md`, `tools/validate-records.md`, `tools/resolve-reference.md`, `tools/propose-record-create.md`, `tools/propose-record-update.md`, and `schema/authoring-transaction-schema.md`.
+  - `namespace-scanning.md`, `schema/discovery.md`, and `schema/record-model.md` were rechecked and their existing authority and location pointers remain sufficient; no T03 change was required.
+  - `tools/list-records.md`, `tools/get-records.md`, `resolver.md`, `schema/record-source.md`, `schema/fields.md`, `schema/metadata-grammar.md`, and `schema/id-normalization.md` remain unchanged after recheck.
+  - T02 advisory A-01 is reflected through explicit PRODUCT authoring-standard pointers for ADR, spec, investigation, requirement, work-item, and task semantic invalidity.
+  - Static stale-category inspection found no positive remaining use of retired repository-validation categories; the only stale name retained in `schema/diagnostics.md` is inside an explicit removed-behavior list.
+  - Pre-review external scoped strict validation passed for the complete six-file T03 normative set: `[strict]  All 6 file(s) OK.`
+  - Pre-review external tracked-file whitespace verification returned `tracked_exit=0` for the six changed specs and this Work Item.
+  - Pre-review external untracked Task whitespace verification returned `untracked_exit=1`; this is the expected `git diff --no-index --check -- NUL <T03 Task>` result for a new file and no whitespace error was reported.
+  - Targeted status confirmed exactly six modified normative specs, this modified Work Item, and the untracked T03 Task.
+  - Initial independent T03 review verdict: `NEEDS REVISION`.
+    - `F-MAJ-01`: unsupported legacy relation syntax had two possible category mappings because `legacy_unsupported` remained an accepted lookup state beside the `invalid_field_value` rule.
+    - `F-MIN-01`: the narrow case-only authoring fallback referenced a removed generic Required narrative section policy instead of current PRODUCT authoring authorities.
+  - Review corrections applied on 2026-06-28:
+    - unsupported or noncanonical declared relation values accepted by no current or legacy lookup grammar map only to `invalid_field_value`;
+    - no lookup runs and no lookup state is attached for that condition;
+    - `legacy_unsupported` was removed from the accepted repository lookup-state vocabulary;
+    - `relation_target_unavailable` now applies only after accepted current or legacy grammar;
+    - the case-only fallback now cites requirement, work-item, and task PRODUCT authoring standards directly without changing the trigger or heading set.
+  - Post-correction external scoped strict validation passed for the complete six-file T03 normative set: `[strict]  All 6 file(s) OK.`
+  - Post-correction external tracked-file whitespace verification returned `tracked_exit=0` for the six changed specs and this Work Item.
+  - Post-correction external untracked Task whitespace verification returned `untracked_exit=1`; this is the expected `git diff --no-index --check -- NUL <T03 Task>` result for a new file and no whitespace error was reported.
+  - Limited independent T03 re-review verdict: `PASS`.
+    - `F-MAJ-01` is closed.
+    - `F-MIN-01` is closed.
+    - No blocking, major, minor, or advisory findings remain.
+    - Post-correction validator and tracked/untracked whitespace evidence were accepted.
+    - No regression was found in T02 execution boundaries, W005 lookup-state separation, D07-D09 determinism, authoring operation triggers, or T04 location ownership.
+  - `DRMCP-TASK-MCP-006-03` closed as `done` on 2026-06-28.
+  - T03 supplies the accepted diagnostic envelope, category mapping, severity, deterministic ordering, duplicate suppression, authoring-envelope boundary, and source-location handoff to T04 and T05.
+- T03 is closed. W006 remains `in_progress`; the next phase is T04 exceptional source-location and physical-path exposure contract definition.

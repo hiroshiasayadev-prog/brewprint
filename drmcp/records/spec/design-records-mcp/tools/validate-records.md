@@ -21,8 +21,8 @@ This contract owns:
 PRODUCT specifications own semantic invalidity for metadata, visible document shape, canonical IDs, canonical refs, and declared relation integrity.
 This contract cites those authorities rather than copying obsolete V01, hidden YAML front-matter, section-ref, spec-status, or artifact-ID rules.
 
-The diagnostic envelope, category vocabulary, severity vocabulary, deterministic ordering, and deduplication are defined by the diagnostics contract completed under DRMCP-WORK-MCP-006.
-Source-location fields and exceptional physical-path exposure are defined separately by the path-exposure contract.
+The diagnostic envelope, category vocabulary, severity vocabulary, deterministic ordering, and duplicate suppression are defined by `spec:drmcp.design_records_mcp.schema.diagnostics`.
+That contract reserves the shared `location` association; T04 defines its concrete source-location fields and exceptional physical-path exposure policy.
 
 ## Request
 
@@ -175,7 +175,7 @@ A successfully started validation execution returns one normal response wrapper:
 
 | field | type | meaning |
 |---|---|---|
-| `ok` | boolean | `false` when at least one diagnostic has the diagnostics contract's blocking severity; `true` otherwise. |
+| `ok` | boolean | `false` when at least one diagnostic has severity `error`; `true` otherwise. |
 | `scope` | object | Effective repository-wide, app, or exact-ref selector. |
 | `summary` | object | Counts of selected current validation subjects. |
 | `diagnostics` | array | Unified source, record, duplicate, current-relation, and legacy-relation findings. |
@@ -201,8 +201,8 @@ Relation-target lookup counts are not included in `summary`.
 Validation does not add a separate top-level `warnings` collection.
 Non-blocking findings remain diagnostics under the T03 severity vocabulary.
 
-`ok` is `true` when no blocking diagnostic exists, including when `diagnostics` is empty.
-`ok` is `false` when at least one blocking diagnostic exists.
+`ok` is `true` when no error-severity diagnostic exists, including when `diagnostics` is empty or contains only `warning` and `info` entries.
+`ok` is `false` when at least one diagnostic has severity `error`.
 Request errors and startup or execution failures do not return this normal wrapper.
 
 ## Errors
@@ -230,6 +230,6 @@ An unresolved exact `ref` selector is not converted into `ok: true` with an empt
 | `spec:drmcp.design_records_mcp.namespace_scanning` | Configured roots, retained current inputs, active-index construction, and separate legacy lookup state. |
 | `spec:drmcp.design_records_mcp.resolver` | Current-first and accepted legacy lookup orchestration boundary. |
 | `spec:drmcp.design_records_mcp.tools.resolve_reference` | Public resolver contract that repository validation does not invoke. |
-| `spec:drmcp.design_records_mcp.schema.diagnostics` | Diagnostic envelope and vocabulary; realigned by the next W006 task. |
+| `spec:drmcp.design_records_mcp.schema.diagnostics` | Shared envelope, categories, severity, ordering, duplicate suppression, and T04 location handoff. |
 | `spec:product.design_records.traceability.resolve_and_validation` | PRODUCT-owned lookup and invalidity semantics. |
 | `spec:product.design_records.namespace_model.artifact_id_grammar` | Current sequential artifact ID grammar. |

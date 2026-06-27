@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.schema.authoring_transaction_schema`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-28
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
 
 ## What this is
@@ -60,7 +60,7 @@ Proposal retention is 3 days. Expired proposals are not valid authoring targets.
 
 Proposal `validation` is scoped to the proposal-local affected record set in the candidate repository state. The affected record set is the proposed target record plus any related records whose files are actually modified by the same proposal (e.g. required reciprocal workflow metadata updates). Unrelated repository diagnostics are repository health information and must not be included in or change proposal-local `validation.ok`.
 
-Proposal-local diagnostics must use the same validation categories and field contracts as `validate_records`. They must be reproducible by the same `validate_records` rules against the same affected record set in the same candidate or accepted/materialized state.
+Proposal-local diagnostics must use the shared repository-validation categories and structured associations from `spec:drmcp.design_records_mcp.schema.diagnostics`. They must be reproducible by the same `validate_records` rules against the same affected record set in the same candidate or accepted/materialized state.
 
 > Source: V01-REQ-MCP-012, V01-TASK-MCP-011-01
 
@@ -99,7 +99,7 @@ Metadata block replacement targets the kind-specific metadata block.
 
 For `spec`, metadata replacement is scoped to recognized fields only. Unknown or auxiliary YAML front matter fields must be preserved. Recognized spec metadata fields: `scope`, top-level `status`, and `design_record.id` / `design_record.kind` / `design_record.status` / `design_record.depends_on`.
 
-Required recognized fields are validated by the same field vocabulary used for record parsing and validation. Missing required recognized fields produce `missing_required_metadata`. Empty required scalar fields or empty list items produce `empty_required_metadata`. Invalid recognized values produce `invalid_metadata_value` or an existing kind-specific diagnostic (`invalid_status_for_kind`, `spec_status_mismatch`, `invalid_migrated_to_spec`).
+Required recognized fields are validated by the same field vocabulary and PRODUCT authority used for repository validation. Missing required fields produce `missing_required_field`. A present empty value produces `empty_required_field` only when the applicable authority requires non-empty content. Invalid present values produce `invalid_field_value`. The diagnostic uses structured `subject`, `field`, `value`, and applicable `target` or `location` associations from `spec:drmcp.design_records_mcp.schema.diagnostics`; authoring does not introduce separate kind-specific validation categories.
 
 ### Section selector model
 

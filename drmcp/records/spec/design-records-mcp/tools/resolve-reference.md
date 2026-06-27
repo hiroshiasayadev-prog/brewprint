@@ -101,6 +101,11 @@ The public outcome vocabulary is fixed to three statuses:
 | `unresolved` | `null` | An accepted current or legacy input has no selectable readable target. |
 | `unsupported` | `null` | Neither current grammar nor accepted legacy-family grammar accepts `ref`. |
 
+Every normal resolver response also contains a top-level `diagnostics` array.
+The array is empty for `resolved`.
+An `unresolved` or `unsupported` response contains the W006 cause diagnostic defined by `spec:drmcp.design_records_mcp.schema.diagnostics`.
+The diagnostic does not change the public status or target projection.
+
 The accepted family set is defined by `spec:product.brewprint.compatibility.legacy_id_compatibility`.
 Exact issued-ID lexical recognition uses the parser mapping in `spec:drmcp.design_records_mcp.namespace_scanning`.
 Grammar acceptance does not depend on whether `legacy_roots` is configured or usable.
@@ -115,8 +120,20 @@ After accepted legacy grammar matches, each of the following returns `unresolved
 One readable source for the exact issued ID returns `resolved` with the legacy target defined below.
 The operation does not add statuses such as `disabled`, `unavailable`, or `conflicted`.
 
-Diagnostic and warning fields that distinguish disabled fallback, missing target, duplicate conflict, and unreadable source are owned by `DRMCP-WORK-MCP-006`.
-This contract does not define diagnostic object shape, category names, severity, messages, source locations, or exceptional path representation.
+Cause diagnostics preserve these distinctions without adding public statuses:
+
+| condition | diagnostic mapping |
+|---|---|
+| Malformed string-shaped input. | `malformed_requested_ref`. |
+| Input accepted by neither current nor legacy grammar. | `unsupported_requested_ref`. |
+| Accepted current input has no active-index target. | `unresolved_requested_ref` with `target.lookup_state: current_unresolved`. |
+| Accepted current identity is conflicted. | `unresolved_requested_ref` with `conflict.type: current_identity`. |
+| Accepted legacy input has fallback disabled. | `legacy_lookup_unavailable` with `target.lookup_state: legacy_disabled`. |
+| Accepted legacy input has no candidate. | `unresolved_requested_ref` with `target.lookup_state: legacy_unresolved`. |
+| Accepted legacy input has duplicate candidates. | `legacy_lookup_conflict`. |
+| Accepted legacy input has one unreadable indexed source. | `legacy_lookup_unavailable` with `target.lookup_state: legacy_unreadable`. |
+
+The shared envelope, severity, associations, ordering, duplicate suppression, and T04 source-location handoff are defined by `spec:drmcp.design_records_mcp.schema.diagnostics`.
 
 ## Current successful target projection
 
@@ -146,7 +163,8 @@ Current spec example:
     "kind": "spec",
     "title": "Resolver responsibility",
     "status": "draft"
-  }
+  },
+  "diagnostics": []
 }
 ```
 
@@ -162,7 +180,8 @@ Current sequential record example:
     "kind": "work_item",
     "title": "Resolver and configured legacy-fallback contract realignment",
     "status": "in_progress"
-  }
+  },
+  "diagnostics": []
 }
 ```
 
@@ -184,7 +203,8 @@ A resolved legacy target contains exactly:
     "target_type": "legacy_sequential_record",
     "ref": "V01-REQ-MCP-001",
     "kind": "requirement"
-  }
+  },
+  "diagnostics": []
 }
 ```
 
@@ -245,7 +265,7 @@ The operation does not consult front-matter alias registries or perform section-
 An exact current or accepted legacy input that has no selectable readable target produces `unresolved`, not `unsupported`.
 The accepted V01 decision, investigation, requirement, work-item, and task families therefore remain distinct from rejected `V01-SPEC-*` inputs.
 
-Diagnostic category, severity, message, source-location, and exceptional path representation remain owned by `DRMCP-WORK-MCP-006`.
+Diagnostic category, severity, message, and shared associations are defined by `spec:drmcp.design_records_mcp.schema.diagnostics`. The concrete `location` shape and exceptional path representation remain T04-owned under `DRMCP-WORK-MCP-006`.
 
 ## Errors
 
@@ -254,7 +274,7 @@ Diagnostic category, severity, message, source-location, and exceptional path re
 | `invalid_request` | The top-level request violates the request-shape rules. |
 
 Unsupported and unresolved string inputs are normal resolver outcomes, not tool execution errors.
-Their diagnostic representation remains delegated to `DRMCP-WORK-MCP-006`.
+Their top-level cause diagnostics use `spec:drmcp.design_records_mcp.schema.diagnostics`.
 
 ## Boundary
 

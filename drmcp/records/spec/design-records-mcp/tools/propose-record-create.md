@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.propose_record_create`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-28
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
 
@@ -139,16 +139,25 @@ When `reciprocal_update_mode: "include_required"` applies a reciprocal update, `
     {
       "category": "reciprocal_update_included",
       "severity": "info",
-      "record_id": "V01-WORK-MCP-008",
-      "field": "tasks",
-      "value": "V01-TASK-MCP-008-04",
-      "message": "reciprocal update included: V01-WORK-MCP-008.tasks will receive V01-TASK-MCP-008-04"
+      "message": "reciprocal update included: V01-WORK-MCP-008.tasks will receive V01-TASK-MCP-008-04",
+      "subject": {
+        "type": "record",
+        "ref": "V01-WORK-MCP-008",
+        "record_kind": "work_item"
+      },
+      "field": {
+        "name": "tasks"
+      },
+      "value": {
+        "actual": "V01-TASK-MCP-008-04"
+      }
     }
   ]
 }
 ```
 
 In this case, `diff.files` includes both the new record create entry and the parent record modify entry. `required_follow_up_updates` is empty.
+The diagnostic uses the shared envelope and structured associations from `spec:drmcp.design_records_mcp.schema.diagnostics`; its trigger and proposal behavior remain owned by this operation.
 
 When `reciprocal_update_mode: "report_required_follow_up"` is used and required follow-ups exist, `required_follow_up_updates` is non-empty and acceptance is rejected with `written: false` until they are satisfied.
 

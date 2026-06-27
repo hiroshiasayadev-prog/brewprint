@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.propose_record_update`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-28
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
 
@@ -128,7 +128,7 @@ Decision metadata replacement validates recognized ADR fields: `status`, `date`,
 
 Workflow artifact metadata replacement validates required fields per `spec:drmcp.design_records_mcp.schema.metadata_grammar`.
 
-Missing required fields produce `missing_required_metadata`. Empty required scalars / empty list items produce `empty_required_metadata`. Invalid recognized field values produce `invalid_metadata_value` or the kind-specific diagnostic.
+Proposal-local validation uses the shared repository taxonomy from `spec:drmcp.design_records_mcp.schema.diagnostics`. Missing required fields produce `missing_required_field`. A present empty value produces `empty_required_field` only when the applicable PRODUCT authority requires non-empty content. Invalid present values produce `invalid_field_value`. The resulting entries use structured `subject`, `field`, `value`, and applicable `target` or `location` associations.
 
 Spec metadata block replacement example:
 
@@ -177,7 +177,7 @@ Exact matching compares heading text after removing ATX marker syntax and trimmi
 **Narrow case-only fallback** (workflow artifacts only):
 
 - Applies to `requirement`, `work_item`, `task` only.
-- Applies only when `section_selector.heading` is listed as a validation-required canonical heading for the target record kind in the Required narrative section policy.
+- Applies only when `section_selector.heading` is a canonical heading whose required presence or gated substantive-content requirement is declared for the target kind by the applicable PRODUCT authority: `spec:product.design_records.authoring_standards.requirement_authoring`, `spec:product.design_records.authoring_standards.work_item_authoring`, or `spec:product.design_records.authoring_standards.task_authoring`.
 - The target record does not need to currently be in the gated status; record kind and requested heading determine eligibility.
 - Attempted only after exact matching finds zero matches.
 - Case-insensitive comparison; no Unicode normalization, punctuation folding, typo correction, prefix, or contains matching.
@@ -306,9 +306,12 @@ No-op update response:
     {
       "category": "no_op_update",
       "severity": "info",
-      "record_id": "V01-TASK-MCP-008-04",
-      "path": "v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md",
-      "message": "update produced no persisted content changes"
+      "message": "update produced no persisted content changes",
+      "subject": {
+        "type": "record",
+        "ref": "V01-TASK-MCP-008-04",
+        "record_kind": "task"
+      }
     }
   ]
 }
@@ -327,7 +330,7 @@ No-op response fields:
 | `diff` | no | Omitted or `null` (no retained proposal) |
 | `proposal_id` | no | Omitted (no retained proposal) |
 
-`no_op_update` MUST have severity `info`. MUST include `record_id`, `path`, and `message`. MUST NOT be returned as a tool execution error. MUST NOT set `validation.ok` to `false`.
+`no_op_update` MUST have severity `info`. It MUST include `message` and a structured `subject` identifying the target record. It MUST NOT use scalar diagnostic `record_id` or standalone diagnostic `path`. The enclosing response `target` continues to expose the resolved authoring target under the authoring transaction contract. A T04-defined `location` may be included when that path-exposure policy allows it. `no_op_update` MUST NOT be returned as a tool execution error and MUST NOT set `validation.ok` to `false`.
 
 No-op detection is evaluated after all operation semantics and normalization (including metadata field preservation, metadata validation, section selector resolution, and heading-safe replacement body normalization).
 

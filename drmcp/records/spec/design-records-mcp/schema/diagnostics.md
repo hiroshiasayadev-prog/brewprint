@@ -2,144 +2,422 @@
 
 - **id**: `spec:drmcp.design_records_mcp.schema.diagnostics`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-28
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
 
 ## What this is
 
-Defines all validation diagnostic categories, severity levels, required additional fields, and diagnostic policy for Design Records MCP.
+Defines the shared machine-readable envelope, associations, category vocabulary, severity, ordering, and duplicate-suppression rules for DRMCP operation warnings, repository diagnostics, and authoring diagnostics.
+
+PRODUCT specifications own whether record content, document shape, lifecycle state, or declared relations are semantically valid. DRMCP maps those authority-owned conditions into the representation defined here.
 
 ## Current contract
 
-### `resolve_reference` resolution responses
+### Placement by operation
 
-`resolve_reference` returns these response types for direct queries:
+| surface | collection | contract |
+|---|---|---|
+| `list_records` | top-level `warnings` | Contains only W004-defined operation warning triggers. |
+| `get_records` | top-level `warnings` | Contains only W004-defined per-ref and duplicate warning triggers. |
+| `resolve_reference` | top-level `diagnostics` | Explains the cause of `unresolved` or `unsupported` without changing the W005 public status vocabulary. |
+| `validate_records` | top-level `diagnostics` | Contains the unified source, record, conflict, and relation findings selected by the T02 execution contract. |
+| Authoring proposal validation | `validation.diagnostics` | Uses the same repository-diagnostic representation as `validate_records`, limited to the proposal-local affected set. |
+| Authoring operation outcomes | operation-level `diagnostics` | Uses the shared envelope while preserving authoring-owned categories and trigger semantics. |
 
-| response | condition |
+Request-shape errors and execution failures are not normal warning or validation-diagnostic entries when the owning operation contract says that no normal response wrapper is returned.
+
+### Shared envelope
+
+Every warning or diagnostic entry contains:
+
+```json
+{
+  "category": "invalid_field_value",
+  "severity": "error",
+  "message": "status value is not accepted for this record kind"
+}
+```
+
+| field | required | meaning |
+|---|---:|---|
+| `category` | yes | Stable machine-readable cause identifier. |
+| `severity` | yes | `error`, `warning`, or `info`. |
+| `message` | yes | Human-readable explanation. It is not an identity or ordering field. |
+| `subject` | category-dependent | The record, source, configuration area, or request item to which the entry applies. |
+| `field` | category-dependent | Affected metadata field, narrative section, or ordered field item. |
+| `value` | category-dependent | Invalid present value and an optional explicit expectation. |
+| `target` | category-dependent | Relation or lookup target association. |
+| `occurrence` | category-dependent | Exact-request first occurrence and duplicate occurrence association. |
+| `conflict` | category-dependent | Current identity or legacy lookup conflict association. |
+| `location` | category-dependent | T04-owned machine-readable source location for a repairable source-backed finding. |
+
+Each category profile defines which optional associations are required, optional, or prohibited.
+
+The following are not shared diagnostic-envelope fields:
+
+- scalar `record_id`, `source_ref`, or `requested_id` duplicates beside canonical `ref` association;
+- scalar `field` or scalar `value` shortcuts;
+- a standalone raw top-level `path` field;
+- an untyped generic `details` object.
+
+### Subject association
+
+`subject` is a discriminated object.
+
+| `subject.type` | required fields | optional fields | use |
+|---|---|---|---|
+| `record` | `ref` | `record_kind` | A current canonical record or spec identity, including an identity whose duplicate conflict prevents unique addressability. |
+| `source` | `app_namespace`, `record_kind` | `ref` when determinable | A current discovered source, including parse-failed and identity-less validation-only sources. |
+| `configuration` | `component` | `app_namespace` | Repository, current-root, legacy-root, active-index, or legacy-lookup configuration context. |
+| `request_item` | `operation` | none | One item supplied to a read or resolver operation. |
+
+Canonical current identity uses `ref`.
+Physical paths are never stored inside `subject`.
+An identity-less source omits `ref`; its exact repair target is supplied by `location` when known.
+
+### Field, value, and target associations
+
+`field` contains:
+
+| field | required | meaning |
+|---|---:|---|
+| `name` | yes | Metadata field name or canonical required section heading. |
+| `item_index` | no | Zero-based index of one ordered list item. |
+
+`value` contains:
+
+| field | required | meaning |
+|---|---:|---|
+| `actual` | yes | Present invalid value. A missing field or section omits `value`. |
+| `expected` | no | Explicit machine-readable accepted value, values, or shape when the authority can be represented without prose inference. |
+
+`target` contains:
+
+| field | required | meaning |
+|---|---:|---|
+| `ref` | category-dependent | Exact current canonical or accepted legacy issued ref being checked. |
+| `actual_kind` | no | Kind found for a uniquely identified target when it differs from the required kind. |
+| `expected_kinds` | no | Ordered accepted target kinds. |
+| `reciprocal_field` | no | Counterpart field required by the applicable reciprocity rule. |
+| `lookup_state` | no | Machine-readable non-resolved lookup cause. |
+
+Accepted `target.lookup_state` values are:
+
+- `current_unresolved`;
+- `legacy_disabled`;
+- `legacy_unresolved`;
+- `legacy_unreadable`.
+
+A declared relation value that matches no accepted current or legacy lookup grammar has no lookup state because no lookup runs.
+
+A current duplicate target is distinguished through `conflict.type: current_identity` rather than another lookup-state value.
+Physical paths are not placed in `field`, `value`, or `target`.
+
+### Request occurrence association
+
+`get_records` per-ref warnings use `occurrence`:
+
+```json
+{
+  "occurrence": {
+    "ref": "DRMCP-WORK-MCP-006",
+    "first_index": 0,
+    "duplicate_indexes": [2, 4]
+  }
+}
+```
+
+| field | required | meaning |
+|---|---:|---|
+| `ref` | yes | Exact string supplied by the caller. |
+| `first_index` | yes | Zero-based index of the first occurrence. |
+| `duplicate_indexes` | only for `duplicate_requested_ref` | Ordered zero-based indexes of every ignored later exact-equal occurrence. |
+
+Exact string equality controls duplicate detection.
+The first occurrence remains effective.
+One `duplicate_requested_ref` entry is emitted per duplicated exact string, not per ignored occurrence.
+
+### Conflict association
+
+`conflict.type` is one of:
+
+| type | required fields | meaning |
+|---|---|---|
+| `current_identity` | `source_count`, `members` | Two or more current sources claim the same canonical current identity. |
+| `legacy_lookup` | `candidate_count`, `candidates` | Two or more configured legacy sources produce the same issued legacy ID. |
+
+For `current_identity`:
+
+- `source_count` is the number of conflicting current sources;
+- `members` contains one entry per conflicting source;
+- each member contains the T04-owned `location` association;
+- no source winner is selected.
+
+For `legacy_lookup`:
+
+- `candidate_count` is the number of configured legacy candidates;
+- `candidates` contains one entry per conflicting legacy source;
+- each candidate contains the T04-owned `location` association;
+- no candidate winner is selected;
+- legacy archive sources remain lookup targets and do not become repository-validation subjects.
+
+Disabled, missing, unreadable, resolved, and unsupported legacy lookup outcomes are not conflict objects.
+
+### Source-location slot and T04 boundary
+
+`location` is the shared source-location association reserved by this contract.
+
+It is required when a repository or proposal-local validation diagnostic identifies a known repairable source file, including:
+
+- identity-less, parse-failed, or unreadable current sources when their source is known;
+- source-backed metadata, section, identity, and relation diagnostics;
+- every member of a current identity conflict;
+- every candidate of a legacy lookup conflict;
+- persisted-file authoring diagnostics when the authoring operation exposes a repair target.
+
+It is omitted when no repository file exists, including malformed request items, unresolved request refs without a source, unknown proposal IDs, and expired body-cache IDs.
+
+This T03 contract does not define the fields inside `location`.
+T04 owns:
+
+- repository-relative versus absolute representation;
+- current-root and legacy-root identification;
+- separator normalization and Windows-path handling;
+- the stable source-location sort key;
+- operation-specific exceptional path-exposure policy.
+
+An opaque internal source token alone is not an acceptable replacement for a repairable location.
+Normal successful list, retrieval, and resolver target objects remain path-free under W004 and W005.
+
+### Severity and validation blocking
+
+| severity | meaning |
 |---|---|
-| `unresolved_reference` | Supported ref form but target does not exist |
-| `ambiguous_reference` | Ref matches multiple targets; single resolution not possible |
-| `unsupported_reference` | Input is defined as out of MVP resolver scope |
+| `error` | Applicable repository or record contract is violated. Blocks `validate_records.ok`. |
+| `warning` | Operation completed normally but one item failed, a projection degraded, or repair attention is warranted without invalidating the entire response wrapper. |
+| `info` | Non-blocking notice, ignored duplicate occurrence, or repair guidance. |
 
-Reserved prefix `yaml:` public resolver input / direct query response behavior and investigation metadata validation behavior are not defined in MVP. These resolution responses are distinct from validation diagnostics produced by `validate_records` for reference fields and index defects.
+`validate_records.ok` is `false` when at least one returned diagnostic has severity `error`.
+It is `true` when no returned diagnostic has severity `error`, including responses containing only `warning` or `info` entries.
 
-### `get_records` retrieval diagnostics
+Malformed validation requests and untrustworthy mandatory configuration or index state remain request or execution failures outside the normal validation wrapper.
 
-`get_records` returns these request- and retrieval-level diagnostics:
+Severity is context-sensitive but deterministic.
+The same condition under the same operation and applicable authority always maps to the same severity.
 
-| category | severity | placement | required additional fields | meaning |
+### Repository-validation categories
+
+| category | normal severity | required associations | meaning |
+|---|---|---|---|
+| `source_unreadable` | `error` | `subject: source`, `location` when known | A selected current source cannot be read. |
+| `source_syntax_invalid` | `error` | `subject`, `location`; optional `field`, `value` | Source or metadata structure cannot be consumed under the current format contract. |
+| `identity_invalid` | `error` | `subject`, `location`; optional `field`, `value` | Canonical identity grammar, H1 identity, filename consistency, metadata identity consistency, or path-derived spec identity is invalid. |
+| `missing_required_field` | `error` | `subject`, `field`, `location` | An applicable authority requires a field that is absent. |
+| `empty_required_field` | `error` | `subject`, `field`, `value`, `location` | An applicable authority requires a present field to be non-empty and the parsed value is empty. |
+| `invalid_field_value` | `error` | `subject`, `field`, `value`, `location`; optional `target` | A present value violates its applicable grammar, vocabulary, kind-specific rule, or relation-value form. |
+| `missing_required_section` | `error` | `subject`, `field`, `location` | An applicable authority requires a narrative section that is absent. |
+| `empty_required_section` | `error` | `subject`, `field`, `value`, `location` | An applicable authority requires a present narrative section to be non-empty and its content is empty. |
+| `noncanonical_section_heading` | `info` | `subject`, `field`, `value`, `location` | A case-only heading variant provides repair guidance and does not suppress a required-section error. |
+| `relation_target_unavailable` | authority-dependent; normally `error` | `subject`, `field`, `target`, `location`; exactly one of a non-conflict `target.lookup_state` or `conflict: current_identity` | A relation value accepted by current or legacy lookup grammar has no selectable target. The lookup state or current identity conflict preserves the cause. |
+| `relation_target_kind_mismatch` | `error` | `subject`, `field`, `target`, `location` | A uniquely found target has a kind outside `target.expected_kinds`. |
+| `relation_reciprocity_mismatch` | `error` | `subject`, `field`, `target`, `location` | A PRODUCT-owned reciprocal relation does not contain the required counterpart. |
+| `current_identity_conflict` | `error` | `subject: record`, `conflict: current_identity` | Current sources claim one canonical identity and no winner exists. |
+| `legacy_lookup_conflict` | `error` in repository validation | `subject: record`, `field`, `target`, `conflict: legacy_lookup`, `location` for the referring source | A selected current record relation cannot resolve because the accepted legacy issued ID has multiple configured candidates. |
+
+`empty_required_field` and `empty_required_section` do not mean that every required field or section must be non-empty.
+They fire only when the applicable PRODUCT authority requires non-empty content.
+A field or section whose authority permits an empty value produces no empty-required diagnostic.
+
+A noncanonical or unsupported declared relation value that matches no accepted current or legacy lookup grammar must use `invalid_field_value`.
+No lookup runs for that condition, no `target.lookup_state` is attached, and `relation_target_unavailable` must not be emitted for the same condition.
+`relation_target_unavailable` applies only after accepted current or legacy lookup grammar and no usable target is selected.
+
+### Operation warning and resolver-diagnostic categories
+
+| category | normal severity | surfaces | required associations | trigger mapping |
 |---|---|---|---|---|
-| `record_not_found` | error | item-level | `requested_id` | Requested exact record ID lookup key is not in the index |
-| `duplicate_requested_id_ignored` | info | top-level | `requested_id`, `first_index`, `duplicate_indexes` | Second and subsequent occurrences of the same requested ID are ignored; only the first-occurrence item is returned |
+| `missing_compact_field` | `warning` | `list_records` | `subject: record`, `field`; `location` only when T04 allows it | A returned compact record lacks `title`, `status`, or `date` and W004 projects `null`. |
+| `malformed_requested_ref` | `warning` | `get_records`, `resolve_reference` | `subject: request_item`; `occurrence` for `get_records`, otherwise `value.actual` | The owning operation classifies the supplied string as malformed. |
+| `unsupported_requested_ref` | `warning` | `get_records`, `resolve_reference` | `subject: request_item`; `occurrence` for `get_records`, otherwise `value.actual` | The supplied string belongs to no supported operation input family. |
+| `unresolved_requested_ref` | `warning` | `get_records`, `resolve_reference` | `subject: request_item`, `target`; `occurrence` for `get_records`; optional `conflict` | An accepted exact current, spec, or legacy input has no selectable target. |
+| `legacy_lookup_unavailable` | `warning` | `get_records`, `resolve_reference` | `subject: request_item`, `target`; `occurrence` for `get_records`; `location` when T04 allows and a source exists | Accepted legacy lookup is disabled or a unique indexed source is unreadable. |
+| `legacy_lookup_conflict` | `warning` in read operations | `get_records`, `resolve_reference` | `subject: request_item`, `target`, `conflict: legacy_lookup`; `occurrence` for `get_records` | Accepted legacy lookup has multiple configured candidates. |
+| `duplicate_requested_ref` | `info` | `get_records` | `subject: request_item`, `occurrence` | Later exact-equal occurrences are ignored after the first occurrence. |
 
-`first_index` and `duplicate_indexes` are zero-based indexes into the request `ids` array. One `duplicate_requested_id_ignored` diagnostic is returned per duplicated requested ID. These are request/retrieval diagnostics; they do not use the `record_id` field that indicates a record metadata defect.
+The operation contracts own trigger conditions, response wrappers, and placement.
+This contract owns the entry representation and category names.
 
-### Authoring transaction diagnostics
+For an accepted current input whose active-index identity is conflicted, `unresolved_requested_ref` may include `conflict.type: current_identity` so the cause remains machine-readable without adding another public resolver status.
 
-These diagnostic categories are used in proposal, accept, discard, get-proposal, and body-cache retry responses.
+### Resolver status alignment
 
-| category | severity | meaning |
-|---|---|---|
-| `proposal_not_found` | error | Requested proposal ID does not exist |
-| `proposal_expired` | error | Requested proposal ID is past expiry |
-| `proposal_discarded` | error | Proposal is already discarded; cannot be accepted |
-| `proposal_already_accepted` | error | Proposal is already accepted; cannot be applied again |
-| `proposal_stale` | error | Proposal base state and current target state do not match |
-| `target_changed` | error | Target record kind / path / identity differs from proposal creation time |
-| `id_collision` | error | Create proposal resolved ID was claimed before acceptance |
-| `required_follow_up_not_satisfied` | error | Required reciprocal metadata update or other follow-up is not satisfied |
-| `invalid_body_source` | error | Body source rule violation: both `body` and `body_cache_id` supplied, or required body source is missing |
-| `body_cache_not_found` | error | Requested body cache ID does not exist |
-| `body_cache_expired` | error | Requested body cache ID is past expiry |
-| `proposal_preparation_failed` | error | Proposal preparation failed before proposal persistence |
-| `section_selector_no_match` | error | Named section selector matched no sections in the target record |
-| `section_selector_ambiguous` | error | Named section selector matched multiple sections; single target cannot be resolved |
-| `section_replacement_body_heading_stripped` | warning | The first non-empty line of the `named_section_replace` replacement body was a Markdown ATX heading matching `section_selector`; it was stripped before proposal creation to prevent a duplicate heading |
+`resolve_reference` keeps the W005 public statuses `resolved`, `unresolved`, and `unsupported`.
+It returns a top-level `diagnostics` array in every normal resolver response.
 
-`section_selector_no_match` / `section_selector_ambiguous` diagnostics should include `candidate_headings` when possible. Candidate heading entries carry at least `heading`, `level`, and `ordinal`.
+| resolver state | diagnostic result |
+|---|---|
+| Current or legacy target resolves. | `diagnostics: []`. |
+| String is malformed under operation classification. | One `malformed_requested_ref` warning. |
+| Neither current nor accepted legacy grammar supports the string. | One `unsupported_requested_ref` warning. |
+| Accepted current input has no active-index target. | One `unresolved_requested_ref` warning with `target.lookup_state: current_unresolved`. |
+| Accepted current identity is conflicted. | One `unresolved_requested_ref` warning with `conflict.type: current_identity`. |
+| Accepted legacy input has fallback disabled. | One `legacy_lookup_unavailable` warning with `target.lookup_state: legacy_disabled`. |
+| Accepted legacy input has no candidate. | One `unresolved_requested_ref` warning with `target.lookup_state: legacy_unresolved`. |
+| Accepted legacy input has duplicate candidates. | One `legacy_lookup_conflict` warning. |
+| Accepted legacy input has one unreadable indexed source. | One `legacy_lookup_unavailable` warning with `target.lookup_state: legacy_unreadable`. |
 
-`section_replacement_body_heading_stripped` diagnostics MUST include `stripped_heading` (the stripped heading text) and `stripped_level` (ATX level as an integer). This diagnostic does not block retained proposal creation.
+The diagnostic cause never changes the resolver status or successful target projection.
 
-### `validate_records` diagnostics
+### PRODUCT semantic authority mapping
 
-Diagnostics fire independently per check axis. Multiple diagnostics may attach to a single record.
+DRMCP categories do not define which fields, statuses, sections, or relations are valid.
+They consume the following authorities:
 
-| category | severity | meaning |
-|---|---|---|
-| `duplicate_id` | error | Multiple records share the same normalized record ID |
-| `filename_id_mismatch` | error | Canonical ID or metadata ID of a decision / investigation / workflow artifact record does not match the filename ID segment |
-| `invalid_h1_title` | error | H1 is absent or does not match the expected format |
-| `invalid_workflow_id` | error | Requirement / work item / task metadata ID or H1 ID does not follow workflow ID grammar |
-| `missing_required_metadata` | error | Required metadata field is absent for a requirement / work item / task |
-| `empty_required_metadata` | error | Required scalar metadata field is empty, or a required list metadata field contains an empty item |
-| `missing_required_section` | error | A workflow artifact in a gated status is missing a required narrative section heading |
-| `empty_required_section` | error | A workflow artifact in a gated status has the required narrative section heading but the section body is empty or whitespace-only |
-| `section_heading_case_mismatch` | info | A heading exists that differs from a canonical required heading only by case |
-| `invalid_metadata_value` | error | Required metadata field is non-empty but does not satisfy the value contract (e.g. `date` is not strict `YYYY-MM-DD`) |
-| `invalid_status_for_kind` | error | `status` value is not allowed for the record `kind` |
-| `spec_status_mismatch` | error | Spec top-level `status` and `design_record.status` do not agree |
-| `missing_depends_on_target` | error | A `depends_on` referenced ID does not exist |
-| `missing_supersedes_target` | error | A `supersedes` referenced ID does not exist |
-| `invalid_migrated_to_spec` | error | `migrated_to_spec` value is invalid |
-| `missing_record_path` | error | Discovery found a candidate path but read/stat failed |
-| `invalid_semantic_ref_declaration` | error | A spec front matter `semantic_refs` entry or `sections` key does not follow active `spec:` grammar |
-| `missing_section_target` | error | A spec front matter `sections` value has no matching Markdown heading |
-| `ambiguous_section_target` | error | A spec front matter `sections` value matches multiple headings in the same document; single resolution not possible |
-| `duplicate_semantic_ref` | error | An active `spec:` document-level or section-level ref is declared to multiple targets and cannot be resolved to a single one |
-| `unresolved_source_ref` | error | An investigation `source_refs` entry is a supported canonical ref but cannot be resolved |
-| `unresolved_follow_up_result` | error | An investigation `follow_up_results` entry is a supported canonical ref but cannot be resolved |
-| `unresolved_follow_up_candidate` | info | An investigation `follow_up_candidates` entry is a supported canonical ref but is unresolved (planned artifact not yet created) |
-| `noncanonical_source_ref` | error | An investigation `source_refs` entry is a physical path rather than a canonical ref |
-| `noncanonical_follow_up_result` | error | An investigation `follow_up_results` entry is a physical path rather than a canonical ref |
-| `noncanonical_follow_up_candidate` | info | An investigation `follow_up_candidates` entry is a physical path rather than a canonical ref |
-| `unsupported_reference` | error / info | MVP-defined unsupported reference in investigation metadata. `source_refs` / `follow_up_results`: error. `follow_up_candidates`: info. Includes `TASK-*` in investigation fields. Reserved `yaml:` prefix is not in scope for this category; its behavior is not defined in MVP. |
-| `unresolved_workflow_relation` | error | A workflow relation field entry is a supported `REQ-*` / `WORK-*` / `TASK-*` ref but cannot be resolved |
-| `invalid_workflow_relation_target` | error | A workflow relation field contains a target that is not the expected kind or ID form |
-| `workflow_relation_mismatch` | error | Declared bidirectional relation between `REQ.work_items` ↔ `WORK.source_requirement`, or `WORK.tasks` ↔ `TASK.work_item` is inconsistent |
-| `workflow_source_requirement_mismatch` | error | Task `source_requirement` does not match the parent work item's `source_requirement` |
+| semantic concern | authority |
+|---|---|
+| Current canonical lookup, duplicate identity, and declared relation invalidity | `spec:product.design_records.traceability.resolve_and_validation` |
+| Investigation and workflow relation fields | `spec:product.design_records.traceability.metadata_schema` |
+| Current sequential artifact identity | `spec:product.design_records.namespace_model.artifact_id_grammar` |
+| Current spec document shape | `spec:product.design_records.spec_format.document_shape` |
+| Current spec path-derived identity | `spec:product.design_records.spec_format.spec_id_as_ref` |
+| Migration-sensitive spec validation policy | `spec:product.design_records.spec_format.validation_policy` |
+| ADR metadata, lifecycle, and narrative rules | `spec:product.design_records.authoring_standards.adr_authoring` |
+| Spec author-facing rules | `spec:product.design_records.authoring_standards.spec_authoring` |
+| Investigation metadata, lifecycle, and narrative rules | `spec:product.design_records.authoring_standards.investigation_authoring` |
+| Requirement metadata, lifecycle, and narrative rules | `spec:product.design_records.authoring_standards.requirement_authoring` |
+| Work-item metadata, lifecycle, and narrative rules | `spec:product.design_records.authoring_standards.work_item_authoring` |
+| Task metadata, lifecycle, and narrative rules | `spec:product.design_records.authoring_standards.task_authoring` |
 
-### Required additional fields by diagnostic type
+The category remains stable when two kinds share the same invalidity cause.
+Kind-specific requiredness, allowed emptiness, gated-section activation, and accepted values are represented by the cited authority plus `field`, `value`, and `target`, not by creating one category per PRODUCT rule.
 
-**Workflow metadata diagnostics** (`missing_required_metadata` / `empty_required_metadata` / `invalid_metadata_value`): in addition to the standard `category` / `severity` / `record_id` / `path` / `message`, must return `field`. When the input value is present, must also return `value`.
+### Authoring shared-envelope boundary
 
-**Workflow required section diagnostics** (`missing_required_section` / `empty_required_section`): in addition to standard fields, must return `section` (the required narrative section heading text) and `status` (the workflow artifact status that activated the rule).
+Proposal-local `validation.diagnostics` uses the same repository category, severity, association, ordering, and duplicate-suppression rules as `validate_records` for the same candidate or materialized state.
 
-**`section_heading_case_mismatch`:** must include `section` (canonical required heading), `actual_heading` (matched non-canonical heading), and `status` (workflow artifact status that activated the required-section rule). Should include `candidate_headings` (heading text, level, ordinal) when available.
+Authoring operation diagnostics also use required `category`, `severity`, and `message`, plus applicable shared associations.
+Existing authoring category names and trigger semantics remain owned by the authoring operation contracts.
 
-This diagnostic is repair guidance only. It does not relax canonical required-section validation and does not suppress any `missing_required_section` / `empty_required_section` error. It is returned when: a canonical required section is missing for the target record kind and current gated status, and exactly one heading exists whose text differs from the canonical heading only by case.
+Authoring-only category fields remain allowed when they express operation concepts that do not fit the shared associations, including:
 
-**Workflow relation diagnostics** (`unresolved_workflow_relation` / `invalid_workflow_relation_target` / `workflow_relation_mismatch` / `workflow_source_requirement_mismatch`): in addition to standard fields, must return `field` (one of `work_items` / `source_requirement` / `tasks` / `work_item` / `depends_on`), `value` (the input ID-as-ref), and `ref_status` (one of `unresolved` / `invalid_target` / `mismatch`). When the target ID can be identified, must also return `target_id`.
+- `proposal_id`;
+- `body_cache_id`;
+- `candidate_headings`;
+- `stripped_heading`;
+- `stripped_level`.
 
-**Investigation reference diagnostics** (`unresolved_*` / `noncanonical_*` / metadata-field-originated `unsupported_reference`): in addition to standard fields, must return `field` (one of `source_refs` / `follow_up_results` / `follow_up_candidates`), `value` (the input reference string), and `ref_status` (one of `unresolved` / `unsupported` / `noncanonical`). When investigation metadata points to a duplicate semantic ref or duplicate record ID that cannot be uniquely resolved, no field-specific diagnostic is added — only `duplicate_semantic_ref` or `duplicate_id` is returned. These duplicate diagnostics and spec declaration/section lookup diagnostics do not require the additional fields defined for investigation metadata diagnostics.
+This shared-envelope alignment does not change:
 
-### Required narrative section policy
+- proposal lifecycle or retention;
+- body-cache behavior;
+- proposal creation, accept, discard, or retrieval behavior;
+- stale, target-change, or ID-collision checks;
+- write eligibility or post-write repair behavior;
+- authoring response wrappers.
 
-| artifact kind | gated status | required non-empty narrative sections |
-|---|---|---|
-| `work_item` | `done` | `Goal`, `Boundary`, `Evidence` |
-| `task` | `done` | `Goal`, `Work`, `Done condition`, `Verification`, `Evidence` |
-| `requirement` | `accepted` | `Requirement`, `Required Outcome` |
+Authoring diagnostic entries do not use scalar `record_id`, scalar `field`, scalar `value`, or standalone raw diagnostic `path` after this contract is applied.
 
-Only headings listed for the target record kind in this table are canonical workflow required headings for the case-only repair behavior defined by `propose_record_update` named section replacement. The target record does not need to currently be in the gated status for the authoring selector fallback to apply — the record kind and requested heading determine fallback eligibility. Authoring guide format headings not listed for the target kind, and user-defined optional headings, are not canonicalized by this rule.
+### Deterministic ordering
 
-`requirement` `accepted` is treated as an adoption-readiness gate, not a close/completion state. Therefore `Evidence` / `Boundary` / `Explicitly Excluded Scope` are not required non-empty sections for `REQ accepted`.
+Repository and proposal-local validation diagnostics use this primary subject-type order:
 
-Required narrative section body is non-empty when: the section body (excluding the heading line) trimmed of leading and trailing whitespace contains at least one non-whitespace character. Whitespace-only body is empty. Body quality, sufficiency, and semantic content are not evaluated — placeholder text such as `Pending` or `None` is non-empty.
+1. `configuration`;
+2. `source`;
+3. `record`;
+4. `request_item`.
 
-### Diagnostic policy and MVP exclusions
+Subjects then sort as follows:
 
-`follow_up_candidates` pointing to a planned-but-uncreated artifact is not an error. `validate_records.ok` is determined solely by the presence of error-severity diagnostics; info diagnostics do not cause failure.
+| subject type | ascending key |
+|---|---|
+| `configuration` | `app_namespace`, then `component` |
+| `source` | `app_namespace`, then `record_kind`, then the T04 stable location sort key |
+| `record` | canonical `ref` |
+| `request_item` | `occurrence.first_index` when present |
 
-The following are **not** included in MVP diagnostic scope:
+Within one subject, diagnostics sort by:
 
-- Coverage mapping, semantic realization relation, `internal-design:` / `coverage:` / `COV-*` resolution and diagnostics.
-- Workflow relation validation beyond declared relation existence and consistency: no orphan artifact diagnostics, no task dependency cycle detection, no execution order projection, no task status–derived progress projection.
-- `accepted_but_not_migrated`
-- `missing_design_record`
-- Status combination validity
-- Per-spec-section origin insufficiency
-- Semantic mismatch between natural language body and metadata
+1. `category`;
+2. `field.name`;
+3. numeric `field.item_index`;
+4. `target.ref`;
+5. `target.lookup_state`;
+6. `target.reciprocal_field`;
+7. `conflict.type`.
 
-`missing_record_path` is issued when the filesystem scan or path normalization detects a record candidate path but the actual read/stat fails. Examples include a file deleted after scan, permission denied, symlink target missing, or a path normalization result that does not exist.
+Missing optional keys sort before present values for the same preceding key.
+`message` is never a sort key.
 
-> Source: V01-ADR-077 §validate_records の責務, V01-ADR-090 §Partial result / Ordering と duplicate requested ID, V01-ADR-092 §4–§7, V01-REQ-MCP-017 / V01-TASK-MCP-016-01 required narrative section policy
+W004 operation-specific ordering remains authoritative:
+
+- `get_records` warnings follow first-occurrence request order;
+- duplicate-request entries use ascending `occurrence.first_index`;
+- `list_records` missing compact-field warnings follow returned-record order and then `title`, `status`, `date`.
+
+### Duplicate suppression
+
+Duplicate suppression occurs before final deterministic sorting.
+
+Semantic diagnostic identity consists of:
+
+- `category`;
+- canonical `subject`;
+- `field`, including `item_index`;
+- `target`, including `ref`, `lookup_state`, and `reciprocal_field`;
+- requested `ref` plus `occurrence.first_index` when present;
+- `conflict.type` when present;
+- source or finding location identity when the diagnostic is location-specific.
+
+The following do not define identity:
+
+- `message`;
+- `severity`;
+- `value.actual` or `value.expected`;
+- counts;
+- aggregated duplicate indexes;
+- aggregated conflict-member or candidate-location lists;
+- the internal check path that detected the condition.
+
+The same semantic finding discovered by multiple checks is emitted once.
+Different subjects, fields, item indexes, targets, lookup states, reciprocal fields, conflict types, or finding locations remain distinct.
+
+Aggregation rules:
+
+- duplicate requested refs aggregate every later index into one ordered `duplicate_indexes` list;
+- one current identity conflict aggregates every conflicting current source location;
+- one legacy lookup conflict aggregates every configured candidate location for the same lookup.
+
+If the same semantic identity is produced with different severities, the implementation violates the deterministic severity contract and must not silently select one.
+
+### Removed stale behavior
+
+This contract does not define or retain:
+
+- resolver statuses named `unresolved_reference`, `ambiguous_reference`, or `unsupported_reference`;
+- `get_records` request field `ids`, item-level failure wrappers, or `record_not_found`;
+- `requested_id` or `record_id` diagnostic shortcuts;
+- one generic duplicate category that merges current identity conflict and legacy lookup conflict;
+- `spec_status_mismatch` based on obsolete YAML or nested metadata;
+- front-matter `semantic_refs`, `sections`, section-target, or section-alias diagnostics;
+- DRMCP-owned copies of PRODUCT required-section or lifecycle rules;
+- raw path as a mandatory standard diagnostic field;
+- V01 ADR or requirement citations as current diagnostic authority.
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:drmcp.design_records_mcp.tools.validate_records` | Validation request, subject selection, relation lookup, and normal wrapper. |
+| `spec:drmcp.design_records_mcp.tools.resolve_reference` | Three-status resolver response plus W006 cause diagnostics. |
+| `spec:drmcp.design_records_mcp.tools.list_records` | Compact-list warning triggers and placement. |
+| `spec:drmcp.design_records_mcp.tools.get_records` | Exact-retrieval warning triggers, ordered occurrence behavior, and placement. |
+| `spec:drmcp.design_records_mcp.schema.record_model` | Current source retention, addressability, and conflict groups. |
+| `spec:drmcp.design_records_mcp.namespace_scanning` | Current and legacy root state and separate legacy lookup map. |
+| `spec:product.design_records.traceability.resolve_and_validation` | PRODUCT-owned relation and identity invalidity. |
+| `spec:product.design_records.authoring_standards` | PRODUCT-owned kind-specific authoring rules. |
+
+## Sources
+
+- `DRMCP-TASK-MCP-006-01`: Authority, contradiction, and changed-file baseline.
+- `DRMCP-TASK-MCP-006-02`: Validation execution, subject, relation-lookup, and response-wrapper contract.
+- `DRMCP-TASK-MCP-006-03`: Accepted D01 through D11 diagnostic representation decisions.
