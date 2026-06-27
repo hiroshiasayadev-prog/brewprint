@@ -1,7 +1,7 @@
 # DRMCP-WORK-MCP-005: Resolver and configured legacy-fallback contract realignment
 
 - **id**: DRMCP-WORK-MCP-005
-- **status**: in_progress
+- **status**: done
 - **date**: 2026-06-27
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **impact_refs**:
@@ -32,6 +32,7 @@
   - DRMCP-TASK-MCP-005-02
   - DRMCP-TASK-MCP-005-03
   - DRMCP-TASK-MCP-005-04
+  - DRMCP-TASK-MCP-005-05
 
 ## Goal
 
@@ -225,3 +226,35 @@ This Work Item is complete when all of the following are true:
   - Advisories A-01 and A-02 remain non-blocking and require no T04 correction.
   - T04 closure readiness is `READY`.
   - T04 status changed to `done` on 2026-06-28.
+- `DRMCP-TASK-MCP-005-05` opened on 2026-06-28.
+  - T05 owns final scoped validation, independent final review, finding closure, and W005 closure synchronization.
+  - Final normative changed-file scope is `namespace-scanning.md`, `resolver.md`, `tools/resolve-reference.md`, and `tools/get-records.md`.
+  - Root overview, tool overview, MVP scope, responsibility boundary, `tools/list-records.md`, current schema specs, diagnostics and validation specs, and authoring transaction specs were rechecked as unchanged candidates.
+  - T05 does not add A-01 or A-02 to scope unless final review identifies a new W005 contract contradiction.
+  - Final resolver baseline remains current grammar and active-index lookup first, resolved-current stop, unresolved-only accepted legacy evaluation, configured legacy lookup only, `unresolved` for accepted lookup failure, and `unsupported` only when neither grammar accepts the input.
+  - Final `get_records` baseline remains accepted-legacy exact classification first, one lookup scope, no resolver invocation, no second lookup, exact ordered deduplication, first-occurrence ordering, partial success, successful-record-only response, top-level warnings, and request-wide `include_body`.
+  - Final legacy baseline remains missing-or-empty fallback disablement, mandatory configured roots, no partial root acceptance, filename-derived issued identity, exact case-sensitive lookup, no duplicate winner, no filesystem-alias traversal, no current-model normalization, no dedicated legacy schema, and issued-ID preservation.
+  - Current spec classification remains lexical. Every current-grammar-matching `spec:` value queries only the active index; an exact miss remains unresolved and does not trigger alias, section, or heading lookup.
+  - W003 current discovery and index construction, W004 exact-retrieval wrapper and projection, W006 diagnostics and validation, and PRODUCT semantic authority remain outside T05 correction ownership.
+  - Final four-file scoped validator command was executed from the repository root and reported on 2026-06-28.
+  - Recorded scoped validator result before final-review correction: `[strict]  All 4 file(s) OK.`
+  - The recorded PASS covered exactly `namespace-scanning.md`, `resolver.md`, `tools/resolve-reference.md`, and `tools/get-records.md`.
+  - Independent final review returned `NEEDS REVISION` with minor finding `F-MIN-FINAL-01`.
+  - `F-MIN-FINAL-01` found stale `date: 2026-06-27` metadata in `resolver.md`, `tools/resolve-reference.md`, and `tools/get-records.md` after the substantive 2026-06-28 lexical current-spec classification correction.
+  - The three affected spec dates were updated to `2026-06-28` without changing contract body text or expanding the final four-file manifest.
+  - The previous validator PASS predates this metadata correction and is superseded for closure purposes.
+  - The same four-file scoped validator was rerun after the metadata correction on 2026-06-28 and returned `[strict]  All 4 file(s) OK.`
+  - Repository-local `git diff --check` reported no whitespace error; only non-blocking line-ending conversion warnings were emitted.
+  - Limited independent re-review returned `PASS`.
+  - `F-MIN-FINAL-01` is `CLOSED`.
+  - The reviewer confirmed that the three date changes were metadata-only, the contract body remained unchanged, and the final four-file normative manifest remained intact.
+  - The reviewer accepted the post-correction validator result and the non-blocking LF-to-CRLF warnings from `git diff --check`.
+  - Blocking findings: none.
+  - Major findings: none.
+  - Minor findings: none.
+  - Advisories A-01 and A-02 remain non-blocking and unchanged.
+  - T05 closure readiness: `READY`.
+  - W005 closure readiness: `READY`.
+  - `DRMCP-TASK-MCP-001-05` closure readiness: `READY`.
+  - T05 status changed to `done` on 2026-06-28.
+  - W005 status changed to `done` on 2026-06-28 after accepted limited re-review PASS.

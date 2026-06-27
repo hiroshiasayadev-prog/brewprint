@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-001-05: Track resolver and legacy-fallback contract correction
 
 - **id**: DRMCP-TASK-MCP-001-05
-- **status**: in_progress
+- **status**: done
 - **date**: 2026-06-27
 - **work_item**: DRMCP-WORK-MCP-001
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -53,6 +53,17 @@ All detailed contract work belongs to the selected child Work Item.
 - Accepted legacy fallback families remain `V01-ADR-*`, `V01-INV-*`, `V01-REQ-*`, `V01-WORK-*`, and `V01-TASK-*`.
 - `DRMCP-WORK-MCP-005` moved to `in_progress` on 2026-06-27.
 - `DRMCP-TASK-MCP-005-01` completed on 2026-06-27 after independent final re-review returned `PASS` with all findings closed.
-- T02 start readiness and T03 design-decision readiness are both `READY`.
-- Detailed resolver, configuration, and fallback contract work remains delegated to `DRMCP-WORK-MCP-005`.
+- T02 start readiness and T03 design-decision readiness were both `READY`.
+- `DRMCP-TASK-MCP-005-02` through `DRMCP-TASK-MCP-005-04` completed with all reported findings closed.
+- `DRMCP-TASK-MCP-005-05` completed on 2026-06-28 after final validation, correction, and limited independent re-review.
+- Final normative manifest: `namespace-scanning.md`, `resolver.md`, `tools/resolve-reference.md`, and `tools/get-records.md`.
+- Post-correction scoped validator result: `[strict]  All 4 file(s) OK.`
+- `git diff --check` reported no whitespace error; LF-to-CRLF warnings were non-blocking.
+- Initial final review finding `F-MIN-FINAL-01` was corrected and is `CLOSED`.
+- Limited independent re-review verdict: `PASS` with no blocking, major, or minor findings.
+- Advisories A-01 and A-02 remain non-blocking.
+- `DRMCP-WORK-MCP-005` changed to `done` on 2026-06-28.
+- The selected child Work Item satisfies the current-first resolver, configured legacy fallback, accepted-family, rejection, issued-ID preservation, and separate-index gates.
+- Detailed resolver, configuration, and fallback contract work remained delegated to `DRMCP-WORK-MCP-005`.
 - This lifecycle-tracking Task contains no direct resolver or configuration contract implementation.
+- `DRMCP-TASK-MCP-001-05` changed to `done` on 2026-06-28 after accepting the child Work Item closure evidence.

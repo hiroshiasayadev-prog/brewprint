@@ -194,6 +194,18 @@ This Work Item is complete when all of the following are true:
   - Validation evidence, changed-file integrity evidence, and W003 through W006 ownership separation were accepted.
   - Final post-closure no-index checks for the closure-updated T05 and W004 records returned expected exit code `1`, no whitespace errors, and LF-to-CRLF warnings only.
 - `DRMCP-WORK-MCP-005`: DRMCP-owned resolver and configured legacy-fallback contract realignment tracked by T05.
+  - The child Work Item is `done` and the resolver/configured-fallback gate is accepted.
+  - Final normative manifest: `namespace-scanning.md`, `resolver.md`, `tools/resolve-reference.md`, and `tools/get-records.md`.
+  - The accepted resolver contract is current-first; accepted legacy fallback begins only after the current stage remains unresolved.
+  - `get_records` retains its operation-specific legacy-first exact classification, one lookup scope, and no resolver invocation.
+  - Missing or empty `legacy_roots` disables fallback; configured roots are mandatory; legacy identity remains filename-derived and exact.
+  - Rejected inputs are not repaired, inferred, redirected, or resolved through aliases, paths, sections, headings, fixtures, or obsolete prefixes.
+  - Post-correction scoped validator result: `[strict]  All 4 file(s) OK.`
+  - `git diff --check` reported no whitespace error; LF-to-CRLF warnings were non-blocking.
+  - Initial final-review finding `F-MIN-FINAL-01` was corrected and closed.
+  - Limited independent re-review verdict: `PASS`; no remaining blocking, major, or minor findings.
+  - Advisories A-01 and A-02 remain non-blocking.
+  - `DRMCP-TASK-MCP-001-05` is `done` and accepted the child closure evidence.
 - `DRMCP-WORK-MCP-006`: DRMCP-owned validation, diagnostics, and path-exposure contract realignment tracked by T06.
 - `DRMCP-WORK-MCP-007`: DRMCP-owned validation Work Item disposition and rebaseline tracked by T07.
 - `PRODUCT-WORK-SPEC-015`: PRODUCT-owned validation owner-pointer synchronization tracked by T07.
