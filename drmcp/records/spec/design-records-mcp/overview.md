@@ -64,6 +64,6 @@ Normal list and exact-retrieval representation is owned by `DRMCP-WORK-MCP-004`.
 | Responsibility boundary | Reference | `spec:drmcp.design_records_mcp.responsibility_boundary` | Boundary against existing brewprint MCP and against general-purpose filesystem tools. |
 | Resolver responsibility | Reference | `spec:drmcp.design_records_mcp.resolver` | Canonical reference model this MCP implements; resolver input/output scope and MVP required inputs. |
 | Namespace scanning | Reference | `spec:drmcp.design_records_mcp.namespace_scanning` | Explicit current-root configuration, app association, active-index construction, and current/legacy root separation. |
-| MVP scope | Reference | `spec:drmcp.design_records_mcp.mvp_scope` | P0/P1 tool set and items explicitly outside MVP. |
+| MVP scope | Reference | `spec:drmcp.design_records_mcp.mvp_scope` | Current-format read baseline tool surface and explicit exclusions. |
 | Schema | Overview | `spec:drmcp.design_records_mcp.schema.overview` | Record data model, metadata grammar, field definitions, ID normalization, discovery, and authoring schema. |
-| Tools | Overview | `spec:drmcp.design_records_mcp.tools.overview` | Full MCP tool set: read/navigation tools, authoring transaction tools, and shared response conventions. |
+| Tools | Overview | `spec:drmcp.design_records_mcp.tools.overview` | Navigation-first public tool catalog and pointers to operation-specific contracts. |

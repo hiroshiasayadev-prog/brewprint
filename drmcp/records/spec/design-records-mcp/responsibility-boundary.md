@@ -15,35 +15,45 @@ Defines the boundary between Design Records MCP, the existing brewprint MCP, and
 
 | MCP | data source | primary responsibility |
 |---|---|---|
-| brewprint MCP | `ResolvedProject` built from brewprint YAML | semantic object query / inspect / impact analysis |
-| Design Records MCP | Current Markdown records under explicitly configured app roots; H1-adjacent metadata; path-derived current spec identity; optional configured legacy archive sources in a separate index | Design record and workflow artifact discovery, indexing, read operations, validation execution, and reference resolution under their owning contracts |
+| brewprint MCP | `ResolvedProject` built from brewprint YAML | Semantic object query, inspection, and impact analysis. |
+| Design Records MCP | Current Markdown records under configured app roots, plus optional configured legacy archive roots in a separate index | Design record discovery, indexing, listing, exact retrieval, reference resolution, validation, and authoring under their owning contracts. |
 
-Design Records MCP is designed to launch and validate independently from the existing brewprint MCP. It does not extend the existing `QueryService` responsibilities into docs management. This spec lives in `drmcp/records/spec/design-records-mcp/**`, not mixed with `bpdsl/records/spec/mcp/tools/**`.
+Design Records MCP operates independently from the existing brewprint MCP. It does not extend the existing `QueryService` into Design Records management.
 
-PRODUCT namespace, repository-layout, and spec-format specifications own current identity and source semantics. DRMCP owns configured-root loading, parser mapping, index construction, validation execution, and MCP operation behavior.
+PRODUCT namespace, repository-layout, authoring, traceability, and spec-format contracts own semantic rules. DRMCP owns concrete parsing, indexing, operation, validation, and response behavior.
 
-Sources: `DRMCP-REQ-MCP-001`, `DRMCP-TASK-MCP-003-02`, `DRMCP-TASK-MCP-003-03`, and `DRMCP-TASK-MCP-003-04`.
+### DRMCP read responsibility split
+
+| owner | responsibility |
+|---|---|
+| `DRMCP-WORK-MCP-003` | Configured current-root discovery, source parsing, canonical identity, active-index construction, normalized record model, invalid-source retention, and duplicate-conflict state. |
+| `DRMCP-WORK-MCP-004` | `list_records` request and compact result behavior; `get_records` exact request and successful-record projection; batch ordering; partial-success triggers; request-wide body inclusion; normal path hiding. |
+| `DRMCP-WORK-MCP-005` | Resolver invocation, current-first resolution, configured legacy fallback, fallback ordering, and current/legacy resolution orchestration. |
+| `DRMCP-WORK-MCP-006` | Warning and diagnostic schema, category names, severity, shared fields, source-location representation, validation semantics, and exceptional path exposure. |
+
+`list_records` does not perform exact retrieval or resolution. It queries the active index for one app namespace, supported sequential kind, and domain.
+
+`get_records` is the sole exact-retrieval operation. A single retrieval uses one `refs` element. Exact retrieval does not invoke the resolver.
 
 ### Boundary against filesystem tools
 
 Design Records MCP is not a substitute for general-purpose filesystem tools.
 
-**What Design Records MCP handles:**
+Design Records MCP handles:
 
-- Retrieve normalized metadata, headings, and optional raw body through the owning read-operation contracts.
-- Return structured record projections through the owning query contract.
-- Validate metadata, identity, and relation inconsistencies.
-- Retain repository-relative source provenance for validation and repair.
-- Suggest the next ADR number and recommended authoring location.
+- compact current-record listing through `list_records`;
+- exact current and configured legacy retrieval through `get_records`;
+- normalized metadata, headings, and request-wide optional body projection;
+- reference resolution under the resolver contract;
+- validation and machine-readable diagnostics;
+- source provenance retained internally for validation and repair.
 
-**What Design Records MCP does not handle:**
+Design Records MCP does not handle:
 
-- Arbitrary file read/write.
-- General Markdown editing.
-- Automatic ADR body generation or update.
-- Automatic rewriting of commit hashes.
-- Git operations.
+- arbitrary file read or write;
+- general Markdown editing outside authoring transaction contracts;
+- automatic record-body generation;
+- Git operations;
+- physical-path projection in normal list or exact-retrieval records.
 
-Normal list and exact-retrieval response representation is owned by `DRMCP-WORK-MCP-004`. Diagnostic source-location fields and exceptional physical-path exposure are owned by `DRMCP-WORK-MCP-006`.
-
-Historical sources: V01-ADR-077 and V01-ADR-090.
+Physical paths may appear only through W006-owned diagnostic, patch, debug, or emergency surfaces.

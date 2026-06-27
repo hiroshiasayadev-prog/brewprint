@@ -2,66 +2,53 @@
 
 - **id**: `spec:drmcp.design_records_mcp.mvp_scope`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-27
 - **parent**: `spec:drmcp.design_records_mcp.overview`
 
 ## What this is
 
-Defines the MVP P0/P1 tool set and the list of items explicitly outside MVP for Design Records MCP.
+Defines the current-format read baseline tool surface and its exclusions without asserting implementation status.
 
 ## Current contract
 
-### P0 tools (MVP required)
+### P0 current-format read tools
 
-The following tools are required in MVP. All P0 tools are read-only; their purpose is candidate narrowing and metadata consistency validation before reading record body.
+| tool | current responsibility | contract owner |
+|---|---|---|
+| `list_records` | Compact active-index listing for one app namespace, supported sequential kind, and domain. Specs and legacy archive records are excluded. | `DRMCP-WORK-MCP-004` |
+| `get_records` | Sole exact retrieval for one through 20 current or configured legacy refs. Single retrieval uses one `refs` element. | `DRMCP-WORK-MCP-004` |
+| `resolve_reference` | Current-first reference resolution and configured legacy fallback. | `DRMCP-WORK-MCP-005` |
+| `validate_records` | Current-record validation and machine-readable diagnostic results. | `DRMCP-WORK-MCP-006` |
 
-- `list_records`
-- `get_record`
-- `get_records`
-- `validate_records`
-- `resolve_reference`
+`get_record` is not part of the current tool surface. The contract does not retain a compatibility alias.
 
-> Source: V01-ADR-077 §P0: MVP必須tool, V01-ADR-090 §決定
+This table classifies the current-format read contract only. It does not claim that an operation is implemented or released.
 
-### P1 tools (optional in MVP)
+Authoring-guidance and authoring-transaction tools are governed by their own contracts and delivery phases. This read-baseline table does not reclassify them.
 
-The following auxiliary tools may be included in MVP but are not required.
+### P1 tools
 
-- `suggest_next_record`
+No P1 read tool is defined by the current realignment baseline.
 
-> Source: V01-ADR-077 §P1: MVPに含めてもよい補助tool
+`suggest_next_record` is removed. Namespace-aware authoring placeholders own sequential allocation.
 
-### MVP exclusions
+### Read-baseline exclusions
 
-The following are explicitly out of scope for MVP.
-
-| item | category |
+| item | exclusion |
 |---|---|
-| `trace_record` | write / traversal |
-| `list_gaps` | gap analysis |
-| `create_record` | write |
-| `update_record` | write |
-| `set_evidence` | write |
-| Other write tools | write |
-| Inferring dependencies from natural language body | NLP analysis |
-| Strict semantic verification against spec body | NLP analysis |
-| Git history analysis | git |
-| Code static analysis | static analysis |
-| Web UI | UI |
-| Multi-project management | scope expansion |
-| Public OSS CLI contract | contract |
-| Full section-level traceability | traceability |
-| `topics` / `affects` / `refines` / `conflicts_with` metadata | metadata |
-| Legacy M-series task records as indexed record kind | indexing |
-| UC docs / impl notes as indexed record kind | indexing |
-| `internal-design:` / `coverage:` / `COV-*` resolve and semantic realization relation validation | ref resolve |
-| Coverage mapping query | ref resolve |
-| Orphan requirement / orphan work item / orphan task diagnostics | diagnostics |
-| Deriving work item progress from task status | projection |
-| Workflow-specific traversal / tree / graph query tools | traversal |
-| Task dependency cycle detection / execution order projection | analysis |
-| Routing `TASK-*` as canonical references from investigation metadata | ref resolve |
+| Broad, cross-app, cross-kind, or cross-domain listing | `list_records` requires explicit app, sequential kind, and domain scope. |
+| Range or exact-ID listing | Exact retrieval uses `get_records`; range listing is unsupported. |
+| Spec or legacy normal listing | Specs remain exact-retrieval targets. Legacy records require configured exact or resolver behavior. |
+| Resolver invocation during exact retrieval | `get_records` classifies each exact input once and does not invoke `resolve_reference`. |
+| Warning taxonomy or validation semantics in W004 | W006 owns warning representation, diagnostic categories, severity, and validation behavior. |
+| Normal physical-path projection | List and exact-retrieval records hide paths. W006 owns narrow exceptional exposure. |
+| Natural-language dependency inference | Read operations use explicit parsed source content only. |
+| Git history or code static analysis | Outside the Design Records read baseline. |
+| UI, multi-project management, or public CLI design | Outside the MCP read contract. |
+| Workflow graph analysis or derived progress | Outside the current read tool surface. |
 
-MVP operates solely on explicit information obtainable from ADR / investigation / requirement / work item / task bullet metadata, spec YAML front matter, H1 titles, and paths. Natural language body inference and operational gap diagnostics will be evaluated for inclusion after MVP validation against real data.
+### Source boundary
 
-> Source: V01-ADR-076 §MVPスコープ外, V01-ADR-077 §MVP外, V01-ADR-092 §7
+W003 owns discovery, current source parsing, canonical identity, active-index construction, normalized record fields, and invalid-source retention.
+
+Current specs use H1-adjacent metadata and path-derived `spec:` identity. Legacy archive sources remain separate and do not enter normal listing.

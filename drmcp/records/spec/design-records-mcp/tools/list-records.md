@@ -2,94 +2,186 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.list_records`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-27
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
 
 ## What this is
 
-`list_records` returns a structured record index for decision / spec / investigation / requirement / work_item / task records. Its purpose is to narrow down candidate records before reading Markdown body. It is not a simple filesystem listing — it returns normalized record metadata and H1 titles extracted from bullet metadata or YAML front matter.
+`list_records` returns a compact projection of current addressable records from one active app, sequential kind, and domain scope.
 
-> Source: V01-ADR-077 §list_records の責務
+The operation narrows candidates before exact retrieval. It is not a broad repository inventory, exact lookup, range query, spec-tree query, resolver, or validation operation.
+
+## Non-goals
+
+- Exact current or legacy record retrieval.
+- Spec listing or spec-tree navigation.
+- Cross-app, cross-kind, or cross-domain broad listing.
+- ID ranges, cursors, totals, or unbounded listing.
+- Reference resolution or legacy fallback orchestration.
+- Validation execution or diagnostic taxonomy.
+- Full metadata, headings, body, source provenance, or physical-path projection.
+- Fixture, implementation, or automated-test behavior.
 
 ## Request
 
-MVP request schema:
-
 ```json
 {
-  "kind": "decision",
-  "status": "accepted",
-  "id": "V01-ADR-076",
-  "id_range": {
-    "from": "V01-ADR-067",
-    "to": "V01-ADR-077"
-  },
-  "order_by": "id",
-  "order": "asc",
+  "app_namespace": "drmcp",
+  "kind": "task",
+  "domain": "MCP",
+  "status": "in_progress",
+  "order": "desc",
   "limit": 20
 }
 ```
 
 | field | required | type | meaning |
 |---|---:|---|---|
-| `kind` | no | string | Filter by `decision` / `spec` / `investigation` / `requirement` / `work_item` / `task` |
-| `status` | no | string | Filter by status value |
-| `id` | no | string | Filter by exact ID |
-| `id_range` | no | object | Filter by ID range (inclusive both ends) |
-| `order_by` | no | string | MVP: `id` only |
-| `order` | no | string | `asc` / `desc` |
-| `limit` | no | integer | Maximum result count |
+| `app_namespace` | yes | non-empty string | Selects exactly one configured active app namespace. |
+| `kind` | yes | string | Selects exactly one supported sequential kind. |
+| `domain` | yes | non-empty string | Selects exactly one canonical domain namespace within the app and kind scope. |
+| `status` | no | non-empty string | Exact status filter from the selected kind's PRODUCT-owned vocabulary. |
+| `order` | no | string | Canonical `ref` order. Default `desc`; alternative `asc`. |
+| `limit` | no | integer | Maximum returned record count. Default 20; accepted range 1 through 100. |
 
-`order_by` supports `id` only in MVP. `head` / `tail` are not supported.
+Supported `kind` values:
 
-`id_range`: either `from` or `to` may be omitted for a one-sided range. Endpoints are specified as public IDs (with namespace_prefix).
+| value | record family |
+|---|---|
+| `decision` | Current ADR records. |
+| `investigation` | Current investigation records. |
+| `requirement` | Current requirement records. |
+| `work_item` | Current work-item records. |
+| `task` | Current task records. |
 
-`id_range` is applicable to these ID families:
+`spec` is not a supported normal-listing kind. Legacy archive records are not query candidates for this operation.
 
-| family | effective `kind` | endpoint form (MVP) | ordering |
-|---|---|---|---|
-| decision | `decision` | `V01-ADR-NNN` | numeric comparison of bare `NNN` |
-| requirement | `requirement` | `V01-REQ-<DOMAIN>-NNN` | numeric comparison of bare `NNN` within the same `<DOMAIN>` |
-| work item | `work_item` | `V01-WORK-<DOMAIN>-NNN` | numeric comparison of bare `NNN` within the same `<DOMAIN>` |
-| task | `task` | `V01-TASK-<DOMAIN>-NNN-MM` | numeric comparison of task sequence `MM` within the same `<DOMAIN>` and work sequence `NNN` |
+The operation uses the configured `app_namespace` value and canonical domain namespace value without case repair, path inference, range-derived scope, or app-prefix inference.
 
-When `kind` is omitted and `id_range` is specified, the effective `kind` is derived from the endpoint family. When `kind` is specified, the endpoint family must match.
+A syntactically valid domain selector with no matching addressable records is a valid zero-match query. An `app_namespace` that does not identify a configured current root is an invalid request.
 
-Workflow artifact range is limited to the same family and same domain. Task range is additionally limited to the same work sequence; a range spanning multiple work items (e.g. `V01-TASK-MCP-006-01` to `V01-TASK-MCP-007-05`) is a request error.
+When `status` is present:
 
-One-sided workflow range is evaluated within the family / domain / work sequence scope of the specified endpoint. For example, `kind: work_item` with `id_range.from: V01-WORK-DATA-004` targets `WORK-DATA-*` with sequence ≥ 004.
+- the value must belong to the selected kind's PRODUCT-owned vocabulary;
+- matching is exact;
+- a record with missing `status` does not match;
+- a parsed invalid status does not match any accepted status filter unless PRODUCT authority accepts that exact value.
 
-`SPEC-*` / `INV-*` range, mixed family, mixed domain, mixed task work sequence, malformed endpoints, and `kind`/endpoint family mismatch are request errors. Silent fallback to lexical ordering or broad listing is prohibited.
+The operation rejects:
+
+- missing, null, empty, or non-string `app_namespace`, `kind`, or `domain`;
+- unsupported or non-string `kind` values;
+- empty, non-string, or kind-invalid `status` values;
+- `order` values other than `asc` or `desc`;
+- non-integer `limit` values or integers outside 1 through 100;
+- unsupported request fields, including `id`, `id_range`, `order_by`, `head`, and `tail`.
+
+The request never broadens when a required scope field is missing or invalid.
 
 ## Response
+
+Normal response shape:
 
 ```json
 {
   "records": [
     {
-      "id": "V01-ADR-076",
-      "kind": "decision",
-      "title": "Design Records MCP",
-      "status": "accepted",
-      "path": "v01/records/adr/V01-ADR-076-design-records-mcp.md",
-      "decision": {
-        "depends_on": ["V01-ADR-050", "V01-ADR-068"],
-        "supersedes": [],
-        "migrated_to_spec": null
-      }
+      "ref": "DRMCP-TASK-MCP-004-02",
+      "title": "Reflect compact active list-records contract",
+      "status": "in_progress",
+      "date": "2026-06-27"
     }
-  ]
+  ],
+  "has_more": false,
+  "warnings": []
 }
 ```
 
-`records[]` is ordered by `order_by` / `order`. For mixed-kind results with `order_by: id`, canonical `id` ASCII lexical ordering is used. When duplicate canonical IDs exist, tie-breaking is by path ASCII lexical order; a `duplicate_id` diagnostic is returned separately.
+Top-level fields:
 
-When `id_range` is specified, range membership follows the ID family rules above. Response ordering follows `order_by` / `order` as normal.
+| field | required | meaning |
+|---|---:|---|
+| `records` | yes | Compact results after scope, optional status filtering, ordering, and limit. |
+| `has_more` | yes | `true` when at least one additional matching addressable record exists after the returned page. |
+| `warnings` | yes | Operation-level warning entries. Empty when no warning trigger fires. W006 owns entry taxonomy and representation. |
+
+Each `records[]` entry has this fixed shape:
+
+| field | required | type | meaning |
+|---|---:|---|---|
+| `ref` | yes | string | Canonical current record ID-as-ref. |
+| `title` | yes | string or null | Parsed H1 title, or `null` when missing. |
+| `status` | yes | string or null | Parsed lifecycle status, or `null` when missing. |
+| `date` | yes | string or null | Parsed source date, or `null` when missing. |
+
+The operation applies filters before ordering and limit.
+It orders records by the canonical `ref` string.
+Default order is descending. Ascending is the only alternative.
+No secondary physical-path key exists.
+
+`has_more` does not expose the total matching count. The response does not contain a cursor, offset, or repository-wide count.
+
+### Invalid-but-addressable records
+
+Every addressable record remains eligible for normal listing.
+
+| source state | projection |
+|---|---|
+| All compact fields are available | Return all four fields with parsed values. |
+| `title`, `status`, or `date` is missing | Return the missing field as `null`. |
+| A compact field has a parsed invalid value | Return the parsed value unchanged. Do not replace, normalize, or repair it. |
+
+Each missing compact field on a returned record triggers one top-level operation warning.
+The warning is not nested inside the compact result.
+W006 defines the warning category, severity, shared fields, and source-location representation.
+
+A parsed invalid value does not trigger a T02-defined warning category. Validation and diagnostic representation remain W006 responsibilities.
+
+### Duplicate-conflict identities
+
+A canonical identity in W003 duplicate-conflict state has no addressable winner.
+`list_records` returns no result for that identity.
+The operation does not merge sources, select by traversal order, or use physical path as a tie-break.
+
+Duplicate-conflict diagnostics and source-location representation remain outside this operation contract.
+
+### Zero-match example
+
+A valid request with no matching addressable records returns:
+
+```json
+{
+  "records": [],
+  "has_more": false,
+  "warnings": []
+}
+```
+
+Zero matches are not an error and do not trigger a warning.
 
 ## Errors
 
 | code | condition |
 |---|---|
-| `invalid_request` | Unknown `kind` value or other invalid request field |
-| `invalid_id_range` | Malformed, unsupported, mixed-family, mixed-domain, mixed-task-work-sequence, or kind-mismatched endpoint |
+| `invalid_request` | Request shape, required scope, supported kind, status vocabulary, ordering, limit, or accepted field set is invalid. |
+
+Invalid requests return no partial listing response.
+Exact error representation remains part of the DRMCP response-boundary contracts.
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:product.design_records.namespace_model` | App and domain namespace semantics. |
+| `spec:product.design_records.namespace_model.artifact_id_grammar` | Canonical sequential record identity. |
+| `spec:drmcp.design_records_mcp.namespace_scanning` | Configured current roots and active-index-only scope. |
+| `spec:drmcp.design_records_mcp.schema.record_model` | Addressable, invalid-but-addressable, and duplicate-conflict states. |
+| `spec:drmcp.design_records_mcp.schema.fields` | Parsed common field vocabulary and missing-value boundary. |
+| `spec:drmcp.design_records_mcp.schema.diagnostics` | W006-owned warning and diagnostic representation. |
+| `spec:drmcp.design_records_mcp.tools.get_records` | Exact retrieval operation owned by the next W004 Task. |
+
+## Sources
+
+- `DRMCP-TASK-MCP-004-01`: Accepted query and exact-retrieval correction baseline.
+- `DRMCP-TASK-MCP-004-02`: Compact active listing contract reflection and evidence.

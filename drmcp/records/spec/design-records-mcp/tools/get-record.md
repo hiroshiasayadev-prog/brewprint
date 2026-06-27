@@ -2,83 +2,48 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.get_record`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-27
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
 
 ## What this is
 
-`get_record` retrieves metadata, path, headings, and optionally Markdown body from a single record ID. Enabling body retrieval here reduces the need to return to a filesystem tool after candidate narrowing with `list_records`.
+`get_record` is retired from the public Design Records MCP tool surface.
 
-> Source: V01-ADR-077 §get_record の責務
+`get_records` is the sole exact-retrieval operation. A caller retrieves one record by sending one value in `refs`.
 
 ## Request
 
+`get_record` has no current request contract.
+
+The former single-record `id` request is not accepted through a compatibility alias.
+
+Use this replacement request:
+
 ```json
 {
-  "id": "V01-ADR-076",
+  "refs": ["DRMCP-ADR-MCP-001"],
   "include_body": false
 }
 ```
 
-| field | required | type | meaning |
-|---|---:|---|---|
-| `id` | yes | string | Target record ID |
-| `include_body` | no | bool | Whether to return the Markdown raw body. Default: `false` |
-
 ## Response
 
-### Response without body
+`get_record` has no current response contract.
 
-```json
-{
-  "record": {
-    "id": "V01-ADR-076",
-    "kind": "decision",
-    "title": "Design Records MCP",
-    "status": "accepted",
-    "path": "v01/records/adr/V01-ADR-076-design-records-mcp.md",
-    "decision": {
-      "depends_on": ["V01-ADR-050", "V01-ADR-068"],
-      "supersedes": [],
-      "migrated_to_spec": null
-    },
-    "headings": [
-      { "level": 1, "text": "076: Design Records MCP" },
-      { "level": 2, "text": "背景" },
-      { "level": 2, "text": "決定" }
-    ]
-  }
-}
-```
+The server tool catalog must omit `get_record`. The server must not route a `get_record` invocation to `get_records` implicitly.
 
-### Response with body
-
-When `include_body: true`, `record.body` is added with the Markdown file content verbatim.
-
-```json
-{
-  "record": {
-    "id": "V01-ADR-076",
-    "kind": "decision",
-    "title": "Design Records MCP",
-    "status": "accepted",
-    "path": "v01/records/adr/V01-ADR-076-design-records-mcp.md",
-    "decision": {
-      "depends_on": ["V01-ADR-050", "V01-ADR-068"],
-      "supersedes": [],
-      "migrated_to_spec": null
-    },
-    "headings": [],
-    "body": "# 076: Design Records MCP\n\n- **status**: accepted\n..."
-  }
-}
-```
-
-`body` returns the original file content verbatim. Formatting, summarization, normalization, and truncation are prohibited. Structured metadata and headings are returned as separate fields, not removed from body.
+The replacement response is defined by `spec:drmcp.design_records_mcp.tools.get_records`.
 
 ## Errors
 
-| code | condition |
+`get_record` defines no tool-execution errors because the operation is not public or invokable.
+
+Unknown-tool handling belongs to the MCP host boundary, not this retired operation contract.
+
+## Related specs
+
+| ref | relation |
 |---|---|
-| `record_not_found` | Specified record ID does not exist in the index |
+| `spec:drmcp.design_records_mcp.tools.get_records` | Sole public exact-retrieval operation. |
+| `DRMCP-TASK-MCP-004-03` | Retirement and replacement contract owner. |

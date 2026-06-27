@@ -2,61 +2,42 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.suggest_next_record`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-27
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
 
 ## What this is
 
-`suggest_next_record` is a P1 read-only tool that assists with creating a new ADR. It suggests the next ADR ID and a recommended filename path from the existing record index. It does not create files.
+`suggest_next_record` is retired from the public Design Records MCP tool surface.
 
-`next_number` is the maximum existing `decision` record number plus 1. Gaps in the sequence are not filled.
+The operation is not public, invokable, or available through a compatibility alias.
 
-> Source: V01-ADR-077 §suggest_next_record の責務
+The former ADR-number and V01 path-suggestion behavior is not part of the current contract.
 
 ## Request
 
-```json
-{
-  "kind": "decision",
-  "title": "Design Records MCP implementation package layout"
-}
-```
+`suggest_next_record` has no current request contract.
 
-| field | required | type | meaning |
-|---|---:|---|---|
-| `kind` | yes | string | MVP: `decision` only |
-| `title` | yes | string | New ADR title (used for slug generation) |
-
-Spec new-record path suggestion is outside MVP scope.
+The former `kind` and `title` request is not accepted.
 
 ## Response
 
-```json
-{
-  "kind": "decision",
-  "title": "Design Records MCP implementation package layout",
-  "next_id": "V01-ADR-078",
-  "next_number": 78,
-  "suggested_path": "v01/records/adr/V01-ADR-078-design-records-mcp-implementation-package-layout.md",
-  "existing_max_id": "V01-ADR-077"
-}
-```
+`suggest_next_record` has no current response contract.
 
-`suggested_path` is a suggestion only; no file is created.
+The server tool catalog must omit `suggest_next_record`. The server must not route a `suggest_next_record` invocation to another operation implicitly.
 
-Filename slug generation rules (applied to `title`):
-
-- Lowercase ASCII alphanumeric characters.
-- Non-alphanumeric ASCII character sequences are replaced with `-`.
-- Consecutive `-` are collapsed to one.
-- Leading and trailing `-` are stripped.
-- Non-ASCII characters are treated as `-`.
-
-When the slug would be empty, `suggested_path` may use `v01/records/adr/V01-ADR-{NNN}.md`. The `suggested_path` is advisory; it may be overridden by the person authoring the record.
+No current operation returns the former `next_id`, `next_number`, `suggested_path`, or `existing_max_id` projection.
 
 ## Errors
 
-| code | condition |
+`suggest_next_record` defines no tool-execution errors because the operation is not public or invokable.
+
+Unknown-tool handling belongs to the MCP host boundary, not this retired operation contract.
+
+## Related records
+
+| ref | relation |
 |---|---|
-| `unsupported_kind` | `kind` value other than `decision` |
+| `DRMCP-ADR-MCP-001` | Accepted removal from the current public tool surface. |
+| `DRMCP-WORK-MCP-004` | Query and exact-retrieval tool-surface realignment owner. |
+| `DRMCP-TASK-MCP-004-05` | Final retirement correction and validation owner. |
