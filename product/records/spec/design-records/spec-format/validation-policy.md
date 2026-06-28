@@ -41,10 +41,10 @@ The DRMCP-owned rows below identify the durable implementation target for a late
 | missing `## What this is` | warning for existing specs; error for new/migrated specs | DRMCP-WORK-SPEC-001 |
 | invalid accepted spec kind | error | DRMCP-WORK-SPEC-001 |
 | missing required section by kind | warning or error based on migration phase | DRMCP-WORK-SPEC-001 |
-| invalid `## Topics` table columns, including canonical `file` instead of `ref` | error for migrated/new Index or Overview+Topics specs | DRMCP-WORK-SPEC-002 |
+| invalid `## Topics` table columns, including canonical `file` instead of `ref` | error for migrated/new Index or Overview+Topics specs | DRMCP-WORK-SPEC-001 |
 | unresolved child `ref` | error for migrated/new Index or Overview+Topics specs | DRMCP-WORK-SPEC-002 |
 | duplicate parent declaration | error | DRMCP-WORK-SPEC-002 |
-| parent grammar violation | error | DRMCP-WORK-SPEC-002 |
+| parent grammar violation | error | DRMCP-WORK-SPEC-001 |
 | topic cycle | deferred until graph validation contract | DRMCP-WORK-SPEC-002 |
 
 ## Errors

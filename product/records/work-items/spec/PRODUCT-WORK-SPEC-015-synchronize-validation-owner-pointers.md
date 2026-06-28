@@ -16,6 +16,7 @@
   - spec:product.design_records.spec_format.follow_up_boundary
 - **tasks**:
   - PRODUCT-TASK-SPEC-015-01
+  - PRODUCT-TASK-SPEC-015-02
 
 ## Goal
 
@@ -55,8 +56,8 @@ This Work Item updates PRODUCT pointers without redefining that disposition.
 | `PRODUCT-REQ-SPEC-001` | Source Requirement for MCP-readable spec validation and topic-tree support. |
 | `DRMCP-ADR-MCP-001` | Requires matching PRODUCT pointer changes when validation Work Items are replaced or absorbed. |
 | `DRMCP-WORK-MCP-007` | Supplies the accepted retain, supersede, absorb, or close disposition. |
-| `DRMCP-WORK-SPEC-001` | Existing parser-aware validation pointer candidate. |
-| `DRMCP-WORK-SPEC-002` | Existing Topics graph-validation pointer candidate. |
+| `DRMCP-WORK-SPEC-001` | Retained per-file parser-aware validation implementation owner. |
+| `DRMCP-WORK-SPEC-002` | Retained cross-file Topics graph-validation implementation owner. |
 | `spec:product.design_records.spec_format.validation_policy` | Receives current implementation-owner pointers. |
 | `spec:product.design_records.spec_format.follow_up_boundary` | Receives synchronized follow-up ownership text. |
 | Other PRODUCT pointer-only records | Change only when they repeat an obsolete owner ID. |
@@ -116,4 +117,36 @@ This Work Item is complete when all of the following are true:
   - Independent T01 review returned `PASS` with no blocking, major, or minor finding.
   - T01 is closed as `done`.
   - Final post-closure whitespace verification remains pending.
-- PRODUCT pointer synchronization, validation, and independent-review closure evidence: pending later Tasks.
+- `PRODUCT-TASK-SPEC-015-02` opened on 2026-06-28.
+  - The exact synchronization set contains two validation-policy owner cells.
+  - The local Topics column-shape row changes from W-SPEC-002 to W-SPEC-001.
+  - The `parent grammar violation` row changes from W-SPEC-002 to W-SPEC-001.
+  - Rule text, severity, row order, and table formatting remain unchanged.
+  - Unresolved child refs, duplicate authoritative parents, parent consistency, and cycles remain W-SPEC-002 concerns.
+  - W-SPEC-001 and W-SPEC-002 Impact Scope descriptions now identify retained implementation ownership without changing either ID.
+  - `spec:product.design_records.spec_format.follow_up_boundary` remains unchanged.
+  - W-SPEC-001 and W-SPEC-002 remain `not_started`.
+  - T02 does not close this Work Item or hub T07.
+  - The changed-file manifest contains only the new T02 Task, validation-policy, and this Work Item.
+  - The strict spec-format validator applies only to validation-policy among the three changed files.
+  - Repository-local commands were not available through the filesystem MCP and were not executed by this assistant.
+  - User-executed strict validation returned `[strict]  All 1 file(s) OK.` and `validator_exit=0`.
+  - User-executed targeted status matched the three-file manifest: validation-policy and this Work Item were modified, and the new T02 Task was untracked.
+  - User-executed whitespace checks returned `tracked_exit=0` and `untracked_exit=1`.
+  - No whitespace error or exit code `2` or greater was reported.
+  - LF-to-CRLF warnings for the three files were non-blocking.
+  - Initial independent T02 review returned `NEEDS REVISION` with no blocking or major finding and one minor finding, F-MIN-01.
+  - F-MIN-01 identified an impermissible copy of the Task's current status in this Work Item Evidence.
+  - The correction replaced the copied status with pending-evidence wording.
+  - User-executed post-F-MIN-01-correction whitespace checks returned `tracked_exit=0` and `untracked_exit=1`.
+  - No whitespace error or exit code `2` or greater was reported.
+  - The first limited re-review closed F-MIN-01 and returned `NEEDS REVISION` with no blocking or major finding and one minor finding, F-MIN-02.
+  - F-MIN-02 identified that the post-correction whitespace result had not yet been recorded in T02 and this Work Item Evidence.
+  - The F-MIN-02 correction recorded that result without changing the synchronization set or lifecycle boundary.
+  - The final pre-review whitespace check returned `tracked_exit=0` and `untracked_exit=1`, with no whitespace error or exit code `2` or greater.
+  - The final independent review returned `PASS` and closed F-MIN-01, F-MIN-02, and F-MIN-03.
+  - No blocking, major, or minor finding remains.
+  - The reviewer confirmed readiness for the next Task after closure.
+  - This closure Evidence update changes the checked Task and Work Item bytes, so one final post-closure whitespace check remains external.
+  - The independent review and limited re-review prompts are recorded in T02 Evidence.
+- PRODUCT pointer synchronization review: pending T03.
