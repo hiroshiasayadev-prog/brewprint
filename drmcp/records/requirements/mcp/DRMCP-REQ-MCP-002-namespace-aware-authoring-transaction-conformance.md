@@ -1,240 +1,319 @@
 # DRMCP-REQ-MCP-002: Namespace-aware authoring transaction conformance
 
 - **id**: DRMCP-REQ-MCP-002
-- **status**: captured
-- **date**: 2026-06-23
+- **status**: accepted
+- **date**: 2026-06-25
 - **source_refs**:
+  - DRMCP-INV-MCP-002
+  - DRMCP-ADR-MCP-001
+  - PRODUCT-ADR-SPEC-001
+  - PRODUCT-REQ-SPEC-003
+  - DRMCP-REQ-MCP-003
   - spec:product.design_records.authoring_standards
   - spec:product.design_records.authoring_standards.adr_authoring
+  - spec:product.design_records.authoring_standards.requirement_authoring
+  - spec:product.design_records.authoring_standards.work_item_authoring
+  - spec:product.design_records.authoring_standards.task_authoring
+  - spec:product.design_records.authoring_standards.spec_authoring
   - spec:product.design_records.authoring_standards.investigation_authoring
   - spec:product.design_records.namespace_model.artifact_id_grammar
   - spec:product.design_records.repository_layout
+  - spec:product.design_records.spec_format
   - PRODUCT-WORK-SPEC-011
-- **work_items**:
+- **work_items**: []
 
 ## Requirement
 
-DRMCP authoring transactions must conform to PRODUCT-owned authoring standards, namespace semantics, and repository layout rules.
+DRMCP authoring transactions must conform to current PRODUCT-owned authoring, identity, placement, and format semantics.
 
-Current DRMCP contracts retain assumptions from the legacy domain-first and single-root model. The contracts do not consistently separate create input, partial update input, and persisted record requirements.
+The authoring surface must use canonical artifact identity as the public input boundary.
+It must generate H1, metadata serialization, filename, and physical placement internally.
 
-The redesigned contract must support namespace-aware IDs, generated placement, semantic metadata, canonical English headings, and per-kind authoring rules without redefining PRODUCT semantics.
+The redesigned contract must preserve the useful proposal transaction mechanics while removing legacy spec-format assumptions, normal path exposure, and duplicated semantic authority.
 
 ## Evidence
 
-- `PRODUCT-WORK-SPEC-011` defines shared and per-artifact authoring standards as the author-facing contract.
-- `spec:product.design_records.authoring_standards.adr_authoring` separates author-supplied values from generated H1 and file path values.
-- The ADR standard distinguishes create, partial update, and persisted metadata requirements.
-- The ADR standard defines `date` as the decision-validity date, not an automatic modification timestamp.
-- `spec:product.design_records.authoring_standards.investigation_authoring` defines conclusion readiness for Investigation records.
-- `spec:product.design_records.namespace_model.artifact_id_grammar` defines namespace-aware artifact IDs.
-- `DRMCP-REQ-MCP-001` explicitly excludes authoring routing and `suggest_next_record` replacement from its scope.
+- `DRMCP-INV-MCP-002` found a conflict between the read-only MVP and authoring trial, stale YAML spec updates, incomplete artifact-kind support, and duplicated PRODUCT semantics.
+- `DRMCP-ADR-MCP-001` accepted the current delivery sequence and retained the propose-then-accept transaction boundary.
+- PRODUCT authoring standards distinguish author inputs, generated values, partial updates, persisted state, canonical headings, and lifecycle gates.
+- PRODUCT namespace and repository-layout specs own sequence and placement semantics.
+- PRODUCT spec-format contracts require H1-adjacent metadata and path-derived `spec:` identity.
 
 ## Required Outcome
 
-### Contract inventory
+### Delivery sequence
 
-Identify every DRMCP tool, schema, parser, validator, and write guard affected by namespace-aware authoring.
+Authoring support must be delivered in this order:
 
-The inventory must distinguish:
+1. ADR, requirement, work-item, and task authoring after the corrected current read baseline.
+2. Spec authoring.
+3. Investigation authoring.
 
-- PRODUCT-owned semantic inputs;
-- DRMCP-owned request and response contracts;
-- DRMCP-owned parsing and normalization;
-- DRMCP-owned diagnostics;
-- implementation-only behavior.
+A later artifact-kind phase may depend on an earlier phase.
+An implementation must not claim support for a kind or operation before its corrected contract and fixtures are complete.
 
-### ID and sequence resolution
+### Shared proposal transaction
 
-Define authoring support for exact IDs and unresolved `new` placeholders.
+Authoring writes must use a propose-then-accept model.
 
-For non-task sequential artifacts, the sequence allocation scope is:
+The corrected contract must retain:
 
-```text
-app namespace + artifact kind + domain namespace
-```
+- proposal creation without repository writes;
+- explicit accept-only filesystem writes;
+- proposal retention and expiry;
+- accept-time target and staleness checks;
+- body cache and retry behavior;
+- patch, summary, and omitted diff modes;
+- affected-record candidate-state validation;
+- exact named-section replacement;
+- machine-readable diagnostics.
 
-Examples:
+Proposal mechanics inherited from the authoring trial are design inputs under `DRMCP-ADR-MCP-001`.
+They are not independent authority where they conflict with current PRODUCT semantics.
 
-- `DRMCP-ADR-MCP-new` resolves within DRMCP ADRs in the MCP domain.
-- DRMCP requirements or work items do not affect the ADR sequence.
-- ADRs in another DRMCP domain use an independent sequence.
+### Create, update, and persisted-state separation
 
-TASK allocation follows the parent work item. TASK sequence allocation must not use the non-task scope above.
-
-The contract must define:
-
-- accepted exact-ID and `new` forms by artifact kind;
-- sequence lookup inputs;
-- collision handling;
-- exact-ID sequence-gap behavior;
-- concurrency and accept-time staleness guards;
-- generated resolved-ID output.
-
-The canonical sequence rule belongs to the PRODUCT namespace model. DRMCP must consume the rule without redefining it.
-
-### Placement and generated values
-
-Define placement resolution from app namespace, artifact kind, and domain namespace.
-
-The contract must distinguish author-supplied and generated values.
-
-Author-supplied values include:
-
-- namespace inputs;
-- artifact title;
-- author-controlled metadata;
-- body sections;
-- exact ID or `new` placeholder.
-
-Generated values include:
-
-- resolved sequence when `new` is used;
-- public ID;
-- H1;
-- file name;
-- repository path.
-
-For new ADRs, generated placement must use:
-
-```text
-<app>/records/adr/<domain>/<APP>-ADR-<DOMAIN>-<NNN>-<slug>.md
-```
-
-Discovery must support both the new domain-subdirectory path and existing flat ADR compatibility records. Flat ADR placement is not canonical for new records.
-
-### Metadata state model
-
-Define separate contracts for:
+Each supported artifact kind must define separate schemas for:
 
 - create input;
 - partial update input;
 - persisted record state.
 
-The contract must not infer that every recognized metadata field is required in every update request.
+The authoring contract must not require every persisted field in a partial update.
+Omitted update fields remain unchanged.
+Generated identity and placement values are not ordinary metadata update targets.
 
-The contract must preserve PRODUCT-defined field semantics. In particular:
+Semantic dates remain author-controlled.
+Editorial updates must not change semantic dates automatically.
 
-- semantic dates remain author-controlled;
-- editorial updates do not automatically change semantic dates;
-- omitted partial-update fields remain unchanged;
-- generated values are not accepted as ordinary metadata replacements.
+### Sequential artifact identity
 
-### Body and heading contract
+ADR, requirement, work-item, task, and investigation creation must support exact IDs and the applicable `new` placeholder.
 
-Define body input and named-section update behavior using canonical English headings from per-artifact authoring standards.
+For non-task sequential artifacts, server-side allocation uses the PRODUCT-owned scope:
+
+```text
+app namespace + artifact kind + domain namespace
+```
+
+Task allocation follows the explicit parent work item.
+Task creation must not infer its parent only from ID shape.
 
 The contract must define:
 
-- body-only create input;
-- exclusion of generated H1 and metadata from body input;
-- canonical section selectors;
-- behavior for legacy non-English headings;
-- missing, duplicate, or ambiguous heading diagnostics.
+- exact-ID and `new` input forms by kind;
+- collision and sequence-gap behavior;
+- task parent validation;
+- concurrency and accept-time stale-allocation guards;
+- generated resolved-ID output;
+- reciprocal workflow relation updates when required.
 
-DRMCP must consume PRODUCT-defined status-gated narrative rules without redefining them.
+`suggest_next_record` must not remain as a tool or compatibility surface.
 
-For an Investigation with `status: concluded`:
+### Generated placement and path boundary
 
-- `## Investigation scope` must exist and contain substantive content;
-- `## Findings` must exist and contain substantive content;
-- placeholder-only content such as `TBD` must not satisfy the gate;
-- validation must report an error for an invalid persisted concluded Investigation;
-- authoring proposals that would persist an invalid concluded Investigation must fail.
+DRMCP must generate physical placement from canonical identity and PRODUCT-owned layout rules.
 
-This requirement is limited to the PRODUCT-defined Investigation conclusion-readiness rule. Broader narrative quality assessment remains excluded.
+Authors do not supply generated:
 
-### Kind support matrix
+- public IDs resolved from `new`;
+- H1 headings;
+- serialized metadata blocks;
+- filenames;
+- repository paths.
 
-Define create and update support independently for each artifact kind.
+Normal authoring requests and proposal-summary responses must not use physical paths as their primary contract.
 
-Required create support:
+Physical paths may appear only in:
 
-| artifact kind | required create behavior |
-|---|---|
-| ADR | Accept exact IDs and `<APP>-ADR-<DOMAIN>-new`. Resolve `new` within the app + kind + domain scope. |
-| requirement | Accept exact IDs and `<APP>-REQ-<DOMAIN>-new`. Resolve `new` within the app + kind + domain scope. |
-| work item | Accept exact IDs and `<APP>-WORK-<DOMAIN>-new`. Resolve `new` within the app + kind + domain scope. |
-| task | Accept exact IDs and `<APP>-TASK-<DOMAIN>-<WORK-SEQUENCE>-new`. Resolve `new` within the parent work item. Require an explicit parent work item relation. |
-| investigation | Accept exact IDs and `<APP>-INV-<DOMAIN>-new`. Resolve `new` within the app + kind + domain scope. |
-| spec | Create specs from PRODUCT-owned path-derived identity rules. Do not use a numeric `new` placeholder. |
+- explicit patch output;
+- diagnostics that require a source location;
+- debug or emergency inspection output.
 
-SPEC create must support:
+### Workflow artifact authoring
 
-- app namespace input;
-- parent spec reference;
-- target child segment or equivalent placement input;
-- spec kind and title;
-- required H1-adjacent metadata;
-- body sections;
-- generated canonical `spec:` ref;
-- generated repository path and H1;
-- path / ref collision checks;
-- parent existence checks;
-- spec-kind section validation;
-- `contract_class` validation for `Contract` specs;
-- rejection of prohibited YAML front matter.
+The first authoring phase must support create and supported updates for:
 
-TASK `new` is a required conformance behavior even when an earlier implementation lacks support. The parent work item determines the work sequence and task sequence scope.
+- ADR;
+- requirement;
+- work item;
+- task.
 
-Create support for SPEC and investigation is required by the redesigned contract even though the earlier MVP excluded those operations.
+The contract must consume the PRODUCT per-kind authoring standards for:
 
-Unsupported update operations must be explicit. Tool support must not be inferred from parser support.
+- metadata meaning and requiredness;
+- lifecycle values and gates;
+- canonical H2 sections;
+- public ID grammar;
+- relationship semantics;
+- generated placement.
 
-### Diagnostics and compatibility
+DRMCP must define request schemas, response schemas, parser mappings, proposal behavior, write guards, and diagnostics.
+It must not restate PRODUCT rules as independent DRMCP semantics.
 
-Define DRMCP-owned diagnostic categories and response fields for:
+### Portable package dependency
 
-- invalid namespace inputs;
-- unsupported artifact kinds or operations;
-- unresolved placement;
-- sequence collision;
-- stale sequence resolution;
+Authoring contract design may proceed before the portable standards package is implemented.
+Runtime authoring implementation must consume a validated package produced under `PRODUCT-REQ-SPEC-003` and loaded under `DRMCP-REQ-MCP-003`.
+Runtime implementation must not hard-code PRODUCT semantics or assume the Brewprint repository layout.
+
+### Current spec authoring
+
+Spec authoring must use the current H1-adjacent format only.
+YAML front matter is prohibited for spec create and update.
+
+Spec creation must accept a logical create selector:
+
+| selector | target | persisted canonical ref |
+|---|---|---|
+| `spec:<segments>` | Leaf spec | `spec:<segments>` |
+| `spec:<segments>.index` | Topic index spec | `spec:<segments>` |
+
+Without `.index`, the selector always targets a leaf spec.
+DRMCP must not infer leaf or topic placement from repository state.
+
+The `.index` suffix is create-only and must not persist in the canonical ref.
+
+The contract must define:
+
+- app namespace validation;
+- logical selector parsing;
+- generated current spec path and H1;
+- parent existence and parent-ref validation;
+- current spec kind and `contract_class` handling;
+- current required-section validation;
+- H1-adjacent metadata serialization;
+- rejection of YAML front matter;
+- target canonical-ref collision checks;
+- physical-path collision checks;
+- accept-time target staleness guards.
+
+A leaf and topic index must not share one canonical ref.
+The contract must reject both:
+
+- `<topic>.md` when `<topic>/index.md` exists;
+- `<topic>/index.md` when `<topic>.md` exists.
+
+A topic index may coexist with child specs below that topic.
+A create proposal must never overwrite an existing spec path or canonical ref.
+
+Spec metadata updates must target current H1-adjacent metadata.
+Legacy YAML metadata replacement must not remain as a compatibility update operation.
+
+### Investigation authoring
+
+Investigation authoring must be delivered after spec authoring.
+
+The contract must support exact IDs and `<APP>-INV-<DOMAIN>-new`.
+It must define create, metadata update, named-section update, and persisted-state validation behavior.
+
+DRMCP must consume the PRODUCT investigation conclusion-readiness rule.
+For `status: concluded`, required sections must exist and contain substantive content.
+Placeholder-only content must not satisfy the gate.
+
+### Body source and section replacement
+
+Create requests must use structured fields plus optional section-only body content.
+
+The contract must define:
+
+- `fields` as required create input;
+- exactly one of `body` or `body_cache_id` when section content is supplied;
+- rejection of body-only or cache-only create;
+- exclusion of H1 and metadata from body input;
+- cache preservation on retryable preparation failure;
+- canonical named-section selectors;
+- zero-match, duplicate, and ambiguous heading diagnostics;
+- no-op update behavior;
+- candidate headings when selector repair is possible.
+
+Legacy non-English headings must not silently become canonical headings for new records.
+Any compatibility handling must be explicit and update-only.
+
+### Validation and write guards
+
+Proposal-local validation must cover only the affected record set in candidate state.
+Unrelated repository diagnostics must not block acceptance.
+
+Accept must re-check:
+
+- proposal lifecycle state;
+- target file state;
+- resolved identity availability;
+- target kind and identity;
+- sequence or selector collision;
+- required reciprocal updates;
+- affected-record validation.
+
+A failed accept check must return `written: false` and must not modify repository files.
+
+### Diagnostics and fixtures
+
+DRMCP must define machine-readable diagnostics for at least:
+
+- invalid app or domain namespace;
+- unsupported artifact kind or operation;
+- invalid exact ID or `new` placeholder;
+- unresolved or invalid task parent;
+- sequence collision or stale allocation;
 - invalid generated-value input;
-- metadata state violations;
-- canonical heading violations;
-- accepted compatibility input.
+- invalid logical spec selector;
+- leaf/topic collision;
+- existing canonical ref or path;
+- prohibited YAML front matter;
+- metadata-state violation;
+- canonical-heading violation;
+- proposal staleness;
+- affected-record validation failure.
 
-Compatibility behavior must not make legacy forms canonical for new records.
+Fixtures must cover each delivery phase independently.
+Legacy implementation fixtures must not define the corrected contract.
 
 ### Follow-up tracking
 
-Create investigation, work item, and task records for contract redesign and implementation.
-
-The follow-up artifacts must reference the applicable PRODUCT authoring standards and namespace specs.
+A coordinating DRMCP Work Item must split workflow authoring, spec authoring, investigation authoring, fixtures, implementation, and independent review into separate reviewable tasks.
 
 ## Explicitly Excluded Scope
 
-- Defining artifact meaning, responsibility boundaries, or required prose content.
-- Defining canonical ID grammar or sequence semantics in DRMCP specs.
-- Authoring guidance discovery, composition, or retrieval tools.
-- Query, resolve, and cross-namespace validation concerns owned by DRMCP-REQ-MCP-001.
+- Query, exact retrieval, resolver, and current/legacy index behavior owned by `DRMCP-REQ-MCP-001`.
+- Portable standards-package production owned by `PRODUCT-REQ-SPEC-003`.
+- Portable package loading, validation, and guidance projection owned by `DRMCP-REQ-MCP-003`.
+- Defining artifact meaning, lifecycle semantics, ID grammar, or canonical section requirements in DRMCP.
 - Bulk migration of existing records.
-- Rewriting existing authoring standards.
+- Migration or authoring of legacy YAML-front-matter specs.
+- Reintroduction of `suggest_next_record`.
+- Arbitrary multi-record atomic transactions with rollback semantics.
+- Natural-language quality assessment beyond PRODUCT-defined structural gates.
 - UI behavior.
+- BPDSL design or migration.
 
 ## Boundary
 
 PRODUCT owns:
 
-- artifact semantics;
+- artifact semantics and lifecycle rules;
 - authoring standards;
 - app and domain namespace semantics;
-- canonical ID grammar;
-- sequence allocation scope;
+- canonical ID and sequence semantics;
 - repository layout semantics;
 - metadata meaning and author-facing requiredness;
-- canonical section headings.
+- canonical section headings;
+- current spec format and logical identity semantics.
+
+PRODUCT also owns portable standards-package production under `PRODUCT-REQ-SPEC-003`.
+DRMCP package loading and runtime semantic access are owned separately by `DRMCP-REQ-MCP-003`.
 
 DRMCP owns:
 
-- tool request and response schemas;
-- placeholder resolution;
-- placement resolution implementation;
-- generated file values;
-- parser and normalization behavior;
-- write guards;
+- authoring request and response schemas;
+- exact-ID and placeholder processing;
+- logical selector processing;
+- generated placement implementation;
+- proposal lifecycle and caches;
+- diff representation;
+- write guards and accept behavior;
+- parser and serialization mappings;
 - diagnostics;
 - operation support by artifact kind.
 
-A DRMCP contract must cite PRODUCT semantic sources rather than duplicate their normative definitions.
+DRMCP contracts must cite PRODUCT semantic sources instead of duplicating their normative definitions.
