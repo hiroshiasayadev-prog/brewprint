@@ -172,3 +172,505 @@ func TestToolErrorCodesAreNotDiagnosticCategories(t *testing.T) {
 		}
 	}
 }
+
+// ── Current read model type tests ─────────────────────────────────────────────
+
+func TestCurrentGetRecordsResponseShape(t *testing.T) {
+	resp := CurrentGetRecordsResponse{
+		Records: []CurrentGetRecordsRecord{
+			{Ref: "DRMCP-REQ-MCP-901", Kind: RecordKindRequirement, Status: RecordStatusAccepted},
+		},
+	}
+	encoded, err := json.Marshal(resp)
+	if err != nil {
+		t.Fatalf("Marshal CurrentGetRecordsResponse: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if _, ok := decoded["records"]; !ok {
+		t.Fatal("CurrentGetRecordsResponse JSON must have 'records' key, not 'items'")
+	}
+	if _, ok := decoded["items"]; ok {
+		t.Fatal("CurrentGetRecordsResponse JSON must not have 'items' key")
+	}
+	if _, ok := decoded["warnings"]; ok {
+		t.Fatal("warnings must be absent when empty")
+	}
+}
+
+func TestCurrentGetRecordsResponseWithWarnings(t *testing.T) {
+	resp := CurrentGetRecordsResponse{
+		Records: []CurrentGetRecordsRecord{},
+		Warnings: []OperationWarning{
+			{Category: "not_found", Message: "ref not found", Ref: "DRMCP-REQ-MCP-999"},
+		},
+	}
+	encoded, err := json.Marshal(resp)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if _, ok := decoded["warnings"]; !ok {
+		t.Fatal("warnings must be present when non-empty")
+	}
+}
+
+func TestCurrentValidateRecordsResponseShape(t *testing.T) {
+	resp := CurrentValidateRecordsResponse{
+		OK:          true,
+		Scope:       "all",
+		Summary:     ValidationSubjectSummary{Total: 5, Invalid: 0},
+		Diagnostics: []Diagnostic{},
+	}
+	encoded, err := json.Marshal(resp)
+	if err != nil {
+		t.Fatalf("Marshal CurrentValidateRecordsResponse: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if ok, _ := decoded["ok"].(bool); !ok {
+		t.Fatal("ok must be a boolean true")
+	}
+	if _, ok := decoded["summary"]; !ok {
+		t.Fatal("summary must be present")
+	}
+	if _, ok := decoded["scope"]; !ok {
+		t.Fatal("scope must be present")
+	}
+}
+
+func TestCurrentValidateRecordsResponseOKFalseOnError(t *testing.T) {
+	resp := CurrentValidateRecordsResponse{
+		OK:      false,
+		Scope:   "all",
+		Summary: ValidationSubjectSummary{Total: 2, Invalid: 1},
+		Diagnostics: []Diagnostic{
+			{Category: DiagnosticMissingRequiredMetadata, Severity: DiagnosticSeverityError, Message: "missing parent"},
+		},
+	}
+	if resp.OK {
+		t.Fatal("OK must be false when diagnostics contain an error severity entry")
+	}
+}
+
+func TestDiagnosticLocationShape(t *testing.T) {
+	loc := DiagnosticLocation{
+		SourceScope:  "current",
+		RecordsRoot:  "current/product/records",
+		Path:         "spec/fixture-baseline/overview.md",
+		AppNamespace: "product",
+	}
+	encoded, err := json.Marshal(loc)
+	if err != nil {
+		t.Fatalf("Marshal DiagnosticLocation: %v", err)
+	}
+	want := `{"source_scope":"current","records_root":"current/product/records","path":"spec/fixture-baseline/overview.md","app_namespace":"product"}`
+	if string(encoded) != want {
+		t.Fatalf("DiagnosticLocation JSON = %s, want %s", encoded, want)
+	}
+}
+
+func TestDiagnosticLocationAppNamespaceOmittedWhenEmpty(t *testing.T) {
+	loc := DiagnosticLocation{
+		SourceScope: "legacy",
+		RecordsRoot: "legacy/v01/records",
+		Path:        "adr/V01-ADR-901-fixture.md",
+	}
+	encoded, err := json.Marshal(loc)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if _, ok := decoded["app_namespace"]; ok {
+		t.Fatal("app_namespace must be omitted when empty")
+	}
+}
+
+func TestCurrentConflictShape(t *testing.T) {
+	conflict := CurrentConflict{
+		Ref: "DRMCP-REQ-MCP-990",
+		Sources: []string{
+			"arrangements/duplicate-current/root-a/records/requirements/mcp/DRMCP-REQ-MCP-990-duplicate-current-a.md",
+			"arrangements/duplicate-current/root-b/records/requirements/mcp/DRMCP-REQ-MCP-990-duplicate-current-b.md",
+		},
+	}
+	encoded, err := json.Marshal(conflict)
+	if err != nil {
+		t.Fatalf("Marshal CurrentConflict: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if decoded["ref"] != "DRMCP-REQ-MCP-990" {
+		t.Fatalf("ref = %v, want DRMCP-REQ-MCP-990", decoded["ref"])
+	}
+	sources, _ := decoded["sources"].([]any)
+	if len(sources) != 2 {
+		t.Fatalf("sources count = %d, want 2", len(sources))
+	}
+}
+
+// ── F-MAJ-01: CurrentListedRecord nullable JSON contract ─────────────────────
+
+func TestCurrentListedRecordJSONAllFields(t *testing.T) {
+	title := "Current read fixture baseline"
+	status := RecordStatusAccepted
+	date := "2026-06-28"
+	rec := CurrentListedRecord{
+		Ref:    "DRMCP-REQ-MCP-901",
+		Kind:   RecordKindRequirement,
+		Title:  &title,
+		Status: &status,
+		Date:   &date,
+	}
+	encoded, err := json.Marshal(rec)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if decoded["ref"] != "DRMCP-REQ-MCP-901" {
+		t.Fatalf("ref = %v", decoded["ref"])
+	}
+	if decoded["title"] != "Current read fixture baseline" {
+		t.Fatalf("title = %v", decoded["title"])
+	}
+	if decoded["status"] != "accepted" {
+		t.Fatalf("status = %v", decoded["status"])
+	}
+	if decoded["date"] != "2026-06-28" {
+		t.Fatalf("date = %v", decoded["date"])
+	}
+}
+
+func TestCurrentListedRecordJSONNullFields(t *testing.T) {
+	rec := CurrentListedRecord{
+		Ref:    "DRMCP-REQ-MCP-901",
+		Title:  nil,
+		Status: nil,
+		Date:   nil,
+	}
+	encoded, err := json.Marshal(rec)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	for _, key := range []string{"title", "status", "date"} {
+		val, present := decoded[key]
+		if !present {
+			t.Fatalf("key %q must be present (got omitted)", key)
+		}
+		if val != nil {
+			t.Fatalf("key %q must be null, got %v", key, val)
+		}
+	}
+}
+
+func TestCurrentListedRecordJSONKeyPresence(t *testing.T) {
+	title := "Some title"
+	rec := CurrentListedRecord{
+		Ref:    "DRMCP-REQ-MCP-902",
+		Title:  &title,
+		Status: nil,
+		Date:   nil,
+	}
+	encoded, err := json.Marshal(rec)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	for _, key := range []string{"ref", "title", "status", "date"} {
+		if _, present := decoded[key]; !present {
+			t.Fatalf("key %q must be present even when nil", key)
+		}
+	}
+}
+
+// ── F-MAJ-02: Diagnostic.Location ────────────────────────────────────────────
+
+func TestDiagnosticWithLocationJSON(t *testing.T) {
+	d := Diagnostic{
+		Category: DiagnosticMissingRequiredMetadata,
+		Severity: DiagnosticSeverityError,
+		Message:  "missing parent",
+		Location: &DiagnosticLocation{
+			SourceScope:  "current",
+			RecordsRoot:  "current/product/records",
+			Path:         "spec/invalid-source/missing-parent.md",
+			AppNamespace: "product",
+		},
+	}
+	encoded, err := json.Marshal(d)
+	if err != nil {
+		t.Fatalf("Marshal Diagnostic with Location: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	loc, ok := decoded["location"].(map[string]any)
+	if !ok {
+		t.Fatalf("location must be a JSON object; got %T (%v)", decoded["location"], decoded["location"])
+	}
+	if loc["source_scope"] != "current" {
+		t.Fatalf("location.source_scope = %v", loc["source_scope"])
+	}
+	if loc["records_root"] != "current/product/records" {
+		t.Fatalf("location.records_root = %v", loc["records_root"])
+	}
+	if loc["path"] != "spec/invalid-source/missing-parent.md" {
+		t.Fatalf("location.path = %v", loc["path"])
+	}
+	if loc["app_namespace"] != "product" {
+		t.Fatalf("location.app_namespace = %v", loc["app_namespace"])
+	}
+}
+
+func TestDiagnosticWithoutLocationJSON(t *testing.T) {
+	d := Diagnostic{
+		Category: DiagnosticDuplicateID,
+		Severity: DiagnosticSeverityError,
+		Message:  "duplicate",
+	}
+	encoded, err := json.Marshal(d)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if _, present := decoded["location"]; present {
+		t.Fatal("location must be absent when nil")
+	}
+}
+
+func TestDiagnosticExistingFieldsUnchangedWithLocation(t *testing.T) {
+	recordID := "DRMCP-REQ-MCP-901"
+	d := Diagnostic{
+		Category: DiagnosticMissingRequiredMetadata,
+		Severity: DiagnosticSeverityError,
+		RecordID: recordID,
+		Message:  "missing field",
+		Location: &DiagnosticLocation{
+			SourceScope: "current",
+			RecordsRoot: "current/drmcp/records",
+			Path:        "requirements/mcp/DRMCP-REQ-MCP-901.md",
+		},
+	}
+	encoded, err := json.Marshal(d)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if decoded["category"] != "missing_required_metadata" {
+		t.Fatalf("category = %v", decoded["category"])
+	}
+	if decoded["severity"] != "error" {
+		t.Fatalf("severity = %v", decoded["severity"])
+	}
+	if decoded["record_id"] != recordID {
+		t.Fatalf("record_id = %v", decoded["record_id"])
+	}
+	if decoded["message"] != "missing field" {
+		t.Fatalf("message = %v", decoded["message"])
+	}
+	if _, present := decoded["location"]; !present {
+		t.Fatal("location must be present")
+	}
+}
+
+func TestDiagnosticLegacyPathFieldPreserved(t *testing.T) {
+	d := Diagnostic{
+		Category: DiagnosticFilenameIDMismatch,
+		Severity: DiagnosticSeverityError,
+		Path:     "current/product/records/adr/spec/PRODUCT-ADR-SPEC-901.md",
+		Message:  "mismatch",
+	}
+	encoded, err := json.Marshal(d)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if decoded["path"] != "current/product/records/adr/spec/PRODUCT-ADR-SPEC-901.md" {
+		t.Fatalf("path = %v", decoded["path"])
+	}
+}
+
+// ── F-MIN-01: CurrentListRecordsRequest / Response ───────────────────────────
+
+func TestCurrentListRecordsRequestJSONShape(t *testing.T) {
+	limit := 20
+	req := CurrentListRecordsRequest{
+		AppNamespace: "drmcp",
+		Kind:         RecordKindRequirement,
+		Domain:       "mcp",
+		Status:       RecordStatusAccepted,
+		Order:        "desc",
+		Limit:        &limit,
+	}
+	encoded, err := json.Marshal(req)
+	if err != nil {
+		t.Fatalf("Marshal CurrentListRecordsRequest: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if decoded["app_namespace"] != "drmcp" {
+		t.Fatalf("app_namespace = %v", decoded["app_namespace"])
+	}
+	if decoded["kind"] != "requirement" {
+		t.Fatalf("kind = %v", decoded["kind"])
+	}
+	if decoded["domain"] != "mcp" {
+		t.Fatalf("domain = %v", decoded["domain"])
+	}
+}
+
+func TestCurrentListRecordsRequestOptionalOmission(t *testing.T) {
+	req := CurrentListRecordsRequest{
+		AppNamespace: "drmcp",
+		Kind:         RecordKindTask,
+		Domain:       "mcp",
+	}
+	encoded, err := json.Marshal(req)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	for _, key := range []string{"status", "order", "limit"} {
+		if _, present := decoded[key]; present {
+			t.Fatalf("optional field %q must be absent when zero", key)
+		}
+	}
+}
+
+func TestCurrentListRecordsResponseJSONShape(t *testing.T) {
+	title := "Current read fixture baseline"
+	status := RecordStatusAccepted
+	date := "2026-06-28"
+	resp := CurrentListRecordsResponse{
+		Records: []CurrentListedRecord{
+			{
+				Ref:    "DRMCP-REQ-MCP-901",
+				Kind:   RecordKindRequirement,
+				Title:  &title,
+				Status: &status,
+				Date:   &date,
+			},
+		},
+		HasMore:  false,
+		Warnings: []OperationWarning{},
+	}
+	encoded, err := json.Marshal(resp)
+	if err != nil {
+		t.Fatalf("Marshal CurrentListRecordsResponse: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if _, ok := decoded["records"]; !ok {
+		t.Fatal("records must be present")
+	}
+	if _, ok := decoded["has_more"]; !ok {
+		t.Fatal("has_more must be present")
+	}
+	if _, ok := decoded["warnings"]; !ok {
+		t.Fatal("warnings must be present even when empty")
+	}
+	if hasMore, _ := decoded["has_more"].(bool); hasMore {
+		t.Fatal("has_more must be false")
+	}
+}
+
+func TestCurrentListRecordsResponseWarningsAlwaysPresent(t *testing.T) {
+	resp := CurrentListRecordsResponse{
+		Records:  []CurrentListedRecord{},
+		HasMore:  false,
+		Warnings: []OperationWarning{},
+	}
+	encoded, err := json.Marshal(resp)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if _, present := decoded["warnings"]; !present {
+		t.Fatal("warnings must be present even when empty (zero-match case)")
+	}
+	warnings, _ := decoded["warnings"].([]any)
+	if len(warnings) != 0 {
+		t.Fatalf("warnings must be empty array, got %v", decoded["warnings"])
+	}
+}
+
+func TestCurrentListRecordsResponseNullableMetadataCombination(t *testing.T) {
+	resp := CurrentListRecordsResponse{
+		Records: []CurrentListedRecord{
+			{Ref: "DRMCP-REQ-MCP-901", Title: nil, Status: nil, Date: nil},
+		},
+		HasMore:  true,
+		Warnings: []OperationWarning{{Category: "missing_title", Message: "title is null"}},
+	}
+	encoded, err := json.Marshal(resp)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	records, _ := decoded["records"].([]any)
+	if len(records) != 1 {
+		t.Fatalf("records count = %d", len(records))
+	}
+	entry, _ := records[0].(map[string]any)
+	for _, key := range []string{"title", "status", "date"} {
+		val, present := entry[key]
+		if !present {
+			t.Fatalf("records[0].%s must be present (not omitted)", key)
+		}
+		if val != nil {
+			t.Fatalf("records[0].%s must be null, got %v", key, val)
+		}
+	}
+	if hasMore, _ := decoded["has_more"].(bool); !hasMore {
+		t.Fatal("has_more must be true")
+	}
+	warnings, _ := decoded["warnings"].([]any)
+	if len(warnings) != 1 {
+		t.Fatalf("warnings count = %d", len(warnings))
+	}
+}

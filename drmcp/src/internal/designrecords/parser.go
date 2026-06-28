@@ -1055,7 +1055,7 @@ func splitCommaList(value string) []string {
 
 func splitCommaListWithEmptyItems(value string) ([]string, []string) {
 	value = strings.TrimSpace(value)
-	if value == "" {
+	if value == "" || value == "[]" {
 		return []string{}, nil
 	}
 	parts := strings.Split(value, ",")
@@ -1098,4 +1098,615 @@ func normalizeRecordID(id string) string {
 func stringPtr(value string) *string {
 	v := value
 	return &v
+}
+
+// ── Current-format parsers ────────────────────────────────────────────────────
+//
+// These functions implement current sequential and spec record parsers.
+// All existing parser functions are preserved unchanged for authoring compatibility.
+
+var (
+	// currentADRH1Pattern matches the post-ns-strip ADR ID form in H1.
+	// Accepts "ADR-SPEC-901" (from "# PRODUCT-ADR-SPEC-901: title" after stripping "PRODUCT-").
+	currentADRH1Pattern       = regexp.MustCompile(`^#\s+(ADR-[A-Z][A-Z0-9]*-\d{3}):\s+(.+?)\s*$`)
+	currentADRFilenamePattern = regexp.MustCompile(`^(ADR-[A-Z][A-Z0-9]*-\d{3})(?:-|\.md$)`)
+)
+
+type currentSpecMetadata struct {
+	ID     string
+	Status string
+	Date   string
+	Parent string
+}
+
+type currentADRMetadata struct {
+	Status         string
+	DependsOn      []string
+	Supersedes     []string
+	MigratedToSpec *string
+}
+
+// parseCurrentADRRecord parses a current-format ADR.
+// The H1 must include the full canonical ID with the app namespace prefix.
+// No identity repair: an H1 without the ns prefix is rejected.
+func parseCurrentADRRecord(path, raw, ns string) (*Record, RecordCandidate, []ParseIssue) {
+	lines := splitMarkdownLines(raw)
+	h1Line := firstLine(lines)
+	candidate := RecordCandidate{
+		Path:     path,
+		Kind:     RecordKindDecision,
+		H1Line:   h1Line,
+		Included: true,
+	}
+	var issues []ParseIssue
+
+	bareID, title, h1OK := parseCurrentADRH1(h1Line, ns)
+	candidate.H1Valid = h1OK
+	candidate.H1Number = bareID
+	if !h1OK {
+		candidate.Included = false
+		candidate.SkipReason = "invalid_adr_h1"
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticInvalidH1Title,
+			Path:     path,
+			Message:  "ADR H1 is missing or does not contain a valid current canonical ID",
+			Details:  map[string]string{"h1": h1Line},
+		})
+		return nil, candidate, issues
+	}
+
+	publicID := ns + bareID
+	candidate.ID = publicID
+	candidate.NormalizedID = normalizeRecordID(publicID)
+
+	filenameID := currentADRFilenameID(path, ns)
+	candidate.FilenameNumber = filenameID
+	if filenameID != bareID {
+		candidate.FilenameIDMismatch = true
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticFilenameIDMismatch,
+			Path:     path,
+			RecordID: publicID,
+			Message:  "ADR filename ID does not match H1 ID",
+			Details: map[string]string{
+				"h1_id":       bareID,
+				"filename_id": filenameID,
+			},
+		})
+	}
+
+	metadata, metadataIssues := parseCurrentADRMetadata(lines, path, publicID)
+	issues = append(issues, metadataIssues...)
+	record := &Record{
+		ID:     publicID,
+		Kind:   RecordKindDecision,
+		Title:  title,
+		Status: RecordStatus(metadata.Status),
+		Path:   path,
+		Decision: &DecisionDetail{
+			DependsOn:      metadata.DependsOn,
+			Supersedes:     metadata.Supersedes,
+			MigratedToSpec: metadata.MigratedToSpec,
+		},
+		Headings:     extractHeadings(raw),
+		RawBody:      raw,
+		NormalizedID: normalizeRecordID(publicID),
+	}
+	return record, candidate, issues
+}
+
+// parseCurrentADRH1 extracts the bare ADR ID (without ns) and title from an H1 line.
+// The ns prefix must be explicitly present; no repair is performed.
+func parseCurrentADRH1(line, ns string) (string, string, bool) {
+	line = trimLineEnd(line)
+	if !strings.HasPrefix(line, "# ") {
+		return "", "", false
+	}
+	content := line[2:]
+	if ns != "" && !strings.HasPrefix(content, ns) {
+		return "", "", false
+	}
+	bareContent := content[len(ns):]
+	match := currentADRH1Pattern.FindStringSubmatch("# " + bareContent)
+	if match == nil {
+		return "", "", false
+	}
+	title := strings.TrimSpace(match[2])
+	if title == "" {
+		return "", "", false
+	}
+	return match[1], title, true
+}
+
+// currentADRFilenameID extracts the bare current ADR ID from a filename after stripping ns.
+func currentADRFilenameID(path, ns string) string {
+	base := filepath.Base(path)
+	base = stripNamespacePrefix(base, ns)
+	m := currentADRFilenamePattern.FindStringSubmatch(base)
+	if m != nil {
+		return m[1]
+	}
+	return ""
+}
+
+// parseCurrentADRMetadata reads H1-adjacent ADR metadata.
+// Handles current conventions: "null" → nil for migrated_to_spec, "[]" → empty for list fields.
+func parseCurrentADRMetadata(lines []string, path, recordID string) (currentADRMetadata, []ParseIssue) {
+	metadata := currentADRMetadata{
+		DependsOn:  []string{},
+		Supersedes: []string{},
+	}
+	var issues []ParseIssue
+	for _, line := range metadataBlock(lines) {
+		match := metadataPattern.FindStringSubmatch(trimLineEnd(line))
+		if match == nil {
+			continue
+		}
+		key := match[1]
+		value := strings.TrimSpace(match[2])
+		switch key {
+		case "status":
+			if value != "" {
+				metadata.Status = value
+			}
+		case "date":
+			continue
+		case "depends_on":
+			metadata.DependsOn = parseCurrentListField(value)
+		case "supersedes":
+			metadata.Supersedes = parseCurrentListField(value)
+		case "migrated_to_spec":
+			if value == "" || value == "null" {
+				metadata.MigratedToSpec = nil
+				continue
+			}
+			metadata.MigratedToSpec = stringPtr(value)
+			if !validDateOnly(value) {
+				issues = append(issues, ParseIssue{
+					Category: DiagnosticInvalidMigratedToSpec,
+					Path:     path,
+					RecordID: recordID,
+					Message:  "ADR migrated_to_spec is not YYYY-MM-DD",
+					Details:  map[string]string{"value": value},
+				})
+			}
+		}
+	}
+	return metadata, issues
+}
+
+// parseCurrentListField parses a current-format list metadata value.
+// "[]" and empty string both yield an empty slice; otherwise comma-split.
+func parseCurrentListField(value string) []string {
+	value = strings.TrimSpace(value)
+	if value == "" || value == "[]" {
+		return []string{}
+	}
+	return splitCommaList(value)
+}
+
+// parseCurrentInvestigationRecord parses a current-format investigation record.
+// The H1 must include the full canonical ID with ns prefix; no repair is performed.
+func parseCurrentInvestigationRecord(path, raw, ns string) (*Record, RecordCandidate, []ParseIssue) {
+	lines := splitMarkdownLines(raw)
+	h1Line := firstLine(lines)
+	candidate := RecordCandidate{
+		Path:     path,
+		Kind:     RecordKindInvestigation,
+		H1Line:   h1Line,
+		Included: true,
+	}
+	var issues []ParseIssue
+
+	bareID, title, h1OK := parseCurrentInvestigationH1(h1Line, ns)
+	candidate.H1Valid = h1OK
+	candidate.H1Number = bareID
+	if !h1OK {
+		candidate.Included = false
+		candidate.SkipReason = "invalid_investigation_h1"
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticInvalidH1Title,
+			Path:     path,
+			Message:  "investigation H1 is missing or does not contain a valid current canonical ID",
+			Details:  map[string]string{"h1": h1Line},
+		})
+		return nil, candidate, issues
+	}
+
+	publicID := ns + bareID
+	candidate.ID = publicID
+	candidate.NormalizedID = normalizeRecordID(publicID)
+
+	filenameID := investigationFilenameID(path, ns)
+	candidate.FilenameNumber = filenameID
+	if filenameID != bareID {
+		candidate.FilenameIDMismatch = true
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticFilenameIDMismatch,
+			Path:     path,
+			RecordID: publicID,
+			Message:  "investigation filename ID does not match H1 ID",
+			Details: map[string]string{
+				"h1_id":       bareID,
+				"filename_id": filenameID,
+			},
+		})
+	}
+
+	metadata := parseInvestigationMetadata(lines)
+	record := &Record{
+		ID:     publicID,
+		Kind:   RecordKindInvestigation,
+		Title:  title,
+		Status: RecordStatus(metadata.Status),
+		Path:   path,
+		Investigation: &InvestigationDetail{
+			Trigger:               metadata.Trigger,
+			Scope:                 metadata.Scope,
+			NonScope:              metadata.NonScope,
+			SourceRefs:            metadata.SourceRefs,
+			FollowUpCandidates:    metadata.FollowUpCandidates,
+			Supersedes:            metadata.Supersedes,
+			RelatedRequirements:   metadata.RelatedRequirements,
+			RelatedWorkItems:      metadata.RelatedWorkItems,
+			RelatedADRs:           metadata.RelatedADRs,
+			RelatedSpecs:          metadata.RelatedSpecs,
+			RelatedInternalDesign: metadata.RelatedInternalDesign,
+			RelatedCoverage:       metadata.RelatedCoverage,
+			FollowUpResults:       metadata.FollowUpResults,
+		},
+		Headings:     extractHeadings(raw),
+		RawBody:      raw,
+		NormalizedID: normalizeRecordID(publicID),
+	}
+	return record, candidate, issues
+}
+
+// parseCurrentInvestigationH1 extracts the bare INV ID and title from an H1 line.
+// The ns prefix must be explicitly present; no repair is performed.
+func parseCurrentInvestigationH1(line, ns string) (string, string, bool) {
+	line = trimLineEnd(line)
+	if !strings.HasPrefix(line, "# ") {
+		return "", "", false
+	}
+	content := line[2:]
+	if ns != "" && !strings.HasPrefix(content, ns) {
+		return "", "", false
+	}
+	bareContent := content[len(ns):]
+	match := investigationH1Pattern.FindStringSubmatch("# " + bareContent)
+	if match == nil {
+		return "", "", false
+	}
+	title := strings.TrimSpace(match[2])
+	if title == "" {
+		return "", "", false
+	}
+	return match[1], title, true
+}
+
+// parseCurrentRequirementRecord parses a current-format requirement record.
+func parseCurrentRequirementRecord(path, raw, ns string) (*Record, RecordCandidate, []ParseIssue) {
+	return parseCurrentWorkflowRecord(path, raw, splitMarkdownLines(raw), RecordKindRequirement, ns)
+}
+
+// parseCurrentWorkItemRecord parses a current-format work-item record.
+func parseCurrentWorkItemRecord(path, raw, ns string) (*Record, RecordCandidate, []ParseIssue) {
+	return parseCurrentWorkflowRecord(path, raw, splitMarkdownLines(raw), RecordKindWorkItem, ns)
+}
+
+// parseCurrentTaskRecord parses a current-format task record.
+func parseCurrentTaskRecord(path, raw, ns string) (*Record, RecordCandidate, []ParseIssue) {
+	return parseCurrentWorkflowRecord(path, raw, splitMarkdownLines(raw), RecordKindTask, ns)
+}
+
+// parseCurrentWorkflowRecord parses a current-format workflow record (REQ/WORK/TASK).
+// The H1 must include the full canonical ID with ns prefix; no repair is performed.
+func parseCurrentWorkflowRecord(path, raw string, lines []string, kind RecordKind, ns string) (*Record, RecordCandidate, []ParseIssue) {
+	h1Line := firstLine(lines)
+	filenameBareID := workflowFilenameID(path, kind, ns)
+	candidate := RecordCandidate{
+		Path:           path,
+		Kind:           kind,
+		H1Line:         h1Line,
+		FilenameNumber: filenameBareID,
+		Included:       true,
+	}
+	var issues []ParseIssue
+
+	h1BareID, title, h1FormOK := parseCurrentWorkflowH1(h1Line, ns)
+	candidate.H1Valid = h1FormOK
+	candidate.H1Number = h1BareID
+	if !h1FormOK {
+		candidate.Included = false
+		candidate.SkipReason = "invalid_workflow_h1"
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticInvalidH1Title,
+			Path:     path,
+			Message:  "workflow H1 is missing or does not contain a valid current canonical ID",
+			Details:  map[string]string{"h1": h1Line},
+		})
+		return nil, candidate, issues
+	}
+
+	metadataIDRaw, status := "", ""
+	var workflowMeta *WorkflowMetadata
+	var requirement *RequirementDetail
+	var workItem *WorkItemDetail
+	var task *TaskDetail
+	switch kind {
+	case RecordKindRequirement:
+		metadata := parseRequirementMetadata(lines)
+		metadataIDRaw = metadata.ID
+		status = metadata.Status
+		workflowMeta = &metadata.Workflow
+		requirement = &RequirementDetail{
+			SourceRefs: metadata.SourceRefs,
+			WorkItems:  metadata.WorkItems,
+			Subdomain:  optionalString(metadata.Subdomain),
+		}
+	case RecordKindWorkItem:
+		metadata := parseWorkItemMetadata(lines)
+		metadataIDRaw = metadata.ID
+		status = metadata.Status
+		workflowMeta = &metadata.Workflow
+		workItem = &WorkItemDetail{
+			SourceRequirement: metadata.SourceRequirement,
+			ImpactRefs:        metadata.ImpactRefs,
+			Tasks:             metadata.Tasks,
+			Subdomain:         optionalString(metadata.Subdomain),
+		}
+	case RecordKindTask:
+		metadata := parseTaskMetadata(lines)
+		metadataIDRaw = metadata.ID
+		status = metadata.Status
+		workflowMeta = &metadata.Workflow
+		task = &TaskDetail{
+			WorkItem:          metadata.WorkItem,
+			SourceRequirement: metadata.SourceRequirement,
+			Estimate:          metadata.Estimate,
+			DependsOn:         metadata.DependsOn,
+			Outputs:           metadata.Outputs,
+			Subdomain:         optionalString(metadata.Subdomain),
+		}
+	}
+
+	metadataBareID := stripNamespacePrefix(metadataIDRaw, ns)
+
+	if !validWorkflowIDForKind(h1BareID, kind) || (metadataBareID != "" && !validWorkflowIDForKind(metadataBareID, kind)) || (filenameBareID != "" && !validWorkflowIDForKind(filenameBareID, kind)) {
+		candidate.Included = false
+		candidate.SkipReason = "invalid_workflow_id"
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticInvalidWorkflowID,
+			Path:     path,
+			RecordID: ns + h1BareID,
+			Message:  "workflow ID does not match the required grammar",
+			Details: map[string]string{
+				"h1_id":       h1BareID,
+				"metadata_id": metadataBareID,
+				"filename_id": filenameBareID,
+			},
+		})
+		return nil, candidate, issues
+	}
+
+	publicID := ns + h1BareID
+	candidate.ID = publicID
+	candidate.NormalizedID = normalizeRecordID(publicID)
+	if metadataBareID == "" || metadataBareID != h1BareID || filenameBareID == "" || filenameBareID != h1BareID {
+		candidate.FilenameIDMismatch = true
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticFilenameIDMismatch,
+			Path:     path,
+			RecordID: publicID,
+			Message:  "workflow metadata ID, H1 ID, and filename ID must match",
+			Details: map[string]string{
+				"h1_id":       h1BareID,
+				"metadata_id": metadataBareID,
+				"filename_id": filenameBareID,
+			},
+		})
+	}
+
+	record := &Record{
+		ID:           publicID,
+		Kind:         kind,
+		Title:        title,
+		Status:       RecordStatus(status),
+		Path:         path,
+		Requirement:  requirement,
+		WorkItem:     workItem,
+		Task:         task,
+		Headings:     extractHeadings(raw),
+		RawBody:      raw,
+		NormalizedID: normalizeRecordID(publicID),
+		WorkflowMeta: workflowMeta,
+	}
+	return record, candidate, issues
+}
+
+// parseCurrentWorkflowH1 extracts the bare workflow ID and title from an H1 line.
+// The ns prefix must be explicitly present; no repair is performed.
+func parseCurrentWorkflowH1(line, ns string) (string, string, bool) {
+	line = trimLineEnd(line)
+	if !strings.HasPrefix(line, "# ") {
+		return "", "", false
+	}
+	content := line[2:]
+	if ns != "" && !strings.HasPrefix(content, ns) {
+		return "", "", false
+	}
+	bareContent := content[len(ns):]
+	rawID, title, ok := strings.Cut(bareContent, ": ")
+	if !ok {
+		return "", "", false
+	}
+	rawID = strings.TrimSpace(rawID)
+	title = strings.TrimSpace(title)
+	if rawID == "" || title == "" {
+		return "", "", false
+	}
+	if !strings.HasPrefix(rawID, "REQ-") && !strings.HasPrefix(rawID, "WORK-") && !strings.HasPrefix(rawID, "TASK-") {
+		return "", "", false
+	}
+	return rawID, title, true
+}
+
+// parseCurrentSpecRecord parses a current-format spec record using H1-adjacent metadata.
+// YAML front matter files are rejected (case R06). The canonical ref is path-derived and
+// cross-checked against the metadata id field. Invalid sources with missing required
+// metadata are retained as path-addressable (case C15).
+// recordsRoot is the ancestor records directory path (same base as path).
+// appNamespace is the lowercase app namespace identifier (e.g., "product").
+func parseCurrentSpecRecord(path, raw, recordsRoot, appNamespace string) (*Record, RecordCandidate, []ParseIssue) {
+	lines := splitMarkdownLines(raw)
+	derivedRef := deriveSpecRef(path, recordsRoot, appNamespace)
+
+	candidate := RecordCandidate{
+		Path:     path,
+		Kind:     RecordKindSpec,
+		Included: true,
+	}
+	if derivedRef != "" {
+		candidate.ID = derivedRef
+		candidate.NormalizedID = normalizeRecordID(derivedRef)
+	}
+
+	var issues []ParseIssue
+
+	if hasOpeningFrontMatter(lines) {
+		candidate.H1Valid = false
+		candidate.Included = false
+		candidate.SkipReason = "yaml_front_matter_current_spec"
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticInvalidH1Title,
+			Path:     path,
+			RecordID: derivedRef,
+			Message:  "current spec must not use YAML front matter",
+		})
+		return nil, candidate, issues
+	}
+
+	h1Line := firstLine(lines)
+	candidate.H1Line = h1Line
+	title, _, h1OK := parseSpecH1(raw)
+	candidate.H1Valid = h1OK
+	if !h1OK {
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticInvalidH1Title,
+			Path:     path,
+			RecordID: derivedRef,
+			Message:  "current spec H1 is missing or invalid",
+			Details:  map[string]string{"h1": h1Line},
+		})
+	}
+
+	specMeta := parseCurrentSpecMetadata(lines)
+
+	if specMeta.ID != "" && derivedRef != "" && specMeta.ID != derivedRef {
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticFilenameIDMismatch,
+			Path:     path,
+			RecordID: derivedRef,
+			Message:  "current spec metadata id does not match path-derived ref",
+			Details: map[string]string{
+				"path_ref":    derivedRef,
+				"metadata_id": specMeta.ID,
+			},
+		})
+	}
+
+	if specMeta.Parent == "" {
+		issues = append(issues, ParseIssue{
+			Category: DiagnosticMissingRequiredMetadata,
+			Path:     path,
+			RecordID: derivedRef,
+			Message:  "current spec is missing required 'parent' metadata",
+		})
+	}
+
+	recordID := derivedRef
+	if recordID == "" {
+		recordID = specMeta.ID
+	}
+
+	record := &Record{
+		ID:           recordID,
+		Kind:         RecordKindSpec,
+		Title:        title,
+		Status:       RecordStatus(specMeta.Status),
+		Date:         specMeta.Date,
+		Path:         path,
+		Spec:         &SpecDetail{DependsOn: []string{}},
+		Headings:     extractHeadings(raw),
+		RawBody:      raw,
+		NormalizedID: normalizeRecordID(recordID),
+	}
+	return record, candidate, issues
+}
+
+// parseCurrentSpecMetadata reads H1-adjacent spec metadata fields.
+// Values for id and parent may use backtick quoting.
+func parseCurrentSpecMetadata(lines []string) currentSpecMetadata {
+	var meta currentSpecMetadata
+	for _, line := range metadataBlock(lines) {
+		key, value, ok := parseMetadataLine(line)
+		if !ok {
+			continue
+		}
+		switch key {
+		case "id":
+			meta.ID = stripBackticks(value)
+		case "status":
+			meta.Status = value
+		case "date":
+			meta.Date = value
+		case "parent":
+			meta.Parent = stripBackticks(value)
+		}
+	}
+	return meta
+}
+
+// stripBackticks removes surrounding backtick quoting from a metadata value.
+func stripBackticks(s string) string {
+	s = strings.TrimSpace(s)
+	if len(s) >= 2 && s[0] == '`' && s[len(s)-1] == '`' {
+		return s[1 : len(s)-1]
+	}
+	return s
+}
+
+// deriveSpecRef derives the canonical spec ref from a current spec source path.
+// path and recordsRoot must share the same base (both relative or both absolute).
+// Hyphens in path segments are converted to underscores; "index" as the final
+// segment collapses to the parent level.
+func deriveSpecRef(path, recordsRoot, appNamespace string) string {
+	path = filepath.ToSlash(path)
+	recordsRoot = filepath.ToSlash(recordsRoot)
+	if !strings.HasSuffix(recordsRoot, "/") {
+		recordsRoot += "/"
+	}
+	if !strings.HasPrefix(path, recordsRoot) {
+		return ""
+	}
+	relPath := path[len(recordsRoot):]
+	if !strings.HasPrefix(relPath, "spec/") {
+		return ""
+	}
+	specRelPath := relPath[len("spec/"):]
+	if strings.HasSuffix(specRelPath, ".md") {
+		specRelPath = specRelPath[:len(specRelPath)-3]
+	}
+	segments := strings.Split(specRelPath, "/")
+	if len(segments) > 0 && segments[len(segments)-1] == "index" {
+		segments = segments[:len(segments)-1]
+	}
+	if len(segments) == 0 {
+		return ""
+	}
+	for i, seg := range segments {
+		segments[i] = strings.ReplaceAll(seg, "-", "_")
+	}
+	return "spec:" + appNamespace + "." + strings.Join(segments, ".")
 }

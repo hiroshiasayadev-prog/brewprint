@@ -50,6 +50,7 @@ type Record struct {
 	Kind          RecordKind           `json:"kind"`
 	Title         string               `json:"title"`
 	Status        RecordStatus         `json:"status"`
+	Date          string               `json:"-"`
 	Path          string               `json:"path"`
 	Decision      *DecisionDetail      `json:"decision,omitempty"`
 	Spec          *SpecDetail          `json:"spec,omitempty"`
@@ -258,12 +259,13 @@ type Diagnostic struct {
 	DuplicateIndexes  []int              `json:"duplicate_indexes,omitempty"`
 	CandidateHeadings []CandidateHeading `json:"candidate_headings,omitempty"`
 	// Authoring repair guidance fields (REQ-MCP-024 / REQ-MCP-028)
-	AllowedValues    []string       `json:"allowed_values,omitempty"`
-	RequiredFields   []string       `json:"required_fields,omitempty"`
-	TargetKind       string         `json:"target_kind,omitempty"`
-	RepairSuggestion map[string]any `json:"repair_suggestion,omitempty"`
+	AllowedValues    []string            `json:"allowed_values,omitempty"`
+	RequiredFields   []string            `json:"required_fields,omitempty"`
+	TargetKind       string              `json:"target_kind,omitempty"`
+	RepairSuggestion map[string]any      `json:"repair_suggestion,omitempty"`
+	Location         *DiagnosticLocation `json:"location,omitempty"`
 	// Internal-only fields (not serialized via json tags; handled by MarshalJSON)
-	ActualHeading string `json:"-"`
+	ActualHeading   string `json:"-"`
 	StrippedHeading string `json:"-"`
 	StrippedLevel   int    `json:"-"`
 	ValuePresent    bool   `json:"-"`
@@ -271,28 +273,29 @@ type Diagnostic struct {
 
 func (d Diagnostic) MarshalJSON() ([]byte, error) {
 	type diagnosticJSON struct {
-		Category          DiagnosticCategory `json:"category"`
-		Severity          DiagnosticSeverity `json:"severity"`
-		RecordID          string             `json:"record_id,omitempty"`
-		Path              string             `json:"path,omitempty"`
-		Message           string             `json:"message"`
-		TargetID          string             `json:"target_id,omitempty"`
-		Field             string             `json:"field,omitempty"`
-		Value             *string            `json:"value,omitempty"`
-		RefStatus         string             `json:"ref_status,omitempty"`
-		Section           string             `json:"section,omitempty"`
-		Status            string             `json:"status,omitempty"`
-		ActualHeading     string             `json:"actual_heading,omitempty"`
-		StrippedHeading   string             `json:"stripped_heading,omitempty"`
-		StrippedLevel     *int               `json:"stripped_level,omitempty"`
-		RequestedID       string             `json:"requested_id,omitempty"`
-		FirstIndex        *int               `json:"first_index,omitempty"`
-		DuplicateIndexes  []int              `json:"duplicate_indexes,omitempty"`
-		CandidateHeadings []CandidateHeading `json:"candidate_headings,omitempty"`
-		AllowedValues     []string           `json:"allowed_values,omitempty"`
-		RequiredFields    []string           `json:"required_fields,omitempty"`
-		TargetKind        string             `json:"target_kind,omitempty"`
-		RepairSuggestion  map[string]any     `json:"repair_suggestion,omitempty"`
+		Category          DiagnosticCategory  `json:"category"`
+		Severity          DiagnosticSeverity  `json:"severity"`
+		RecordID          string              `json:"record_id,omitempty"`
+		Path              string              `json:"path,omitempty"`
+		Message           string              `json:"message"`
+		TargetID          string              `json:"target_id,omitempty"`
+		Field             string              `json:"field,omitempty"`
+		Value             *string             `json:"value,omitempty"`
+		RefStatus         string              `json:"ref_status,omitempty"`
+		Section           string              `json:"section,omitempty"`
+		Status            string              `json:"status,omitempty"`
+		ActualHeading     string              `json:"actual_heading,omitempty"`
+		StrippedHeading   string              `json:"stripped_heading,omitempty"`
+		StrippedLevel     *int                `json:"stripped_level,omitempty"`
+		RequestedID       string              `json:"requested_id,omitempty"`
+		FirstIndex        *int                `json:"first_index,omitempty"`
+		DuplicateIndexes  []int               `json:"duplicate_indexes,omitempty"`
+		CandidateHeadings []CandidateHeading  `json:"candidate_headings,omitempty"`
+		AllowedValues     []string            `json:"allowed_values,omitempty"`
+		RequiredFields    []string            `json:"required_fields,omitempty"`
+		TargetKind        string              `json:"target_kind,omitempty"`
+		RepairSuggestion  map[string]any      `json:"repair_suggestion,omitempty"`
+		Location          *DiagnosticLocation `json:"location,omitempty"`
 	}
 	var value *string
 	if d.Value != "" || d.ValuePresent {
@@ -326,34 +329,35 @@ func (d Diagnostic) MarshalJSON() ([]byte, error) {
 		RequiredFields:    d.RequiredFields,
 		TargetKind:        d.TargetKind,
 		RepairSuggestion:  d.RepairSuggestion,
+		Location:          d.Location,
 	})
 }
 
 type ErrorCode string
 
 const (
-	ErrorCodeRecordNotFound               ErrorCode = "record_not_found"
-	ErrorCodeGuideNotFound                ErrorCode = "guide_not_found"
-	ErrorCodeInvalidRequest               ErrorCode = "invalid_request"
-	ErrorCodeUnsupportedKind              ErrorCode = "unsupported_kind"
-	ErrorCodeInvalidIDRange               ErrorCode = "invalid_id_range"
-	ErrorCodeIDRangeRequiresDecisionKind  ErrorCode = "id_range_requires_decision_kind"
-	ErrorCodeProposalNotFound             ErrorCode = "proposal_not_found"
-	ErrorCodeProposalExpired              ErrorCode = "proposal_expired"
-	ErrorCodeProposalDiscarded            ErrorCode = "proposal_discarded"
-	ErrorCodeProposalAlreadyAccepted      ErrorCode = "proposal_already_accepted"
-	ErrorCodeProposalStale                ErrorCode = "proposal_stale"
-	ErrorCodeTargetChanged                ErrorCode = "target_changed"
-	ErrorCodeIDCollision                  ErrorCode = "id_collision"
-	ErrorCodeRequiredFollowUpNotSatisfied ErrorCode = "required_follow_up_not_satisfied"
-	ErrorCodeInvalidBodySource            ErrorCode = "invalid_body_source"
-	ErrorCodeBodyCacheNotFound            ErrorCode = "body_cache_not_found"
-	ErrorCodeBodyCacheExpired             ErrorCode = "body_cache_expired"
-	ErrorCodeProposalPreparationFailed    ErrorCode = "proposal_preparation_failed"
-	ErrorCodeSectionSelectorNoMatch              ErrorCode = "section_selector_no_match"
-	ErrorCodeSectionSelectorAmbiguous            ErrorCode = "section_selector_ambiguous"
-	ErrorCodeConflictingOperations               ErrorCode = "conflicting_operations"
-	ErrorCodeMultipleSectionReplaceNotSupported  ErrorCode = "multiple_section_replace_not_supported"
+	ErrorCodeRecordNotFound                     ErrorCode = "record_not_found"
+	ErrorCodeGuideNotFound                      ErrorCode = "guide_not_found"
+	ErrorCodeInvalidRequest                     ErrorCode = "invalid_request"
+	ErrorCodeUnsupportedKind                    ErrorCode = "unsupported_kind"
+	ErrorCodeInvalidIDRange                     ErrorCode = "invalid_id_range"
+	ErrorCodeIDRangeRequiresDecisionKind        ErrorCode = "id_range_requires_decision_kind"
+	ErrorCodeProposalNotFound                   ErrorCode = "proposal_not_found"
+	ErrorCodeProposalExpired                    ErrorCode = "proposal_expired"
+	ErrorCodeProposalDiscarded                  ErrorCode = "proposal_discarded"
+	ErrorCodeProposalAlreadyAccepted            ErrorCode = "proposal_already_accepted"
+	ErrorCodeProposalStale                      ErrorCode = "proposal_stale"
+	ErrorCodeTargetChanged                      ErrorCode = "target_changed"
+	ErrorCodeIDCollision                        ErrorCode = "id_collision"
+	ErrorCodeRequiredFollowUpNotSatisfied       ErrorCode = "required_follow_up_not_satisfied"
+	ErrorCodeInvalidBodySource                  ErrorCode = "invalid_body_source"
+	ErrorCodeBodyCacheNotFound                  ErrorCode = "body_cache_not_found"
+	ErrorCodeBodyCacheExpired                   ErrorCode = "body_cache_expired"
+	ErrorCodeProposalPreparationFailed          ErrorCode = "proposal_preparation_failed"
+	ErrorCodeSectionSelectorNoMatch             ErrorCode = "section_selector_no_match"
+	ErrorCodeSectionSelectorAmbiguous           ErrorCode = "section_selector_ambiguous"
+	ErrorCodeConflictingOperations              ErrorCode = "conflicting_operations"
+	ErrorCodeMultipleSectionReplaceNotSupported ErrorCode = "multiple_section_replace_not_supported"
 )
 
 type ToolError struct {
@@ -520,4 +524,133 @@ type GetAuthoringGuidanceResponse struct {
 	ID      string `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
+}
+
+// ── Current read model types ──────────────────────────────────────────────────
+//
+// These types establish the shared API for T05-T07. Existing request/response
+// types above remain for compile compatibility with tools.go until T05 retires them.
+
+// OperationWarning is an informational message returned alongside a successful
+// operation result, describing a per-call anomaly without failing the operation.
+type OperationWarning struct {
+	Category string `json:"category"`
+	Message  string `json:"message"`
+	Ref      string `json:"ref,omitempty"`
+}
+
+// CurrentListRecordsRequest is the accepted list_records request per W004.
+// app_namespace, kind, and domain are all required.
+type CurrentListRecordsRequest struct {
+	AppNamespace string       `json:"app_namespace"`
+	Kind         RecordKind   `json:"kind"`
+	Domain       string       `json:"domain"`
+	Status       RecordStatus `json:"status,omitempty"`
+	Order        string       `json:"order,omitempty"`
+	Limit        *int         `json:"limit,omitempty"`
+}
+
+// CurrentListRecordsResponse is the accepted list_records response per W004.
+// warnings is always present (empty array when no warning fires).
+type CurrentListRecordsResponse struct {
+	Records  []CurrentListedRecord `json:"records"`
+	HasMore  bool                  `json:"has_more"`
+	Warnings []OperationWarning    `json:"warnings"`
+}
+
+// CurrentListedRecord is a compact listing entry for a current record.
+// Physical path is excluded per path-free normal projection contract.
+// Missing title, status, and date are represented as JSON null per W004.
+type CurrentListedRecord struct {
+	Ref    string        `json:"ref"`
+	Kind   RecordKind    `json:"kind,omitempty"`
+	Title  *string       `json:"title"`
+	Status *RecordStatus `json:"status"`
+	Date   *string       `json:"date"`
+}
+
+// CurrentGetRecordsRequest is the accepted get-records request per W004.
+// Refs replaces IDs; exact canonical refs only, no repair.
+type CurrentGetRecordsRequest struct {
+	Refs        []string `json:"refs"`
+	IncludeBody bool     `json:"include_body,omitempty"`
+}
+
+// CurrentGetRecordsRecord is a successfully retrieved current record.
+// Physical path is excluded per path-free normal projection contract.
+type CurrentGetRecordsRecord struct {
+	Ref      string       `json:"ref"`
+	Kind     RecordKind   `json:"kind,omitempty"`
+	Title    string       `json:"title,omitempty"`
+	Status   RecordStatus `json:"status,omitempty"`
+	Date     string       `json:"date,omitempty"`
+	Headings []Heading    `json:"headings,omitempty"`
+	Body     *string      `json:"body,omitempty"`
+}
+
+// CurrentGetRecordsResponse has successful records and top-level warnings.
+// No items wrapper per W004; failed refs produce warnings, not items.
+type CurrentGetRecordsResponse struct {
+	Records  []CurrentGetRecordsRecord `json:"records"`
+	Warnings []OperationWarning        `json:"warnings,omitempty"`
+}
+
+// CurrentResolveReferenceRequest is the current format reference resolution request.
+type CurrentResolveReferenceRequest struct {
+	Ref string `json:"ref"`
+}
+
+// CurrentResolvedTarget is a current resolver target without physical path.
+type CurrentResolvedTarget struct {
+	TargetType string       `json:"target_type"`
+	Ref        string       `json:"ref"`
+	Kind       RecordKind   `json:"kind,omitempty"`
+	Title      string       `json:"title,omitempty"`
+	Status     RecordStatus `json:"status,omitempty"`
+}
+
+// CurrentResolveReferenceResponse is the current format reference resolution response.
+type CurrentResolveReferenceResponse struct {
+	Ref         string                 `json:"ref"`
+	RefKind     string                 `json:"ref_kind,omitempty"`
+	Status      string                 `json:"status"`
+	Target      *CurrentResolvedTarget `json:"target,omitempty"`
+	Diagnostics []Diagnostic           `json:"diagnostics"`
+}
+
+// CurrentValidateRecordsRequest is the current format validation request.
+// All fields optional; empty request validates all current sources.
+type CurrentValidateRecordsRequest struct {
+	AppNamespace string `json:"app_namespace,omitempty"`
+	Ref          string `json:"ref,omitempty"`
+}
+
+// ValidationSubjectSummary is the count of validation subjects in a validate response.
+type ValidationSubjectSummary struct {
+	Total   int `json:"total"`
+	Invalid int `json:"invalid"`
+}
+
+// CurrentValidateRecordsResponse is the current format validation response.
+type CurrentValidateRecordsResponse struct {
+	OK          bool                     `json:"ok"`
+	Scope       string                   `json:"scope"`
+	Summary     ValidationSubjectSummary `json:"summary"`
+	Diagnostics []Diagnostic             `json:"diagnostics"`
+}
+
+// DiagnosticLocation is a portable source location in a validation diagnostic.
+// SourceScope distinguishes current from legacy archive sources.
+type DiagnosticLocation struct {
+	SourceScope  string `json:"source_scope"`
+	RecordsRoot  string `json:"records_root"`
+	Path         string `json:"path"`
+	AppNamespace string `json:"app_namespace,omitempty"`
+}
+
+// CurrentConflict represents duplicate canonical identity across current source roots.
+// All conflicting source paths are listed; no winner is declared.
+type CurrentConflict struct {
+	Ref     string   `json:"ref"`
+	Sources []string `json:"sources"`
 }
