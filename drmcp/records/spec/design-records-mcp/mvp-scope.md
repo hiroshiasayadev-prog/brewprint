@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.mvp_scope`
 - **status**: draft
-- **date**: 2026-06-27
+- **date**: 2026-06-28
 - **parent**: `spec:drmcp.design_records_mcp.overview`
 
 ## What this is
@@ -40,8 +40,8 @@ No P1 read tool is defined by the current realignment baseline.
 | Range or exact-ID listing | Exact retrieval uses `get_records`; range listing is unsupported. |
 | Spec or legacy normal listing | Specs remain exact-retrieval targets. Legacy records require configured exact or resolver behavior. |
 | Resolver invocation during exact retrieval | `get_records` classifies each exact input once and does not invoke `resolve_reference`. |
-| Warning taxonomy or validation semantics in W004 | W006 owns warning representation, diagnostic categories, severity, and validation behavior. |
-| Normal physical-path projection | List and exact-retrieval records hide paths. W006 owns narrow exceptional exposure. |
+| Warning and diagnostic representation or repository-validation execution in W004 | W004 owns its operation warning triggers only. Shared representation is defined by `spec:drmcp.design_records_mcp.schema.diagnostics`, validation execution by `spec:drmcp.design_records_mcp.tools.validate_records`, and semantic invalidity by PRODUCT authorities. |
+| Normal successful path projection | Successful list, exact-retrieval, and resolver projections remain path-free. Portable diagnostic locations and explicit authoring paths follow their owning contracts. No current operation exposes an absolute physical path. |
 | Natural-language dependency inference | Read operations use explicit parsed source content only. |
 | Git history or code static analysis | Outside the Design Records read baseline. |
 | UI, multi-project management, or public CLI design | Outside the MCP read contract. |

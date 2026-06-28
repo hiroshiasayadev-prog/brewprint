@@ -1,7 +1,7 @@
 # DRMCP-WORK-MCP-006: Validation, diagnostics, and path-exposure contract realignment
 
 - **id**: DRMCP-WORK-MCP-006
-- **status**: in_progress
+- **status**: done
 - **date**: 2026-06-28
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **impact_refs**:
@@ -31,6 +31,7 @@
   - DRMCP-TASK-MCP-006-02
   - DRMCP-TASK-MCP-006-03
   - DRMCP-TASK-MCP-006-04
+  - DRMCP-TASK-MCP-006-05
 
 ## Goal
 
@@ -305,4 +306,38 @@ This Work Item is complete when all of the following are true:
   - Closure synchronization changes the checked Task and W006 bytes, so one post-closure external whitespace check must run after these final edits.
   - The post-closure result is supplied externally and intentionally not written back into either checked file.
   - W006 remains `in_progress`; the next phase is T05 final cross-spec synchronization, validation, review, correction, and closure.
+  - No repository-wide clean working tree is inferred.
+- `DRMCP-TASK-MCP-006-05` opened on 2026-06-28.
+  - Exact Task inventory confirmed T01 through T04 and no existing T05 record.
+  - T05 owns final cross-spec pointer and navigation synchronization, complete manifest confirmation, scoped validation, tracked and untracked whitespace verification, independent final review, finding correction, and closure synchronization.
+  - Initial synchronization candidates are `overview.md`, `tools/overview.md`, `mvp-scope.md`, and `responsibility-boundary.md`.
+  - A candidate changes only for a direct contradiction or missing authoritative pointer; mere relevance is insufficient.
+  - W007 disposition and PRODUCT validation-policy owner-pointer synchronization remain outside W006.
+  - The pre-T05 normative manifest is the ten-file union recorded in the T05 Task.
+  - All four synchronization candidates were changed only to correct an authority pointer, ownership summary, successful path-hiding summary, or absolute-path boundary.
+  - `overview.md`, `tools/overview.md`, `mvp-scope.md`, and `responsibility-boundary.md` are the complete T05 direct normative change set.
+  - Seven required recheck-only files were inspected and require no T05 change.
+  - The complete W006 normative manifest contains 14 files: the accepted T02-T04 ten-file union plus the four T05 synchronization changes.
+  - W003 through W005 boundaries remain unchanged.
+  - W007 disposition and PRODUCT validation-policy owner-pointer synchronization remain outside W006.
+  - The independent final review prompt is recorded in the T05 Task.
+  - Pre-review strict validation passed: `[strict]  All 4 file(s) OK.`
+  - Tracked whitespace passed with `tracked_exit=0`.
+  - The initial untracked Task check found one extra EOF blank line and returned `untracked_exit=3`; the blank line was removed.
+  - The corrected untracked Task check returned `untracked_exit=1` with no whitespace error.
+  - That result was then synchronized into T05 and W006, changing the checked bytes.
+  - LF-to-CRLF working-copy conversion warnings are non-blocking.
+  - Final pre-review external whitespace verification after evidence synchronization returned `tracked_exit=0` and `untracked_exit=1` with no whitespace error.
+  - The final pre-review result was not written back before review.
+  - Independent final review verdict: `PASS`.
+  - No blocking, major, minor, or advisory finding remains.
+  - All four T05 synchronization candidate dispositions were accepted.
+  - T01-T04 and W003-W005 non-regression assessments passed.
+  - W007 disposition and PRODUCT validation-policy owner-pointer ownership remain outside W006.
+  - The complete normative manifest is 14 files and the T05 direct normative change set is four files.
+  - Recorded strict validation and whitespace evidence were accepted; independent repository-local reruns were `NOT RUN` because the reviewer had no command-execution boundary.
+  - W006 completion conditions were assessed as satisfied in substance and closure readiness was `READY`.
+  - No normative contract correction was required.
+  - `DRMCP-TASK-MCP-006-05`, this Work Item, and `DRMCP-TASK-MCP-001-06` were synchronized to `done` on 2026-06-28.
+  - One post-closure tracked and untracked whitespace check remains external and must not be written back into checked files.
   - No repository-wide clean working tree is inferred.

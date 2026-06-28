@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.responsibility_boundary`
 - **status**: draft
-- **date**: 2026-06-27
+- **date**: 2026-06-28
 - **parent**: `spec:drmcp.design_records_mcp.overview`
 
 ## What this is
@@ -29,7 +29,7 @@ PRODUCT namespace, repository-layout, authoring, traceability, and spec-format c
 | `DRMCP-WORK-MCP-003` | Configured current-root discovery, source parsing, canonical identity, active-index construction, normalized record model, invalid-source retention, and duplicate-conflict state. |
 | `DRMCP-WORK-MCP-004` | `list_records` request and compact result behavior; `get_records` exact request and successful-record projection; batch ordering; partial-success triggers; request-wide body inclusion; normal path hiding. |
 | `DRMCP-WORK-MCP-005` | Resolver invocation, current-first resolution, configured legacy fallback, fallback ordering, and current/legacy resolution orchestration. |
-| `DRMCP-WORK-MCP-006` | Warning and diagnostic schema, category names, severity, shared fields, source-location representation, validation semantics, and exceptional path exposure. |
+| `DRMCP-WORK-MCP-006` | Validation execution; warning and diagnostic schema, categories, severity, and shared associations; portable source-location representation; and exceptional path-exposure policy. PRODUCT authorities retain semantic validity. |
 
 `list_records` does not perform exact retrieval or resolution. It queries the active index for one app namespace, supported sequential kind, and domain.
 
@@ -56,4 +56,4 @@ Design Records MCP does not handle:
 - Git operations;
 - physical-path projection in normal list or exact-retrieval records.
 
-Physical paths may appear only through W006-owned diagnostic, patch, debug, or emergency surfaces.
+Portable repository-relative paths may appear only where the owning diagnostic or authoring contract requires them. No current operation exposes an absolute physical path. Any future absolute `physical_path` requires a separately contracted, host-enabled privileged debug or emergency operation.

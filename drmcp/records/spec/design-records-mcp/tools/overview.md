@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.overview`
 - **status**: draft
-- **date**: 2026-06-27
+- **date**: 2026-06-28
 - **parent**: `spec:drmcp.design_records_mcp.overview`
 
 ## What this is
@@ -18,7 +18,7 @@ Provides the navigation-first catalog for Design Records MCP tools and points ea
 | Public tool catalog and navigation | This overview. |
 | Request, response, and operation error behavior | The individual tool contract. |
 | Shared parsed fields and internal record state | The corresponding `schema.*` contract. |
-| Warning and diagnostic entry representation | `DRMCP-WORK-MCP-006` and the diagnostic schema. |
+| Warning and diagnostic entry representation | `spec:drmcp.design_records_mcp.schema.diagnostics`. Individual operation contracts own trigger conditions and response placement. |
 
 This overview does not define a shared record response shape. Individual operations select the projection they return.
 

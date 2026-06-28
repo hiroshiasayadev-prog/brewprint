@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-001-06: Track validation, diagnostics, and path-exposure contract correction
 
 - **id**: DRMCP-TASK-MCP-001-06
-- **status**: in_progress
+- **status**: done
 - **date**: 2026-06-26
 - **work_item**: DRMCP-WORK-MCP-001
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -60,4 +60,22 @@ T02 established repository-wide, app-scoped, and exact-current-ref validation; W
 
 The T02 limited re-review returned `PASS`, closed `F-MIN-01`, and left no blocking, major, or minor findings. Advisory `A-01` is delegated to T03.
 
-T06 remains `in_progress` until the child Work Item reaches `done`, its final independent review has no blocking or major finding, and the gate evidence is accepted here.
+`DRMCP-TASK-MCP-006-03` and `DRMCP-TASK-MCP-006-04` closed on 2026-06-28 after their accepted contracts, finding corrections, strict validation, and tracked/untracked whitespace evidence were confirmed.
+
+`DRMCP-TASK-MCP-006-05` completed final pointer synchronization across `overview.md`, `tools/overview.md`, `mvp-scope.md`, and `responsibility-boundary.md` without reopening T01 through T04 semantics.
+
+The complete W006 normative manifest contains 14 files. The T05 direct normative change set contains four files.
+
+T05 strict validation passed for all four direct normative changes: `[strict]  All 4 file(s) OK.`
+
+The final pre-review external whitespace check returned `tracked_exit=0` and `untracked_exit=1` with no whitespace error. LF-to-CRLF warnings were non-blocking.
+
+The W006/T05 independent final review returned `PASS` with no blocking, major, minor, or advisory finding.
+
+The review accepted all synchronization dispositions, T01-T04 and W003-W005 non-regression, the W007 and PRODUCT ownership boundary, the 14-file final manifest, and the recorded verification evidence.
+
+`DRMCP-TASK-MCP-006-05`, `DRMCP-WORK-MCP-006`, and this hub Task were synchronized to `done` on 2026-06-28.
+
+One post-closure tracked and untracked whitespace check remains external and must not be written back into the checked files.
+
+No repository-wide clean working tree is inferred.

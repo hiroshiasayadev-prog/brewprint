@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.overview`
 - **status**: draft
-- **date**: 2026-06-27
+- **date**: 2026-06-28
 - **parent**: `-`
 
 ## What this is
@@ -55,7 +55,7 @@ Design Records MCP operates on a separate data source from the existing brewprin
 | brewprint MCP | `ResolvedProject` built from brewprint YAML | semantic object query / inspect / impact analysis |
 | Design Records MCP | Current Markdown records under explicitly configured app roots; H1-adjacent metadata; path-derived current spec identity; optional configured legacy archive sources in a separate index | Design record and workflow artifact discovery, indexing, read operations, validation execution, and reference resolution under their owning contracts |
 
-Normal list and exact-retrieval representation is owned by `DRMCP-WORK-MCP-004`. Diagnostic source-location and exceptional physical-path exposure are owned by `DRMCP-WORK-MCP-006`.
+Normal list and exact-retrieval representation is owned by `DRMCP-WORK-MCP-004`. Successful resolver target projection is owned by `DRMCP-WORK-MCP-005`. Shared warning and diagnostic representation, portable source-location exposure, and the no-current-absolute-path boundary are defined by `spec:drmcp.design_records_mcp.schema.diagnostics`. Any future absolute physical-path output requires a separate privileged operation contract.
 
 ## Topics
 
