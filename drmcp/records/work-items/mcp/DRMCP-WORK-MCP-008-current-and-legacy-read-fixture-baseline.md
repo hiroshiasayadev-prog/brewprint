@@ -21,6 +21,7 @@
 - **tasks**:
   - DRMCP-TASK-MCP-008-01
   - DRMCP-TASK-MCP-008-02
+  - DRMCP-TASK-MCP-008-03
 
 ## Goal
 
@@ -135,5 +136,12 @@ This Work Item is complete when all of the following are true:
 - Corrected external verification returned `fixture_shape=OK` and `lifecycle_shape=OK` after the three findings were addressed.
 - Independent scoped re-review returned `PASS`; F-MAJ-01, F-MAJ-02, and F-MIN-01 are closed with no blocking, major, or minor regression.
 - `DRMCP-TASK-MCP-008-02` is `done`.
-- W008 remains `in_progress` because T03 through T05 are not complete.
+- `DRMCP-TASK-MCP-008-03` materialized L01 through L09 in the authoritative manifest with one separate configured legacy root, the five approved V01 families, one exact retrieval source, one current-to-legacy relation, and one current-miss-to-unique-legacy-source arrangement.
+- T03 did not create L10 through L13, R01 through R24, `V01-SPEC-*`, invalid or overlapping roots, disabled fallback, duplicate identity, leakage fixtures, production implementation changes, or existing Go test changes.
+- T03 independent review returned `PASS` with no blocking, major, or minor finding.
+- The review accepted legacy lexical mapping, root separation, L01 through L09 coverage, relation and fallback boundaries, manifest non-regression, lifecycle synchronization, and scoped Git evidence.
+- The review-time Python verifier remained `NOT RUN`; no review-time execution result is inferred.
+- After closure synchronization, external verification returned `fixture_shape=OK` and `lifecycle_shape=OK` against the final T03 state.
+- `DRMCP-TASK-MCP-008-03` is `done`.
+- W008 remains `in_progress` because T04 through T05 are not complete.
 - Runtime behavior, repository-local tests, and repository-wide clean status are not inferred from fixture structure.

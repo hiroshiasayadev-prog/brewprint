@@ -1,0 +1,25 @@
+{
+  "schema": "read-baseline-config-arrangement/v1",
+  "serialization_role": "fixture_local_arrangement",
+  "repository_root": ".",
+  "current_roots": [
+    {
+      "name": "product-current",
+      "app_namespace": "product",
+      "records_root": "current/product/records"
+    },
+    {
+      "name": "drmcp-current",
+      "app_namespace": "drmcp",
+      "records_root": "current/drmcp/records"
+    }
+  ],
+  "legacy_roots_state": "configured",
+  "legacy_roots": [
+    {
+      "name": "v01-legacy",
+      "records_root": "legacy/v01/records"
+    }
+  ],
+  "purpose": "Declare separate current and configured legacy roots for fixture structure without defining production runtime serialization."
+}
