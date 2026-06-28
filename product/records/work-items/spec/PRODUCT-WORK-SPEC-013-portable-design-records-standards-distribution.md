@@ -1,7 +1,7 @@
 # PRODUCT-WORK-SPEC-013: Portable Design Records standards distribution
 
 - **id**: PRODUCT-WORK-SPEC-013
-- **status**: in_progress
+- **status**: done
 - **date**: 2026-06-26
 - **source_requirement**: PRODUCT-REQ-SPEC-003
 - **impact_refs**:
@@ -26,6 +26,7 @@
   - PRODUCT-TASK-SPEC-013-05
   - PRODUCT-TASK-SPEC-013-06
   - PRODUCT-TASK-SPEC-013-07
+  - PRODUCT-TASK-SPEC-013-08
 
 ## Goal
 
@@ -108,7 +109,7 @@ A neutral or shared tool location is permitted only when PRODUCT remains the own
 | E. Generation checks and warning emission | Phases B-D | Define destination-root checks, prefix-rewrite checks, semantic warning emission, host-registry independence, working-directory independence, and operational generation failures. |
 | F. Initial package production | Phases D-E | Generate the first reviewable whole-tree package with semantic warnings emitted during execution and an operational generation result. |
 | G. Portability and release fixtures | Phase F | Verify deterministic output, host independence, prefix rewriting, warning reporting, localized defect handling, and operational generation success. |
-| H. Independent review and handoff | Phases F-G | Review warning behavior, operational results, producer/consumer interface, and ownership boundaries; then hand off accepted evidence to the DRMCP P0 Work Item. |
+| H. Independent review and handoff | Phases F-G | Review warning behavior, operational results, producer/consumer interface, and ownership boundaries; then record accepted producer evidence in `DRMCP-WORK-MCP-002` as input to T03 P0 Work Item creation. |
 
 Contract and fixture work may proceed before the final tooling implementation.
 Later generation phases do not depend on source-warning closure. The initial package must have reviewable generation, prefix rewrite, warning behavior, operational result, and portability checks.
@@ -124,7 +125,7 @@ Later generation phases do not depend on source-warning closure. The initial pac
 | T05 | Define package generation checks for copy destination, prefix rewrite, warning emission, operational failures, host-registry independence, and working-directory independence. | T02-T04. |
 | T06 | Implement or configure deterministic whole-tree copy/ref-rewrite generation and produce the initial package. | T03-T05. |
 | T07 | Add release and portability fixtures for reproducibility, host independence, prefix rewriting, warning reporting, localized duplicate/unresolved behavior, and operational generation success. | T05-T06. |
-| T08 | Run independent producer/consumer review, apply required corrections, record release evidence, update the reciprocal Requirement relation, and hand off the accepted package contract to the DRMCP P0 Work Item. | T07. |
+| T08 | Run independent producer/consumer review, apply required corrections, record release evidence, update the reciprocal Requirement relation, and record the accepted producer contract and release evidence in `DRMCP-WORK-MCP-002` for T03 P0 Work Item creation. | T07. |
 
 Generator implementation, operational generation results, and review evidence must remain separately reviewable where practical. A source-authoring Requirement is created separately only when a human reviewer decides that tracked correction is required.
 
@@ -148,9 +149,9 @@ This Work Item is complete when all of the following are true:
 - the initial package can be generated and operationally checked without depending on the Brewprint process working directory or host app registry;
 - producer-side fixtures cover destination root, namespace, prefix rewrite, warning emission, operational failure cases, reproducibility, host independence, and working-directory independence;
 - the producer/consumer interface supplies the roots, namespace, rewrite, warning boundary, partial-loading, localized-indexing, and guidance-projection information expected by `DRMCP-REQ-MCP-003`;
-- an independent review reports no blocking or major findings;
+- an independent review reports no blocking, major, or minor findings;
 - `PRODUCT-REQ-SPEC-003` lists this Work Item in `work_items`;
-- the resulting package contract and release evidence are available to the DRMCP package-consumer P0 Work Item;
+- the resulting package contract and release evidence are available in `DRMCP-WORK-MCP-002` for T03 creation of the DRMCP package-consumer P0 Work Item;
 - final evidence identifies the exact package contents, generation command or mechanism, operational generation result, review findings, and residual limitations.
 
 ## Evidence
@@ -187,3 +188,15 @@ This Work Item is complete when all of the following are true:
 - T07 corrected F-MIN-02 by preserving warning order and exact class/path assertions while checking canonical refs, declaring path sets, and boundary group sets instead of private detail wrapper text.
 - Post-correction verification passed: all 35 tests, the public generator, and `scripts\\verify.bat` exited `0`; `bin/design-records/index.md` and a non-Python test-directory probe remained ignored; and the Python release test remained visible to Git.
 - T07 final review result: PASS. F-MIN-01 and F-MIN-02 are closed. T07 is done, while T08 remains open.
+- T08 final producer review confirms the released implementation remains aligned with `PRODUCT-REQ-SPEC-003` and `PRODUCT-ADR-SPEC-001` through `PRODUCT-ADR-SPEC-003`. No new producer-contract conflict was found.
+- T08 consolidated accepted release evidence: 34 generated files, 79 non-blocking semantic warnings, generator exit `0`, 35 passing tests with exit `0`, `scripts\\verify.bat` exit `0`, generated-artifact ignore exit `0`, scoped whitespace pass, and T07 independent re-review `PASS`.
+- T08 confirmed that `PRODUCT-REQ-SPEC-003` already lists `PRODUCT-WORK-SPEC-013`; no Requirement rewrite is required.
+- T08 prepared the producer handoff for `DRMCP-REQ-MCP-003` through `DRMCP-WORK-MCP-002`. The handoff fixes the source and package roots, namespace, prefix rewrite, warning boundary, operational failure boundary, generation command, portability evidence, consumer-owned scope, and residual limitations.
+- No Work Item sourced from `DRMCP-REQ-MCP-003` exists in the scoped consumer Work Item set. The next consumer action is P0 Work Item creation through the `DRMCP-WORK-MCP-002` T03 sequence; T08 does not create or implement that Work Item.
+- T08 residual limitations are explicit: 79 semantic warnings, no manifest, no version negotiation, no remote registry, no incremental generation, unsupported concurrent generation, unimplemented consumer integration, non-authoritative generated output, and separately owned source correction.
+- T08 initial independent review returned `NEEDS REVISION` with one minor finding, F-MIN-01, and no blocking or major findings.
+- F-MIN-01 was corrected by synchronizing Phase H, Task Candidate T08, and the Completion Condition with the `DRMCP-WORK-MCP-002` T03 handoff sequence and by requiring closure of blocking, major, and minor findings.
+- T08 independent re-review returned `PASS`. F-MIN-01 is `CLOSED`; T07 F-MIN-01 and F-MIN-02 remain `CLOSED`; no blocking, major, or minor findings remain.
+- Scoped whitespace passed after the wording-only correction. Repository-local tests, generator, and `scripts\\verify.bat` were not rerun; accepted T07 execution evidence remains valid.
+- `PRODUCT-TASK-SPEC-013-08` and this Work Item are closed as `done`.
+- Producer closure is complete. The next consumer-side action is P0 Work Item creation through `DRMCP-WORK-MCP-002` T03; consumer implementation is not claimed complete.
