@@ -1,32 +1,33 @@
 package designrecords
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-// RecordsEntry describes a single app namespace records tree within a repository.
+// CurrentRoot is one explicitly declared current records root for NormalizeConfig.
+type CurrentRoot struct {
+	AppNamespace string // e.g. "product", "drmcp"
+	RecordsRoot  string // repository-relative, e.g. "product/records"
+}
+
+// RecordsEntry describes one validated current records root within a repository.
 type RecordsEntry struct {
-	// RecordsRoot is the records directory relative to Config.Root (e.g. "v01/records").
-	RecordsRoot string
-	// NamespacePrefix is derived from the app namespace directory name (e.g. "V01-").
-	NamespacePrefix string
+	AppNamespace    string // explicit app namespace, e.g. "product"
+	RecordsRoot     string // repository-relative records root, e.g. "product/records"
+	NamespacePrefix string // derived: strings.ToUpper(AppNamespace) + "-", e.g. "PRODUCT-"
 }
 
 // Config contains repository-local Design Records MCP configuration.
 type Config struct {
-	// Root is the absolute repository root used for discovery. Response paths
-	// are expected to be relative to this root.
-	Root string
-	// RecordsRoots is the ordered list of records trees to scan.
-	// Built by NewConfig: single entry from --records-root, or auto-detected from */records/.
-	RecordsRoots []RecordsEntry
+	Root         string         // absolute repository root
+	RecordsRoots []RecordsEntry // validated current records roots
 }
 
-// NamespacePrefix returns the namespace prefix of the primary (first) records tree,
-// or empty string when RecordsRoots is empty.
+// NamespacePrefix returns the namespace prefix of the first records root, or "".
 func (c Config) NamespacePrefix() string {
 	if len(c.RecordsRoots) == 0 {
 		return ""
@@ -34,19 +35,114 @@ func (c Config) NamespacePrefix() string {
 	return c.RecordsRoots[0].NamespacePrefix
 }
 
-// primaryRecordsRoot returns the RecordsRoot of the first entry.
-// Falls back to "v01/records" when RecordsRoots is empty (should not occur after normalization).
+// primaryRecordsRoot returns the RecordsRoot of the first entry, or "".
 func (c Config) primaryRecordsRoot() string {
 	if len(c.RecordsRoots) == 0 {
-		return "v01/records"
+		return ""
 	}
 	return c.RecordsRoots[0].RecordsRoot
 }
 
-// NewConfig resolves root from an explicit path or the current working directory when
-// root is empty. If recordsRoot is non-empty, a single-entry RecordsRoots is built for
-// that path (single-root / backward-compat mode). When recordsRoot is empty, all
-// */records/ directories under root are auto-detected (multi-root mode).
+// readDir is the package-level seam for directory readability checks.
+// Production default is os.ReadDir. Tests may replace it for a single test
+// and must restore the original via defer before the test returns.
+var readDir func(string) ([]os.DirEntry, error) = os.ReadDir
+
+// NormalizeConfig validates an explicitly configured set of current roots.
+//
+// root must be non-empty and resolvable to an absolute path.
+// roots must be non-empty.
+// Each root must carry a non-empty app_namespace and a records_root that exactly
+// matches <app_namespace>/records.
+// Duplicate records_root declarations and duplicate app_namespace values fail the
+// complete configuration.
+// Every records_root is verified to exist as a readable directory within root.
+// A valid but empty records directory is accepted.
+// Any invalid root fails the complete configuration.
+func NormalizeConfig(root string, roots []CurrentRoot) (Config, error) {
+	if root == "" {
+		return Config{}, errors.New("repository root must not be empty")
+	}
+	abs, err := filepath.Abs(root)
+	if err != nil {
+		return Config{}, fmt.Errorf("resolve root: %w", err)
+	}
+	cleanRoot := filepath.Clean(abs)
+
+	if len(roots) == 0 {
+		return Config{}, errors.New("at least one current root must be configured")
+	}
+
+	seenRoot := map[string]bool{}
+	seenNS := map[string]bool{}
+	entries := make([]RecordsEntry, 0, len(roots))
+
+	for i, cr := range roots {
+		if cr.AppNamespace == "" {
+			return Config{}, fmt.Errorf("current_roots[%d]: app_namespace must not be empty", i)
+		}
+		if cr.RecordsRoot == "" {
+			return Config{}, fmt.Errorf("current_roots[%d] (%q): records_root must not be empty", i, cr.AppNamespace)
+		}
+
+		// Exact app-root shape: records_root must equal <app_namespace>/records.
+		want := cr.AppNamespace + "/records"
+		cleanRel := filepath.ToSlash(filepath.Clean(cr.RecordsRoot))
+		if cleanRel != want {
+			return Config{}, fmt.Errorf("current_roots[%d]: records_root %q does not match required shape %q",
+				i, cr.RecordsRoot, want)
+		}
+
+		// Root containment: resolve absolute path and confirm no parent escape.
+		absDir := filepath.Join(cleanRoot, filepath.FromSlash(cleanRel))
+		rel, relErr := filepath.Rel(cleanRoot, absDir)
+		if relErr != nil || strings.HasPrefix(filepath.ToSlash(rel), "..") {
+			return Config{}, fmt.Errorf("current_roots[%d]: records_root %q escapes repository root", i, cr.RecordsRoot)
+		}
+		normalizedRel := filepath.ToSlash(rel)
+
+		// Duplicate records_root declaration.
+		if seenRoot[normalizedRel] {
+			return Config{}, fmt.Errorf("current_roots[%d]: duplicate records_root declaration %q", i, cr.RecordsRoot)
+		}
+		seenRoot[normalizedRel] = true
+
+		// Duplicate app_namespace.
+		if seenNS[cr.AppNamespace] {
+			return Config{}, fmt.Errorf("current_roots[%d]: duplicate app_namespace %q", i, cr.AppNamespace)
+		}
+		seenNS[cr.AppNamespace] = true
+
+		// Directory existence and readability.
+		info, statErr := os.Stat(absDir)
+		if statErr != nil {
+			return Config{}, fmt.Errorf("current_roots[%d] (%q): records_root %q: %w",
+				i, cr.AppNamespace, cr.RecordsRoot, statErr)
+		}
+		if !info.IsDir() {
+			return Config{}, fmt.Errorf("current_roots[%d] (%q): records_root %q is not a directory",
+				i, cr.AppNamespace, cr.RecordsRoot)
+		}
+		if _, rdErr := readDir(absDir); rdErr != nil {
+			return Config{}, fmt.Errorf("current_roots[%d] (%q): records_root %q is not readable: %w",
+				i, cr.AppNamespace, cr.RecordsRoot, rdErr)
+		}
+
+		entries = append(entries, RecordsEntry{
+			AppNamespace:    cr.AppNamespace,
+			RecordsRoot:     normalizedRel,
+			NamespacePrefix: strings.ToUpper(cr.AppNamespace) + "-",
+		})
+	}
+
+	return Config{Root: cleanRoot, RecordsRoots: entries}, nil
+}
+
+// NewConfig builds a Config from a repository root and a single explicit records root path.
+// root may be empty (resolved to the current working directory).
+// recordsRoot must be non-empty and match the <app_namespace>/records shape.
+// Auto-discovery of */records directories is removed.
+// The v01/records default fallback is removed.
 func NewConfig(root, recordsRoot string) (Config, error) {
 	if root == "" {
 		cwd, err := os.Getwd()
@@ -55,65 +151,23 @@ func NewConfig(root, recordsRoot string) (Config, error) {
 		}
 		root = cwd
 	}
-	abs, err := filepath.Abs(root)
-	if err != nil {
-		return Config{}, fmt.Errorf("resolve root: %w", err)
+	if recordsRoot == "" {
+		return Config{}, errors.New("records_root must not be empty: auto-discovery has been removed")
 	}
-	cleanRoot := filepath.Clean(abs)
 
-	var entries []RecordsEntry
-	if recordsRoot != "" {
-		entries = []RecordsEntry{makeRecordsEntry(recordsRoot)}
-	} else {
-		entries = discoverRecordsEntries(cleanRoot)
-		if len(entries) == 0 {
-			// No */records/ dirs found; fall back to default.
-			entries = []RecordsEntry{makeRecordsEntry("v01/records")}
-		}
+	// Derive app_namespace from the records_root shape: exactly <app_namespace>/records.
+	cleanRel := filepath.ToSlash(filepath.Clean(recordsRoot))
+	slashIdx := strings.Index(cleanRel, "/")
+	if slashIdx <= 0 || cleanRel[slashIdx:] != "/records" {
+		return Config{}, fmt.Errorf("records_root %q does not match required shape <app_namespace>/records", recordsRoot)
 	}
-	return Config{Root: cleanRoot, RecordsRoots: entries}, nil
+	appNS := cleanRel[:slashIdx]
+
+	return NormalizeConfig(root, []CurrentRoot{{AppNamespace: appNS, RecordsRoot: recordsRoot}})
 }
 
-// makeRecordsEntry builds a RecordsEntry from a records root path.
-// NamespacePrefix is derived from the app namespace directory (parent of "records/"):
-//
-//	"v01/records"  → appNS "v01"  → "V01-"
-//	"drmcp/records" → appNS "drmcp" → "DRMCP-"
-//	"docs"          → appNS "."    → ""  (single-component path)
-func makeRecordsEntry(recordsRoot string) RecordsEntry {
-	clean := filepath.Clean(filepath.FromSlash(recordsRoot))
-	appNS := filepath.Base(filepath.Dir(clean))
-	ns := ""
-	if appNS != "." && appNS != "" {
-		ns = strings.ToUpper(appNS) + "-"
-	}
-	return RecordsEntry{
-		RecordsRoot:     filepath.ToSlash(clean),
-		NamespacePrefix: ns,
-	}
-}
-
-// discoverRecordsEntries finds all */records/ directories directly under root.
-func discoverRecordsEntries(root string) []RecordsEntry {
-	matches, err := filepath.Glob(filepath.Join(root, "*", "records"))
-	if err != nil {
-		return nil
-	}
-	var entries []RecordsEntry
-	for _, abs := range matches {
-		info, err := os.Stat(abs)
-		if err != nil || !info.IsDir() {
-			continue
-		}
-		rel, err := filepath.Rel(root, abs)
-		if err != nil {
-			continue
-		}
-		entries = append(entries, makeRecordsEntry(filepath.ToSlash(rel)))
-	}
-	return entries
-}
-
+// normalizeConfig resolves Root to an absolute path and verifies RecordsRoots is non-empty.
+// Auto-discovery of */records directories and the v01/records fallback are removed.
 func normalizeConfig(cfg Config) (Config, error) {
 	if cfg.Root == "" {
 		cwd, err := os.Getwd()
@@ -129,10 +183,7 @@ func normalizeConfig(cfg Config) (Config, error) {
 	result := cfg
 	result.Root = filepath.Clean(abs)
 	if len(result.RecordsRoots) == 0 {
-		result.RecordsRoots = discoverRecordsEntries(result.Root)
-		if len(result.RecordsRoots) == 0 {
-			result.RecordsRoots = []RecordsEntry{makeRecordsEntry("v01/records")}
-		}
+		return Config{}, errors.New("current roots must not be empty: auto-discovery has been removed")
 	}
 	return result, nil
 }

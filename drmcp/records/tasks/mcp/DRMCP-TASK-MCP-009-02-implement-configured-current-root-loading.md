@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-009-02: Implement configured current-root loading
 
 - **id**: DRMCP-TASK-MCP-009-02
-- **status**: not_started
+- **status**: done
 - **date**: 2026-06-28
 - **work_item**: DRMCP-WORK-MCP-009
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -63,16 +63,81 @@ Record `full_package_gate: deferred_to_T04`.
 
 ## Evidence
 
-Record:
+### Changed files
 
-- exact changed files;
-- removed auto-discovery and fallback behavior;
-- accepted current-root cases;
-- rejected root cases;
-- targeted and package-compile command outputs;
-- `full_package_gate: deferred_to_T04`;
-- scoped whitespace result;
-- any residual configuration serialization limitation.
+- drmcp/src/internal/designrecords/config.go
+- drmcp/src/internal/designrecords/config_test.go
+
+### Implemented behavior
+
+- Explicit repository root parameter required; empty root resolves to current working directory.
+- Non-empty explicit current roots (`[]CurrentRoot` slice); auto-discovery of `*/records` patterns removed.
+- Per-root `AppNamespace` field; non-empty and required for each current root.
+- Per-root repository-relative `RecordsRoot` field; non-empty and required.
+- Exact `<app_namespace>/records` shape validation; mismatched paths rejected.
+- Root containment validation; paths escaping repository root rejected.
+- Directory existence validation; missing directories fail the complete configuration.
+- Directory type validation; non-directories rejected.
+- Directory readability validation; unreadable directories rejected.
+- Duplicate `records_root` declaration rejection; same path configured twice fails.
+- Duplicate `app_namespace` rejection; duplicate namespace values fail.
+- Valid empty records tree acceptance; existing but empty readable directories accepted.
+- `v01/records` fallback removed; missing configuration no longer defaults.
+- Legacy-root configuration and behavior not implemented (outside this task).
+
+### Accepted and rejected fixture cases
+
+| fixture case | result | evidence |
+|---|---|---|
+| C08 | accepted | TestCurrentRootTwoRootsAccepted: two unique roots with distinct app_namespace values |
+| C10 | accepted | TestCurrentRootCurrentOnlyConfig: configuration with only current roots, no legacy_roots |
+| R08 | rejected | TestCurrentRootMissingDirectory: missing directory fails the complete configuration |
+| R10 | rejected | TestCurrentRootDuplicateDeclaration: duplicate records_root declaration fails |
+
+### Targeted tests
+
+```powershell
+go test ./drmcp/src/internal/designrecords -run 'Test(NewConfig|NormalizeConfig|CurrentRoot)' -count=1
+```
+
+Result: PASS (19 tests)
+
+```powershell
+go test ./drmcp/src/internal/designrecords -run 'Test(NewConfig|NormalizeConfig|CurrentRoot)' -count=10
+```
+
+Result: PASS
+
+### Package compile verification
+
+```powershell
+go test ./drmcp/src/internal/designrecords -run '^$' -count=1
+```
+
+Result: PASS (package compiles, no tests to run)
+
+### Format verification
+
+```powershell
+gofmt -d drmcp/src/internal/designrecords/config.go drmcp/src/internal/designrecords/config_test.go
+```
+
+Result: PASS (no diff)
+
+### Scoped whitespace
+
+LF/CRLF conversion warnings on Windows only; non-blocking advisory. No whitespace findings.
+
+### Full-package gate
+
+`full_package_gate: deferred_to_T04`
+
+### Residual limitations
+
+- `RecordsEntry.NamespacePrefix` remains as a compile-compatibility bridge until T04.
+- `normalizeConfig` remains as a private compatibility bridge until T04.
+- `readDir` is a private package-level test seam; future parallel tests require care.
+- Full-package integration remains owned by T04.
 
 No evidence is accepted from legacy-root loading or fallback behavior.
 
@@ -96,16 +161,37 @@ implementation_mapping:
 
   implementation:
     - path: drmcp/src/internal/designrecords/config.go
-      symbols: []
+      symbols:
+        - CurrentRoot
+        - RecordsEntry
+        - Config
+        - NormalizeConfig
+        - NewConfig
 
   verification:
     - path: drmcp/src/internal/designrecords/config_test.go
-      tests: []
+      tests:
+        - TestNewConfigNormalizesRoot
+        - TestNewConfigSingleRoot
+        - TestNewConfigEmptyRecordsRootRejected
+        - TestNewConfigShapeMismatchRejected
+        - TestCurrentRootTwoRootsAccepted
+        - TestCurrentRootCurrentOnlyConfig
+        - TestCurrentRootMissingDirectory
+        - TestCurrentRootDuplicateDeclaration
+        - TestCurrentRootContainmentViolation
+        - TestCurrentRootAppNamespaceMismatch
+        - TestNormalizeConfigEmptyRoot
+        - TestNormalizeConfigEmptyRoots
+        - TestNormalizeConfigMissingAppNamespace
+        - TestNormalizeConfigMissingRecordsRoot
+        - TestNormalizeConfigValidEmptyTree
+        - TestNormalizeConfigRootNormalization
+        - TestNormalizeConfigNotADirectory
+        - TestNormalizeConfigRejectsEmptyRoots
+        - TestCurrentRootUnreadableDirectory
 
   future_canonicalization:
     internal_design_ref: pending
     bpdsl_ref: pending
 ```
-
-Populate `symbols` and `tests` with real names before Task closure.
-Remove any path that does not contain the final contract-significant implementation or verification.
