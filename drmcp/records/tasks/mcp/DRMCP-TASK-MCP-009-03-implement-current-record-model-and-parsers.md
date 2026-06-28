@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-009-03: Implement current record model and parsers
 
 - **id**: DRMCP-TASK-MCP-009-03
-- **status**: not_started
+- **status**: done
 - **date**: 2026-06-28
 - **work_item**: DRMCP-WORK-MCP-009
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -74,22 +74,26 @@ Record `full_package_gate: deferred_to_T04`.
 
 ## Evidence
 
-Record:
+**Accepted review results:**
 
-- the frozen shared type inventory for T05 through T07;
-- exact identity grammar and no-repair tests;
-- current spec metadata and path-derived identity tests;
-- invalid-source retention tests;
-- path-free projection proof;
-- targeted and package-compile outputs;
-- `full_package_gate: deferred_to_T04`;
-- explicit confirmation that authoring files were not changed.
+- Six findings closed (F-MAJ-01, F-MAJ-02, F-MIN-01–F-MIN-04)
+- Targeted parser/type tests: PASS
+- Package compile/build: PASS
+- Exact current identity: no case/prefix/whitespace/fuzzy repair
+- Current sequential parsers: `parseCurrentADRRecord`, `parseCurrentInvestigationRecord`, `parseCurrentRequirementRecord`, `parseCurrentWorkItemRecord`, `parseCurrentTaskRecord`
+- Path-derived spec parser: `parseCurrentSpecRecord` with `deriveSpecRef`
+- Invalid source retention via `RecordCandidate`
+- Nullable `CurrentListedRecord` missing title/status/date serialize as JSON null
+- Structured `Diagnostic.Location` for portable location representation
+- Shared API frozen for T05–T07: current list/get/resolve/validate request/response types
+- Spec date retained in `Record.Date`
+- `full_package_gate: deferred_to_T04`
 
-### Provisional implementation mapping
+### Implementation mapping
 
 ```yaml
 implementation_mapping:
-  status: provisional
+  status: accepted
 
   contract_refs:
     - DRMCP-REQ-MCP-001
@@ -100,27 +104,35 @@ implementation_mapping:
     - DRMCP-WORK-MCP-006
     - DRMCP-WORK-MCP-008
 
-  fixture_cases:
-    - C01
-    - C02
-    - C03
-    - C04
-    - C05
-    - C06
-    - C07
-    - C11
-    - C15
-    - R02
-    - R03
-    - R04
-    - R05
-    - R06
-
   implementation:
     - path: drmcp/src/internal/designrecords/types.go
-      symbols: []
+      symbols:
+        - Record
+        - OperationWarning
+        - CurrentListRecordsRequest
+        - CurrentListedRecord
+        - CurrentListRecordsResponse
+        - CurrentGetRecordsRequest
+        - CurrentGetRecordsRecord
+        - CurrentGetRecordsResponse
+        - CurrentResolveReferenceRequest
+        - CurrentResolvedTarget
+        - CurrentResolveReferenceResponse
+        - CurrentValidateRecordsRequest
+        - ValidationSubjectSummary
+        - CurrentValidateRecordsResponse
+        - Diagnostic
+        - DiagnosticLocation
+        - CurrentConflict
     - path: drmcp/src/internal/designrecords/parser.go
-      symbols: []
+      symbols:
+        - parseCurrentADRRecord
+        - parseCurrentInvestigationRecord
+        - parseCurrentRequirementRecord
+        - parseCurrentWorkItemRecord
+        - parseCurrentTaskRecord
+        - parseCurrentSpecRecord
+        - deriveSpecRef
 
   verification:
     - path: drmcp/src/internal/designrecords/types_test.go
@@ -132,6 +144,3 @@ implementation_mapping:
     internal_design_ref: pending
     bpdsl_ref: pending
 ```
-
-Populate `symbols` and `tests` with real names before Task closure.
-Remove any path that does not contain the final contract-significant implementation or verification.

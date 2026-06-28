@@ -1,472 +1,65 @@
 package designrecords
 
 import (
-	"context"
 	"os"
 	"path/filepath"
-	"sort"
-	"strings"
 	"testing"
 )
 
-func TestADRH1Parser(t *testing.T) {
-	tests := []struct {
-		name  string
-		line  string
-		valid bool
-		num   string
-		title string
-	}{
-		{name: "valid", line: "# ADR-076: Design Records MCP", valid: true, num: "076", title: "Design Records MCP"},
-		{name: "bare num invalid", line: "# 076: Design Records MCP"},
-		{name: "not zero padded invalid", line: "# 76: Design Records MCP"},
-		{name: "non ascii colon invalid", line: "# 076： Design Records MCP"},
-		{name: "missing whitespace after colon invalid", line: "# 076:Design Records MCP"},
-		{name: "empty trimmed title invalid", line: "# 076:   "},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			num, title, valid := parseADRH1(tt.line, "")
-			if valid != tt.valid {
-				t.Fatalf("valid = %v, want %v", valid, tt.valid)
-			}
-			if num != tt.num || title != tt.title {
-				t.Fatalf("num/title = %q/%q, want %q/%q", num, title, tt.num, tt.title)
-			}
-		})
-	}
-}
+// fixtureBase is the path to the read-baseline fixture tree, relative to the package.
+const fixtureBase = "testdata/read-baseline"
 
-func TestADRRecordParserIssuesAndMetadata(t *testing.T) {
-	raw := "# ADR-076: Design Records MCP\n\n" +
-		"- **status**: accepted\n" +
-		"- **date**: 2026-05-11\n" +
-		"- **depends_on**: ADR-050, ADR-068\n" +
-		"- **supersedes**: ADR-001, ADR-002\n" +
-		"- **migrated_to_spec**: 2026-05-12\n" +
-		"- **unknown**: ignored\n" +
-		"## Stop\n" +
-		"- **status**: proposed\n"
-	record, candidate, issues := parseADRRecord("docs/adr/075-wrong.md", raw, "")
-	if record == nil {
-		t.Fatal("record is nil")
-	}
-	if record.ID != "ADR-076" || record.Title != "Design Records MCP" || record.Status != RecordStatusAccepted {
-		t.Fatalf("record = %#v", record)
-	}
-	assertStrings(t, record.Decision.DependsOn, []string{"ADR-050", "ADR-068"})
-	assertStrings(t, record.Decision.Supersedes, []string{"ADR-001", "ADR-002"})
-	if record.Decision.MigratedToSpec == nil || *record.Decision.MigratedToSpec != "2026-05-12" {
-		t.Fatalf("MigratedToSpec = %#v", record.Decision.MigratedToSpec)
-	}
-	if !candidate.FilenameIDMismatch {
-		t.Fatal("FilenameIDMismatch = false, want true")
-	}
-	if !hasIssue(issues, DiagnosticFilenameIDMismatch) {
-		t.Fatalf("missing filename mismatch issue: %#v", issues)
-	}
-}
-
-func TestADRInvalidH1RemainsCandidateWithoutFilenameDerivedID(t *testing.T) {
-	record, candidate, issues := parseADRRecord("docs/adr/076-design-records-mcp.md", "# 076: Design Records MCP\n", "")
-	if record != nil {
-		t.Fatalf("record = %#v, want nil", record)
-	}
-	if candidate.ID != "" || candidate.NormalizedID != "" {
-		t.Fatalf("candidate derived ID from filename: %#v", candidate)
-	}
-	if candidate.Included || candidate.SkipReason != "invalid_adr_h1" {
-		t.Fatalf("candidate inclusion = %#v", candidate)
-	}
-	if !hasIssue(issues, DiagnosticInvalidH1Title) {
-		t.Fatalf("missing invalid H1 issue: %#v", issues)
-	}
-}
-
-func TestADRMetadataEmptyValuesAndInvalidMigratedToSpec(t *testing.T) {
-	raw := "# ADR-076: Design Records MCP\n" +
-		"- **status**: accepted\n" +
-		"- **depends_on**: \n" +
-		"- **supersedes**:   \n" +
-		"- **migrated_to_spec**: tomorrow\n" +
-		"> stop\n" +
-		"- **depends_on**: ADR-999\n"
-	record, _, issues := parseADRRecord("docs/adr/076-design-records-mcp.md", raw, "")
-	if record == nil {
-		t.Fatal("record is nil")
-	}
-	assertStrings(t, record.Decision.DependsOn, []string{})
-	assertStrings(t, record.Decision.Supersedes, []string{})
-	if record.Decision.MigratedToSpec == nil || *record.Decision.MigratedToSpec != "tomorrow" {
-		t.Fatalf("MigratedToSpec = %#v", record.Decision.MigratedToSpec)
-	}
-	if !hasIssue(issues, DiagnosticInvalidMigratedToSpec) {
-		t.Fatalf("missing invalid migrated_to_spec issue: %#v", issues)
-	}
-
-	record, _, issues = parseADRRecord("docs/adr/076-design-records-mcp.md", "# ADR-076: Design Records MCP\n- **migrated_to_spec**: 2026-02-31\n", "")
-	if record == nil {
-		t.Fatal("record is nil")
-	}
-	if !hasIssue(issues, DiagnosticInvalidMigratedToSpec) {
-		t.Fatalf("calendar-invalid migrated_to_spec should produce issue: %#v", issues)
-	}
-
-	record, _, issues = parseADRRecord("docs/adr/076-design-records-mcp.md", "# ADR-076: Design Records MCP\n- **migrated_to_spec**: \n", "")
-	if record.Decision.MigratedToSpec != nil {
-		t.Fatalf("empty MigratedToSpec = %#v, want nil", record.Decision.MigratedToSpec)
-	}
-	if hasIssue(issues, DiagnosticInvalidMigratedToSpec) {
-		t.Fatalf("empty migrated_to_spec should not produce issue: %#v", issues)
-	}
-}
-
-func TestSpecRecordParser(t *testing.T) {
-	raw := "---\n" +
-		"status: draft\n" +
-		"depends_on:\n" +
-		"  - docs/adr/999-path-only.md\n" +
-		"design_record:\n" +
-		"  id: SPEC-design-records-mcp-schema\n" +
-		"  kind: spec\n" +
-		"  status: confirmed\n" +
-		"  depends_on:\n" +
-		"    - ADR-076\n" +
-		"  supersedes:\n" +
-		"    - ADR-001\n" +
-		"  migrated_to_spec: 2026-05-12\n" +
-		"---\n\n" +
-		"# Design Records MCP schema\n"
-	record, candidate, issues := parseSpecRecord("docs/spec/design-records-mcp/schema.md", raw)
-	if record == nil {
-		t.Fatal("record is nil")
-	}
-	if candidate.ID != record.ID || candidate.NormalizedID != "SPEC-DESIGN-RECORDS-MCP-SCHEMA" {
-		t.Fatalf("candidate = %#v", candidate)
-	}
-	if record.Status != RecordStatusDraft {
-		t.Fatalf("Status = %q, want draft", record.Status)
-	}
-	assertStrings(t, record.Spec.DependsOn, []string{"ADR-076"})
-	if record.Decision != nil {
-		t.Fatalf("Decision = %#v, want nil", record.Decision)
-	}
-	if !hasIssue(issues, DiagnosticSpecStatusMismatch) {
-		t.Fatalf("missing status mismatch issue: %#v", issues)
-	}
-}
-
-func TestSpecSilentSkips(t *testing.T) {
-	withoutDesignRecord := "---\nstatus: draft\n---\n# Existing spec\n"
-	record, candidate, issues := parseSpecRecord("docs/spec/existing.md", withoutDesignRecord)
-	if record != nil || candidate.Path != "" || len(issues) != 0 {
-		t.Fatalf("design_record absent should silent skip: record=%#v candidate=%#v issues=%#v", record, candidate, issues)
-	}
-
-	invalidKind := "---\nstatus: draft\ndesign_record:\n  id: TASK-001\n  kind: task\n---\n# Task\n"
-	record, candidate, issues = parseSpecRecord("docs/spec/task.md", invalidKind)
-	if record != nil || len(issues) != 0 {
-		t.Fatalf("invalid kind should silent skip record/issues: record=%#v issues=%#v", record, issues)
-	}
-	if candidate.Path == "" || candidate.Included || candidate.SkipReason != "unsupported_design_record_kind" {
-		t.Fatalf("invalid kind candidate = %#v", candidate)
-	}
-}
-
-func TestSpecInvalidH1Issue(t *testing.T) {
-	raw := "---\nstatus: draft\ndesign_record:\n  id: SPEC-x\n  kind: spec\n---\n\n## Not H1\n"
-	record, _, issues := parseSpecRecord("docs/spec/x.md", raw)
-	if record == nil {
-		t.Fatal("record is nil")
-	}
-	if record.Title != "" {
-		t.Fatalf("Title = %q, want empty", record.Title)
-	}
-	if !hasIssue(issues, DiagnosticInvalidH1Title) {
-		t.Fatalf("missing invalid H1 issue: %#v", issues)
-	}
-}
-
-func TestInvestigationRecordParserIssuesAndMetadata(t *testing.T) {
-	raw := "# INV-DOCS-001: investigation artifact format and lifecycle\n\n" +
-		"- **status**: concluded\n" +
-		"- **date**: 2026-05-19\n" +
-		"- **trigger**: ADR-085\n" +
-		"- **scope**: investigation format\n" +
-		"- **non_scope**: writer tools\n" +
-		"- **source_refs**:\n" +
-		"  - ADR-085\n" +
-		"  - spec:trace.resolve-and-validation\n" +
-		"- **follow_up_candidates**:\n" +
-		"  - ADR-086\n" +
-		"- **follow_up_results**:\n" +
-		"  - ADR-087\n" +
-		"## Stop\n" +
-		"  - ADR-999\n"
-	record, candidate, issues := parseInvestigationRecord("docs/investigations/docs/INV-DOCS-001-investigation-artifact-format-and-lifecycle.md", raw, "")
-	if record == nil {
-		t.Fatal("record is nil")
-	}
-	if record.ID != "INV-DOCS-001" || record.Kind != RecordKindInvestigation || record.Title != "investigation artifact format and lifecycle" || record.Status != RecordStatusConcluded {
-		t.Fatalf("record = %#v", record)
-	}
-	if record.Investigation == nil {
-		t.Fatalf("Investigation detail missing: %#v", record)
-	}
-	if record.Investigation.Trigger != "ADR-085" || record.Investigation.Scope != "investigation format" || record.Investigation.NonScope != "writer tools" {
-		t.Fatalf("investigation scalar metadata = %#v", record.Investigation)
-	}
-	assertStrings(t, record.Investigation.SourceRefs, []string{"ADR-085", "spec:trace.resolve-and-validation"})
-	assertStrings(t, record.Investigation.FollowUpCandidates, []string{"ADR-086"})
-	assertStrings(t, record.Investigation.FollowUpResults, []string{"ADR-087"})
-	if candidate.FilenameIDMismatch || len(issues) != 0 {
-		t.Fatalf("candidate/issues = %#v %#v", candidate, issues)
-	}
-}
-
-func TestInvestigationInvalidH1AndFilenameMismatch(t *testing.T) {
-	record, candidate, issues := parseInvestigationRecord("docs/investigations/docs/INV-DOCS-001-valid.md", "# INV-docs-001: invalid\n", "")
-	if record != nil {
-		t.Fatalf("record = %#v, want nil", record)
-	}
-	if candidate.Included || candidate.SkipReason != "invalid_investigation_h1" {
-		t.Fatalf("candidate = %#v", candidate)
-	}
-	if !hasIssue(issues, DiagnosticInvalidH1Title) {
-		t.Fatalf("missing invalid H1 issue: %#v", issues)
-	}
-
-	record, candidate, issues = parseInvestigationRecord("docs/investigations/docs/INV-DOCS-002-mismatch.md", "# INV-DOCS-001: mismatch\n- **status**: concluded\n", "")
-	if record == nil {
-		t.Fatal("record is nil")
-	}
-	if !candidate.FilenameIDMismatch || !hasIssue(issues, DiagnosticFilenameIDMismatch) {
-		t.Fatalf("missing filename mismatch: candidate=%#v issues=%#v", candidate, issues)
-	}
-}
-
-func TestWorkflowRecordParsersMetadataAndDiagnostics(t *testing.T) {
-	reqRaw := "# REQ-MCP-003: Workflow support\n\n" +
-		"- **id**: REQ-MCP-003\n" +
-		"- **status**: accepted\n" +
-		"- **date**: 2026-05-25\n" +
-		"- **source_refs**:\n" +
-		"  - ADR-091\n" +
-		"- **work_items**:\n" +
-		"  - WORK-MCP-003\n"
-	req, candidate, issues := parseRequirementRecord("docs/requirements/mcp/REQ-MCP-003-workflow-support.md", reqRaw, "")
-	if req == nil || candidate.FilenameIDMismatch || len(issues) != 0 {
-		t.Fatalf("requirement parse = %#v candidate=%#v issues=%#v", req, candidate, issues)
-	}
-	if req.Kind != RecordKindRequirement || req.ID != "REQ-MCP-003" || req.Title != "Workflow support" || req.Status != RecordStatusAccepted {
-		t.Fatalf("requirement record = %#v", req)
-	}
-	assertStrings(t, req.Requirement.SourceRefs, []string{"ADR-091"})
-	assertStrings(t, req.Requirement.WorkItems, []string{"WORK-MCP-003"})
-
-	workRaw := "# WORK-MCP-003: Workflow implementation\n\n" +
-		"- **id**: WORK-MCP-003\n" +
-		"- **status**: in_progress\n" +
-		"- **date**: 2026-05-26\n" +
-		"- **source_requirement**: REQ-MCP-003\n" +
-		"- **impact_refs**:\n" +
-		"  - ADR-092\n" +
-		"- **tasks**:\n" +
-		"  - TASK-MCP-003-04\n"
-	work, candidate, issues := parseWorkItemRecord("docs/work-items/mcp/WORK-MCP-003-workflow-implementation.md", workRaw, "")
-	if work == nil || candidate.FilenameIDMismatch || len(issues) != 0 {
-		t.Fatalf("work item parse = %#v candidate=%#v issues=%#v", work, candidate, issues)
-	}
-	if work.Kind != RecordKindWorkItem || work.ID != "WORK-MCP-003" || work.Status != RecordStatusInProgress {
-		t.Fatalf("work item record = %#v", work)
-	}
-	if work.WorkItem.SourceRequirement != "REQ-MCP-003" {
-		t.Fatalf("source requirement = %q", work.WorkItem.SourceRequirement)
-	}
-	assertStrings(t, work.WorkItem.ImpactRefs, []string{"ADR-092"})
-	assertStrings(t, work.WorkItem.Tasks, []string{"TASK-MCP-003-04"})
-
-	taskRaw := "# TASK-MCP-003-04: Implement workflow records\n\n" +
-		"- **id**: TASK-MCP-003-04\n" +
-		"- **status**: in_progress\n" +
-		"- **date**: 2026-05-26\n" +
-		"- **work_item**: WORK-MCP-003\n" +
-		"- **source_requirement**: REQ-MCP-003\n" +
-		"- **estimate**: 1.5d\n" +
-		"- **depends_on**:\n" +
-		"- **outputs**:\n" +
-		"  - implementation\n"
-	task, candidate, issues := parseTaskRecord("docs/tasks/mcp/TASK-MCP-003-04-implement-workflow-records.md", taskRaw, "")
-	if task == nil || candidate.FilenameIDMismatch || len(issues) != 0 {
-		t.Fatalf("task parse = %#v candidate=%#v issues=%#v", task, candidate, issues)
-	}
-	if task.Kind != RecordKindTask || task.ID != "TASK-MCP-003-04" || task.Status != RecordStatusInProgress {
-		t.Fatalf("task record = %#v", task)
-	}
-	if task.Task.WorkItem != "WORK-MCP-003" || task.Task.SourceRequirement != "REQ-MCP-003" || task.Task.Estimate != "1.5d" {
-		t.Fatalf("task scalar metadata = %#v", task.Task)
-	}
-	assertStrings(t, task.Task.DependsOn, []string{})
-	assertStrings(t, task.Task.Outputs, []string{"implementation"})
-}
-
-func TestWorkflowRecordParserIssues(t *testing.T) {
-	record, candidate, issues := parseRequirementRecord("docs/requirements/mcp/REQ-MCP-003-valid.md", "# REQ-MCP-003 missing colon\n- **id**: REQ-MCP-003\n", "")
-	if record != nil {
-		t.Fatalf("record = %#v, want nil", record)
-	}
-	if candidate.Included || candidate.SkipReason != "invalid_workflow_h1" || !hasIssue(issues, DiagnosticInvalidH1Title) {
-		t.Fatalf("invalid H1 candidate/issues = %#v %#v", candidate, issues)
-	}
-
-	record, candidate, issues = parseRequirementRecord("docs/requirements/mcp/REQ-MCP-003-mismatch.md", "# REQ-MCP-003: Mismatch\n- **id**: REQ-MCP-004\n- **status**: accepted\n", "")
-	if record == nil {
-		t.Fatal("record is nil")
-	}
-	if !candidate.FilenameIDMismatch || !hasIssue(issues, DiagnosticFilenameIDMismatch) {
-		t.Fatalf("metadata mismatch candidate/issues = %#v %#v", candidate, issues)
-	}
-
-	task, candidate, issues := parseTaskRecord("docs/tasks/mcp/TASK-mcp-003-04-invalid.md", "# TASK-mcp-003-04: Invalid\n- **id**: TASK-mcp-003-04\n- **status**: todo\n", "")
-	if task != nil {
-		t.Fatalf("task = %#v, want nil", task)
-	}
-	if candidate.Included || candidate.SkipReason != "invalid_workflow_id" || !hasIssue(issues, DiagnosticInvalidWorkflowID) {
-		t.Fatalf("invalid workflow ID candidate/issues = %#v %#v", candidate, issues)
-	}
-}
-
-func TestHeadingsExtractionExcludesFrontMatterAndFences(t *testing.T) {
-	raw := "---\nsummary: '# not a heading'\n---\n" +
-		"# Title\n" +
-		"```yaml\n" +
-		"# not a heading\n" +
-		"```\n" +
-		"## Section\n" +
-		"Setext\n---\n"
-	headings := extractHeadings(raw)
-	if len(headings) != 2 {
-		t.Fatalf("headings = %#v, want 2", headings)
-	}
-	if headings[0] != (Heading{Level: 1, Text: "Title"}) || headings[1] != (Heading{Level: 2, Text: "Section"}) {
-		t.Fatalf("headings = %#v", headings)
-	}
-}
-
-func TestBuildIndexDiscoversRecordsAndPreservesRawBody(t *testing.T) {
-	root := t.TempDir()
-	writeTestFile(t, root, "records/adr/001-test.md", "# ADR-001: Test ADR\n- **status**: accepted\n- **depends_on**:\n")
-	writeTestFile(t, root, "records/adr/nested/002-skip.md", "# ADR-002: Skip\n- **status**: accepted\n")
-	rawSpec := "---\nstatus: draft\ndesign_record:\n  id: SPEC-test\n  kind: spec\n  depends_on:\n    - ADR-001\n---\n# Test spec\n"
-	writeTestFile(t, root, "records/spec/test.md", rawSpec)
-	writeTestFile(t, root, "records/spec/existing.md", "---\nstatus: draft\n---\n# Existing\n")
-	writeTestFile(t, root, "records/investigations/docs/INV-DOCS-001-test.md", "# INV-DOCS-001: Test investigation\n- **status**: concluded\n- **date**: 2026-05-19\n- **trigger**: ADR-001\n- **scope**: test\n- **non_scope**: none\n- **source_refs**:\n  - ADR-001\n- **follow_up_candidates**:\n  - SPEC-test\n")
-	writeTestFile(t, root, "records/requirements/mcp/REQ-MCP-003-test.md", "# REQ-MCP-003: Test requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n  - ADR-001\n- **work_items**:\n  - WORK-MCP-003\n")
-	writeTestFile(t, root, "records/work-items/mcp/WORK-MCP-003-test.md", "# WORK-MCP-003: Test work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n  - ADR-001\n- **tasks**:\n  - TASK-MCP-003-01\n")
-	writeTestFile(t, root, "records/tasks/mcp/TASK-MCP-003-01-test.md", "# TASK-MCP-003-01: Test task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - test\n")
-	writeTestFile(t, root, "records/tasks/m17-legacy.md", "# Legacy task\n")
-
-	cfg, err := NewConfig(root, "records")
-	if err != nil {
-		t.Fatalf("NewConfig: %v", err)
-	}
-	idx, err := BuildIndex(context.Background(), cfg)
-	if err != nil {
-		t.Fatalf("BuildIndex: %v", err)
-	}
-	if len(idx.Records) != 6 {
-		t.Fatalf("records = %#v, want 6", idx.Records)
-	}
-	if got := recordIDs(idx.Records); !sameStrings(got, []string{"ADR-001", "INV-DOCS-001", "REQ-MCP-003", "SPEC-test", "TASK-MCP-003-01", "WORK-MCP-003"}) {
-		t.Fatalf("record IDs = %#v", got)
-	}
-	spec := findRecord(idx.Records, "SPEC-test")
-	if spec == nil || spec.RawBody != rawSpec {
-		t.Fatalf("raw body was not preserved: %#v", spec)
-	}
-	investigation := findRecord(idx.Records, "INV-DOCS-001")
-	if investigation == nil || investigation.Kind != RecordKindInvestigation || investigation.Investigation == nil {
-		t.Fatalf("investigation not indexed: %#v", investigation)
-	}
-	if legacy := findRecord(idx.Records, "m17"); legacy != nil {
-		t.Fatalf("legacy task was indexed as workflow task: %#v", legacy)
-	}
-}
-
-func TestBuildIndexRepositoryBootstrapRecords(t *testing.T) {
-	root := findRepoRoot(t)
-	cfg, err := NewConfig(root, "")
-	if err != nil {
-		t.Fatalf("NewConfig: %v", err)
-	}
-	idx, err := BuildIndex(context.Background(), cfg)
-	if err != nil {
-		t.Fatalf("BuildIndex: %v", err)
-	}
-	for _, id := range []string{"V01-ADR-050", "V01-ADR-067", "V01-ADR-068", "V01-ADR-069", "V01-ADR-070", "V01-ADR-071", "V01-ADR-072", "V01-ADR-073", "V01-ADR-074", "V01-ADR-075", "V01-ADR-076", "V01-ADR-077"} {
-		record := findRecord(idx.Records, id)
-		if record == nil {
-			t.Fatalf("missing %s in repository index", id)
-		}
-		if record.Kind != RecordKindDecision {
-			t.Fatalf("%s kind = %q, want decision", id, record.Kind)
-		}
-	}
-	for _, id := range []string{"V01-SPEC-design-records-mcp-overview", "V01-SPEC-design-records-mcp-schema", "V01-SPEC-design-records-mcp-tools"} {
-		record := findRecord(idx.Records, id)
-		if record == nil {
-			t.Fatalf("missing %s in repository index", id)
-		}
-		if record.Kind != RecordKindSpec {
-			t.Fatalf("%s kind = %q, want spec", id, record.Kind)
-		}
-	}
-	for _, id := range []string{"V01-INV-DOCS-001", "V01-INV-DOCS-002", "V01-INV-DOCS-003"} {
-		record := findRecord(idx.Records, id)
-		if record == nil {
-			t.Fatalf("missing %s in repository index", id)
-		}
-		if record.Kind != RecordKindInvestigation {
-			t.Fatalf("%s kind = %q, want investigation", id, record.Kind)
-		}
-	}
-	for _, tt := range []struct {
-		id   string
-		kind RecordKind
-	}{
-		{"V01-REQ-MCP-003", RecordKindRequirement},
-		{"V01-WORK-MCP-003", RecordKindWorkItem},
-		{"V01-TASK-MCP-003-01", RecordKindTask},
-		{"V01-TASK-MCP-003-03", RecordKindTask},
-		{"V01-TASK-MCP-003-04", RecordKindTask},
-	} {
-		record := findRecord(idx.Records, tt.id)
-		if record == nil {
-			t.Fatalf("missing %s in repository index", tt.id)
-		}
-		if record.Kind != tt.kind {
-			t.Fatalf("%s kind = %q, want %q", tt.id, record.Kind, tt.kind)
-		}
-	}
-	for _, record := range idx.Records {
-		if record.Kind == RecordKindTask && isLegacyMSeriesTaskPath(record.Path) {
-			t.Fatalf("legacy M-series task was indexed: %#v", record)
-		}
-	}
-	if findRecord(idx.Records, "docs/spec/overview.md") != nil {
-		t.Fatal("design_record-less existing spec was indexed")
-	}
-}
-
-func writeTestFile(t *testing.T, root, rel, content string) {
+// writeTestFile creates a file at filepath.Join(root, relPath) with the given content.
+// Preserved for use by authoring_test.go and authoring_guidance_test.go.
+func writeTestFile(t *testing.T, root, relPath, content string) {
 	t.Helper()
-	path := filepath.Join(root, filepath.FromSlash(rel))
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		t.Fatalf("MkdirAll: %v", err)
+	full := filepath.Join(root, filepath.FromSlash(relPath))
+	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+		t.Fatalf("MkdirAll %q: %v", filepath.Dir(full), err)
 	}
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
-		t.Fatalf("WriteFile: %v", err)
+	if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+		t.Fatalf("WriteFile %q: %v", full, err)
 	}
+}
+
+// findRepoRoot walks up from the current working directory until it finds go.mod.
+// Preserved for use by integration tests in this package.
+func findRepoRoot(t *testing.T) string {
+	t.Helper()
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Getwd: %v", err)
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			t.Fatal("could not find repo root (go.mod not found in any parent directory)")
+		}
+		dir = parent
+	}
+}
+
+// findRecord returns a pointer to the first record in records whose ID equals id, or nil.
+// Preserved for use by integration tests in this package.
+func findRecord(records []Record, id string) *Record {
+	for i := range records {
+		if records[i].ID == id {
+			return &records[i]
+		}
+	}
+	return nil
+}
+
+func readFixtureFile(t *testing.T, relPath string) string {
+	t.Helper()
+	data, err := os.ReadFile(filepath.FromSlash(relPath))
+	if err != nil {
+		t.Fatalf("ReadFile %q: %v", relPath, err)
+	}
+	return string(data)
 }
 
 func hasIssue(issues []ParseIssue, category DiagnosticCategory) bool {
@@ -497,47 +90,644 @@ func sameStrings(got, want []string) bool {
 	return true
 }
 
-func recordIDs(records []Record) []string {
-	ids := make([]string, 0, len(records))
-	for _, record := range records {
-		ids = append(ids, record.ID)
+// ── C01: PRODUCT-ADR-SPEC-901 ─────────────────────────────────────────────────
+
+func TestCurrentADRRecordParser_C01(t *testing.T) {
+	path := fixtureBase + "/current/product/records/adr/spec/PRODUCT-ADR-SPEC-901-current-read-fixture-baseline.md"
+	raw := readFixtureFile(t, path)
+	record, candidate, issues := parseCurrentADRRecord(path, raw, "PRODUCT-")
+
+	if record == nil {
+		t.Fatalf("record is nil; issues = %#v", issues)
 	}
-	sort.Strings(ids)
-	return ids
+	if record.ID != "PRODUCT-ADR-SPEC-901" {
+		t.Fatalf("ID = %q, want PRODUCT-ADR-SPEC-901", record.ID)
+	}
+	if record.Kind != RecordKindDecision {
+		t.Fatalf("Kind = %q, want decision", record.Kind)
+	}
+	if record.Title != "Use shared current read fixtures" {
+		t.Fatalf("Title = %q", record.Title)
+	}
+	if record.Status != RecordStatusAccepted {
+		t.Fatalf("Status = %q, want accepted", record.Status)
+	}
+	if candidate.FilenameIDMismatch {
+		t.Fatalf("FilenameIDMismatch = true, want false; candidate = %#v", candidate)
+	}
+	if len(issues) != 0 {
+		t.Fatalf("unexpected issues: %#v", issues)
+	}
+	if record.Decision == nil {
+		t.Fatal("Decision detail is nil")
+	}
+	assertStrings(t, record.Decision.DependsOn, []string{})
+	assertStrings(t, record.Decision.Supersedes, []string{})
+	if record.Decision.MigratedToSpec != nil {
+		t.Fatalf("MigratedToSpec = %#v, want nil", record.Decision.MigratedToSpec)
+	}
 }
 
-func findRecord(records []Record, id string) *Record {
-	for i := range records {
-		if records[i].ID == id {
-			return &records[i]
-		}
-	}
-	return nil
-}
-
-func findRepoRoot(t *testing.T) string {
-	t.Helper()
-	dir, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd: %v", err)
-	}
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir
-		}
-		next := filepath.Dir(dir)
-		if next == dir {
-			t.Fatal("repo root not found")
-		}
-		dir = next
+func TestCurrentADRH1NoRepair(t *testing.T) {
+	// Bare ADR ID without app namespace prefix must be rejected (no repair).
+	for _, tc := range []struct {
+		name string
+		line string
+		ns   string
+	}{
+		{"missing ns prefix", "# ADR-SPEC-901: title", "PRODUCT-"},
+		{"wrong ns prefix", "# DRMCP-ADR-SPEC-901: title", "PRODUCT-"},
+		{"legacy bare number form", "# ADR-076: title", "PRODUCT-"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, _, ok := parseCurrentADRH1(tc.line, tc.ns)
+			if ok {
+				t.Fatalf("parseCurrentADRH1 accepted %q with ns %q, want rejection", tc.line, tc.ns)
+			}
+		})
 	}
 }
 
-func isLegacyMSeriesTaskPath(path string) bool {
-	prefix := "docs/tasks/m"
-	if !strings.HasPrefix(path, prefix) || len(path) <= len(prefix) {
-		return false
+func TestCurrentADRH1ValidForms(t *testing.T) {
+	for _, tc := range []struct {
+		line   string
+		ns     string
+		bareID string
+		title  string
+	}{
+		{"# PRODUCT-ADR-SPEC-901: Use shared current read fixtures", "PRODUCT-", "ADR-SPEC-901", "Use shared current read fixtures"},
+		{"# DRMCP-ADR-MCP-001: Something", "DRMCP-", "ADR-MCP-001", "Something"},
+	} {
+		bareID, title, ok := parseCurrentADRH1(tc.line, tc.ns)
+		if !ok {
+			t.Fatalf("parseCurrentADRH1(%q, %q) = false, want true", tc.line, tc.ns)
+		}
+		if bareID != tc.bareID || title != tc.title {
+			t.Fatalf("bareID/title = %q/%q, want %q/%q", bareID, title, tc.bareID, tc.title)
+		}
 	}
-	next := path[len(prefix)]
-	return next >= '0' && next <= '9'
+}
+
+// ── C02: DRMCP-INV-MCP-901 ───────────────────────────────────────────────────
+
+func TestCurrentInvestigationRecordParser_C02(t *testing.T) {
+	path := fixtureBase + "/current/drmcp/records/investigations/mcp/DRMCP-INV-MCP-901-current-read-fixture-observations.md"
+	raw := readFixtureFile(t, path)
+	record, candidate, issues := parseCurrentInvestigationRecord(path, raw, "DRMCP-")
+
+	if record == nil {
+		t.Fatalf("record is nil; issues = %#v", issues)
+	}
+	if record.ID != "DRMCP-INV-MCP-901" {
+		t.Fatalf("ID = %q, want DRMCP-INV-MCP-901", record.ID)
+	}
+	if record.Kind != RecordKindInvestigation {
+		t.Fatalf("Kind = %q, want investigation", record.Kind)
+	}
+	if record.Title != "Current read fixture observations" {
+		t.Fatalf("Title = %q", record.Title)
+	}
+	if record.Status != RecordStatusConcluded {
+		t.Fatalf("Status = %q, want concluded", record.Status)
+	}
+	if candidate.FilenameIDMismatch {
+		t.Fatalf("FilenameIDMismatch = true; candidate = %#v", candidate)
+	}
+	if len(issues) != 0 {
+		t.Fatalf("unexpected issues: %#v", issues)
+	}
+	if record.Investigation == nil {
+		t.Fatal("Investigation detail is nil")
+	}
+	assertStrings(t, record.Investigation.SourceRefs, []string{"PRODUCT-ADR-SPEC-901"})
+}
+
+func TestCurrentInvestigationH1NoRepair(t *testing.T) {
+	// Bare INV ID without app namespace prefix must be rejected.
+	_, _, ok := parseCurrentInvestigationH1("# INV-MCP-901: title", "DRMCP-")
+	if ok {
+		t.Fatal("parseCurrentInvestigationH1 accepted bare ID without ns prefix")
+	}
+}
+
+// ── C03: DRMCP-REQ-MCP-901 ───────────────────────────────────────────────────
+
+func TestCurrentRequirementRecordParser_C03(t *testing.T) {
+	path := fixtureBase + "/current/drmcp/records/requirements/mcp/DRMCP-REQ-MCP-901-current-read-fixture-baseline.md"
+	raw := readFixtureFile(t, path)
+	record, candidate, issues := parseCurrentRequirementRecord(path, raw, "DRMCP-")
+
+	if record == nil {
+		t.Fatalf("record is nil; issues = %#v", issues)
+	}
+	if record.ID != "DRMCP-REQ-MCP-901" {
+		t.Fatalf("ID = %q, want DRMCP-REQ-MCP-901", record.ID)
+	}
+	if record.Kind != RecordKindRequirement {
+		t.Fatalf("Kind = %q, want requirement", record.Kind)
+	}
+	if record.Title != "Current read fixture baseline" {
+		t.Fatalf("Title = %q", record.Title)
+	}
+	if record.Status != RecordStatusAccepted {
+		t.Fatalf("Status = %q, want accepted", record.Status)
+	}
+	if candidate.FilenameIDMismatch {
+		t.Fatalf("FilenameIDMismatch = true; candidate = %#v", candidate)
+	}
+	if len(issues) != 0 {
+		t.Fatalf("unexpected issues: %#v", issues)
+	}
+	if record.Requirement == nil {
+		t.Fatal("Requirement detail is nil")
+	}
+	assertStrings(t, record.Requirement.SourceRefs, []string{"PRODUCT-ADR-SPEC-901"})
+	assertStrings(t, record.Requirement.WorkItems, []string{"DRMCP-WORK-MCP-901"})
+}
+
+// ── C04: DRMCP-WORK-MCP-901 ──────────────────────────────────────────────────
+
+func TestCurrentWorkItemRecordParser_C04(t *testing.T) {
+	path := fixtureBase + "/current/drmcp/records/work-items/mcp/DRMCP-WORK-MCP-901-current-read-fixture-baseline.md"
+	raw := readFixtureFile(t, path)
+	record, candidate, issues := parseCurrentWorkItemRecord(path, raw, "DRMCP-")
+
+	if record == nil {
+		t.Fatalf("record is nil; issues = %#v", issues)
+	}
+	if record.ID != "DRMCP-WORK-MCP-901" {
+		t.Fatalf("ID = %q, want DRMCP-WORK-MCP-901", record.ID)
+	}
+	if record.Kind != RecordKindWorkItem {
+		t.Fatalf("Kind = %q, want work_item", record.Kind)
+	}
+	if record.Status != RecordStatusInProgress {
+		t.Fatalf("Status = %q, want in_progress", record.Status)
+	}
+	if candidate.FilenameIDMismatch {
+		t.Fatalf("FilenameIDMismatch = true; candidate = %#v", candidate)
+	}
+	if len(issues) != 0 {
+		t.Fatalf("unexpected issues: %#v", issues)
+	}
+	if record.WorkItem == nil {
+		t.Fatal("WorkItem detail is nil")
+	}
+	if record.WorkItem.SourceRequirement != "DRMCP-REQ-MCP-901" {
+		t.Fatalf("SourceRequirement = %q", record.WorkItem.SourceRequirement)
+	}
+	assertStrings(t, record.WorkItem.Tasks, []string{"DRMCP-TASK-MCP-901-01"})
+}
+
+// ── C05: DRMCP-TASK-MCP-901-01 ───────────────────────────────────────────────
+
+func TestCurrentTaskRecordParser_C05(t *testing.T) {
+	path := fixtureBase + "/current/drmcp/records/tasks/mcp/DRMCP-TASK-MCP-901-01-current-read-fixture.md"
+	raw := readFixtureFile(t, path)
+	record, candidate, issues := parseCurrentTaskRecord(path, raw, "DRMCP-")
+
+	if record == nil {
+		t.Fatalf("record is nil; issues = %#v", issues)
+	}
+	if record.ID != "DRMCP-TASK-MCP-901-01" {
+		t.Fatalf("ID = %q, want DRMCP-TASK-MCP-901-01", record.ID)
+	}
+	if record.Kind != RecordKindTask {
+		t.Fatalf("Kind = %q, want task", record.Kind)
+	}
+	if record.Title != "Current read fixture" {
+		t.Fatalf("Title = %q", record.Title)
+	}
+	if record.Status != RecordStatusInProgress {
+		t.Fatalf("Status = %q, want in_progress", record.Status)
+	}
+	if candidate.FilenameIDMismatch {
+		t.Fatalf("FilenameIDMismatch = true; candidate = %#v", candidate)
+	}
+	if len(issues) != 0 {
+		t.Fatalf("unexpected issues: %#v", issues)
+	}
+	if record.Task == nil {
+		t.Fatal("Task detail is nil")
+	}
+	if record.Task.WorkItem != "DRMCP-WORK-MCP-901" {
+		t.Fatalf("WorkItem = %q", record.Task.WorkItem)
+	}
+	if record.Task.SourceRequirement != "DRMCP-REQ-MCP-901" {
+		t.Fatalf("SourceRequirement = %q", record.Task.SourceRequirement)
+	}
+	if record.Task.Estimate != "0.5d" {
+		t.Fatalf("Estimate = %q", record.Task.Estimate)
+	}
+	assertStrings(t, record.Task.DependsOn, []string{})
+	assertStrings(t, record.Task.Outputs, []string{})
+}
+
+// ── C06: spec:product.fixture_baseline.overview ───────────────────────────────
+
+func TestCurrentSpecRecordParser_C06(t *testing.T) {
+	recordsRoot := fixtureBase + "/current/product/records"
+	path := recordsRoot + "/spec/fixture-baseline/overview.md"
+	raw := readFixtureFile(t, path)
+	record, candidate, issues := parseCurrentSpecRecord(path, raw, recordsRoot, "product")
+
+	if record == nil {
+		t.Fatalf("record is nil; issues = %#v", issues)
+	}
+	if record.ID != "spec:product.fixture_baseline.overview" {
+		t.Fatalf("ID = %q, want spec:product.fixture_baseline.overview", record.ID)
+	}
+	if record.Kind != RecordKindSpec {
+		t.Fatalf("Kind = %q, want spec", record.Kind)
+	}
+	if record.Title != "Overview: Fixture baseline overview" {
+		t.Fatalf("Title = %q", record.Title)
+	}
+	if record.Status != RecordStatusAccepted {
+		t.Fatalf("Status = %q, want accepted", record.Status)
+	}
+	if candidate.ID != "spec:product.fixture_baseline.overview" {
+		t.Fatalf("candidate.ID = %q", candidate.ID)
+	}
+	if !candidate.Included {
+		t.Fatalf("candidate.Included = false; candidate = %#v", candidate)
+	}
+	if len(issues) != 0 {
+		t.Fatalf("unexpected issues: %#v", issues)
+	}
+}
+
+// ── C07: spec:product.fixture_baseline (index.md) ────────────────────────────
+
+func TestCurrentSpecRecordParser_C07_Index(t *testing.T) {
+	recordsRoot := fixtureBase + "/current/product/records"
+	path := recordsRoot + "/spec/fixture-baseline/index.md"
+	raw := readFixtureFile(t, path)
+	record, candidate, issues := parseCurrentSpecRecord(path, raw, recordsRoot, "product")
+
+	if record == nil {
+		t.Fatalf("record is nil; issues = %#v", issues)
+	}
+	if record.ID != "spec:product.fixture_baseline" {
+		t.Fatalf("ID = %q, want spec:product.fixture_baseline", record.ID)
+	}
+	if record.Status != RecordStatusAccepted {
+		t.Fatalf("Status = %q, want accepted", record.Status)
+	}
+	if candidate.ID != "spec:product.fixture_baseline" {
+		t.Fatalf("candidate.ID = %q", candidate.ID)
+	}
+	if !candidate.Included {
+		t.Fatalf("candidate.Included = false")
+	}
+	if len(issues) != 0 {
+		t.Fatalf("unexpected issues: %#v", issues)
+	}
+}
+
+// ── C11: mixed sequential + spec (no repair) ──────────────────────────────────
+
+func TestCurrentMixedInputsNoRepair_C11(t *testing.T) {
+	adrPath := fixtureBase + "/current/product/records/adr/spec/PRODUCT-ADR-SPEC-901-current-read-fixture-baseline.md"
+	specPath := fixtureBase + "/current/product/records/spec/fixture-baseline/overview.md"
+	recordsRoot := fixtureBase + "/current/product/records"
+
+	adrRaw := readFixtureFile(t, adrPath)
+	specRaw := readFixtureFile(t, specPath)
+
+	adrRecord, _, adrIssues := parseCurrentADRRecord(adrPath, adrRaw, "PRODUCT-")
+	specRecord, _, specIssues := parseCurrentSpecRecord(specPath, specRaw, recordsRoot, "product")
+
+	if adrRecord == nil {
+		t.Fatalf("ADR record is nil; issues = %#v", adrIssues)
+	}
+	if specRecord == nil {
+		t.Fatalf("spec record is nil; issues = %#v", specIssues)
+	}
+	if adrRecord.ID != "PRODUCT-ADR-SPEC-901" {
+		t.Fatalf("ADR ID = %q", adrRecord.ID)
+	}
+	if specRecord.ID != "spec:product.fixture_baseline.overview" {
+		t.Fatalf("spec ID = %q", specRecord.ID)
+	}
+	if len(adrIssues) != 0 {
+		t.Fatalf("unexpected ADR issues: %#v", adrIssues)
+	}
+	if len(specIssues) != 0 {
+		t.Fatalf("unexpected spec issues: %#v", specIssues)
+	}
+}
+
+// ── C15: invalid source (missing parent) ─────────────────────────────────────
+
+func TestCurrentSpecRecordParser_C15_MissingParent(t *testing.T) {
+	arrangement := "arrangements/invalid-current-source"
+	recordsRoot := fixtureBase + "/" + arrangement + "/current/product/records"
+	path := recordsRoot + "/spec/invalid-source/missing-parent.md"
+	raw := readFixtureFile(t, path)
+	record, candidate, issues := parseCurrentSpecRecord(path, raw, recordsRoot, "product")
+
+	// Source is invalid but path-addressable — record must be returned.
+	if record == nil {
+		t.Fatal("record is nil; invalid-but-addressable source must be retained")
+	}
+	if record.ID != "spec:product.invalid_source.missing_parent" {
+		t.Fatalf("ID = %q, want spec:product.invalid_source.missing_parent", record.ID)
+	}
+	if !candidate.Included {
+		t.Fatalf("candidate.Included = false; invalid-but-addressable source must be retained")
+	}
+	if !hasIssue(issues, DiagnosticMissingRequiredMetadata) {
+		t.Fatalf("expected MissingRequiredMetadata issue for missing parent; issues = %#v", issues)
+	}
+}
+
+// ── R06: YAML front matter spec rejected ──────────────────────────────────────
+
+func TestCurrentSpecRecordParser_R06_YAMLFrontMatter(t *testing.T) {
+	arrangement := "arrangements/invalid-spec-format"
+	recordsRoot := fixtureBase + "/" + arrangement + "/current/product/records"
+	path := recordsRoot + "/spec/invalid-format/yaml-current-spec.md"
+	raw := readFixtureFile(t, path)
+	record, candidate, issues := parseCurrentSpecRecord(path, raw, recordsRoot, "product")
+
+	if record != nil {
+		t.Fatalf("record must be nil for YAML front matter spec; got %#v", record)
+	}
+	if candidate.Included {
+		t.Fatalf("candidate.Included must be false for YAML front matter spec")
+	}
+	if candidate.SkipReason != "yaml_front_matter_current_spec" {
+		t.Fatalf("SkipReason = %q, want yaml_front_matter_current_spec", candidate.SkipReason)
+	}
+	if len(issues) == 0 {
+		t.Fatal("expected at least one issue for YAML front matter rejection")
+	}
+}
+
+// ── No-repair behavior (R02/R04/R05 at parser level) ─────────────────────────
+
+func TestCurrentWorkflowH1NoRepair(t *testing.T) {
+	tests := []struct {
+		name string
+		line string
+		ns   string
+	}{
+		// R02: bare REQ ID without app namespace prefix — rejected (not repaired)
+		{"REQ bare no ns", "# REQ-MCP-901: title", "DRMCP-"},
+		// R05: bare TASK ID without app namespace prefix — rejected (not repaired)
+		{"TASK bare no ns", "# TASK-MCP-901-01: title", "DRMCP-"},
+		// wrong ns prefix — rejected (not silently rewritten to correct ns)
+		{"wrong ns prefix", "# PRODUCT-REQ-MCP-901: title", "DRMCP-"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, _, ok := parseCurrentWorkflowH1(tc.line, tc.ns)
+			if ok {
+				t.Fatalf("parseCurrentWorkflowH1 accepted %q with ns %q, want rejection", tc.line, tc.ns)
+			}
+		})
+	}
+}
+
+func TestCurrentWorkflowH1ValidForms(t *testing.T) {
+	tests := []struct {
+		line   string
+		ns     string
+		bareID string
+		title  string
+	}{
+		{"# DRMCP-REQ-MCP-901: title", "DRMCP-", "REQ-MCP-901", "title"},
+		{"# DRMCP-WORK-MCP-901: title", "DRMCP-", "WORK-MCP-901", "title"},
+		{"# DRMCP-TASK-MCP-901-01: title", "DRMCP-", "TASK-MCP-901-01", "title"},
+	}
+	for _, tc := range tests {
+		bareID, title, ok := parseCurrentWorkflowH1(tc.line, tc.ns)
+		if !ok {
+			t.Fatalf("parseCurrentWorkflowH1(%q, %q) = false, want true", tc.line, tc.ns)
+		}
+		if bareID != tc.bareID || title != tc.title {
+			t.Fatalf("bareID/title = %q/%q, want %q/%q", bareID, title, tc.bareID, tc.title)
+		}
+	}
+}
+
+// ── deriveSpecRef ─────────────────────────────────────────────────────────────
+
+func TestDeriveSpecRef(t *testing.T) {
+	tests := []struct {
+		name        string
+		path        string
+		recordsRoot string
+		appNS       string
+		want        string
+	}{
+		{
+			name:        "leaf spec",
+			path:        "current/product/records/spec/fixture-baseline/overview.md",
+			recordsRoot: "current/product/records",
+			appNS:       "product",
+			want:        "spec:product.fixture_baseline.overview",
+		},
+		{
+			name:        "index collapses to parent",
+			path:        "current/product/records/spec/fixture-baseline/index.md",
+			recordsRoot: "current/product/records",
+			appNS:       "product",
+			want:        "spec:product.fixture_baseline",
+		},
+		{
+			name:        "invalid-source path",
+			path:        "arrangements/invalid-current-source/current/product/records/spec/invalid-source/missing-parent.md",
+			recordsRoot: "arrangements/invalid-current-source/current/product/records",
+			appNS:       "product",
+			want:        "spec:product.invalid_source.missing_parent",
+		},
+		{
+			name:        "invalid-format path",
+			path:        "arrangements/invalid-spec-format/current/product/records/spec/invalid-format/yaml-current-spec.md",
+			recordsRoot: "arrangements/invalid-spec-format/current/product/records",
+			appNS:       "product",
+			want:        "spec:product.invalid_format.yaml_current_spec",
+		},
+		{
+			name:        "path outside records root",
+			path:        "other/path/spec/foo/bar.md",
+			recordsRoot: "current/product/records",
+			appNS:       "product",
+			want:        "",
+		},
+		{
+			name:        "non-spec path",
+			path:        "current/product/records/adr/spec/PRODUCT-ADR-SPEC-901.md",
+			recordsRoot: "current/product/records",
+			appNS:       "product",
+			want:        "",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := deriveSpecRef(tc.path, tc.recordsRoot, tc.appNS)
+			if got != tc.want {
+				t.Fatalf("deriveSpecRef = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// ── stripBackticks ────────────────────────────────────────────────────────────
+
+func TestStripBackticks(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"`spec:product.fixture_baseline.overview`", "spec:product.fixture_baseline.overview"},
+		{"`spec:product.fixture_baseline`", "spec:product.fixture_baseline"},
+		{"spec:product.fixture_baseline", "spec:product.fixture_baseline"},
+		{"", ""},
+		{"`single`", "single"},
+		{"` spaced `", " spaced "},
+	}
+	for _, tc := range tests {
+		got := stripBackticks(tc.input)
+		if got != tc.want {
+			t.Fatalf("stripBackticks(%q) = %q, want %q", tc.input, got, tc.want)
+		}
+	}
+}
+
+// ── parseCurrentListField ─────────────────────────────────────────────────────
+
+func TestParseCurrentListField(t *testing.T) {
+	assertStrings(t, parseCurrentListField("[]"), []string{})
+	assertStrings(t, parseCurrentListField(""), []string{})
+	assertStrings(t, parseCurrentListField("PRODUCT-ADR-SPEC-901"), []string{"PRODUCT-ADR-SPEC-901"})
+	assertStrings(t, parseCurrentListField("ADR-050, ADR-068"), []string{"ADR-050", "ADR-068"})
+}
+
+// ── HeadingsExtraction ────────────────────────────────────────────────────────
+
+func TestHeadingsExtractionExcludesFrontMatterAndFences(t *testing.T) {
+	raw := "---\nsummary: '# not a heading'\n---\n" +
+		"# Title\n" +
+		"```yaml\n" +
+		"# not a heading\n" +
+		"```\n" +
+		"## Section\n" +
+		"Setext\n---\n"
+	headings := extractHeadings(raw)
+	if len(headings) != 2 {
+		t.Fatalf("headings = %#v, want 2", headings)
+	}
+	if headings[0] != (Heading{Level: 1, Text: "Title"}) || headings[1] != (Heading{Level: 2, Text: "Section"}) {
+		t.Fatalf("headings = %#v", headings)
+	}
+}
+
+// ── F-MIN-02: spec date retention (C06, C07) ──────────────────────────────────
+
+func TestCurrentSpecRecordDate_C06(t *testing.T) {
+	recordsRoot := fixtureBase + "/current/product/records"
+	path := recordsRoot + "/spec/fixture-baseline/overview.md"
+	raw := readFixtureFile(t, path)
+	record, _, issues := parseCurrentSpecRecord(path, raw, recordsRoot, "product")
+
+	if record == nil {
+		t.Fatalf("record is nil; issues = %#v", issues)
+	}
+	if record.Date != "2026-06-28" {
+		t.Fatalf("Date = %q, want 2026-06-28", record.Date)
+	}
+}
+
+func TestCurrentSpecRecordDate_C07(t *testing.T) {
+	recordsRoot := fixtureBase + "/current/product/records"
+	path := recordsRoot + "/spec/fixture-baseline/index.md"
+	raw := readFixtureFile(t, path)
+	record, _, issues := parseCurrentSpecRecord(path, raw, recordsRoot, "product")
+
+	if record == nil {
+		t.Fatalf("record is nil; issues = %#v", issues)
+	}
+	if record.Date != "2026-06-28" {
+		t.Fatalf("Date = %q, want 2026-06-28", record.Date)
+	}
+}
+
+// ── F-MIN-03: full-record parser rejection for R02 and R05 ───────────────────
+//
+// R02 (manifest): exact_input "REQ-MCP-901" — app_prefixless_id.
+// At parser level: H1 "# REQ-MCP-901: title" with ns "DRMCP-" must be rejected.
+// R05 (manifest): exact_input "TASK-MCP-901-01" — missing_app_prefix.
+// At parser level: H1 "# TASK-MCP-901-01: title" with ns "DRMCP-" must be rejected.
+
+func TestCurrentRequirementRecordParser_R02_BareIDRejected(t *testing.T) {
+	raw := "# REQ-MCP-901: Bare requirement\n\n- **id**: REQ-MCP-901\n- **status**: captured\n- **date**: 2026-06-28\n- **source_refs**: PRODUCT-ADR-SPEC-901\n- **work_items**: DRMCP-WORK-MCP-901\n"
+	record, candidate, _ := parseCurrentRequirementRecord("records/requirements/mcp/DRMCP-REQ-MCP-901-fixture.md", raw, "DRMCP-")
+	if record != nil {
+		t.Fatalf("parser must reject bare ID in H1 (no ns prefix); got record.ID = %q", record.ID)
+	}
+	if candidate.Included {
+		t.Fatalf("candidate.Included must be false for rejected source; candidate = %#v", candidate)
+	}
+}
+
+func TestCurrentTaskRecordParser_R05_BareIDRejected(t *testing.T) {
+	raw := "# TASK-MCP-901-01: Bare task\n\n- **id**: TASK-MCP-901-01\n- **status**: in_progress\n- **date**: 2026-06-28\n- **work_item**: DRMCP-WORK-MCP-901\n- **source_requirement**: DRMCP-REQ-MCP-901\n- **estimate**: 0.5d\n- **depends_on**: []\n- **outputs**: []\n"
+	record, candidate, _ := parseCurrentTaskRecord("records/tasks/mcp/DRMCP-TASK-MCP-901-01-fixture.md", raw, "DRMCP-")
+	if record != nil {
+		t.Fatalf("parser must reject bare TASK suffix (no ns prefix); got record.ID = %q", record.ID)
+	}
+	if candidate.Included {
+		t.Fatalf("candidate.Included must be false for rejected source; candidate = %#v", candidate)
+	}
+}
+
+// ── F-MIN-04: splitCommaListWithEmptyItems dedicated test ────────────────────
+
+func TestSplitCommaListWithEmptyItems(t *testing.T) {
+	t.Run("empty string", func(t *testing.T) {
+		items, emptyItems := splitCommaListWithEmptyItems("")
+		if len(items) != 0 {
+			t.Fatalf("items = %v, want empty", items)
+		}
+		if len(emptyItems) != 0 {
+			t.Fatalf("emptyItems = %v, want empty", emptyItems)
+		}
+	})
+
+	t.Run("bracket notation []", func(t *testing.T) {
+		items, emptyItems := splitCommaListWithEmptyItems("[]")
+		if len(items) != 0 {
+			t.Fatalf("items = %v, want empty for []", items)
+		}
+		if len(emptyItems) != 0 {
+			t.Fatalf("emptyItems = %v, want empty for []", emptyItems)
+		}
+	})
+
+	t.Run("one value", func(t *testing.T) {
+		items, emptyItems := splitCommaListWithEmptyItems("PRODUCT-ADR-SPEC-901")
+		assertStrings(t, items, []string{"PRODUCT-ADR-SPEC-901"})
+		if len(emptyItems) != 0 {
+			t.Fatalf("emptyItems = %v, want empty", emptyItems)
+		}
+	})
+
+	t.Run("multiple values", func(t *testing.T) {
+		items, emptyItems := splitCommaListWithEmptyItems("ADR-050, ADR-068")
+		assertStrings(t, items, []string{"ADR-050", "ADR-068"})
+		if len(emptyItems) != 0 {
+			t.Fatalf("emptyItems = %v, want empty", emptyItems)
+		}
+	})
+
+	t.Run("empty member", func(t *testing.T) {
+		items, emptyItems := splitCommaListWithEmptyItems("ADR-050,,ADR-068")
+		assertStrings(t, items, []string{"ADR-050", "ADR-068"})
+		if len(emptyItems) != 1 {
+			t.Fatalf("emptyItems = %v, want one empty marker", emptyItems)
+		}
+	})
 }
