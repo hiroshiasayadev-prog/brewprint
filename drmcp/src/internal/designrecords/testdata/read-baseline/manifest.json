@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "suite": "current-and-legacy-read-baseline",
+  "materialized_scope": "T02 current accepted cases only",
+  "fixture_root": "drmcp/src/internal/designrecords/testdata/read-baseline",
+  "repository_root": "current",
+  "roots": {
+    "current": [
+      {"name": "product-current", "app_namespace": "product", "records_root": "product/records", "repository_path": "current/product/records", "role": "normal"},
+      {"name": "drmcp-current", "app_namespace": "drmcp", "records_root": "drmcp/records", "repository_path": "current/drmcp/records", "role": "normal"}
+    ],
+    "legacy": []
+  },
+  "configurations": [
+    {"name": "current-only", "repository_path": "config/current-only/roots.json", "legacy_roots_state": "omitted", "serialization_role": "fixture_local_arrangement"},
+    {"name": "legacy-roots-omitted", "repository_path": "config/legacy-roots-omitted/config.json", "legacy_roots_state": "omitted", "serialization_role": "fixture_local_arrangement"}
+  ],
+  "cases": [
+    {
+      "id": "C01",
+      "fixture_class": "current",
+      "root_arrangement": "current-only",
+      "current_roots": ["product-current"],
+      "repository_paths": ["current/product/records/adr/spec/PRODUCT-ADR-SPEC-901-current-read-fixture-baseline.md"],
+      "exact_inputs": ["PRODUCT-ADR-SPEC-901"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "App-aware PRODUCT ADR; no prefix inference."
+    },
+    {
+      "id": "C02",
+      "fixture_class": "current",
+      "root_arrangement": "current-only",
+      "current_roots": ["drmcp-current"],
+      "repository_paths": ["current/drmcp/records/investigations/mcp/DRMCP-INV-MCP-901-current-read-fixture-observations.md"],
+      "exact_inputs": ["DRMCP-INV-MCP-901"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "Current sequential investigation."
+    },
+    {
+      "id": "C03",
+      "fixture_class": "current",
+      "root_arrangement": "current-only",
+      "current_roots": ["drmcp-current"],
+      "repository_paths": ["current/drmcp/records/requirements/mcp/DRMCP-REQ-MCP-901-current-read-fixture-baseline.md"],
+      "exact_inputs": ["DRMCP-REQ-MCP-901"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "Current sequential requirement."
+    },
+    {
+      "id": "C04",
+      "fixture_class": "current",
+      "root_arrangement": "current-only",
+      "current_roots": ["drmcp-current"],
+      "repository_paths": ["current/drmcp/records/work-items/mcp/DRMCP-WORK-MCP-901-current-read-fixture-baseline.md"],
+      "exact_inputs": ["DRMCP-WORK-MCP-901"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "Current Work Item linked to current REQ and TASK."
+    },
+    {
+      "id": "C05",
+      "fixture_class": "current",
+      "root_arrangement": "current-only",
+      "current_roots": ["drmcp-current"],
+      "repository_paths": ["current/drmcp/records/tasks/mcp/DRMCP-TASK-MCP-901-01-current-read-fixture.md"],
+      "exact_inputs": ["DRMCP-TASK-MCP-901-01"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "Current Task uses parent Work Item sequence."
+    },
+    {
+      "id": "C06",
+      "fixture_class": "current",
+      "root_arrangement": "current-only",
+      "current_roots": ["product-current"],
+      "repository_paths": ["current/product/records/spec/fixture-baseline/overview.md"],
+      "exact_inputs": ["spec:product.fixture_baseline.overview"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "Path-derived current spec ref."
+    },
+    {
+      "id": "C07",
+      "fixture_class": "current",
+      "root_arrangement": "current-only",
+      "current_roots": ["product-current"],
+      "repository_paths": [
+        "current/product/records/spec/fixture-baseline/index.md",
+        "current/product/records/spec/fixture-baseline/overview.md"
+      ],
+      "exact_inputs": ["spec:product.fixture_baseline", "spec:product.fixture_baseline.overview"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009", "DRMCP-WORK-SPEC-001"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "Visible id, status, date, and parent metadata immediately follow H1. Runtime parsing is owned by DRMCP-WORK-MCP-009; parser-aware detector assertions are owned by DRMCP-WORK-SPEC-001."
+    },
+    {
+      "id": "C08",
+      "fixture_class": "config",
+      "root_arrangement": "current-only",
+      "current_roots": ["product-current", "drmcp-current"],
+      "repository_paths": ["config/current-only/roots.json"],
+      "exact_inputs": ["product/records", "drmcp/records"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "Two unique current app roots; fixture-local declaration, not runtime serialization authority."
+    },
+    {
+      "id": "C09",
+      "fixture_class": "relation",
+      "root_arrangement": "current-only",
+      "current_roots": ["product-current", "drmcp-current"],
+      "repository_paths": [
+        "current/drmcp/records/requirements/mcp/DRMCP-REQ-MCP-901-current-read-fixture-baseline.md",
+        "current/product/records/adr/spec/PRODUCT-ADR-SPEC-901-current-read-fixture-baseline.md"
+      ],
+      "exact_inputs": ["PRODUCT-ADR-SPEC-901"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "DRMCP requirement source_refs contains the exact PRODUCT ADR ref."
+    },
+    {
+      "id": "C10",
+      "fixture_class": "config",
+      "root_arrangement": "current-only",
+      "current_roots": ["product-current", "drmcp-current"],
+      "repository_paths": ["config/legacy-roots-omitted/config.json"],
+      "exact_inputs": ["legacy_roots key omitted"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "No empty legacy_roots fixture is created."
+    },
+    {
+      "id": "C11",
+      "fixture_class": "current",
+      "root_arrangement": "current-only",
+      "current_roots": ["product-current", "drmcp-current"],
+      "repository_paths": [
+        "current/product/records/adr/spec/PRODUCT-ADR-SPEC-901-current-read-fixture-baseline.md",
+        "current/product/records/spec/fixture-baseline/overview.md"
+      ],
+      "exact_inputs": ["PRODUCT-ADR-SPEC-901", "spec:product.fixture_baseline.overview"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "Exact current sequential and spec inputs; no repair variant."
+    },
+    {
+      "id": "C12",
+      "fixture_class": "current",
+      "root_arrangement": "current-only",
+      "current_roots": ["drmcp-current", "product-current"],
+      "repository_paths": [
+        "current/drmcp/records/requirements/mcp/DRMCP-REQ-MCP-901-current-read-fixture-baseline.md",
+        "current/drmcp/records/requirements/mcp/DRMCP-REQ-MCP-902-current-listing-candidate.md",
+        "current/product/records/spec/fixture-baseline/overview.md"
+      ],
+      "exact_inputs": ["DRMCP-REQ-MCP-901", "DRMCP-REQ-MCP-902"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "Only the two sequential requirement refs are normal listing candidates; the spec is exact-only."
+    },
+    {
+      "id": "C13",
+      "fixture_class": "current",
+      "root_arrangement": "current-only",
+      "current_roots": ["drmcp-current"],
+      "repository_paths": ["current/drmcp/records/requirements/mcp/DRMCP-REQ-MCP-901-current-read-fixture-baseline.md"],
+      "exact_inputs": ["DRMCP-REQ-MCP-901"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "One unique current target and no competing legacy lookup input."
+    },
+    {
+      "id": "C14",
+      "fixture_class": "current",
+      "root_arrangement": "current-only",
+      "current_roots": ["product-current", "drmcp-current"],
+      "repository_paths": [
+        "current/product/records/adr/spec/PRODUCT-ADR-SPEC-901-current-read-fixture-baseline.md",
+        "current/drmcp/records/investigations/mcp/DRMCP-INV-MCP-901-current-read-fixture-observations.md",
+        "current/drmcp/records/requirements/mcp/DRMCP-REQ-MCP-901-current-read-fixture-baseline.md",
+        "current/drmcp/records/requirements/mcp/DRMCP-REQ-MCP-902-current-listing-candidate.md",
+        "current/drmcp/records/work-items/mcp/DRMCP-WORK-MCP-901-current-read-fixture-baseline.md",
+        "current/drmcp/records/tasks/mcp/DRMCP-TASK-MCP-901-01-current-read-fixture.md",
+        "current/product/records/spec/fixture-baseline/index.md",
+        "current/product/records/spec/fixture-baseline/overview.md"
+      ],
+      "exact_inputs": [
+        "PRODUCT-ADR-SPEC-901",
+        "DRMCP-INV-MCP-901",
+        "DRMCP-REQ-MCP-901",
+        "DRMCP-REQ-MCP-902",
+        "DRMCP-WORK-MCP-901",
+        "DRMCP-TASK-MCP-901-01",
+        "spec:product.fixture_baseline",
+        "spec:product.fixture_baseline.overview"
+      ],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-MCP-009"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "Current validation subjects only; no legacy archive source. DRMCP-WORK-SPEC-001 and DRMCP-WORK-SPEC-002 also consume the applicable spec fixtures."
+    },
+    {
+      "id": "C17",
+      "fixture_class": "current",
+      "root_arrangement": "current-only",
+      "current_roots": ["product-current"],
+      "repository_paths": [
+        "current/product/records/spec/fixture-baseline/index.md",
+        "current/product/records/spec/fixture-baseline/overview.md"
+      ],
+      "exact_inputs": ["spec:product.fixture_baseline", "spec:product.fixture_baseline.overview"],
+      "legacy_roots_state": "omitted",
+      "expected_classification": "accepted",
+      "intentional_invalidity": null,
+      "runtime_owner": ["DRMCP-WORK-SPEC-002"],
+      "planned_task": "DRMCP-TASK-MCP-008-02",
+      "notes": "Topics row contains title, kind, ref, and summary; child parent matches the Index ref."
+    }
+  ]
+}

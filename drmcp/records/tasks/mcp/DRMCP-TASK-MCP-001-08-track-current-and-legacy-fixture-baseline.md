@@ -54,7 +54,12 @@ All fixture authoring and local verification belong to the selected child Work I
 Selected child Work Item: `DRMCP-WORK-MCP-008`.
 
 The child fixture-baseline lifecycle began on 2026-06-28.
-`DRMCP-TASK-MCP-008-01` now supplies the initial coverage matrix, bounded existing-test inventory, candidate fixture-root and manifest proposal, and future owner allocation.
+`DRMCP-TASK-MCP-008-01` supplies the accepted coverage matrix, bounded existing-test inventory, package-local fixture-root proposal, manifest schema, and future owner allocation.
+T01 independent review returned `PASS`, and external scoped lifecycle and whitespace verification completed.
 
-No fixture file, production implementation, or existing test was changed as hub evidence.
+`DRMCP-TASK-MCP-008-02` materializes current accepted cases C01 through C14 and C17 under `drmcp/src/internal/designrecords/testdata/read-baseline/`.
+The first T02 review identified three corrections. Corrected fixture-shape and lifecycle checks passed, and scoped re-review returned `PASS` with all three findings closed.
+`DRMCP-TASK-MCP-008-02` is `done`; the selected child Work Item remains `in_progress` for T03 through T05.
+The child Work Item owns those fixture files and manifest; this hub Task records only the lifecycle and evidence pointer.
+No production implementation or existing Go test changed as hub evidence.
 T08 remains `in_progress` until the selected child Work Item reaches `done` and its accepted evidence is recorded here.

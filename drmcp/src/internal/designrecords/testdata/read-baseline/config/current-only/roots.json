@@ -1,0 +1,15 @@
+{
+  "schema": "read-baseline-root-arrangement/v1",
+  "suite_relative_repository_root": "current",
+  "current_roots": [
+    {
+      "app_namespace": "product",
+      "records_root": "product/records"
+    },
+    {
+      "app_namespace": "drmcp",
+      "records_root": "drmcp/records"
+    }
+  ],
+  "purpose": "Declare the valid two-app current root arrangement without defining runtime serialization."
+}

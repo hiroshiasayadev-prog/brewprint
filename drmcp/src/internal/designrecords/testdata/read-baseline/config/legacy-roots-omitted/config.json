@@ -1,0 +1,18 @@
+{
+  "schema": "read-baseline-config-arrangement/v1",
+  "legacy_roots_state": "omitted",
+  "config": {
+    "suite_relative_repository_root": "current",
+    "current_roots": [
+      {
+        "app_namespace": "product",
+        "records_root": "product/records"
+      },
+      {
+        "app_namespace": "drmcp",
+        "records_root": "drmcp/records"
+      }
+    ]
+  },
+  "purpose": "Make omission of the legacy_roots key explicit without creating the T04-owned empty-list case."
+}

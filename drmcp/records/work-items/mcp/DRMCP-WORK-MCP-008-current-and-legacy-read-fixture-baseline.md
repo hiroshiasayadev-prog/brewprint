@@ -20,6 +20,7 @@
   - spec:product.design_records.traceability
 - **tasks**:
   - DRMCP-TASK-MCP-008-01
+  - DRMCP-TASK-MCP-008-02
 
 ## Goal
 
@@ -118,6 +119,21 @@ This Work Item is complete when all of the following are true:
 - `DRMCP-WORK-MCP-003` through `DRMCP-WORK-MCP-007`: Upstream contract and disposition owners.
 - `PRODUCT-WORK-SPEC-014`: Compatibility prerequisite.
 - `DRMCP-TASK-MCP-001-08`: Hub lifecycle gate for this Work Item.
-- `DRMCP-TASK-MCP-008-01` records the requirement-to-fixture matrix, bounded existing-test inventory, candidate package-local fixture layout, manifest schema, ownership split, and review prompt.
-- Fixture files, manifests, structural checker implementation, and runtime assertions have not been created in T01.
-- Independent T01 review and externally executed scoped checks remain pending.
+- `DRMCP-TASK-MCP-008-01` records the requirement-to-fixture matrix, bounded existing-test inventory, accepted package-local fixture candidate, manifest schema, ownership split, and review prompt.
+- T01 independent review returned `PASS` with no blocking, major, or minor finding.
+- External T01 scoped lifecycle and targeted whitespace checks completed with the corrected all-untracked verification shape.
+- `DRMCP-TASK-MCP-008-02` opened on 2026-06-28 and accepted `drmcp/src/internal/designrecords/testdata/read-baseline/` as the package-local fixture root.
+- T02 materialized C01 through C14 and C17 in one authoritative manifest.
+- T02 created separate PRODUCT and DRMCP current roots, app-aware sequential fixtures using active app-domain assignments, path-derived current specs, one valid Topics parent-child arrangement, and fixture-local current-only configuration declarations.
+- No legacy archive, rejection, invalid-root, duplicate, overlap, unresolved, empty-`legacy_roots`, or leakage fixture was created in T02.
+- Production implementation and existing Go tests remain unchanged by T02.
+- Initial external scoped fixture and lifecycle verification returned `fixture_shape=OK` and `lifecycle_shape=OK`; targeted whitespace checks also returned the expected tracked exit `0` and untracked exit `1` results.
+- The first T02 independent review returned `NEEDS REVISION` with F-MAJ-01, F-MAJ-02, and F-MIN-01.
+- The correction moved the PRODUCT ADR from the inactive `PRODUCT` / `MCP` assignment to `PRODUCT-ADR-SPEC-901`, synchronized every relation and exact input, made manifest-internal paths fixture-root-relative, and represented `runtime_owner` consistently as a list with both accepted C07 owners.
+- The initial fixture and lifecycle verification predates the corrected bytes and is not treated as corrected-fixture evidence.
+- Corrected scoped `git.inspect_worktree` checks passed for all three workflow files and all eleven fixture files; only LF-to-CRLF conversion warnings were reported, and repository-wide cleanliness was not asserted.
+- Corrected external verification returned `fixture_shape=OK` and `lifecycle_shape=OK` after the three findings were addressed.
+- Independent scoped re-review returned `PASS`; F-MAJ-01, F-MAJ-02, and F-MIN-01 are closed with no blocking, major, or minor regression.
+- `DRMCP-TASK-MCP-008-02` is `done`.
+- W008 remains `in_progress` because T03 through T05 are not complete.
+- Runtime behavior, repository-local tests, and repository-wide clean status are not inferred from fixture structure.
