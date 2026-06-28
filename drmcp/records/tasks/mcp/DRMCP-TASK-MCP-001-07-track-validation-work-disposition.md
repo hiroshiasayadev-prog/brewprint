@@ -53,6 +53,9 @@ Selected child Work Items:
 T07 changed to `in_progress` on 2026-06-28 after the recorded lifecycle gate was satisfied.
 
 - `DRMCP-WORK-MCP-007`: `done`; the DRMCP owner-side child began and completed.
-- `PRODUCT-WORK-SPEC-015`: `in_progress`; the PRODUCT owner-side child has begun.
-- T07 remains `in_progress` until both child Work Items are `done`, PRODUCT owner pointers match the accepted disposition, and cross-owner review has no blocking or major finding.
-- T07 is not `done`.
+- `PRODUCT-WORK-SPEC-015`: `done`; the PRODUCT owner-side synchronization and closure completed.
+- PRODUCT owner pointers match the accepted W-SPEC-001 and W-SPEC-002 disposition.
+- Cross-owner final review returned `PASS` with no blocking, major, or minor finding.
+- The PRODUCT owner-side handoff is complete.
+- T07 remains `in_progress` for separate hub lifecycle closure.
+- PRODUCT does not mark T07 `done`.

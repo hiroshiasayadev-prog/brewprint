@@ -1,7 +1,7 @@
 # PRODUCT-WORK-SPEC-015: Synchronize validation owner pointers
 
 - **id**: PRODUCT-WORK-SPEC-015
-- **status**: in_progress
+- **status**: done
 - **date**: 2026-06-26
 - **source_requirement**: PRODUCT-REQ-SPEC-001
 - **impact_refs**:
@@ -17,6 +17,7 @@
 - **tasks**:
   - PRODUCT-TASK-SPEC-015-01
   - PRODUCT-TASK-SPEC-015-02
+  - PRODUCT-TASK-SPEC-015-03
 
 ## Goal
 
@@ -147,6 +148,34 @@ This Work Item is complete when all of the following are true:
   - The final independent review returned `PASS` and closed F-MIN-01, F-MIN-02, and F-MIN-03.
   - No blocking, major, or minor finding remains.
   - The reviewer confirmed readiness for the next Task after closure.
-  - This closure Evidence update changes the checked Task and Work Item bytes, so one final post-closure whitespace check remains external.
+  - The accepted final post-closure whitespace check returned `tracked_exit=0` and `untracked_exit=1`.
+  - No whitespace error or exit code `2` or greater was reported.
   - The independent review and limited re-review prompts are recorded in T02 Evidence.
-- PRODUCT pointer synchronization review: pending T03.
+- `PRODUCT-TASK-SPEC-015-03` opened on 2026-06-28.
+  - The exact Task directory inventory contained T01 and T02 but no T03 or equivalent validate-review-close Task.
+  - The stale T02 post-closure pending note was synchronized to the accepted final whitespace result.
+  - Static inspection confirms the two synchronized validation-policy owner rows match the accepted DRMCP disposition.
+  - Static inspection confirms W-SPEC-001 retains per-file parser-aware validation ownership.
+  - Static inspection confirms W-SPEC-002 retains cross-file Topics graph-validation ownership.
+  - `spec:product.design_records.spec_format.follow_up_boundary` requires no edit.
+  - `PRODUCT-REQ-SPEC-001` already lists this Work Item in `work_items`; no Requirement correction is required.
+  - The initial T03 changed-file manifest contains only the new T03 Task and this Work Item.
+  - The cumulative final-review target includes T01, T02, T03, this Work Item, validation-policy, and the explicit recheck-only records.
+  - The strict validator applies to validation-policy; Task and Work Item records remain outside that validator scope.
+  - Repository-local commands are unavailable through the filesystem MCP and were not executed by this assistant.
+  - External targeted status matched the initial T03 changed-file manifest.
+  - External strict validation returned `[strict]  All 1 file(s) OK.` and `validator_exit=0`.
+  - Initial external whitespace checks returned `tracked_exit=0` and `untracked_exit=1`.
+  - No whitespace error or exit code `2` or greater was reported.
+  - LF-to-CRLF warnings were non-blocking.
+  - This Evidence synchronization changed the T03 Task and this Work Item bytes after that check.
+  - Final pre-review whitespace for the current bytes returned `tracked_exit=0` and `untracked_exit=1`.
+  - Independent cross-owner final review returned `PASS`.
+  - No blocking, major, or minor finding remains.
+  - Every Completion Condition is satisfied within the recorded validation and review boundary.
+  - Final closure-time changed files are T03, this Work Item, and hub T07.
+  - Repository-local commands were not independently rerun by the reviewer.
+  - Byte-level Git diff comparison against pre-T02 bytes was not independently performed.
+  - Repository-wide clean status remains unknown.
+  - This Work Item closes as `done`.
+  - Hub T07 records the PRODUCT owner-side handoff and remains `in_progress`; PRODUCT does not close the hub.
