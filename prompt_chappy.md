@@ -7,16 +7,16 @@
 
 #### Canonical namespace and layout sources
 
-- Namespace model: `spec:product.concepts.namespace_model`
-- Repository layout contract: `spec:product.concepts.repository_layout`
+- Namespace model: `spec:product.design_records.namespace_model`
+- Repository layout contract: `spec:product.design_records.repository_layout`
 - Current Brewprint repository inventory: `spec:product.brewprint.layout`
 
 Resolve active namespaces and current placement rules from these canonical specs before creating or moving records.
 
 Filesystem fallback paths:
 
-- `product/records/spec/concepts/namespace-model/index.md`
-- `product/records/spec/concepts/repository-layout/index.md`
+- `product/records/spec/design-records/namespace-model/index.md`
+- `product/records/spec/design-records/repository-layout/index.md`
 - `product/records/spec/brewprint/layout/index.md`
 
 New records must be created under an active app namespace. Creating new files under `v01/records/` is prohibited.
@@ -29,7 +29,7 @@ New records must be created under an active app namespace. Creating new files un
 - Authoring では、record の作成・更新前に `<namespace>/records/guides/` の関連 guide を読む。
 - 大きな作業では、この会話で扱うスコープを明確にする。
 - `CLAUDE.md` や `AGENTS.md` は、明示的に依頼された場合だけ読む。
-- Agent authoring policy: `spec:product.concepts.authoring_standards.agent_authoring_policy`。
+- Agent authoring policy: `spec:product.design_records.authoring_standards.agent_authoring_policy`。
 - Note: DRMCP-dependent sections are TBD。DRMCP operational までは、この参照は partial と扱う。
 
 ### Chat style
@@ -91,6 +91,17 @@ New records must be created under an active app namespace. Creating new files un
 - 指示されていないファイルを勝手に変更しない。
 - 新規ファイルは write_file、既存ファイルの部分更新は str-replace / edit_file を使う。
 
+### Git worktree inspection
+
+- Gitの変更状態とwhitespace検査には、利用可能な場合は `git.inspect_worktree` を優先して使う。
+- `cwd` には `C:\Users\imved\projects\brewprint` を指定する。
+- taskやreviewの対象が限定されている場合は、対象pathを `paths` に明示し、無関係なworking-tree変更を結果へ混ぜない。
+- repository全体の状態が必要な場合だけ `paths` を省略する。
+- `result: pass` はwhitespace検査の成功を示す。working tree cleanの判定には `changes_present`、`scope_clean`、`repository_wide_clean` を使う。
+- `git diff --no-index --check` 相当のuntracked exit code `1` は、whitespace findingがなければ正常な差分として扱う。
+- LF/CRLF変換warningはadvisoryとして扱い、whitespace failureと混同しない。
+- `git.inspect_worktree` はread-onlyなstatusとwhitespace確認専用。test、formatter、generator、任意のGit操作の代替にはしない。
+
 ### Encoding / PowerShell
 
 - Windows / PowerShell でテキストファイルを読む場合、`Get-Content -Raw` は使用禁止。
@@ -122,7 +133,8 @@ AI assistant は、現在利用可能なツール境界を明示して作業す�
 以下の場合は、無理に単独で完結させず、Codex / Opus / reviewer agent への委譲を提案する。
 
 - repo-local command execution が必要だが、現在の assistant tool から実行できない場合
-  - 例: `git status`, `git diff`, `go test`, `go run`, formatter, generator, renderer
+  - Git statusとwhitespace確認は、まず `git.inspect_worktree` の対応範囲を使う。
+  - 例: `go test`, `go run`, formatter, generator, renderer、または `git.inspect_worktree` が対応しないGit操作
 - 実行ログ・テスト結果・diagnostic 再現が判断根拠として必須の場合
 - 大きな実装差分の静的調査が必要で、grep / AST / test execution を組み合わせた方が安全な場合
 - 仕様・ADR・実装・fixture の境界が絡み、独立レビューを挟む価値が高い場合
