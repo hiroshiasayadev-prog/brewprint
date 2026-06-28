@@ -13,7 +13,7 @@ Each namespace uses this layout under `<namespace>/records/`:
 
 | directory | contents |
 |---|---|
-| `spec/` | Specifications, organized by topic area under `concepts/` |
+| `spec/` | Specifications organized by the current app-local topic tree. PRODUCT routes through `design-records/`, `brewprint/`, and temporary `bpdsl/` staging. |
 | `adr/` | Architecture decision records |
 | `investigations/<domain>/` | Investigation records by domain |
 | `requirements/` | Requirement records |
@@ -57,7 +57,7 @@ New REQ / WORK / TASK / ADR must be created under an active namespace. Creating 
 - For authoring, read the relevant guide from `<namespace>/records/guides/` before creating or updating records.
 - For large tasks, clarify scope at the start of the conversation.
 - Do not read `prompt_chappy.md` or `AGENTS.md` — they are not instructions for Claude Code.
-- Agent authoring policy: `spec:product.concepts.authoring_standards.agent_authoring_policy`. Note: DRMCP-dependent sections are TBD — this reference is partial until DRMCP is operational.
+- Agent authoring policy: `spec:product.design_records.authoring_standards.agent_authoring_policy`. Note: DRMCP-dependent sections are TBD — this reference is partial until DRMCP is operational.
 
 ## Information access
 
