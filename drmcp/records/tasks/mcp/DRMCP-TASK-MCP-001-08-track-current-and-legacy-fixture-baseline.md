@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-001-08: Track current and legacy fixture baseline
 
 - **id**: DRMCP-TASK-MCP-001-08
-- **status**: in_progress
+- **status**: done
 - **date**: 2026-06-28
 - **work_item**: DRMCP-WORK-MCP-001
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -68,6 +68,14 @@ Independent T04 review returned `PASS` with no blocking, major, or minor finding
 The review accepted the 22-file boundary, lifecycle synchronization, and scoped Git evidence; the ready-to-run Python verifier remained `NOT RUN` during review without inferred results.
 After closure synchronization, external verification returned `fixture_shape=OK` and `lifecycle_shape=OK` against the final T04 state.
 T04 structural evidence, review acceptance, and exclusions are recorded in `DRMCP-TASK-MCP-008-04`; fixture details are not duplicated here.
+`DRMCP-TASK-MCP-008-05` now owns final structural verification, accepted T04 fixture-byte confirmation, independent review, and closure synchronization for the selected child Work Item.
+The accepted evidence pointer is `DRMCP-TASK-MCP-008-05`; detailed fixture evidence remains in W008 and T05 rather than this hub.
+T05 independent review returned `PASS` with no blocking, major, or minor finding.
+The accepted evidence pointer remains `DRMCP-TASK-MCP-008-05`.
 The child Work Item owns the fixture files, manifest, and structural evidence; this hub Task records only lifecycle and evidence pointers.
 No production implementation or existing Go test changed as hub evidence.
-T08 remains `in_progress` until the selected child Work Item reaches `done` and its accepted evidence is recorded here.
+`DRMCP-TASK-MCP-008-05` is `done`.
+`DRMCP-WORK-MCP-008` is `done`.
+This hub Task is `done`.
+The final structural verifier remains accurately recorded as `NOT RUN`.
+Repository-wide cleanliness is not inferred.

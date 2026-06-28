@@ -1,7 +1,7 @@
 # DRMCP-WORK-MCP-008: Current and legacy read fixture baseline
 
 - **id**: DRMCP-WORK-MCP-008
-- **status**: in_progress
+- **status**: done
 - **date**: 2026-06-28
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **impact_refs**:
@@ -23,6 +23,7 @@
   - DRMCP-TASK-MCP-008-02
   - DRMCP-TASK-MCP-008-03
   - DRMCP-TASK-MCP-008-04
+  - DRMCP-TASK-MCP-008-05
 
 ## Goal
 
@@ -158,5 +159,26 @@ This Work Item is complete when all of the following are true:
 - Scoped `git.inspect_worktree` returned `result: pass`, no whitespace findings, expected untracked no-index exit `1`, no exit `2` or greater, and `repository_wide_clean: null`.
 - LF-to-CRLF conversion warnings were non-blocking.
 - `DRMCP-TASK-MCP-008-04` is `done`.
-- W008 remains `in_progress` because T05 is not complete.
+- Before T05 began, W008 remained `in_progress` because T05 was not complete.
 - Runtime behavior, repository-local tests, and repository-wide clean status are not inferred from fixture structure.
+- `DRMCP-TASK-MCP-008-05` opened on 2026-06-28 after bounded inventory confirmed no existing T05 ID or file.
+- T05 confirmed direct predecessor commit `57998d6b51ece4a6845cbbf322688fc231443dfa` as the accepted T04 baseline and found the exact T04 22-file boundary plus the full fixture root unchanged.
+- T05 static verification confirmed the deterministic 54-case manifest, declared path existence and absence, current and legacy separation, exact five-family legacy isolation, duplicate and overlap structure, fallback-state separation, forbidden leakage boundaries, and Topics graph arrangements.
+- No fixture correction was required; T05 changes only its Task, this Work Item, and hub T08.
+- The final structural verifier is ready to run and is accurately recorded as `NOT RUN` because arbitrary repository-local Python execution is unavailable in this session.
+- T05 independent review returned `PASS` with no blocking, major, or minor finding.
+- T02 F-MAJ-01, F-MAJ-02, and F-MIN-01 remain closed with no regression.
+- T03 and T04 had no previous finding.
+- The review accepted the deterministic 54-case manifest and declared path existence and absence.
+- Normal current and legacy roots remain unchanged and disjoint.
+- The exact five-family legacy isolation, duplicate and overlap structure, fallback-state separation, forbidden leakage boundaries, path-exposure separation, and Topics graph arrangements were accepted.
+- The review accepted the recorded pre-authoring fixture-byte evidence with the explicit execution limitation.
+- The final structural verifier remains `NOT RUN`; no result is inferred.
+- T01 through T05 are `done`.
+- Current, legacy, rejection, and arrangement scopes remain separate.
+- Production `.go` implementation and existing Go tests were not changed.
+- Accepted ADR, Requirement, and Specification records were not changed by closure.
+- Scoped Git and whitespace inspection passed for the three closure files with LF-to-CRLF warnings only and `repository_wide_clean: null`.
+- Residual limitation: the ready-to-run repository-local Python verifier was not executed.
+- `DRMCP-WORK-MCP-008` is `done`.
+- Hub `DRMCP-TASK-MCP-001-08` is synchronized to `done` with W008 and T05 as accepted evidence pointers.
