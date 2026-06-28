@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.brewprint.compatibility`
 - **status**: draft
-- **date**: 2026-06-24
+- **date**: 2026-06-27
 - **parent**: `spec:product.brewprint`
 
 ## What this is
@@ -15,14 +15,13 @@ Owns Brewprint V01 compatibility, historical attribution, issued-ID retention, a
 |---|---|
 | Existing artifact ownership and effective attribution | `spec:product.brewprint.compatibility.existing_artifacts`. |
 | Legacy ID family acceptance and retention | `spec:product.brewprint.compatibility.legacy_id_compatibility`. |
-| Compatibility-only V01 spec identity | `spec:product.brewprint.compatibility.legacy_id_compatibility`. |
 
 ## Topics
 
 | title | kind | ref | summary |
 |---|---|---|---|
 | Existing artifact compatibility | Reference | `spec:product.brewprint.compatibility.existing_artifacts` | Historical PRODUCT ownership, effective attribution, and migration state. |
-| Legacy ID compatibility | Reference | `spec:product.brewprint.compatibility.legacy_id_compatibility` | Accepted V01 ID families, retention policy, and compatibility-only spec identity. |
+| Legacy ID compatibility | Reference | `spec:product.brewprint.compatibility.legacy_id_compatibility` | Accepted V01 sequential ID families and retention policy. |
 
 ## Rules
 

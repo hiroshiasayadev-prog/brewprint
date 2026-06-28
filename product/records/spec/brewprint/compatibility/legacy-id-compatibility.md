@@ -2,12 +2,12 @@
 
 - **id**: `spec:product.brewprint.compatibility.legacy_id_compatibility`
 - **status**: draft
-- **date**: 2026-06-24
+- **date**: 2026-06-27
 - **parent**: `spec:product.brewprint.compatibility`
 
 ## What this is
 
-Defines the Brewprint compatibility policy for V01-epoch artifact IDs.
+Defines the Brewprint compatibility policy for accepted V01-epoch sequential artifact IDs.
 
 ## Accepted legacy families
 
@@ -17,7 +17,6 @@ All are accepted as valid resolvable references.
 | family | example |
 |---|---|
 | `V01-ADR-*` | `V01-ADR-096` |
-| `V01-SPEC-*` | `V01-SPEC-design-records-mcp-schema` |
 | `V01-INV-*` | `V01-INV-MCP-001` |
 | `V01-REQ-*` | `V01-REQ-PRODUCT-001` |
 | `V01-WORK-*` | `V01-WORK-MCP-004` |
@@ -25,21 +24,14 @@ All are accepted as valid resolvable references.
 
 ## Retention policy
 
-Issued legacy IDs remain unchanged and resolvable.
-No V01 artifact is renamed as part of this policy.
+Issued IDs in the accepted legacy families remain unchanged and resolvable.
+No artifact in an accepted legacy family is renamed as part of this policy.
 
 Legacy public IDs are not the canonical form for new sequential records.
 New sequential records use the grammar defined in `spec:product.design_records.namespace_model.artifact_id_grammar`.
 
 New specs use path-derived `spec:` refs.
 Spec identity is defined in `spec:product.design_records.spec_format.spec_id_as_ref`.
-
-## Spec identity note
-
-The `V01-SPEC-*` family provides compatibility-only indexed IDs for specs from the V01 epoch.
-These IDs do not constitute canonical spec identity.
-
-Canonical spec identity is path-derived.
 
 ## Related specs
 
