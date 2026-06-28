@@ -3,4 +3,7 @@ bin/
 memory/
 __pycache__
 tools/
+!product/tests/tools/
+product/tests/tools/*
+!product/tests/tools/*.py
 tmp.py
