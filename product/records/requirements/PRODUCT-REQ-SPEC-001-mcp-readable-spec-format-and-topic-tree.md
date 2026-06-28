@@ -8,6 +8,8 @@
   - PRODUCT-INV-SPEC-001
 - **work_items**:
   - PRODUCT-WORK-SPEC-001
+  - PRODUCT-WORK-SPEC-012
+  - PRODUCT-WORK-SPEC-015
 
 Note: `V01-REQ-PRODUCT-003` is listed as the repository-layout prerequisite for the current `product/records/**` placement. `PRODUCT-INV-SPEC-001` is the investigation evidence used to accept this requirement. This requirement itself is a new PRODUCT app-domain record and is not intended to be a V01 snapshot continuation.
 
