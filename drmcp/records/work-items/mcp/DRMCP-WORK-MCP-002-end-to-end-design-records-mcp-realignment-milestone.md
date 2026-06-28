@@ -1,7 +1,7 @@
 # DRMCP-WORK-MCP-002: End-to-end Design Records MCP realignment milestone
 
 - **id**: DRMCP-WORK-MCP-002
-- **status**: not_started
+- **status**: in_progress
 - **date**: 2026-06-26
 - **source_requirement**: DRMCP-REQ-MCP-004
 - **impact_refs**:
@@ -16,7 +16,8 @@
   - DRMCP-WORK-SPEC-002
   - spec:product.brewprint.compatibility.legacy_id_compatibility
   - spec:product.design_records.spec_format.validation_policy
-- **tasks**: []
+- **tasks**:
+  - DRMCP-TASK-MCP-002-02
 
 ## Goal
 
@@ -161,3 +162,47 @@ This Work Item is complete when all of the following are true:
 - Known producer residuals: no manifest, version negotiation, remote registry, incremental generation, or concurrent-generation support. Generated output remains non-authoritative, and source correction may require separate ownership.
 - Consumer-owned remaining scope: package-root configuration, loader and availability behavior, recursive discovery, localized indexes and diagnostics, guidance projection, authoring and validation integration, proposal reproducibility, and package-dependent capability exposure.
 - No P0 Work Item sourced from `DRMCP-REQ-MCP-003` exists in the scoped consumer Work Item set. Producer closure is accepted. The next consumer-side action is to create that P0 Work Item through milestone T03. This milestone does not treat producer closure as consumer implementation completion.
+
+### T02 producer package gate acceptance
+
+`DRMCP-TASK-MCP-002-02` formally accepts the completed PRODUCT producer handoff as the milestone producer gate.
+
+| evidence | accepted result |
+|---|---|
+| `PRODUCT-WORK-SPEC-013` | `done` |
+| `PRODUCT-TASK-SPEC-013-08` | `done` |
+| producer final re-review | `PASS` |
+| T08 F-MIN-01 | `CLOSED` |
+| blocking / major / minor findings | none |
+| producer gate | accepted |
+
+Release-evidence pointer:
+
+- 34 generated files;
+- 79 non-blocking semantic warnings;
+- generator exit `0`;
+- 35 tests passed with test exit `0`;
+- `scripts\\verify.bat` exit `0`;
+- generated-artifact ignore exit `0`;
+- scoped whitespace pass.
+
+The 79 warning messages remain in producer execution output and are not copied into this milestone.
+
+Producer gate acceptance means the PRODUCT-owned contract, generated package, and release evidence are available to the milestone.
+The acceptance also means the producer input for future T03 execution is ready.
+
+Producer gate acceptance does not mean a P0 Work Item exists or any consumer loader, configuration, indexing, guidance, validation, or authoring integration is implemented.
+Consumer runtime completion and milestone completion remain open.
+
+The next gate remains the read-baseline readiness flow:
+
+| record | current status |
+|---|---|
+| `DRMCP-WORK-MCP-001` | `in_progress` |
+| `DRMCP-TASK-MCP-001-11` | `not_started` |
+| `DRMCP-TASK-MCP-001-12` | `not_started` |
+
+While this state remains, T03 must not execute and no Work Item sourced from `DRMCP-REQ-MCP-003` may be created or assigned an inferred ID.
+The next milestone action is T03 execution after T11 and T12 readiness is accepted.
+The independent T02 review returned `PASS` with no blocking, major, or minor findings. The producer package gate remains accepted.
+This Work Item remains `in_progress` because later milestone Tasks remain.
