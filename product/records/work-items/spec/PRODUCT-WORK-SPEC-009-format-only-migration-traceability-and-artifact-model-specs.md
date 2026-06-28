@@ -87,3 +87,5 @@ Format migration only. No ownership relocation, no hybrid-section ownership spli
 **Staging directory:** `product/records/old/` removed after final validation
 
 **Final validator:** `[strict]  All 18 file(s) OK.`
+
+**Lifecycle synchronization (2026-06-23):** `PRODUCT-TASK-SPEC-009-04` was corrected from stale `not_started` to `done` using the review findings already recorded above. No new review result was invented.

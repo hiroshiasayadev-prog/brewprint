@@ -1,7 +1,7 @@
 # PRODUCT-TASK-SPEC-009-04: Opus review of migrated product concepts spec files
 
 - **id**: PRODUCT-TASK-SPEC-009-04
-- **status**: not_started
+- **status**: done
 - **date**: 2026-06-22
 - **work_item**: PRODUCT-WORK-SPEC-009
 - **estimate**: 1d
@@ -42,4 +42,14 @@ Cross-check all Opus findings against the actual files before applying any fix �
 
 ## Evidence
 
-TBD
+Retrospective status synchronization from `PRODUCT-WORK-SPEC-009` completion evidence:
+
+- Independent review findings were recorded and classified before finalization.
+- M1: Japanese table headers in eight locations — corrected during the retranslation pass.
+- D1: dropped navigation rows — restored with `*(planned)*` markers in `project-artifact-model/index.md`.
+- D2: missing internal-design and implementation follow-up bullets — restored in `traceability/out-of-scope.md`.
+- D3: stale example paths — updated in `traceability/resolve-and-validation.md`.
+- D4 and D5 required no changes after verification against current contracts.
+- User sign-off is evidenced by completion of `PRODUCT-TASK-SPEC-009-05` and closure of `PRODUCT-WORK-SPEC-009`.
+
+The original review output was summarized in the parent work item's Evidence rather than copied into this task. This record now reflects that completed gate.
