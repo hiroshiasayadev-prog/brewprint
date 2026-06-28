@@ -1,7 +1,7 @@
 # PRODUCT-WORK-SPEC-015: Synchronize validation owner pointers
 
 - **id**: PRODUCT-WORK-SPEC-015
-- **status**: not_started
+- **status**: in_progress
 - **date**: 2026-06-26
 - **source_requirement**: PRODUCT-REQ-SPEC-001
 - **impact_refs**:
@@ -14,7 +14,8 @@
   - DRMCP-TASK-MCP-001-07
   - spec:product.design_records.spec_format.validation_policy
   - spec:product.design_records.spec_format.follow_up_boundary
-- **tasks**: []
+- **tasks**:
+  - PRODUCT-TASK-SPEC-015-01
 
 ## Goal
 
@@ -99,4 +100,20 @@ This Work Item is complete when all of the following are true:
 - `DRMCP-ADR-MCP-001`: Requires coordinated pointer synchronization.
 - `DRMCP-WORK-MCP-007`: DRMCP disposition owner and upstream gate.
 - `DRMCP-TASK-MCP-001-07`: Hub lifecycle gate tracking both owner-side Work Items.
-- PRODUCT pointer synchronization, validation, and independent-review evidence: pending Task execution.
+- `PRODUCT-TASK-SPEC-015-01` opened on 2026-06-28.
+  - Exact Task inventory confirmed that no `PRODUCT-TASK-SPEC-015-*` record existed before creation.
+  - Scoped PRODUCT pointer inventory identified two owner-only T02 changes in `spec:product.design_records.spec_format.validation_policy`.
+  - The inventory also identified one W015 wording-only normalization from pointer-candidate wording to retained-owner wording.
+  - The known local Topics column-shape row must move from W-SPEC-002 to W-SPEC-001.
+  - The `parent grammar violation` row is an additional stale pointer and must move from W-SPEC-002 to W-SPEC-001.
+  - PRODUCT rule text and severity remain unchanged.
+  - `spec:product.design_records.spec_format.follow_up_boundary` requires no change from the T01 inventory.
+  - Targeted status matched the three-file changed manifest.
+  - External whitespace results were `tracked_exit=0` and `untracked_exit=1`.
+  - No whitespace error or exit code `2` or greater was reported.
+  - LF-to-CRLF warnings were non-blocking.
+  - Final pre-review whitespace results were `tracked_exit=0` and `untracked_exit=1`.
+  - Independent T01 review returned `PASS` with no blocking, major, or minor finding.
+  - T01 is closed as `done`.
+  - Final post-closure whitespace verification remains pending.
+- PRODUCT pointer synchronization, validation, and independent-review closure evidence: pending later Tasks.
