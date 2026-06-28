@@ -22,6 +22,7 @@
   - DRMCP-TASK-MCP-008-01
   - DRMCP-TASK-MCP-008-02
   - DRMCP-TASK-MCP-008-03
+  - DRMCP-TASK-MCP-008-04
 
 ## Goal
 
@@ -143,5 +144,19 @@ This Work Item is complete when all of the following are true:
 - The review-time Python verifier remained `NOT RUN`; no review-time execution result is inferred.
 - After closure synchronization, external verification returned `fixture_shape=OK` and `lifecycle_shape=OK` against the final T03 state.
 - `DRMCP-TASK-MCP-008-03` is `done`.
-- W008 remains `in_progress` because T04 through T05 are not complete.
+- `DRMCP-TASK-MCP-008-04` opened on 2026-06-28 after bounded inventory confirmed no existing T04 ID or file.
+- T04 extends the single authoritative manifest with C15, C16, L10 through L13, and R01 through R24.
+- T04 materializes rejected source and identity inputs, duplicate current identity, invalid and duplicate roots, equal and nested root overlap, disabled fallback states, unresolved inputs, isolation flags, forbidden leakage metadata, and invalid Topics graph arrangements.
+- T04 keeps normal current and legacy roots unchanged and stores invalid material only below `arrangements/` or `config/legacy-roots-empty/`.
+- The rejected `V01-SPEC-901` source exists only below an explicit rejection arrangement and is not an accepted legacy source.
+- T04 does not claim production parser, resolver, validator, MCP operation, or diagnostic execution results.
+- Production implementation and existing Go tests remain outside the T04 changed-file boundary.
+- T04 independent review returned `PASS` with no blocking, major, or minor finding.
+- The review accepted existing fixture non-regression, complete deterministic case ordering, invalid and overlap arrangements, disabled/unresolved/unsupported separation, legacy isolation, path-exposure boundaries, Topics graph arrangements, lifecycle synchronization, and the scoped 22-file Git evidence.
+- The ready-to-run Python verifier remained `NOT RUN` during independent review; no review-time result was inferred.
+- After closure synchronization, the external verifier returned `fixture_shape=OK` and `lifecycle_shape=OK` against the final T04 state.
+- Scoped `git.inspect_worktree` returned `result: pass`, no whitespace findings, expected untracked no-index exit `1`, no exit `2` or greater, and `repository_wide_clean: null`.
+- LF-to-CRLF conversion warnings were non-blocking.
+- `DRMCP-TASK-MCP-008-04` is `done`.
+- W008 remains `in_progress` because T05 is not complete.
 - Runtime behavior, repository-local tests, and repository-wide clean status are not inferred from fixture structure.

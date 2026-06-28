@@ -1,0 +1,20 @@
+{
+  "schema": "read-baseline-config-arrangement/v1",
+  "serialization_role": "fixture_local_arrangement",
+  "repository_root": ".",
+  "current_roots": [
+    {
+      "name": "product-current",
+      "app_namespace": "product",
+      "records_root": "current/product/records"
+    },
+    {
+      "name": "drmcp-current",
+      "app_namespace": "drmcp",
+      "records_root": "current/drmcp/records"
+    }
+  ],
+  "legacy_roots_state": "empty",
+  "legacy_roots": [],
+  "purpose": "Represent an explicitly empty legacy_roots list separately from omission without defining production runtime serialization."
+}

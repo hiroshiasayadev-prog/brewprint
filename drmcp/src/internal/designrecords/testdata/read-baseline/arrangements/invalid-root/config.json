@@ -1,0 +1,15 @@
+{
+  "schema": "read-baseline-invalid-root-arrangement/v1",
+  "serialization_role": "fixture_local_arrangement",
+  "current_root_case": {
+    "condition": "missing",
+    "records_root": "arrangements/invalid-root/missing-current/records",
+    "expected_path_state": "absent"
+  },
+  "legacy_root_case": {
+    "condition": "missing",
+    "records_root": "arrangements/invalid-root/missing-legacy/records",
+    "expected_path_state": "absent"
+  },
+  "purpose": "Represent invalid current and legacy roots without registering either path as a normal root."
+}

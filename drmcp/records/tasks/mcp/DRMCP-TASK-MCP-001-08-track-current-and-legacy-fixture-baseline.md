@@ -59,10 +59,15 @@ T01 independent review returned `PASS`, and external scoped lifecycle and whites
 
 `DRMCP-TASK-MCP-008-02` materializes current accepted cases C01 through C14 and C17 under `drmcp/src/internal/designrecords/testdata/read-baseline/`.
 The first T02 review identified three corrections. Corrected fixture-shape and lifecycle checks passed, and scoped re-review returned `PASS` with all three findings closed.
-`DRMCP-TASK-MCP-008-02` is `done`; the selected child Work Item remains `in_progress` for T04 through T05.
+`DRMCP-TASK-MCP-008-02` is `done`; the selected child Work Item remains `in_progress` through T05.
 `DRMCP-TASK-MCP-008-03` materialized configured legacy accepted cases L01 through L09.
 Independent T03 review returned `PASS` with no blocking, major, or minor finding, and T03 is `done`.
 Post-closure external verification returned `fixture_shape=OK` and `lifecycle_shape=OK`.
+`DRMCP-TASK-MCP-008-04` materialized C15, C16, L10 through L13, and R01 through R24.
+Independent T04 review returned `PASS` with no blocking, major, or minor finding, and T04 is `done`.
+The review accepted the 22-file boundary, lifecycle synchronization, and scoped Git evidence; the ready-to-run Python verifier remained `NOT RUN` during review without inferred results.
+After closure synchronization, external verification returned `fixture_shape=OK` and `lifecycle_shape=OK` against the final T04 state.
+T04 structural evidence, review acceptance, and exclusions are recorded in `DRMCP-TASK-MCP-008-04`; fixture details are not duplicated here.
 The child Work Item owns the fixture files, manifest, and structural evidence; this hub Task records only lifecycle and evidence pointers.
 No production implementation or existing Go test changed as hub evidence.
 T08 remains `in_progress` until the selected child Work Item reaches `done` and its accepted evidence is recorded here.

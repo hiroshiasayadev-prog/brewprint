@@ -1,0 +1,6 @@
+{
+  "schema": "read-baseline-root-marker/v1",
+  "role": "arrangement_only",
+  "relationship": "current_descendant_of_legacy",
+  "purpose": "Keep the nested current root directory materialized without making it a normal root."
+}

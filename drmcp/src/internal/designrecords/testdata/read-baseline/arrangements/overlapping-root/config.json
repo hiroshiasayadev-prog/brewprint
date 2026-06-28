@@ -1,0 +1,25 @@
+{
+  "schema": "read-baseline-overlapping-root-arrangement/v1",
+  "serialization_role": "fixture_local_arrangement",
+  "relations": [
+    {
+      "name": "equal",
+      "current_root": "arrangements/overlapping-root/equal",
+      "legacy_root": "arrangements/overlapping-root/equal",
+      "relationship": "equal"
+    },
+    {
+      "name": "current-ancestor-of-legacy",
+      "current_root": "arrangements/overlapping-root/ancestor",
+      "legacy_root": "arrangements/overlapping-root/ancestor/legacy",
+      "relationship": "current_ancestor_of_legacy"
+    },
+    {
+      "name": "current-descendant-of-legacy",
+      "current_root": "arrangements/overlapping-root/descendant/current",
+      "legacy_root": "arrangements/overlapping-root/descendant",
+      "relationship": "current_descendant_of_legacy"
+    }
+  ],
+  "purpose": "Represent equal, ancestor, and descendant current/legacy root overlap without registering any arrangement path as normal."
+}

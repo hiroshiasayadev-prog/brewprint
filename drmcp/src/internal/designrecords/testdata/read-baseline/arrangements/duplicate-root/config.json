@@ -1,0 +1,18 @@
+{
+  "schema": "read-baseline-duplicate-root-arrangement/v1",
+  "serialization_role": "fixture_local_arrangement",
+  "current_roots": [
+    {
+      "declaration_position": 0,
+      "app_namespace": "product",
+      "records_root": "current/product/records"
+    },
+    {
+      "declaration_position": 1,
+      "app_namespace": "product",
+      "records_root": "current/product/records"
+    }
+  ],
+  "duplicate_normalized_root": "current/product/records",
+  "purpose": "Represent duplicate configured-root declarations without deduplicating them."
+}
