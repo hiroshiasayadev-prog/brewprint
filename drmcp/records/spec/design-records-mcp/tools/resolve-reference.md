@@ -273,7 +273,9 @@ Diagnostic category, severity, message, and shared associations are defined by `
 |---|---|
 | `invalid_request` | The top-level request violates the request-shape rules. |
 
-Unsupported and unresolved string inputs are normal resolver outcomes, not tool execution errors.
+When a required conflict-member, conflict-candidate, or unreadable-source location cannot be constructed, the operation fails without returning a normal resolver response. This contract does not assign a new error identifier for that execution failure.
+
+Unsupported and unresolved string inputs are normal resolver outcomes, not tool execution errors, only when every required source-backed diagnostic location can be constructed.
 Their top-level cause diagnostics use `spec:drmcp.design_records_mcp.schema.diagnostics`.
 
 ## Boundary

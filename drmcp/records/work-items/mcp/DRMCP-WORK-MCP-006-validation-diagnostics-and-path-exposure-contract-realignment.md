@@ -24,10 +24,13 @@
   - spec:drmcp.design_records_mcp.tools.validate_records
   - spec:drmcp.design_records_mcp.tools.propose_record_create
   - spec:drmcp.design_records_mcp.tools.propose_record_update
+  - spec:drmcp.design_records_mcp.tools.authoring_transaction_model
+  - spec:drmcp.design_records_mcp.tools.accept_proposed_write
 - **tasks**:
   - DRMCP-TASK-MCP-006-01
   - DRMCP-TASK-MCP-006-02
   - DRMCP-TASK-MCP-006-03
+  - DRMCP-TASK-MCP-006-04
 
 ## Goal
 
@@ -232,3 +235,74 @@ This Work Item is complete when all of the following are true:
   - `DRMCP-TASK-MCP-006-03` closed as `done` on 2026-06-28.
   - T03 supplies the accepted diagnostic envelope, category mapping, severity, deterministic ordering, duplicate suppression, authoring-envelope boundary, and source-location handoff to T04 and T05.
 - T03 is closed. W006 remains `in_progress`; the next phase is T04 exceptional source-location and physical-path exposure contract definition.
+- `DRMCP-TASK-MCP-006-04` opened on 2026-06-28.
+  - Exact Task inventory confirmed T01 through T03 and no existing T04 record.
+  - T04 owns the concrete `location` object, portable path representation, configured-root identification, Windows handling, stable location identity and sort key, operation-specific exceptional exposure, explicit patch paths, files-written paths, and debug or emergency exposure limits.
+  - T03 source-location requiredness, conflict aggregation, ordering, and duplicate-suppression requirements are fixed inputs and are not reopened.
+  - W004 normal list and exact-retrieval path hiding and W005 successful resolver target hiding remain fixed non-regression boundaries.
+  - Existing current-root identity is `app_namespace` plus repository-relative `records_root`; existing legacy roots expose repository-relative `records_root` without an app namespace or stable configured root ID.
+  - Existing current source provenance includes `app_namespace`, record kind, and repository-relative source path.
+  - Existing authoring outputs expose repository-relative paths through proposal targets, `diff.files`, unified patch text, and `files_written`; T04 may define representation and exposure without redesigning authoring transaction behavior.
+  - No dedicated debug or emergency operation currently exists. T04 defines only the permitted exceptional boundary and does not add a new public tool.
+  - The unconditional normative candidate is `schema/diagnostics.md`; source, root, validation, and authoring contracts remain conditional on accepted T04 decisions.
+  - Discovery, record-source, normal read, resolver, overview, MVP, and responsibility contracts are recheck-only or T05 synchronization candidates unless a direct contradiction is found.
+  - D01 through D07 were presented and accepted one at a time on 2026-06-28 before normative reflection.
+  - Current and legacy locations now share `source_scope`, `records_root`, and `path`; current locations additionally require `app_namespace`.
+  - Normal exposed paths are repository-relative, `/`-separated, canonically contained, case-preserving, and prohibit absolute, drive, UNC, URI, `.`, `..`, and alias-escape forms.
+  - Location identity is `(source_scope, records_root, path)` and the stable sort key is `(source_scope_rank, records_root, path)` with locale-independent UTF-8 bytewise comparison.
+  - Source-backed validation, read-warning, conflict, and applicable authoring findings expose direct or typed member/candidate locations under an explicit surface matrix; normal successful list, retrieval, and resolver projections remain path-free.
+  - Proposal targets, `diff.files`, unified patch operands, and `files_written` retain scalar fields but use one normalized repository-relative spelling.
+  - No current operation exposes an absolute physical path. A future privileged debug or emergency operation requires a separate contract and cannot be a hidden existing-operation flag.
+  - Missing required direct, member, or candidate location fails closed. No partial entry, incomplete conflict, opaque token, absolute fallback, partial read response, retained proposal, or pre-write filesystem change is allowed.
+  - Normative reflection changed `schema/diagnostics.md`, `tools/validate-records.md`, `tools/list-records.md`, `tools/get-records.md`, `tools/resolve-reference.md`, `schema/authoring-transaction-schema.md`, `tools/authoring-transaction-model.md`, `tools/propose-record-create.md`, and `tools/accept-proposed-write.md`.
+  - `tools/list-records.md`, `tools/get-records.md`, and `tools/resolve-reference.md` changed only because D07 exposed a direct response-construction contradiction; no new execution-failure identifier was invented.
+  - `schema/record-model.md`, `namespace-scanning.md`, `schema/discovery.md`, `schema/record-source.md`, `resolver.md`, `tools/propose-record-update.md`, and `tools/get-proposed-write.md` were rechecked and require no T04 change.
+  - Overview, tool-overview, MVP, responsibility, final manifest, final review, and closure synchronization remain T05 scope.
+  - External scoped strict validation passed for all nine changed T04 normative specifications: `[strict]  All 9 file(s) OK.`
+  - External tracked-file `git diff --check` covered the nine changed normative specifications and this Work Item and reported no whitespace error.
+  - LF-to-CRLF messages for those tracked files are non-blocking working-copy conversion notices.
+  - External untracked T04 Task whitespace verification returned exit code `1` with no whitespace error; this is the expected `git diff --no-index --check -- NUL <T04 Task>` result for a new file.
+  - Targeted status confirmed exactly nine modified normative specifications, this modified Work Item, and the untracked T04 Task.
+  - Initial independent T04 review verdict: `NEEDS REVISION` with one minor finding, `F-MIN-01`.
+    - The T04 normative contract, D01 through D07, changed-file body manifest, W003-W005 non-regression, authoring path contract, and recorded verification evidence were assessed as PASS-equivalent.
+    - `F-MIN-01` found that T04 Task metadata `outputs` listed only `schema.diagnostics` and W006 despite nine changed normative specifications.
+  - `F-MIN-01` correction applied on 2026-06-28:
+    - added the eight omitted spec refs for `validate_records`, `list_records`, `get_records`, `resolve_reference`, `authoring_transaction_schema`, `authoring_transaction_model`, `propose_record_create`, and `accept_proposed_write`;
+    - T04 Task metadata now matches its normative reflection and changed-file manifest;
+    - no normative specification changed.
+  - Post-`F-MIN-01` correction whitespace verification was executed externally before the first limited re-review:
+    - the tracked W006 Work Item check returned `tracked_exit=0`;
+    - the untracked T04 Task check returned `untracked_exit=1`;
+    - neither check reported a whitespace error;
+    - no exit code `2` or greater occurred;
+    - untracked exit code `1` is expected because the new Task differs from `NUL`.
+  - First limited independent T04 re-review verdict: `NEEDS REVISION`.
+    - `F-MIN-01` is closed.
+    - New `F-MIN-02` found that the post-correction whitespace results were not yet recorded in T04 and W006, while W006 still described verification as pending.
+  - `F-MIN-02` correction applied on 2026-06-28:
+    - recorded and synchronized `tracked_exit=0` and `untracked_exit=1` with no whitespace error and no exit code `2` or greater;
+    - removed the stale corrected-verification-pending statement;
+    - changed no normative specification.
+  - Second limited independent T04 re-review verdict: `NEEDS REVISION`.
+    - `F-MIN-02` is closed.
+    - New `F-MIN-03` requested final current-file whitespace results to be recorded back into the same Task and W006 files.
+  - That final-evidence requirement is self-invalidating because writing the results changes the checked bytes.
+  - Final verification boundary:
+    - finalize Task and W006 evidence first;
+    - run whitespace checks after the last evidence edit;
+    - supply raw command output directly to the final limited re-review;
+    - do not write the final result back into either checked file;
+    - any later edit requires another external final check.
+  - No normative specification changed for this closure correction.
+  - Pre-closure final external whitespace verification passed with `tracked_exit=0` and `untracked_exit=1`; no whitespace error and no exit code `2` or greater were reported.
+  - Final limited independent T04 re-review verdict: `PASS`.
+    - `F-MIN-01` is closed.
+    - `F-MIN-02` is closed.
+    - `F-MIN-03` is closed.
+    - No blocking, major, minor, or advisory findings remain.
+    - T04 closure readiness is `READY`.
+  - `DRMCP-TASK-MCP-006-04` changed to `done` on 2026-06-28.
+  - Closure synchronization changes the checked Task and W006 bytes, so one post-closure external whitespace check must run after these final edits.
+  - The post-closure result is supplied externally and intentionally not written back into either checked file.
+  - W006 remains `in_progress`; the next phase is T05 final cross-spec synchronization, validation, review, correction, and closure.
+  - No repository-wide clean working tree is inferred.

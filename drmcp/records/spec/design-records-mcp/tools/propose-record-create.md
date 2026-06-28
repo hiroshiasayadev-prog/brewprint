@@ -120,7 +120,7 @@ Task create requires `parent_id`. The parent work item must resolve to an indexe
         "record_kind": "task"
       }
     ],
-    "text": "--- /dev/null\n+++ v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md\n..."
+    "text": "diff --git a/v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md b/v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md\nnew file mode 100644\n--- /dev/null\n+++ b/v01/records/tasks/mcp/V01-TASK-MCP-008-04-mcp-tools-spec-reflection.md\n..."
   },
   "validation": {
     "ok": true,

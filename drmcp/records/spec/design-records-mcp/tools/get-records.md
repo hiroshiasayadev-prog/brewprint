@@ -269,7 +269,9 @@ This operation does not authorize path exposure through warnings. Diagnostic, pa
 |---|---|
 | `invalid_request` | The top-level request violates the request-shape rules. |
 
-Malformed, unsupported, unresolved, unavailable legacy, and duplicate string items are not `invalid_request` conditions. They produce warning triggers in a normal partial-success response.
+When a required warning, conflict-member, conflict-candidate, or unreadable-source location cannot be constructed, the operation fails without returning a partial normal response. This contract does not assign a new error identifier for that execution failure.
+
+Malformed, unsupported, unresolved, unavailable legacy, and duplicate string items are not `invalid_request` conditions. They produce warning triggers in a normal partial-success response only when every required source-backed location can be constructed.
 
 ## Boundary
 

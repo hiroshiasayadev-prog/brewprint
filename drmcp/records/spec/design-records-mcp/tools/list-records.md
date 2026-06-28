@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.list_records`
 - **status**: draft
-- **date**: 2026-06-27
+- **date**: 2026-06-28
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
 
@@ -167,6 +167,7 @@ Zero matches are not an error and do not trigger a warning.
 | `invalid_request` | Request shape, required scope, supported kind, status vocabulary, ordering, limit, or accepted field set is invalid. |
 
 Invalid requests return no partial listing response.
+When a required source-backed warning location cannot be constructed, the operation fails without returning a partial listing response. This contract does not assign a new error identifier for that execution failure.
 Exact error representation remains part of the DRMCP response-boundary contracts.
 
 ## Related specs

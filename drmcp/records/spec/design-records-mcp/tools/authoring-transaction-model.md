@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.authoring_transaction_model`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-28
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 
 ## What this is
@@ -41,6 +41,7 @@ Expired proposals are not returned as retained proposals; they produce a `propos
 - For create proposals: resolved ID is still available.
 - For update proposals: target ID still resolves to the same record.
 - Pre-write validation has no error-severity diagnostics.
+- Every affected target and source-backed diagnostic can construct the required portable location before writing begins.
 
 When any check fails, `accept_proposed_write` returns `written: false` and MUST NOT modify repository files.
 
@@ -71,7 +72,7 @@ Proposal responses return at least:
 | `kind` | yes | Target record kind |
 | `domain` | no | Domain for domain-scoped workflow records |
 | `parent_id` | no | Parent record ID used for parent-aware resolution (required for task create) |
-| `path` | yes | Resolved repository-relative path. Transparency output only — not the canonical request primary input. |
+| `path` | yes | Resolved normalized repository-relative path. Transparency output only — not the canonical request primary input. |
 
 `diff` object fields vary by `diff_mode`:
 
@@ -83,6 +84,29 @@ Proposal responses return at least:
 | `omitted` | `none` only | `true`; explicitly indicates that diff information was intentionally omitted |
 
 `diff.files[]` entries include `path`, `change` (`create` / `modify`), and optionally `record_id` / `record_kind`. Workflow reciprocal metadata update proposals may have multiple entries in `files[]`.
+
+### Authoring path representation
+
+`target.path`, every `diff.files[].path`, repository path operands inside `diff.text`, and every successful `accept_proposed_write.files_written[].path` use one normalized repository-relative spelling.
+
+Path rules:
+
+- `/` is the only exposed separator;
+- leading slash, trailing slash, duplicate separator, empty segment, `.`, and `..` are prohibited;
+- Windows drive-qualified, UNC, device, URI, and other absolute forms are prohibited;
+- repository spelling is preserved without case folding or locale-dependent normalization;
+- the path must remain canonically within `repository_root` and the applicable current `records_root`;
+- matching target, diff-summary, patch, and write-confirmation entries use exactly the same repository-relative path.
+
+Git-style unified diff syntax remains distinct from path values:
+
+- modify patches use `diff --git a/<path> b/<path>`, `--- a/<path>`, and `+++ b/<path>`;
+- create patches may use `--- /dev/null` and `+++ b/<path>`;
+- `a/` and `b/` are diff side prefixes, not part of the repository-relative path;
+- `/dev/null` is a diff sentinel, not a repository or physical path;
+- host absolute paths and backslash-separated Windows paths are prohibited in `diff.text`.
+
+These scalar authoring paths are explicit transaction transparency, patch, and write-confirmation outputs. They are not diagnostic `location` objects and are never accepted as primary authoring request inputs.
 
 `validation` returns at least `ok` and `diagnostics`. `ok` is `true` when there are no error diagnostics.
 
@@ -152,6 +176,10 @@ For `propose_record_update`:
 - The target record being updated.
 
 Proposal-time validation runs against the candidate repository state (proposal diff applied to the current state) but the returned diagnostics are filtered to the affected record set. Accept-time pre-write validation uses the same model after staleness, target-change, and ID-collision guards. Diagnostics in `validation.diagnostics` must be reproducible by running `validate_records` against the same affected record set in the same candidate or accepted/materialized state.
+
+A source-backed proposal-local diagnostic requires the current portable `location` defined by `spec:drmcp.design_records_mcp.schema.diagnostics`, including an unmaterialized create target with a deterministic destination. If any required direct, conflict-member, or conflict-candidate location cannot be constructed, proposal preparation fails, no retained proposal is created, and no repository file is written.
+
+Before acceptance begins writing, every affected path and required source-backed diagnostic location must be constructible. Failure returns `written: false` with an empty `files_written` list and starts no write. An implementation failure detected after files were actually modified must not report `written: false` or erase the actual written-file state.
 
 > Source: V01-REQ-MCP-012, V01-TASK-MCP-011-01
 

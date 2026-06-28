@@ -21,8 +21,7 @@ This contract owns:
 PRODUCT specifications own semantic invalidity for metadata, visible document shape, canonical IDs, canonical refs, and declared relation integrity.
 This contract cites those authorities rather than copying obsolete V01, hidden YAML front-matter, section-ref, spec-status, or artifact-ID rules.
 
-The diagnostic envelope, category vocabulary, severity vocabulary, deterministic ordering, and duplicate suppression are defined by `spec:drmcp.design_records_mcp.schema.diagnostics`.
-That contract reserves the shared `location` association; T04 defines its concrete source-location fields and exceptional physical-path exposure policy.
+The diagnostic envelope, category vocabulary, severity vocabulary, deterministic ordering, duplicate suppression, concrete `location` association, and exceptional path-exposure policy are defined by `spec:drmcp.design_records_mcp.schema.diagnostics`.
 
 ## Request
 
@@ -89,7 +88,7 @@ Every configured current root is mandatory.
 Every configured legacy root is mandatory when legacy fallback is configured.
 
 `validate_records` cannot produce a normal response when the complete trustworthy input state required by the request cannot be built.
-This includes an invalid mandatory current root, an invalid configured legacy root, unavailable required active-index state, or unavailable required configured legacy lookup state.
+This includes an invalid mandatory current root, an invalid configured legacy root, unavailable required active-index state, unavailable required configured legacy lookup state, or inability to construct any source-backed diagnostic location required by the diagnostics contract.
 
 Execution rules:
 
@@ -98,6 +97,7 @@ Execution rules:
 - Configuration or index construction failure is not represented as ordinary source, record, or relation invalidity.
 - A valid current root with zero discovered records is valid and contributes an empty subject set.
 - Missing `legacy_roots` and an explicit empty list are valid and mean legacy fallback is disabled.
+- A required direct, conflict-member, or conflict-candidate location that cannot be constructed makes the diagnostic collection untrustworthy; validation does not omit that entry, source, member, or candidate and does not return a partial normal wrapper.
 
 ## Current relation validation
 
@@ -216,6 +216,7 @@ Request errors and startup or execution failures do not return this normal wrapp
 | Selected `ref` does not match current canonical grammar. | Request error; no normal validation response. |
 | Selected current canonical `ref` has no addressable source, record, or duplicate-conflict group. | Request error; no normal validation response. |
 | Mandatory configuration or required index state cannot be built. | Startup or execution failure; no normal validation response. |
+| A source-backed diagnostic requires a location that cannot be constructed. | Execution failure; no partial diagnostic collection and no normal validation response. |
 | Valid configured app contains zero retained validation subjects. | Successful validation with an empty selected subject set. |
 | Selected source, record, duplicate group, current relation, or legacy relation is invalid. | Validation diagnostic inside the normal response. |
 

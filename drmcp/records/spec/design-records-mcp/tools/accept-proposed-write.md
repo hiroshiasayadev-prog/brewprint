@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.accept_proposed_write`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-06-28
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
 
@@ -50,14 +50,16 @@
 | `proposal_id` | yes | Accepted proposal ID |
 | `state` | yes | `accepted` on successful write; otherwise the retained or rejection state |
 | `written` | yes | Whether repository files were modified by this accept call |
-| `files_written` | yes | Written file list; empty when `written: false` |
+| `files_written` | yes | Written file list using normalized repository-relative paths; empty when `written: false` |
 | `validation` | yes | Post-accept validation result when applicable; otherwise current validation result |
 | `repair_guidance` | yes | Actionable repair suggestions; empty when no repair is needed |
 | `diagnostics` | yes | Accept diagnostics |
 
-`written: false` is required when the proposal is unknown, expired, discarded, already accepted, stale, has a changed target, ID collision, unresolved target, invalid proposal, or required-follow-up-not-satisfied. None of these outcomes may modify repository files.
+`written: false` is required when the proposal is unknown, expired, discarded, already accepted, stale, has a changed target, ID collision, unresolved target, invalid proposal, required-follow-up-not-satisfied, or cannot construct every affected target and required source-backed diagnostic location before writing. None of these outcomes may modify repository files, and `files_written` is empty.
 
-`written: true` means repository files were modified. If post-write validation fails after writing, the response must still return `written: true`, include validation diagnostics, and provide repair guidance. MVP does not automatically roll back accepted writes after post-write validation failure. The caller should create a repair proposal.
+`written: true` means repository files were modified. Each `files_written[].path` uses the same normalized repository-relative spelling as the corresponding proposal target, `diff.files[]` entry, and unified-diff operand. Absolute host paths and backslash-separated Windows paths are prohibited.
+
+If post-write validation fails after writing, the response must still return `written: true`, include validation diagnostics, and provide repair guidance. MVP does not automatically roll back accepted writes after post-write validation failure. The caller should create a repair proposal. An implementation failure discovered after files were actually modified must not report `written: false` or erase the actual written-file state.
 
 Force-accepting invalid proposals (proposals with pre-write error diagnostics) is outside MVP. Pre-write error diagnostics cause `written: false`.
 

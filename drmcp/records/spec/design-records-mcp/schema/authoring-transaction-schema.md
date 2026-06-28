@@ -24,9 +24,10 @@ Authoring target identity uses artifact identity as its primary key. Public requ
 | `resolved_id` | Final ID resolved by MCP from the record index |
 | `domain` | Workflow artifact domain. Used for requirement / work item / task create. |
 | `parent_id` | Parent record ID used for parent-aware ID resolution. Required for task create. |
-| `path` | Resolved repository-relative path. Transparency output only. |
+| `path` | Resolved normalized repository-relative path. Transparency output only. |
 
 `path` is an output that explains relocation or slug generation results; it is not the canonical authoring target identity for requests.
+It uses `/`, contains no leading slash, drive, UNC, URI, `.`, `..`, empty, or duplicate-separator segment, preserves repository spelling without case folding, and must remain canonically within the configured `repository_root` and current `records_root`.
 
 For create operations, the canonical target ID input is the top-level request `id`. `fields.id` is not a primary authoring target identity field and is not required. When a create request supplies `fields.id`, it is a duplicate consistency input only — it must exactly match the top-level ID after canonical ID normalization, and must be omitted when the top-level ID uses a `new` placeholder. Mismatch or placeholder-time `fields.id` is an invalid request, not a record validation diagnostic.
 
@@ -61,6 +62,7 @@ Proposal retention is 3 days. Expired proposals are not valid authoring targets.
 Proposal `validation` is scoped to the proposal-local affected record set in the candidate repository state. The affected record set is the proposed target record plus any related records whose files are actually modified by the same proposal (e.g. required reciprocal workflow metadata updates). Unrelated repository diagnostics are repository health information and must not be included in or change proposal-local `validation.ok`.
 
 Proposal-local diagnostics must use the shared repository-validation categories and structured associations from `spec:drmcp.design_records_mcp.schema.diagnostics`. They must be reproducible by the same `validate_records` rules against the same affected record set in the same candidate or accepted/materialized state.
+A source-backed proposal-local diagnostic requires the concrete current `location` defined by that contract, including for an unmaterialized create target whose repository destination is deterministic. If any required location cannot be constructed, proposal preparation fails closed and no retained proposal is created.
 
 > Source: V01-REQ-MCP-012, V01-TASK-MCP-011-01
 

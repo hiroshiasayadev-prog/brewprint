@@ -49,7 +49,7 @@ Every warning or diagnostic entry contains:
 | `target` | category-dependent | Relation or lookup target association. |
 | `occurrence` | category-dependent | Exact-request first occurrence and duplicate occurrence association. |
 | `conflict` | category-dependent | Current identity or legacy lookup conflict association. |
-| `location` | category-dependent | T04-owned machine-readable source location for a repairable source-backed finding. |
+| `location` | category-dependent | Portable machine-readable source location for a repairable source-backed finding. Its concrete shape and exposure rules are defined below. |
 
 Each category profile defines which optional associations are required, optional, or prohibited.
 
@@ -73,7 +73,7 @@ The following are not shared diagnostic-envelope fields:
 
 Canonical current identity uses `ref`.
 Physical paths are never stored inside `subject`.
-An identity-less source omits `ref`; its exact repair target is supplied by `location` when known.
+An identity-less source omits `ref`; its exact repair target is supplied by the required `location` association. If that location cannot be constructed, the operation fails under the missing-required-location boundary below.
 
 ### Field, value, and target associations
 
@@ -150,44 +150,132 @@ For `current_identity`:
 
 - `source_count` is the number of conflicting current sources;
 - `members` contains one entry per conflicting source;
-- each member contains the T04-owned `location` association;
+- each member contains the concrete `location` association defined below;
 - no source winner is selected.
 
 For `legacy_lookup`:
 
 - `candidate_count` is the number of configured legacy candidates;
 - `candidates` contains one entry per conflicting legacy source;
-- each candidate contains the T04-owned `location` association;
+- each candidate contains the concrete `location` association defined below;
 - no candidate winner is selected;
 - legacy archive sources remain lookup targets and do not become repository-validation subjects.
 
 Disabled, missing, unreadable, resolved, and unsupported legacy lookup outcomes are not conflict objects.
 
-### Source-location slot and T04 boundary
+### Source-location association
 
-`location` is the shared source-location association reserved by this contract.
+`location` identifies one repairable current or legacy source through one shared object shape.
 
-It is required when a repository or proposal-local validation diagnostic identifies a known repairable source file, including:
+Current example:
 
-- identity-less, parse-failed, or unreadable current sources when their source is known;
-- source-backed metadata, section, identity, and relation diagnostics;
-- every member of a current identity conflict;
-- every candidate of a legacy lookup conflict;
-- persisted-file authoring diagnostics when the authoring operation exposes a repair target.
+```json
+{
+  "source_scope": "current",
+  "app_namespace": "drmcp",
+  "records_root": "drmcp/records",
+  "path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-006-04-example.md"
+}
+```
 
-It is omitted when no repository file exists, including malformed request items, unresolved request refs without a source, unknown proposal IDs, and expired body-cache IDs.
+Legacy example:
 
-This T03 contract does not define the fields inside `location`.
-T04 owns:
+```json
+{
+  "source_scope": "legacy",
+  "records_root": "v01/records",
+  "path": "v01/records/tasks/mcp/V01-TASK-MCP-003-01-example.md"
+}
+```
 
-- repository-relative versus absolute representation;
-- current-root and legacy-root identification;
-- separator normalization and Windows-path handling;
-- the stable source-location sort key;
-- operation-specific exceptional path-exposure policy.
+| field | required | meaning |
+|---|---:|---|
+| `source_scope` | yes | `current` or `legacy`. |
+| `records_root` | yes | Configured repository-relative records root containing the source. |
+| `path` | yes | Repository-relative source file path. |
+| `app_namespace` | current only | Explicit app namespace bound to the configured current root. Prohibited for legacy locations. |
 
-An opaque internal source token alone is not an acceptable replacement for a repairable location.
-Normal successful list, retrieval, and resolver target objects remain path-free under W004 and W005.
+Portable path rules:
+
+- `records_root` and `path` are relative to the configured `repository_root`;
+- `/` is the only exposed separator;
+- leading slash, trailing slash, duplicate separator, empty segment, `.`, and `..` are prohibited;
+- Windows drive-qualified, UNC, device, URI, `file://`, and other absolute forms are prohibited;
+- path spelling is preserved without case folding, Unicode normalization, or locale-dependent rewriting;
+- `records_root` must remain canonically within `repository_root`;
+- `path` must remain canonically within both `repository_root` and its declared `records_root`;
+- symlink, junction, reparse-point, or other alias escape cannot produce a valid normal location.
+
+Location semantic identity is:
+
+```text
+(source_scope, records_root, path)
+```
+
+`app_namespace` is required current-root context but is not another identity component.
+
+The stable location sort key is:
+
+```text
+(source_scope_rank, records_root, path)
+```
+
+where `current = 0` and `legacy = 1`.
+Normalized strings compare in locale-independent UTF-8 bytewise ascending order without case folding.
+Configuration order, scan order, discovery order, host filesystem collation, and absolute paths are never identity or sort inputs.
+
+### Location exposure by surface
+
+A direct `location` identifies the one source that contains or causes a finding.
+Conflict-source locations appear only in their typed conflict collection and are not duplicated at diagnostic top level.
+
+| surface or outcome | exposure |
+|---|---|
+| Source-backed `validate_records` diagnostic | Direct `location` required when one current source is the repair target. |
+| Current identity conflict | Every `conflict.members[].location` required; no direct diagnostic location. |
+| Repository-validation legacy relation conflict | Direct location of the referring current source plus every `conflict.candidates[].location`. |
+| Proposal-local validation | Direct current location required when a deterministic candidate repository target exists, including an unmaterialized create target. |
+| Persisted-file authoring diagnostic | Direct current location allowed and required when the file is the cause or repair target. |
+| `list_records` `missing_compact_field` | Direct current source location required. |
+| Current conflict in `get_records` or `resolve_reference` | Every conflict member location required; no direct diagnostic location. |
+| Unique unreadable legacy source | Direct legacy source location required. |
+| Legacy lookup conflict in a read operation | Every conflict candidate location required; no direct diagnostic location. |
+| Malformed, unsupported, duplicate, source-less unresolved, disabled-lookup, proposal-lifecycle, or body-cache-lifecycle condition | Location prohibited. |
+| Successful list, retrieval, resolver, or normal target projection | Location prohibited. |
+
+Paths do not move into `subject`, `field`, `value`, `target`, successful records, or successful resolver targets.
+Normal successful list, retrieval, and resolver projections remain path-free.
+
+### Missing required location
+
+A source-backed entry is valid only when every required direct, member, or candidate location can be constructed.
+
+When a required location cannot be constructed:
+
+- do not emit the entry without it;
+- do not drop an affected item, member, or candidate;
+- do not return a partial location or conflict collection;
+- do not substitute an opaque source token or absolute path;
+- do not weaken category or severity to continue;
+- fail the operation before emitting a normal response or beginning a write.
+
+For `validate_records`, this is an execution failure and no normal validation wrapper is returned.
+For `list_records`, `get_records`, and `resolve_reference`, this is operation execution failure rather than per-item partial success or an unresolved status.
+Proposal creation retains no proposal.
+`accept_proposed_write` begins no write and returns `written: false` with an empty `files_written` list when the invariant fails before writing.
+An implementation failure discovered after files were actually modified must not misreport the write as absent.
+
+No shared “location unavailable” diagnostic is introduced because it would itself lack the required repair target.
+
+### Absolute physical-path boundary
+
+No current operation or shared diagnostic field exposes an absolute physical path.
+
+A future separately contracted and host-enabled privileged debug or emergency operation may expose a distinct `physical_path` field.
+It must not replace portable `location`, add a hidden debug flag to an existing operation, or use the absolute value for identity, ordering, or duplicate suppression.
+That future operation must define its request, response, privilege, scope, and failure or redaction behavior.
+
+Authoring `target.path`, `diff.files[].path`, unified-diff path operands, and `files_written[].path` are separate explicit transaction outputs governed by the authoring transaction contract; they are not diagnostic `location` objects.
 
 ### Severity and validation blocking
 
@@ -200,7 +288,7 @@ Normal successful list, retrieval, and resolver target objects remain path-free 
 `validate_records.ok` is `false` when at least one returned diagnostic has severity `error`.
 It is `true` when no returned diagnostic has severity `error`, including responses containing only `warning` or `info` entries.
 
-Malformed validation requests and untrustworthy mandatory configuration or index state remain request or execution failures outside the normal validation wrapper.
+Malformed validation requests, untrustworthy mandatory configuration or index state, and inability to construct a required source-backed location remain request or execution failures outside the normal validation wrapper.
 
 Severity is context-sensitive but deterministic.
 The same condition under the same operation and applicable authority always maps to the same severity.
@@ -209,7 +297,7 @@ The same condition under the same operation and applicable authority always maps
 
 | category | normal severity | required associations | meaning |
 |---|---|---|---|
-| `source_unreadable` | `error` | `subject: source`, `location` when known | A selected current source cannot be read. |
+| `source_unreadable` | `error` | `subject: source`, `location` | A selected current source cannot be read. |
 | `source_syntax_invalid` | `error` | `subject`, `location`; optional `field`, `value` | Source or metadata structure cannot be consumed under the current format contract. |
 | `identity_invalid` | `error` | `subject`, `location`; optional `field`, `value` | Canonical identity grammar, H1 identity, filename consistency, metadata identity consistency, or path-derived spec identity is invalid. |
 | `missing_required_field` | `error` | `subject`, `field`, `location` | An applicable authority requires a field that is absent. |
@@ -236,12 +324,12 @@ No lookup runs for that condition, no `target.lookup_state` is attached, and `re
 
 | category | normal severity | surfaces | required associations | trigger mapping |
 |---|---|---|---|---|
-| `missing_compact_field` | `warning` | `list_records` | `subject: record`, `field`; `location` only when T04 allows it | A returned compact record lacks `title`, `status`, or `date` and W004 projects `null`. |
+| `missing_compact_field` | `warning` | `list_records` | `subject: record`, `field`, `location` | A returned compact record lacks `title`, `status`, or `date` and W004 projects `null`. |
 | `malformed_requested_ref` | `warning` | `get_records`, `resolve_reference` | `subject: request_item`; `occurrence` for `get_records`, otherwise `value.actual` | The owning operation classifies the supplied string as malformed. |
 | `unsupported_requested_ref` | `warning` | `get_records`, `resolve_reference` | `subject: request_item`; `occurrence` for `get_records`, otherwise `value.actual` | The supplied string belongs to no supported operation input family. |
-| `unresolved_requested_ref` | `warning` | `get_records`, `resolve_reference` | `subject: request_item`, `target`; `occurrence` for `get_records`; optional `conflict` | An accepted exact current, spec, or legacy input has no selectable target. |
-| `legacy_lookup_unavailable` | `warning` | `get_records`, `resolve_reference` | `subject: request_item`, `target`; `occurrence` for `get_records`; `location` when T04 allows and a source exists | Accepted legacy lookup is disabled or a unique indexed source is unreadable. |
-| `legacy_lookup_conflict` | `warning` in read operations | `get_records`, `resolve_reference` | `subject: request_item`, `target`, `conflict: legacy_lookup`; `occurrence` for `get_records` | Accepted legacy lookup has multiple configured candidates. |
+| `unresolved_requested_ref` | `warning` | `get_records`, `resolve_reference` | `subject: request_item`, `target`; `occurrence` for `get_records`; optional `conflict: current_identity` whose members each require `location` | An accepted exact current, spec, or legacy input has no selectable target. |
+| `legacy_lookup_unavailable` | `warning` | `get_records`, `resolve_reference` | `subject: request_item`, `target`; `occurrence` for `get_records`; direct `location` required only for `legacy_unreadable` and prohibited for `legacy_disabled` | Accepted legacy lookup is disabled or a unique indexed source is unreadable. |
+| `legacy_lookup_conflict` | `warning` in read operations | `get_records`, `resolve_reference` | `subject: request_item`, `target`, `conflict: legacy_lookup` whose candidates each require `location`; `occurrence` for `get_records` | Accepted legacy lookup has multiple configured candidates. |
 | `duplicate_requested_ref` | `info` | `get_records` | `subject: request_item`, `occurrence` | Later exact-equal occurrences are ignored after the first occurrence. |
 
 The operation contracts own trigger conditions, response wrappers, and placement.
@@ -331,7 +419,7 @@ Subjects then sort as follows:
 | subject type | ascending key |
 |---|---|
 | `configuration` | `app_namespace`, then `component` |
-| `source` | `app_namespace`, then `record_kind`, then the T04 stable location sort key |
+| `source` | `app_namespace`, then `record_kind`, then `(source_scope_rank, records_root, path)` using the location comparison rules above |
 | `record` | canonical `ref` |
 | `request_item` | `occurrence.first_index` when present |
 
@@ -384,8 +472,10 @@ Different subjects, fields, item indexes, targets, lookup states, reciprocal fie
 Aggregation rules:
 
 - duplicate requested refs aggregate every later index into one ordered `duplicate_indexes` list;
-- one current identity conflict aggregates every conflicting current source location;
-- one legacy lookup conflict aggregates every configured candidate location for the same lookup.
+- one current identity conflict aggregates every conflicting current source location, sorted by the stable location sort key;
+- one legacy lookup conflict aggregates every configured candidate location for the same lookup, sorted by the stable location sort key.
+
+When location participates in semantic diagnostic identity, equality uses the complete `(source_scope, records_root, path)` tuple.
 
 If the same semantic identity is produced with different severities, the implementation violates the deterministic severity contract and must not silently select one.
 
