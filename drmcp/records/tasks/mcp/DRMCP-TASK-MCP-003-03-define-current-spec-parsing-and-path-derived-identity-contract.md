@@ -1,0 +1,302 @@
+# DRMCP-TASK-MCP-003-03: Define current spec parsing and path-derived identity contract
+
+- **id**: DRMCP-TASK-MCP-003-03
+- **status**: done
+- **date**: 2026-06-27
+- **work_item**: DRMCP-WORK-MCP-003
+- **source_requirement**: DRMCP-REQ-MCP-001
+- **estimate**: 1d
+- **depends_on**:
+  - DRMCP-TASK-MCP-003-01
+  - DRMCP-TASK-MCP-003-02
+- **outputs**:
+  - spec:drmcp.design_records_mcp.schema.discovery
+  - spec:drmcp.design_records_mcp.schema.record_source
+  - spec:drmcp.design_records_mcp.schema.metadata_grammar
+  - spec:drmcp.design_records_mcp.schema.fields
+  - spec:drmcp.design_records_mcp.schema.id_normalization
+
+## Goal
+
+Define the DRMCP parser mapping and invalid-source boundary for current spec discovery and canonical identity.
+
+Replace YAML-front-matter and legacy spec identity assumptions with H1-adjacent metadata and path-derived active `spec:` refs.
+
+## Work
+
+- Compare current PRODUCT spec-format and repository-layout authorities with the existing DRMCP discovery contracts.
+- Define which Markdown paths under each configured `<records_root>/spec/` are current spec candidates.
+- Define recursive discovery, topic `index.md`, leaf spec, auxiliary file, and non-spec Markdown handling.
+- Define the H1-adjacent metadata block start, continuation, termination, duplicate-key, unknown-key, and missing-metadata parser behavior.
+- Map repository placement to the canonical path-derived `spec:` ref without redefining PRODUCT identity semantics.
+- Define consistency handling between H1-adjacent metadata `id` and the path-derived canonical ref.
+- Define leaf and topic-index canonical identity collision behavior.
+- Define YAML front matter rejection for current spec sources.
+- Define current spec source-format failure behavior at the discovery boundary.
+- Update `spec:drmcp.design_records_mcp.schema.discovery` as the primary contract.
+- Update `record-source`, `fields`, `metadata-grammar`, or `id-normalization` only where T03 requires a narrow current-spec mapping correction.
+
+This Task does not define query, exact retrieval, resolver fallback, legacy archive parsing, diagnostic identifiers, MCP response shape, fixtures, runtime implementation, tests, authoring transactions, or portable standards packaging.
+
+Shared record models, shared field integration, common duplicate representation, and cross-kind invalid-source policy remain in `DRMCP-TASK-MCP-003-04`.
+
+## Done condition
+
+- Current spec candidate paths and recursive discovery boundaries are explicit.
+- Topic `index.md` and leaf spec handling are explicit.
+- H1-adjacent metadata parser boundaries are explicit.
+- Path-derived canonical identity mapping cites PRODUCT authority and defines DRMCP parsing steps only.
+- Metadata `id` mismatch does not replace or rewrite path-derived identity.
+- YAML front matter is not accepted or ignored as a current metadata source.
+- Legacy spec IDs and aliases do not provide fallback identity.
+- Source-format failure behavior is explicit without defining W006 diagnostic identifiers.
+- Shared-model and downstream operation concerns remain delegated.
+- T03-owned contract changes receive scoped static verification.
+
+## Verification
+
+- Compare the final contract against `spec:product.design_records.spec_format.document_shape`.
+- Compare identity mapping against `spec:product.design_records.spec_format.spec_id_as_ref`.
+- Compare candidate paths against `spec:product.design_records.repository_layout.record_discovery_paths`.
+- Confirm consistency with `DRMCP-ADR-MCP-001` and `DRMCP-TASK-MCP-003-02`.
+- Confirm that no legacy `V01-SPEC-*`, YAML metadata-source, query, resolver, fixture, implementation, or diagnostic-code contract enters T03 changes.
+- Record validator execution as deferred to T05 when unavailable through filesystem-only operation.
+
+## Evidence
+
+- Upstream Tasks `DRMCP-TASK-MCP-003-01` and `DRMCP-TASK-MCP-003-02` are `done`.
+- `PRODUCT-WORK-SPEC-014` is complete and active compatibility no longer accepts `V01-SPEC-*`.
+- PRODUCT authority comparison completed on 2026-06-27:
+  - current spec candidates use `<records_root>/spec/**/*.md` placement;
+  - visible metadata is H1-adjacent and includes required `id`, `status`, `date`, and `parent` markers;
+  - canonical spec identity is derived from app namespace and repository placement;
+  - `index.md` omits the `index` segment;
+  - hyphenated path segments map to underscore ID segments;
+  - metadata `id` must match the path-derived canonical ref;
+  - validators must not rewrite mismatched IDs automatically.
+- Existing DRMCP contracts remain stale in three T03-owned areas:
+  - `schema.discovery` includes specs through YAML `design_record` fields;
+  - `schema.record_source` treats YAML front matter as the spec metadata source;
+  - `schema.id_normalization` defines `V01-SPEC-*` through prefix concatenation.
+- Accepted decision 1: every regular Markdown file matching `<records_root>/spec/**/*.md` is a current spec candidate.
+  - Discovery is recursive to arbitrary depth below `spec/`.
+  - Both `index.md` and non-index leaf files are candidates.
+  - Non-Markdown files are outside current spec discovery.
+  - Auxiliary or non-spec Markdown files are not allowed inside the current spec tree.
+  - Missing or malformed current metadata does not silently exclude a candidate; it is a current source-format violation.
+  - Whole-index failure versus narrower handling is resolved by accepted decisions 11 and 16.
+  - Reason: PRODUCT owns the complete Markdown path pattern, while metadata-first candidate selection would silently hide malformed current specs.
+- Accepted decision 2: the current spec metadata block may begin after zero or more blank lines immediately following the real ATX H1.
+  - The first non-blank line must match the metadata marker form `- **<key>**:`.
+  - Comments, prose, headings, or other content between H1 and the first metadata line mean the H1-adjacent metadata block is missing.
+  - DRMCP does not search later document content for a recoverable metadata block.
+  - Reason: this preserves PRODUCT H1-adjacency while accepting the existing Markdown convention of one blank line after H1.
+- Accepted decision 3: after the first metadata line, DRMCP reads only a contiguous sequence of lines matching `- **<key>**: <value>`.
+  - The first blank or non-metadata line ends the metadata block.
+  - Headings, prose, comments, blockquotes, and indented child-list items all end the block.
+  - DRMCP does not resume metadata parsing later in the document.
+  - Current spec metadata values are scalar; multiline list continuation is not accepted in this block.
+  - Reason: a contiguous scalar block gives one deterministic boundary and matches the current PRODUCT spec shape.
+- Accepted decision 4: any duplicate current spec metadata key is a current source-format violation.
+  - DRMCP does not use first-wins or last-wins behavior.
+  - Repeating the same key with the same value is still invalid.
+  - The parser detects the duplicate; exact diagnostic identifiers remain owned by W006.
+  - Reason: visible metadata fields have one authoritative value, and line order must not change record meaning.
+- Accepted decision 5: any unknown current spec metadata key is a current source-format violation.
+  - Recognized keys are `id`, `status`, `date`, `parent`, and `contract_class`.
+  - DRMCP does not ignore or preserve unknown keys as extension metadata.
+  - PRODUCT authority determines whether a recognized field applies to a given spec kind.
+  - Exact diagnostic identifiers remain owned by W006.
+  - Reason: strict recognition exposes typos and prevents DRMCP-local metadata extensions from becoming accidental authority.
+- Accepted decision 6: missing or empty PRODUCT-required current spec metadata is a current source-format violation.
+  - A missing metadata block is invalid.
+  - Missing or empty `id`, `status`, `date`, or `parent` is invalid for every current spec.
+  - Missing or empty `contract_class` is invalid for a `Contract` spec.
+  - `contract_class` on a non-`Contract` spec is invalid according to PRODUCT document-shape authority.
+  - DRMCP detects the condition as invalid source metadata; a uniquely path-addressable candidate may remain readable under decisions 11 and 16. PRODUCT owns field requiredness and applicability.
+  - Exact diagnostic identifiers remain owned by W006.
+  - Reason: path discovery already establishes the file as a current spec candidate, so metadata absence cannot silently reclassify it as a non-spec file.
+- Accepted decision 7: DRMCP derives the canonical current spec ref mechanically from the configured `app_namespace` and the path relative to `<records_root>/spec/`.
+  - Path separators are normalized before segment processing.
+  - The final `.md` extension is removed.
+  - A final path segment exactly equal to `index` is omitted.
+  - Hyphens in path segments are converted to underscores.
+  - The configured `app_namespace` is used as the first ref segment; DRMCP does not infer it from a parent directory.
+  - The canonical ref is assembled as `spec:<app_namespace>.<segments>`.
+  - Every resulting segment must match `[a-z0-9][a-z0-9_]*`.
+  - DRMCP does not lowercase or otherwise repair invalid path segments.
+  - Metadata `id`, `SPEC-*`, and `V01-SPEC-*` values do not participate in identity derivation.
+  - Reason: this is the direct parser mapping of PRODUCT path-derived identity and preserves invalid placement as an observable source error.
+- Accepted decision 8: H1-adjacent metadata `id` is a required consistency value and must exactly equal the path-derived canonical current spec ref.
+  - The path-derived ref remains the canonical identity authority.
+  - DRMCP does not adopt metadata `id` as a replacement identity.
+  - DRMCP does not rewrite the metadata value to the path-derived ref.
+  - Comparison does not case-fold or normalize hyphen and underscore differences.
+  - `SPEC-*`, `V01-SPEC-*`, and alias values do not provide fallback identity.
+  - A mismatched candidate remains readable only through the unique path-derived canonical ref and fails validation.
+  - Exact diagnostic identifiers remain owned by W006.
+  - Reason: exact consistency exposes stale move or rename metadata and prevents removed legacy identity behavior from re-entering active discovery.
+- Accepted decision 9: when a leaf spec and a topic `index.md` derive the same canonical current spec ref, that canonical identity becomes conflicted and unavailable for normal ID-based retrieval.
+  - DRMCP does not prefer either source by file role or traversal order.
+  - `index.md` is not automatically preferred over a leaf file.
+  - A leaf file is not automatically preferred over `index.md`.
+  - Both conflicting sources remain validation inputs with source provenance.
+  - Unrelated uniquely identified records remain available to normal read operations.
+  - A topic index may coexist with child specs below that topic when each child derives a distinct canonical ref.
+  - Exact diagnostic identifiers and read response representation remain owned by W006 and W004.
+  - Reason: PRODUCT requires one-to-one path/ref mapping, while read availability for unaffected records must not depend on repository-wide validity.
+- Accepted decision 10: a current spec candidate with YAML front matter is a current source-format violation.
+  - DRMCP does not read YAML front matter as a metadata source.
+  - DRMCP does not ignore YAML front matter and continue with H1-adjacent metadata.
+  - Matching YAML and H1-adjacent values do not make the source valid.
+  - Empty YAML front matter is still invalid.
+  - YAML values do not supplement missing H1-adjacent metadata.
+  - The rule applies only to leading YAML front matter, not later thematic breaks in Markdown body content.
+  - `SPEC-*`, `V01-SPEC-*`, and legacy aliases do not provide fallback identity.
+  - Exact diagnostic identifiers remain owned by W006.
+  - Reason: accepting a file that still carries YAML front matter would preserve a second obsolete metadata authority inside the active current source.
+- Accepted decision 11: individual current spec source invalidity does not fail server startup or the complete active read surface.
+  - Configured-root and root-overlap failures remain whole-index failures under T02 because DRMCP cannot establish a trustworthy discovery scope.
+  - A current spec candidate with a unique path-derived canonical ref remains addressable through that ref even when required metadata, H1, or document shape is invalid.
+  - Repository validation reports the invalid source; exact severity, diagnostic identifiers, and list/get warning representation remain owned by W006 and W004.
+  - Missing or invalid metadata field representation in the shared record model remains owned by T04 and W004.
+  - A candidate whose canonical identity cannot be determined uniquely is not addressable through normal ID-based retrieval.
+  - Examples include invalid path segments and duplicate canonical identity such as leaf/topic collision.
+  - Such unaddressable candidates remain validation inputs and may be reported with source provenance.
+  - Reason: repository validity and read availability are separate concerns. One malformed record must not prevent access to unrelated valid records or to an identifiable malformed source needed for repair.
+- Accepted decision 12: DRMCP maps current spec H1 parsing directly to the PRODUCT document-shape contract.
+  - DRMCP counts real ATX H1 headings outside fenced code blocks.
+  - Leading YAML front matter is already invalid under decision 10; headings inside that block do not become current spec H1 candidates.
+  - Exactly one real H1 is required.
+  - The H1 must match `# <SpecKind>: <Title>`.
+  - Accepted spec kinds are `Overview`, `Index`, `Concept`, `Reference`, and `Contract` as defined by PRODUCT authority.
+  - The title is the trimmed text after the ASCII colon and must be non-empty.
+  - DRMCP does not infer kind or title from the filename, metadata, or body.
+  - Missing, multiple, or malformed H1 remains a validation failure, but a uniquely path-addressable candidate may remain readable under decision 11.
+  - Exact diagnostics and missing-field response representation remain owned by W006 and W004.
+  - Reason: this is the direct parser mapping of PRODUCT document shape and avoids silent repair from non-authoritative sources.
+- Accepted decision 13: current spec file role and H1 spec kind remain independent.
+  - `index.md` represents the containing topic in path-derived identity.
+  - `index.md` does not force H1 kind `Index`.
+  - An `index.md` file may use `Overview` when the document contains substantive specification body.
+  - DRMCP does not add a discovery-time filename-to-kind restriction beyond PRODUCT authority.
+  - Kind-specific section validity remains governed by PRODUCT document-shape rules.
+  - Reason: PRODUCT explicitly separates the physical `index.md` role from the semantic H1 kind.
+- Accepted decision 14: current spec scalar metadata accepts either a bare scalar or one complete inline-code span.
+  - DRMCP trims whitespace after the metadata colon.
+  - When the entire value is enclosed by one matching backtick pair, DRMCP removes only that outer pair.
+  - An empty inline-code span normalizes to an empty value.
+  - Partial inline-code wrapping, multiple inline-code spans, or unmatched backticks are invalid metadata values.
+  - Identity and field validation use the unwrapped scalar value.
+  - Reason: PRODUCT does not make inline-code presentation semantic, while current specs commonly use it for visible metadata values.
+- Accepted decision 15: T03 owns scalar parsing and source-format detection, while PRODUCT authorities own field semantics and allowed values.
+  - DRMCP parses `id`, `date`, `status`, `parent`, and `contract_class` as scalar values.
+  - T03 validates `id` through exact comparison with the path-derived canonical ref.
+  - T03 detects empty values, duplicate keys, unknown keys, and malformed inline-code wrapping.
+  - PRODUCT authority defines date format, parent grammar, contract-class values, and field applicability by spec kind. PRODUCT defines `status` marker requiredness; a complete spec status allowed-value vocabulary is not currently defined by PRODUCT authority.
+  - DRMCP parses `status` as a required non-empty scalar. DRMCP does not define a local spec status vocabulary and does not apply spec-specific status value validation until PRODUCT authority defines that vocabulary.
+  - DRMCP may detect violations of other PRODUCT field rules but does not restate their semantic tables as independent authority.
+  - Exact diagnostic identifiers and response representation remain owned by W006 and W004.
+  - Reason: this preserves DRMCP parser ownership without duplicating PRODUCT semantic authority.
+- Accepted decision 16: invalid metadata other than canonical path identity does not remove a uniquely addressable current spec from the read surface.
+  - Missing or empty `status` remains a validation failure. A non-empty `status` value is not checked for enum validity until PRODUCT defines a complete spec lifecycle status vocabulary.
+  - Invalid `date`, `parent`, or `contract_class` remains a validation failure per existing PRODUCT authority.
+  - Missing `date`, `parent`, `contract_class`, or H1-derived title remains a validation failure.
+  - A uniquely path-derived canonical ref remains usable for list and exact-read operations.
+  - Relation-graph participation, invalid-field representation, and list/get warning shape remain owned by T04, W004, and W006.
+  - Duplicate canonical identity and invalid path segments remain unaddressable because DRMCP cannot establish one unique canonical identity.
+  - Reason: read availability supports inspection and repair, while validation remains the authority for repository conformance.
+- Accepted decision 17: a metadata `id` mismatch does not remove a uniquely path-addressable current spec from the read surface.
+  - The path-derived canonical ref remains the only canonical read identity.
+  - The mismatched metadata `id` is not registered as an alias or alternate lookup key.
+  - Retrieval succeeds through the path-derived canonical ref and fails through the stale metadata value.
+  - The mismatch remains a validation failure and is not auto-corrected.
+  - Raw-field and warning representation remain owned by T04, W004, and W006.
+  - Reason: repository placement is the most directly recognizable source identity for repair, while metadata `id` exists only to confirm consistency with that path.
+- Accepted decision 18: current spec metadata field order is not semantic.
+  - Recognized fields may appear in any order within the contiguous metadata block.
+  - Duplicate, missing required, unknown, and invalidly applied fields remain invalid under earlier decisions.
+  - DRMCP does not reject a source only because recognized fields use a different order.
+  - Authoring standards may recommend a canonical order without changing parser acceptance.
+  - Reason: PRODUCT defines field presence and applicability but does not make ordering part of current spec semantics.
+- Accepted decision 19: current spec metadata lines use the exact canonical marker `- **<key>**: <value>`.
+  - The line begins at column 1 with `- `.
+  - The key is enclosed by `**`, uses lowercase, and is case-sensitive.
+  - An ASCII colon follows the closing `**` immediately.
+  - Zero or more spaces may follow the colon before the scalar value.
+  - Indented lines, alternate bullet markers, unbolded keys, and case variants are not normalized into metadata lines.
+  - Before block start, a malformed candidate line leaves the metadata block missing. After block start, a malformed line ends the block and may cause required-field validation failures.
+  - Reason: one exact visible marker keeps parser boundaries deterministic and avoids silent repair of noncanonical source text.
+- Accepted decision 20: current spec discovery follows only regular Markdown files physically contained under the configured `<records_root>/spec/` tree.
+  - Symlinked files are not current spec candidates.
+  - Symlinked directories and filesystem aliases are not traversed for current spec discovery.
+  - A canonicalized source that resolves outside the configured spec tree is not adopted through the visible alias path.
+  - Exact diagnostics or warnings for skipped aliases remain owned by W006.
+  - Reason: path-derived identity requires one repository placement per source and must not assign multiple identities to one filesystem object.
+- Contract reflection completed on 2026-06-27:
+  - `schema/discovery.md` fully rewritten. Removed YAML `design_record` spec inclusion. Defined current spec candidate paths, candidate-versus-valid-source distinction, YAML front matter rejection, invalid source behavior, duplicate canonical identity conflict, no legacy alias fallback, and other-kind inclusion table. Reflects accepted decisions 1, 9–12, 16–17, 20.
+  - `schema/record-source.md` updated. Removed `Spec YAML front matter` as metadata source. Added current spec H1-adjacent metadata as the spec metadata source. Added current spec source mapping table. Replaced `design_record` metadata authority with path-derived identity and H1-adjacent metadata block. Reflects accepted decisions 7, 8, 10, 12, 13, 15.
+  - `schema/metadata-grammar.md` extended. Added `### Current spec H1-adjacent metadata grammar` section covering block start, continuation, termination, exact marker syntax, recognized keys, duplicate and unknown keys, missing and empty values, scalar and inline-code normalization, and field order independence. PRODUCT semantic ownership explicitly stated. Reflects accepted decisions 2–8, 14–15, 18–19.
+  - `schema/fields.md` narrowly corrected. Spec `id` source changed from `design_record.id` to path-derived canonical `spec:` ref. Spec title extraction updated to `# <SpecKind>: <Title>` H1 form. Spec `id` example changed from `V01-SPEC-design-records-mcp-schema` to path-derived form. Spec `status` source changed from `top-level YAML front matter` to `H1-adjacent metadata block`. Removed `design_record.status` mismatch diagnostic reference. Spec H1 section updated to `# <SpecKind>: <Title>` format with PRODUCT authority citation. Reflects accepted decisions 7, 8, 12, 15.
+  - `schema/id-normalization.md` updated. Added `### Current spec path-derived canonical ref` section defining seven-step derivation, valid segment constraint, no-repair rule, mismatch handling, and no-fallback rule for `SPEC-*` / `V01-SPEC-*`. Removed `SPEC-<slug>` from bare ID grammar table (spec identity is now path-derived only). Reflects accepted decisions 7, 8, 17.
+- Static stale-contract search completed on 2026-06-27.
+  - Searched terms: `design_record`, `Spec YAML front matter`, `YAML front matter read`, `V01-SPEC-`, `SPEC-<`, `namespace_prefix`, `successfully parsed current records`, `fails deterministically`, `duplicate canonical identity`, `excluded without`, `missing_design_record`.
+  - All matches in T03-owned specs (`schema/discovery.md`, `schema/record-source.md`, `schema/metadata-grammar.md`, `schema/fields.md`, `schema/id-normalization.md`) are valid new normative text or reference pointers, not stale authority.
+  - Remaining `design_record` matches in `schema/fields.md`: `design_record.depends_on` (spec depends_on source, line 118), `design_record.supersedes` (spec supersedes source, line 136), `design_record.migrated_to_spec` (spec migrated_to_spec source, line 148). Classified as T04-owned shared field integration remainders. T03 does not redesign the relation field model.
+  - `V01-SPEC-*` and `namespace_prefix` matches in `schema/fields.md` and `schema/metadata-grammar.md`: all in sequential artifact sections (ADR, investigation, workflow). Classified as T04-owned sequential artifact shared model remainders.
+  - `duplicate canonical identity` matches in `namespace-scanning.md`, `DRMCP-TASK-MCP-003-02`, and `DRMCP-WORK-MCP-003`: valid T02 evidence and W003 evidence statements.
+  - `missing_design_record` in `schema/diagnostics.md` line 138: classified as T04/W006-owned. Not in T03 primary spec scope.
+  - `design_record` in `schema/record-model.md`, `schema/authoring-transaction-schema.md`, `overview.md`, `responsibility-boundary.md`: classified as T04-owned (record-model) and T05-owned (overview, responsibility-boundary synchronization). T03 is explicitly excluded from `record-model.md`.
+  - `fails deterministically` in `DRMCP-WORK-MCP-009` line 113: valid downstream work item scope statement ("duplicate current identity fails deterministically"). Not a stale authority.
+  - No unresolved contradictions in T03-owned specs.
+- Scoped validator run on 2026-06-27: `python -X utf8 product/src/tools/validate_spec.py drmcp/records/spec/design-records-mcp --strict --no-color`. Result: `[strict] All 30 file(s) OK.`
+- T04-delegated remainder in fields.md: spec `depends_on` source (`design_record.depends_on`), spec `supersedes` source (`design_record.supersedes`), spec `migrated_to_spec` source (`design_record.migrated_to_spec`). These are stale `design_record` references that require T04 shared field integration to correct properly.
+- T04-delegated remainder in fields.md / metadata-grammar.md: `namespace_prefix` in sequential artifact sections (ADR H1 processing, investigation H1 processing, workflow artifact grammar). Shared artifact ID model correction remains T04.
+- W006-delegated: all exact diagnostic identifiers referenced in T03 text as owned by W006.
+- W004-delegated: list/get warning representation, invalid-field response representation, conflicted-identity read response.
+- T05-delegated: `overview.md` and `responsibility-boundary.md` stale spec source claims (YAML front matter in `design_record`-bearing spec files). Overview table synchronization.
+- Status at end of T03 reflection: READY FOR REVIEW.
+- Independent review verdict received: NEEDS REVISION.
+- Review corrections applied on 2026-06-27:
+  - M1 (id-normalization.md): Added empty-segment-list case to canonical ref assembly. Root `index.md` (0 segments after index omission) produces `spec:<app_namespace>` without trailing dot. Reordered derivation steps: directory separator replacement (step 5) now precedes segment hyphen conversion (step 6); assembly is now step 7 with explicit empty/non-empty branching. Added `product/records/spec/index.md → spec:product` example row.
+  - M2 (fields.md): Split `id` section into current spec paragraph (path-derived `spec:` ref, no namespace_prefix) and sequential artifact paragraph (namespace_prefix-prefixed public ID). Updated title extraction intro to scope namespace_prefix stripping to sequential artifact records only; Spec H1 explicitly excluded from that intro.
+  - M3 (fields.md): Removed `confirmed / draft / wip` from spec row in allowed status table. Added explicit note that current spec status vocabulary is owned by PRODUCT authority; DRMCP consumes without redefining. Authority pointer: `spec:product.design_records.spec_format.document_shape`.
+  - M4 (discovery.md): Changed `may remain available` to normative `remains addressable through that ref even when its metadata, H1, or document shape is invalid`. Read availability is now a firm contract, not permissive.
+  - M5 (discovery.md, fields.md): Added PRODUCT accepted spec kind set validation to valid-source conditions in discovery.md. Unknown and deferred kinds fail valid-source condition; invalid-kind candidate with unique path-derived ref remains addressable. Added kind extraction and PRODUCT accepted-kind validation steps to Spec H1 section in fields.md; normative read-availability language updated to match M4.
+  - m1 (DRMCP-TASK-MCP-003-03): Removed stale `Remaining design decisions and normative spec edits: pending one-at-a-time user confirmation.` line.
+  - m2 (record-source.md): Changed `optional contract_class` to `kind-conditional contract_class` with explicit required/prohibited boundary. Updated both the record sources table and the current spec source mapping table.
+  - Also corrected: Accepted decision 11 evidence statement updated from `may remain available` to `remains addressable through that ref even when required metadata, H1, or document shape is invalid`.
+- Files changed by review corrections: `schema/id-normalization.md`, `schema/fields.md`, `schema/discovery.md`, `schema/record-source.md`, `DRMCP-TASK-MCP-003-03-...md`.
+- Validation rerun: `python -X utf8 product/src/tools/validate_spec.py drmcp/records/spec/design-records-mcp --strict --no-color` → `[strict] All 30 file(s) OK.`
+- Targeted search: remaining matches in `fields.md` (`namespace_prefix-prefixed` in depends_on and task sections) are T04/W005-owned; `id-normalization.md` and `fields.md` matches from M1/M2 new normative text are correctly scoped. No unresolved findings from M1–M5, m1–m2.
+- Status: READY FOR RE-REVIEW.
+- Second re-review verdict received: NEEDS REVISION.
+- Second-round review corrections applied on 2026-06-27:
+  - spec status authority (fields.md): Corrected spec status note. `spec:product.design_records.spec_format.document_shape` retains authority only for marker requiredness; current PRODUCT contract set does not define a complete allowed-value vocabulary for spec lifecycle status. DRMCP does not define a local spec status vocabulary and does not apply a spec-specific `invalid_status_for_kind` check until a PRODUCT authority defines that vocabulary. Spec row in allowed status table changed to `no complete allowed-value set is currently defined by PRODUCT authority`.
+  - read availability wording (metadata-grammar.md): Changed `may remain readable` to `remains readable` (normative). Delegation to `spec:drmcp.design_records_mcp.schema.discovery` maintained.
+  - Files changed: `schema/fields.md`, `schema/metadata-grammar.md`.
+  - Validation: `python -X utf8 product/src/tools/validate_spec.py drmcp/records/spec/design-records-mcp --strict --no-color` → `[strict] All 30 file(s) OK.`
+  - Targeted search: remaining matches are historical evidence in T03 task file (`may remain readable` in accepted decision 6/12 original text) and review correction evidence (`confirmed / draft / wip` in M3 description). No unresolved contradictions in normative specs.
+- Status: READY FOR FINAL REVIEW.
+- Final review verdict received: NEEDS REVISION.
+- Final-round corrections applied on 2026-06-27:
+  - status vocabulary authority (metadata-grammar.md): `status` recognized-key row corrected to "Required non-empty scalar. No complete allowed-value set is currently defined by PRODUCT authority." Authority summary paragraph replaced with per-field table: `id` consistency and `parent` grammar owned by `spec:product.design_records.spec_format.spec_id_as_ref`; `status` marker requiredness and `contract_class` applicability owned by `spec:product.design_records.spec_format.document_shape`; `status` complete vocabulary currently undefined; `date` format defers to PRODUCT authority for currently defined scope only.
+  - invalid_status_for_kind scope (fields.md): Generic statement scoped to "record kinds with a defined allowed-value set." Explicit exclusion added: current spec records excluded from `invalid_status_for_kind` check until PRODUCT defines a complete spec lifecycle status vocabulary.
+  - Accepted decision 15 (T03): Clarified `status` ownership. PRODUCT defines marker requiredness; complete allowed-value vocabulary not currently defined. DRMCP parses `status` as required non-empty scalar; does not define local enum; will consume PRODUCT vocabulary when defined.
+  - Accepted decision 16 (T03): Narrowed `status` validation failure scope. Missing or empty `status` remains a validation failure. Non-empty status value enum check deferred until PRODUCT defines complete vocabulary. Invalid `date`, `parent`, `contract_class` validation failures unchanged. Read availability unchanged.
+  - Files changed: `schema/metadata-grammar.md`, `schema/fields.md`, `DRMCP-TASK-MCP-003-03-...md`, `DRMCP-WORK-MCP-003-...md`.
+  - Validation: `python -X utf8 product/src/tools/validate_spec.py drmcp/records/spec/design-records-mcp --strict --no-color` → `[strict] All 30 file(s) OK.`
+  - Targeted search: T03:275 is prior review correction evidence (correctly states vocabulary not defined); `fields.md:110` and `metadata-grammar.md:65` are correct new normative text. No unresolved contradictions in normative specs or accepted decisions.
+- Status: READY FOR CLOSURE REVIEW.
+- Closure review verdict: PASS.
+- No blocking, major, or minor findings remain in the T03-owned contract set.
+- T03 Done condition is satisfied:
+  - current spec candidate and recursive discovery boundaries are explicit;
+  - H1-adjacent metadata parser boundaries are explicit;
+  - path-derived canonical identity cites PRODUCT authority and handles root `index.md` without a trailing dot;
+  - metadata `id` mismatch never replaces or rewrites path-derived identity;
+  - YAML front matter and legacy spec aliases are rejected as active current identity inputs;
+  - uniquely addressable invalid sources remain readable while conflicted or identity-undeterminable sources remain validation inputs;
+  - exact diagnostics, response representation, shared record integration, implementation, fixtures, query, retrieval, and resolver concerns remain delegated;
+  - scoped validation passed: `[strict] All 30 file(s) OK.`
+- Final status: `done`.
