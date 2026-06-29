@@ -155,6 +155,7 @@ type Index struct {
 	Candidates         []RecordCandidate   `json:"-"`
 	ParseIssues        []ParseIssue        `json:"-"`
 	PathIssues         []PathIssue         `json:"-"`
+	ConflictGroups     []CurrentConflict   `json:"-"`
 	SemanticRefs       []SemanticRefDecl   `json:"-"`
 	SemanticRefSources []SemanticRefSource `json:"-"`
 }
