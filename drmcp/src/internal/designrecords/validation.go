@@ -2,6 +2,7 @@ package designrecords
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
@@ -9,32 +10,73 @@ import (
 )
 
 type validationScope struct {
-	kind    RecordKind
-	hasKind bool
-	idRange *recordIDRange
-	ns      string
+	appNamespace string
+	ref          string
+}
+
+const (
+	validationRequestAppNamespacePrefix = "\x00app_namespace:"
+	validationRequestRefPrefix          = "\x00ref:"
+)
+
+func (r *ValidateRecordsRequest) UnmarshalJSON(data []byte) error {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	if raw == nil {
+		return fmt.Errorf("validate_records request must be a JSON object")
+	}
+	for key := range raw {
+		switch key {
+		case "app_namespace", "ref":
+		case "kind", "domain", "id_range":
+			return fmt.Errorf("%s selector is not supported by current validate_records", key)
+		default:
+			return fmt.Errorf("%s selector is not supported by current validate_records", key)
+		}
+	}
+
+	appNamespaceRaw, hasAppNamespace := raw["app_namespace"]
+	refRaw, hasRef := raw["ref"]
+	if hasAppNamespace && hasRef {
+		return fmt.Errorf("app_namespace and ref selectors are mutually exclusive")
+	}
+
+	switch {
+	case hasAppNamespace:
+		var appNamespace *string
+		if err := json.Unmarshal(appNamespaceRaw, &appNamespace); err != nil || appNamespace == nil || *appNamespace == "" {
+			return fmt.Errorf("app_namespace must be a non-empty string")
+		}
+		r.Kind = RecordKind(validationRequestAppNamespacePrefix + *appNamespace)
+	case hasRef:
+		var ref *string
+		if err := json.Unmarshal(refRaw, &ref); err != nil || ref == nil || *ref == "" {
+			return fmt.Errorf("ref must be a non-empty string")
+		}
+		r.Kind = RecordKind(validationRequestRefPrefix + *ref)
+	default:
+		*r = ValidateRecordsRequest{}
+	}
+	return nil
 }
 
 func newValidationScope(req ValidateRecordsRequest) (validationScope, error) {
-	scope := validationScope{}
-	if req.Kind != "" {
-		if !isListableRecordKind(req.Kind) {
-			return scope, newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unsupported kind %q", req.Kind))
-		}
-		scope.kind = req.Kind
-		scope.hasKind = true
+	if req.IDRange != nil {
+		return validationScope{}, newToolError(ErrorCodeInvalidRequest, "id_range selector is not supported by current validate_records")
 	}
-	if req.IDRange == nil {
-		return scope, nil
+	value := string(req.Kind)
+	switch {
+	case value == "":
+		return validationScope{}, nil
+	case strings.HasPrefix(value, validationRequestAppNamespacePrefix):
+		return validationScope{appNamespace: strings.TrimPrefix(value, validationRequestAppNamespacePrefix)}, nil
+	case strings.HasPrefix(value, validationRequestRefPrefix):
+		return validationScope{ref: strings.TrimPrefix(value, validationRequestRefPrefix)}, nil
+	default:
+		return validationScope{}, newToolError(ErrorCodeInvalidRequest, "kind selector is not supported by current validate_records")
 	}
-	parsed, err := parseRecordIDRange(*req.IDRange, req.Kind)
-	if err != nil {
-		return scope, err
-	}
-	scope.kind = parsed.kind
-	scope.hasKind = true
-	scope.idRange = parsed
-	return scope, nil
 }
 
 func generateValidationDiagnostics(idx *Index, scope validationScope) []Diagnostic {
@@ -45,7 +87,7 @@ func generateValidationDiagnostics(idx *Index, scope validationScope) []Diagnost
 	for _, record := range idx.Records {
 		recordsByPath[record.Path] = record
 		if record.NormalizedID != "" {
-			recordsByID[record.NormalizedID] = append(recordsByID[record.NormalizedID], record)
+			recordsByID[record.ID] = append(recordsByID[record.ID], record)
 		}
 	}
 
@@ -56,12 +98,11 @@ func generateValidationDiagnostics(idx *Index, scope validationScope) []Diagnost
 		}
 	}
 
-	diagnostics = append(diagnostics, duplicateIDDiagnostics(recordsByID, scope)...)
-	diagnostics = append(diagnostics, parseIssueDiagnostics(idx.ParseIssues, recordsByPath, candidatesByPath, scope)...)
-	diagnostics = append(diagnostics, semanticRefDiagnostics(idx, scope)...)
-	diagnostics = append(diagnostics, recordDiagnostics(idx.Records, recordsByID, semanticTargetsByRef(idx), scope)...)
-	diagnostics = append(diagnostics, pathIssueDiagnostics(idx.PathIssues, candidatesByPath, scope)...)
-	return diagnostics
+	diagnostics = append(diagnostics, currentConflictDiagnostics(idx, scope)...)
+	diagnostics = append(diagnostics, parseIssueDiagnostics(idx, idx.ParseIssues, recordsByPath, candidatesByPath, scope)...)
+	diagnostics = append(diagnostics, recordDiagnostics(idx, idx.Records, recordsByID, scope)...)
+	diagnostics = append(diagnostics, pathIssueDiagnostics(idx, idx.PathIssues, candidatesByPath, scope)...)
+	return sortAndDedupeDiagnostics(idx, diagnostics)
 }
 
 func duplicateIDDiagnostics(recordsByID map[string][]Record, scope validationScope) []Diagnostic {
@@ -83,7 +124,7 @@ func duplicateIDDiagnostics(recordsByID map[string][]Record, scope validationSco
 			return records[i].Path < records[j].Path
 		})
 		for _, record := range records {
-			if !scope.selectRecord(record) {
+			if !scope.selectRecord(nil, record) {
 				continue
 			}
 			diagnostics = append(diagnostics, Diagnostic{
@@ -98,10 +139,33 @@ func duplicateIDDiagnostics(recordsByID map[string][]Record, scope validationSco
 	return diagnostics
 }
 
-func parseIssueDiagnostics(issues []ParseIssue, recordsByPath map[string]Record, candidatesByPath map[string]RecordCandidate, scope validationScope) []Diagnostic {
+func currentConflictDiagnostics(idx *Index, scope validationScope) []Diagnostic {
+	var diagnostics []Diagnostic
+	for _, group := range idx.ConflictGroups {
+		if !scope.selectConflictGroup(idx, group) {
+			continue
+		}
+		for _, source := range group.Sources {
+			if scope.appNamespace != "" && pathAppNamespace(idx, source) != scope.appNamespace {
+				continue
+			}
+			diagnostics = append(diagnostics, Diagnostic{
+				Category: DiagnosticCategory("current_conflict"),
+				Severity: DiagnosticSeverityError,
+				RecordID: group.Ref,
+				Path:     source,
+				Message:  fmt.Sprintf("current ref %s has conflicting current sources", group.Ref),
+				Location: currentDiagnosticLocation(idx, source),
+			})
+		}
+	}
+	return diagnostics
+}
+
+func parseIssueDiagnostics(idx *Index, issues []ParseIssue, recordsByPath map[string]Record, candidatesByPath map[string]RecordCandidate, scope validationScope) []Diagnostic {
 	diagnostics := make([]Diagnostic, 0, len(issues))
 	for _, issue := range issues {
-		if !scope.selectIssue(issue, recordsByPath, candidatesByPath) {
+		if !scope.selectIssue(idx, issue, recordsByPath, candidatesByPath) {
 			continue
 		}
 		diagnostics = append(diagnostics, Diagnostic{
@@ -110,15 +174,16 @@ func parseIssueDiagnostics(issues []ParseIssue, recordsByPath map[string]Record,
 			RecordID: issue.RecordID,
 			Path:     issue.Path,
 			Message:  issue.Message,
+			Location: currentDiagnosticLocation(idx, issue.Path),
 		})
 	}
 	return diagnostics
 }
 
-func recordDiagnostics(records []Record, recordsByID map[string][]Record, semanticByRef map[string][]SemanticRefDecl, scope validationScope) []Diagnostic {
+func recordDiagnostics(idx *Index, records []Record, recordsByID map[string][]Record, scope validationScope) []Diagnostic {
 	var diagnostics []Diagnostic
 	for _, record := range records {
-		if !scope.selectRecord(record) {
+		if !scope.selectRecord(idx, record) {
 			continue
 		}
 		diagnostics = append(diagnostics, workflowMetadataDiagnostics(record)...)
@@ -157,9 +222,14 @@ func recordDiagnostics(records []Record, recordsByID map[string][]Record, semant
 			}
 		}
 		if record.Kind == RecordKindInvestigation && record.Investigation != nil {
-			diagnostics = append(diagnostics, investigationReferenceDiagnostics(record, recordsByID, semanticByRef)...)
+			diagnostics = append(diagnostics, investigationReferenceDiagnostics(idx, record, recordsByID)...)
 		}
-		diagnostics = append(diagnostics, workflowRelationDiagnostics(record, recordsByID)...)
+		diagnostics = append(diagnostics, workflowRelationDiagnostics(idx, record, recordsByID)...)
+	}
+	for i := range diagnostics {
+		if diagnostics[i].Path != "" && diagnostics[i].Location == nil {
+			diagnostics[i].Location = currentDiagnosticLocation(idx, diagnostics[i].Path)
+		}
 	}
 	return diagnostics
 }
@@ -244,103 +314,31 @@ func workflowMetadataDiagnostic(record Record, category DiagnosticCategory, fiel
 	}
 }
 
-func semanticRefDiagnostics(idx *Index, scope validationScope) []Diagnostic {
+func investigationReferenceDiagnostics(idx *Index, record Record, recordsByID map[string][]Record) []Diagnostic {
 	var diagnostics []Diagnostic
-	if scope.hasKind && scope.kind != RecordKindSpec {
-		return diagnostics
-	}
-	byRef := map[string][]SemanticRefDecl{}
-	for _, source := range idx.SemanticRefSources {
-		for _, decl := range source.Decls {
-			if !activeSpecRefPattern.MatchString(decl.Ref) {
-				diagnostics = append(diagnostics, Diagnostic{
-					Category: DiagnosticInvalidSemanticRefDeclaration,
-					Severity: DiagnosticSeverityError,
-					RecordID: source.RecordID,
-					Path:     decl.Path,
-					Message:  fmt.Sprintf("semantic reference declaration %q is invalid", decl.Ref),
-				})
-				continue
-			}
-			if decl.TargetType == SemanticTargetSection {
-				matches := matchingHeadingCount(source.Headings, decl.Section)
-				switch matches {
-				case 0:
-					diagnostics = append(diagnostics, Diagnostic{
-						Category: DiagnosticMissingSectionTarget,
-						Severity: DiagnosticSeverityError,
-						RecordID: source.RecordID,
-						Path:     decl.Path,
-						Message:  fmt.Sprintf("section target %q for %s was not found", decl.Section, decl.Ref),
-					})
-				case 1:
-				default:
-					diagnostics = append(diagnostics, Diagnostic{
-						Category: DiagnosticAmbiguousSectionTarget,
-						Severity: DiagnosticSeverityError,
-						RecordID: source.RecordID,
-						Path:     decl.Path,
-						Message:  fmt.Sprintf("section target %q for %s matches multiple headings", decl.Section, decl.Ref),
-					})
-				}
-			}
-			byRef[decl.Ref] = append(byRef[decl.Ref], decl)
-		}
-	}
-	refs := make([]string, 0, len(byRef))
-	for ref, decls := range byRef {
-		if len(decls) > 1 {
-			refs = append(refs, ref)
-		}
-	}
-	sort.Strings(refs)
-	for _, ref := range refs {
-		decls := byRef[ref]
-		sort.Slice(decls, func(i, j int) bool {
-			if decls[i].Path == decls[j].Path {
-				return decls[i].Section < decls[j].Section
-			}
-			return decls[i].Path < decls[j].Path
-		})
-		for _, decl := range decls {
-			diagnostics = append(diagnostics, Diagnostic{
-				Category: DiagnosticDuplicateSemanticRef,
-				Severity: DiagnosticSeverityError,
-				Path:     decl.Path,
-				Message:  fmt.Sprintf("semantic reference %s has multiple targets", ref),
-			})
-		}
-	}
+	diagnostics = append(diagnostics, diagnosticsForInvestigationRefs(idx, record, "source_refs", record.Investigation.SourceRefs, DiagnosticUnresolvedSourceRef, DiagnosticSeverityError, recordsByID)...)
+	diagnostics = append(diagnostics, diagnosticsForInvestigationRefs(idx, record, "follow_up_results", record.Investigation.FollowUpResults, DiagnosticUnresolvedFollowUpResult, DiagnosticSeverityError, recordsByID)...)
+	diagnostics = append(diagnostics, diagnosticsForInvestigationRefs(idx, record, "follow_up_candidates", record.Investigation.FollowUpCandidates, DiagnosticUnresolvedFollowUpCandidate, DiagnosticSeverityInfo, recordsByID)...)
 	return diagnostics
 }
 
-func investigationReferenceDiagnostics(record Record, recordsByID map[string][]Record, semanticByRef map[string][]SemanticRefDecl) []Diagnostic {
-	var diagnostics []Diagnostic
-	diagnostics = append(diagnostics, diagnosticsForInvestigationRefs(record, "source_refs", record.Investigation.SourceRefs, DiagnosticUnresolvedSourceRef, DiagnosticNoncanonicalSourceRef, DiagnosticSeverityError, recordsByID, semanticByRef)...)
-	diagnostics = append(diagnostics, diagnosticsForInvestigationRefs(record, "follow_up_results", record.Investigation.FollowUpResults, DiagnosticUnresolvedFollowUpResult, DiagnosticNoncanonicalFollowUpResult, DiagnosticSeverityError, recordsByID, semanticByRef)...)
-	diagnostics = append(diagnostics, diagnosticsForInvestigationRefs(record, "follow_up_candidates", record.Investigation.FollowUpCandidates, DiagnosticUnresolvedFollowUpCandidate, DiagnosticNoncanonicalFollowUpCandidate, DiagnosticSeverityInfo, recordsByID, semanticByRef)...)
-	return diagnostics
-}
-
-func diagnosticsForInvestigationRefs(record Record, field string, values []string, unresolvedCategory, noncanonicalCategory DiagnosticCategory, severity DiagnosticSeverity, recordsByID map[string][]Record, semanticByRef map[string][]SemanticRefDecl) []Diagnostic {
+func diagnosticsForInvestigationRefs(idx *Index, record Record, field string, values []string, unresolvedCategory DiagnosticCategory, severity DiagnosticSeverity, recordsByID map[string][]Record) []Diagnostic {
 	var diagnostics []Diagnostic
 	for _, value := range values {
 		switch {
 		case strings.HasPrefix(value, "yaml:"):
 			continue
-		case strings.HasPrefix(value, "TASK-"):
-			diagnostics = append(diagnostics, investigationReferenceDiagnostic(record, DiagnosticUnsupportedReference, severity, field, value, "unsupported"))
 		case isPhysicalPathReference(value):
-			diagnostics = append(diagnostics, investigationReferenceDiagnostic(record, noncanonicalCategory, severity, field, value, "noncanonical"))
+			diagnostics = append(diagnostics, investigationReferenceDiagnostic(record, DiagnosticUnsupportedReference, severity, field, value, "unsupported"))
 		case isExplicitUnsupportedReference(value):
 			diagnostics = append(diagnostics, investigationReferenceDiagnostic(record, DiagnosticUnsupportedReference, severity, field, value, "unsupported"))
 		case activeSpecRefPattern.MatchString(value):
-			targets := semanticByRef[value]
+			targets := recordsByID[value]
 			if len(targets) == 0 {
 				diagnostics = append(diagnostics, investigationReferenceDiagnostic(record, unresolvedCategory, severity, field, value, "unresolved"))
 			}
-		case isSupportedInvestigationRecordIDReference(value):
-			targets := recordsByID[normalizeRecordID(value)]
+		case isCurrentRecordIDReference(idx, value) && isSupportedInvestigationRecordIDReference(stripKnownNamespacePrefix(idx, value)):
+			targets := recordsByID[value]
 			if len(targets) == 0 {
 				diag := investigationReferenceDiagnostic(record, unresolvedCategory, severity, field, value, "unresolved")
 				diag.TargetID = value
@@ -366,32 +364,32 @@ func investigationReferenceDiagnostic(record Record, category DiagnosticCategory
 	}
 }
 
-func workflowRelationDiagnostics(record Record, recordsByID map[string][]Record) []Diagnostic {
+func workflowRelationDiagnostics(idx *Index, record Record, recordsByID map[string][]Record) []Diagnostic {
 	switch record.Kind {
 	case RecordKindRequirement:
 		if record.Requirement == nil {
 			return nil
 		}
-		return requirementWorkflowRelationDiagnostics(record, recordsByID)
+		return requirementWorkflowRelationDiagnostics(idx, record, recordsByID)
 	case RecordKindWorkItem:
 		if record.WorkItem == nil {
 			return nil
 		}
-		return workItemWorkflowRelationDiagnostics(record, recordsByID)
+		return workItemWorkflowRelationDiagnostics(idx, record, recordsByID)
 	case RecordKindTask:
 		if record.Task == nil {
 			return nil
 		}
-		return taskWorkflowRelationDiagnostics(record, recordsByID)
+		return taskWorkflowRelationDiagnostics(idx, record, recordsByID)
 	default:
 		return nil
 	}
 }
 
-func requirementWorkflowRelationDiagnostics(record Record, recordsByID map[string][]Record) []Diagnostic {
+func requirementWorkflowRelationDiagnostics(idx *Index, record Record, recordsByID map[string][]Record) []Diagnostic {
 	var diagnostics []Diagnostic
 	for _, value := range record.Requirement.WorkItems {
-		target, ok, targetDiagnostics := validateWorkflowRelationTarget(record, "work_items", value, RecordKindWorkItem, recordsByID)
+		target, ok, targetDiagnostics := validateWorkflowRelationTarget(idx, record, "work_items", value, RecordKindWorkItem, recordsByID)
 		diagnostics = append(diagnostics, targetDiagnostics...)
 		if !ok {
 			continue
@@ -403,17 +401,17 @@ func requirementWorkflowRelationDiagnostics(record Record, recordsByID map[strin
 	return diagnostics
 }
 
-func workItemWorkflowRelationDiagnostics(record Record, recordsByID map[string][]Record) []Diagnostic {
+func workItemWorkflowRelationDiagnostics(idx *Index, record Record, recordsByID map[string][]Record) []Diagnostic {
 	var diagnostics []Diagnostic
 	if record.WorkItem.SourceRequirement != "" {
-		target, ok, targetDiagnostics := validateWorkflowRelationTarget(record, "source_requirement", record.WorkItem.SourceRequirement, RecordKindRequirement, recordsByID)
+		target, ok, targetDiagnostics := validateWorkflowRelationTarget(idx, record, "source_requirement", record.WorkItem.SourceRequirement, RecordKindRequirement, recordsByID)
 		diagnostics = append(diagnostics, targetDiagnostics...)
 		if ok && (target.Requirement == nil || !containsString(target.Requirement.WorkItems, record.ID)) {
 			diagnostics = append(diagnostics, workflowMismatchDiagnostic(record, "source_requirement", record.WorkItem.SourceRequirement, target.ID, fmt.Sprintf("%s.source_requirement is %s but %s.work_items does not contain %s", record.ID, record.WorkItem.SourceRequirement, target.ID, record.ID)))
 		}
 	}
 	for _, value := range record.WorkItem.Tasks {
-		target, ok, targetDiagnostics := validateWorkflowRelationTarget(record, "tasks", value, RecordKindTask, recordsByID)
+		target, ok, targetDiagnostics := validateWorkflowRelationTarget(idx, record, "tasks", value, RecordKindTask, recordsByID)
 		diagnostics = append(diagnostics, targetDiagnostics...)
 		if !ok {
 			continue
@@ -425,12 +423,12 @@ func workItemWorkflowRelationDiagnostics(record Record, recordsByID map[string][
 	return diagnostics
 }
 
-func taskWorkflowRelationDiagnostics(record Record, recordsByID map[string][]Record) []Diagnostic {
+func taskWorkflowRelationDiagnostics(idx *Index, record Record, recordsByID map[string][]Record) []Diagnostic {
 	var diagnostics []Diagnostic
 	var parent Record
 	parentOK := false
 	if record.Task.WorkItem != "" {
-		target, ok, targetDiagnostics := validateWorkflowRelationTarget(record, "work_item", record.Task.WorkItem, RecordKindWorkItem, recordsByID)
+		target, ok, targetDiagnostics := validateWorkflowRelationTarget(idx, record, "work_item", record.Task.WorkItem, RecordKindWorkItem, recordsByID)
 		diagnostics = append(diagnostics, targetDiagnostics...)
 		parent = target
 		parentOK = ok
@@ -440,12 +438,12 @@ func taskWorkflowRelationDiagnostics(record Record, recordsByID map[string][]Rec
 	}
 	sourceRequirementOK := false
 	if record.Task.SourceRequirement != "" {
-		_, ok, targetDiagnostics := validateWorkflowRelationTarget(record, "source_requirement", record.Task.SourceRequirement, RecordKindRequirement, recordsByID)
+		_, ok, targetDiagnostics := validateWorkflowRelationTarget(idx, record, "source_requirement", record.Task.SourceRequirement, RecordKindRequirement, recordsByID)
 		diagnostics = append(diagnostics, targetDiagnostics...)
 		sourceRequirementOK = ok
 	}
 	for _, value := range record.Task.DependsOn {
-		_, _, targetDiagnostics := validateWorkflowRelationTarget(record, "depends_on", value, RecordKindTask, recordsByID)
+		_, _, targetDiagnostics := validateWorkflowRelationTarget(idx, record, "depends_on", value, RecordKindTask, recordsByID)
 		diagnostics = append(diagnostics, targetDiagnostics...)
 	}
 	if parentOK && sourceRequirementOK && parent.WorkItem != nil && parent.WorkItem.SourceRequirement != "" && record.Task.SourceRequirement != parent.WorkItem.SourceRequirement {
@@ -454,16 +452,11 @@ func taskWorkflowRelationDiagnostics(record Record, recordsByID map[string][]Rec
 	return diagnostics
 }
 
-func validateWorkflowRelationTarget(record Record, field, value string, expectedKind RecordKind, recordsByID map[string][]Record) (Record, bool, []Diagnostic) {
+func validateWorkflowRelationTarget(idx *Index, record Record, field, value string, expectedKind RecordKind, recordsByID map[string][]Record) (Record, bool, []Diagnostic) {
 	if strings.TrimSpace(value) == "" {
 		return Record{}, false, nil
 	}
-	// Index lookup is performed first so that namespace-prefixed public IDs
-	// (e.g. "V01-REQ-MCP-033") resolve correctly even though validWorkflowIDForKind
-	// only matches bare ID patterns. The bare-format check is a fallback that
-	// distinguishes "valid format but record not yet in index" (unresolved) from
-	// "unrecognisable ID string" (invalid_target).
-	targets := recordsByID[normalizeRecordID(value)]
+	targets := recordsByID[value]
 	for _, target := range targets {
 		if target.Kind == expectedKind {
 			return target, true, nil
@@ -473,7 +466,7 @@ func validateWorkflowRelationTarget(record Record, field, value string, expected
 		// Found at least one record with this ID but none matched expectedKind.
 		return Record{}, false, []Diagnostic{workflowTargetDiagnostic(record, DiagnosticInvalidWorkflowRelationTarget, field, value, "invalid_target", value)}
 	}
-	if !validWorkflowIDForKind(value, expectedKind) {
+	if !validCurrentWorkflowIDForKind(idx, value, expectedKind) {
 		return Record{}, false, []Diagnostic{workflowTargetDiagnostic(record, DiagnosticInvalidWorkflowRelationTarget, field, value, "invalid_target", value)}
 	}
 	return Record{}, false, []Diagnostic{workflowTargetDiagnostic(record, DiagnosticUnresolvedWorkflowRelation, field, value, "unresolved", value)}
@@ -548,10 +541,10 @@ func containsString(values []string, needle string) bool {
 	return false
 }
 
-func pathIssueDiagnostics(issues []PathIssue, candidatesByPath map[string]RecordCandidate, scope validationScope) []Diagnostic {
+func pathIssueDiagnostics(idx *Index, issues []PathIssue, candidatesByPath map[string]RecordCandidate, scope validationScope) []Diagnostic {
 	diagnostics := make([]Diagnostic, 0, len(issues))
 	for _, issue := range issues {
-		if !scope.selectPathIssue(issue, candidatesByPath) {
+		if !scope.selectPathIssue(idx, issue, candidatesByPath) {
 			continue
 		}
 		diagnostics = append(diagnostics, Diagnostic{
@@ -559,6 +552,7 @@ func pathIssueDiagnostics(issues []PathIssue, candidatesByPath map[string]Record
 			Severity: DiagnosticSeverityError,
 			Path:     issue.Path,
 			Message:  fmt.Sprintf("%s failed for record path %s: %v", issue.Operation, issue.Path, issue.Err),
+			Location: currentDiagnosticLocation(idx, issue.Path),
 		})
 	}
 	return diagnostics
@@ -584,69 +578,72 @@ func statusAllowedForKind(kind RecordKind, status RecordStatus) bool {
 }
 
 func recordIDExists(recordsByID map[string][]Record, id string) bool {
-	records := recordsByID[normalizeRecordID(id)]
+	records := recordsByID[id]
 	return len(records) > 0
 }
 
-func (s validationScope) selectRecord(record Record) bool {
-	if s.hasKind && record.Kind != s.kind {
-		return false
+func (s validationScope) selectRecord(idx *Index, record Record) bool {
+	if s.ref != "" {
+		return record.ID == s.ref
 	}
-	if s.idRange == nil {
-		return true
+	if s.appNamespace != "" {
+		return pathAppNamespace(idx, record.Path) == s.appNamespace
 	}
-	return s.idRange.containsRecord(record)
+	return true
 }
 
-func (s validationScope) selectIssue(issue ParseIssue, recordsByPath map[string]Record, candidatesByPath map[string]RecordCandidate) bool {
+func (s validationScope) selectIssue(idx *Index, issue ParseIssue, recordsByPath map[string]Record, candidatesByPath map[string]RecordCandidate) bool {
 	if record, ok := recordsByPath[issue.Path]; ok {
-		return s.selectRecord(record)
+		return s.selectRecord(idx, record)
 	}
 	if candidate, ok := candidatesByPath[issue.Path]; ok {
-		return s.selectCandidate(candidate)
+		return s.selectCandidate(idx, candidate)
 	}
-	kind, ok := kindFromPath(issue.Path)
-	if !ok {
-		return !s.hasKind && s.idRange == nil
+	if s.ref != "" {
+		return issue.RecordID == s.ref
 	}
-	if s.hasKind && kind != s.kind {
-		return false
+	if s.appNamespace != "" {
+		return pathAppNamespace(idx, issue.Path) == s.appNamespace
 	}
-	if s.idRange == nil {
-		return true
-	}
-	return s.idRange.containsID(kind, issue.RecordID)
+	return true
 }
 
-func (s validationScope) selectCandidate(candidate RecordCandidate) bool {
-	if s.hasKind && candidate.Kind != s.kind {
-		return false
+func (s validationScope) selectCandidate(idx *Index, candidate RecordCandidate) bool {
+	if s.ref != "" {
+		return candidate.ID == s.ref
 	}
-	if s.idRange == nil {
-		return true
+	if s.appNamespace != "" {
+		return pathAppNamespace(idx, candidate.Path) == s.appNamespace
 	}
-	return s.idRange.containsID(candidate.Kind, candidate.ID)
+	return true
 }
 
-func (s validationScope) selectPathIssue(issue PathIssue, candidatesByPath map[string]RecordCandidate) bool {
+func (s validationScope) selectPathIssue(idx *Index, issue PathIssue, candidatesByPath map[string]RecordCandidate) bool {
 	if candidate, ok := candidatesByPath[issue.Path]; ok {
-		return s.selectCandidate(candidate)
+		return s.selectCandidate(idx, candidate)
 	}
-	kind, ok := kindFromPath(issue.Path)
-	if !ok {
-		return !s.hasKind && s.idRange == nil
-	}
-	if s.hasKind && kind != s.kind {
+	if s.ref != "" {
 		return false
 	}
-	if s.idRange == nil {
-		return true
+	if s.appNamespace != "" {
+		return pathAppNamespace(idx, issue.Path) == s.appNamespace
 	}
-	if s.idRange.kind != RecordKindDecision {
+	return true
+}
+
+func (s validationScope) selectConflictGroup(idx *Index, group CurrentConflict) bool {
+	if s.ref != "" {
+		return group.Ref == s.ref
+	}
+	if s.appNamespace != "" {
+		for _, source := range group.Sources {
+			if pathAppNamespace(idx, source) == s.appNamespace {
+				return true
+			}
+		}
 		return false
 	}
-	num, ok := decisionFilenameNumber(issue.Path, s.ns)
-	return ok && s.idRange.contains(num)
+	return true
 }
 
 func decisionFilenameNumber(path, ns string) (int, bool) {
@@ -714,16 +711,6 @@ func collectSemanticRefs(records []Record) []SemanticRefDecl {
 		out = append(out, record.SemanticRefs...)
 	}
 	return out
-}
-
-func matchingHeadingCount(headings []Heading, text string) int {
-	count := 0
-	for _, heading := range headings {
-		if heading.Text == text {
-			count++
-		}
-	}
-	return count
 }
 
 type requiredSectionPolicy struct {
@@ -856,6 +843,251 @@ func extractSectionBody(raw, headingText string, headingLevel int) string {
 	return strings.Join(bodyLines, "\n")
 }
 
+func validateCurrentValidationScope(idx *Index, req CurrentValidateRecordsRequest) (validationScope, string, error) {
+	if req.AppNamespace != "" && req.Ref != "" {
+		return validationScope{}, "", newToolError(ErrorCodeInvalidRequest, "app_namespace and ref selectors are mutually exclusive")
+	}
+	if req.AppNamespace != "" {
+		if !knownAppNamespace(idx, req.AppNamespace) {
+			return validationScope{}, "", newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unknown app_namespace %q", req.AppNamespace))
+		}
+		return validationScope{appNamespace: req.AppNamespace}, "app_namespace", nil
+	}
+	if req.Ref != "" {
+		if !validCurrentRefSelector(idx, req.Ref) {
+			return validationScope{}, "", newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unsupported current ref selector %q", req.Ref))
+		}
+		return validationScope{ref: req.Ref}, "ref", nil
+	}
+	return validationScope{}, "all", nil
+}
+
+func knownAppNamespace(idx *Index, appNamespace string) bool {
+	for _, entry := range idx.RecordsEntries {
+		if entry.AppNamespace == appNamespace {
+			return true
+		}
+	}
+	return false
+}
+
+func validCurrentRefSelector(idx *Index, ref string) bool {
+	if ref == "" || isPhysicalPathReference(ref) || strings.HasPrefix(ref, "V01-") {
+		return false
+	}
+	if validCurrentSpecRefSelector(ref) {
+		return true
+	}
+	return isCurrentRecordIDReference(idx, ref)
+}
+
+func validCurrentSpecRefSelector(ref string) bool {
+	if !strings.HasPrefix(ref, "spec:") || strings.ContainsAny(ref, `/\`) || strings.HasSuffix(strings.ToLower(ref), ".md") {
+		return false
+	}
+	rest := strings.TrimPrefix(ref, "spec:")
+	if rest == "" || strings.HasPrefix(rest, ".") || strings.HasSuffix(rest, ".") || strings.Contains(rest, "..") {
+		return false
+	}
+	for _, r := range rest {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' || r == '_' || r == '.' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func isCurrentRecordIDReference(idx *Index, ref string) bool {
+	bare := stripKnownNamespacePrefix(idx, ref)
+	return bare != ref && currentNamespaceIDPattern.MatchString(ref)
+}
+
+func validCurrentWorkflowIDForKind(idx *Index, ref string, kind RecordKind) bool {
+	bare := stripKnownNamespacePrefix(idx, ref)
+	return bare != ref && validWorkflowIDForKind(bare, kind)
+}
+
+func stripKnownNamespacePrefix(idx *Index, ref string) string {
+	if idx != nil {
+		for _, entry := range idx.RecordsEntries {
+			if entry.NamespacePrefix != "" && strings.HasPrefix(ref, entry.NamespacePrefix) {
+				return strings.TrimPrefix(ref, entry.NamespacePrefix)
+			}
+		}
+		if idx.NamespacePrefix != "" && strings.HasPrefix(ref, idx.NamespacePrefix) {
+			return strings.TrimPrefix(ref, idx.NamespacePrefix)
+		}
+	}
+	return ref
+}
+
+func pathAppNamespace(idx *Index, path string) string {
+	if idx == nil {
+		return ""
+	}
+	entry, ok := recordsEntryForPath(idx, path)
+	if !ok {
+		return ""
+	}
+	return entry.AppNamespace
+}
+
+func currentDiagnosticLocation(idx *Index, path string) *DiagnosticLocation {
+	if idx == nil || path == "" {
+		return nil
+	}
+	entry, ok := recordsEntryForPath(idx, path)
+	if !ok {
+		return nil
+	}
+	recordsRoot := strings.TrimSuffix(entry.RecordsRoot, "/")
+	if !isPortableRepositoryRelativePath(recordsRoot) || !isPortableRepositoryRelativePath(path) || path == recordsRoot {
+		return nil
+	}
+	prefix := recordsRoot + "/"
+	if !strings.HasPrefix(path, prefix) {
+		return nil
+	}
+	rel := strings.TrimPrefix(path, prefix)
+	if !isPortableRepositoryRelativePath(rel) {
+		return nil
+	}
+	return &DiagnosticLocation{
+		SourceScope:  "current",
+		RecordsRoot:  recordsRoot,
+		Path:         rel,
+		AppNamespace: entry.AppNamespace,
+	}
+}
+
+func isPortableRepositoryRelativePath(path string) bool {
+	if path == "" || path == "." || path == ".." {
+		return false
+	}
+	if strings.Contains(path, `\`) || strings.HasPrefix(path, "/") || strings.Contains(path, ":") {
+		return false
+	}
+	if len(path) >= 2 && ((path[0] >= 'A' && path[0] <= 'Z') || (path[0] >= 'a' && path[0] <= 'z')) && path[1] == ':' {
+		return false
+	}
+	for _, segment := range strings.Split(path, "/") {
+		if segment == "" || segment == "." || segment == ".." {
+			return false
+		}
+	}
+	return true
+}
+
+func recordsEntryForPath(idx *Index, path string) (RecordsEntry, bool) {
+	var best RecordsEntry
+	bestLen := -1
+	for _, entry := range idx.RecordsEntries {
+		root := strings.TrimSuffix(entry.RecordsRoot, "/")
+		if path == root || strings.HasPrefix(path, root+"/") {
+			if len(root) > bestLen {
+				best = entry
+				bestLen = len(root)
+			}
+		}
+	}
+	if bestLen >= 0 {
+		return best, true
+	}
+	return RecordsEntry{}, false
+}
+
+func sortAndDedupeDiagnostics(idx *Index, diagnostics []Diagnostic) []Diagnostic {
+	for i := range diagnostics {
+		if diagnostics[i].Path != "" && diagnostics[i].Location == nil {
+			diagnostics[i].Location = currentDiagnosticLocation(idx, diagnostics[i].Path)
+		}
+	}
+	sort.SliceStable(diagnostics, func(i, j int) bool {
+		return diagnosticStableKey(diagnostics[i]) < diagnosticStableKey(diagnostics[j])
+	})
+	out := diagnostics[:0]
+	seen := map[string]bool{}
+	for _, diagnostic := range diagnostics {
+		key := diagnosticStableKey(diagnostic)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, diagnostic)
+	}
+	return out
+}
+
+func diagnosticStableKey(d Diagnostic) string {
+	encoded, _ := json.Marshal(d)
+	var structured map[string]json.RawMessage
+	_ = json.Unmarshal(encoded, &structured)
+	delete(structured, "message")
+	delete(structured, "Message")
+	key, _ := json.Marshal(structured)
+	return string(key)
+}
+
+func currentValidationSubjectSummary(idx *Index, scope validationScope, diagnostics []Diagnostic) ValidationSubjectSummary {
+	subjects := map[string]bool{}
+	for _, record := range idx.Records {
+		if scope.selectRecord(idx, record) {
+			subjects[record.Path] = true
+		}
+	}
+	for _, candidate := range idx.Candidates {
+		if scope.selectCandidate(idx, candidate) {
+			subjects[candidate.Path] = true
+		}
+	}
+	for _, group := range idx.ConflictGroups {
+		if !scope.selectConflictGroup(idx, group) {
+			continue
+		}
+		for _, source := range group.Sources {
+			if scope.appNamespace == "" || pathAppNamespace(idx, source) == scope.appNamespace {
+				subjects[source] = true
+			}
+		}
+	}
+	invalid := map[string]bool{}
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Severity != DiagnosticSeverityError || diagnostic.Path == "" {
+			continue
+		}
+		invalid[diagnostic.Path] = true
+	}
+	return ValidationSubjectSummary{Total: len(subjects), Invalid: len(invalid)}
+}
+
+func ValidateCurrentRecords(ctx context.Context, idx *Index, req CurrentValidateRecordsRequest) (CurrentValidateRecordsResponse, error) {
+	if err := ctx.Err(); err != nil {
+		return CurrentValidateRecordsResponse{}, err
+	}
+	if idx == nil {
+		return CurrentValidateRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
+	}
+	scope, scopeName, err := validateCurrentValidationScope(idx, req)
+	if err != nil {
+		return CurrentValidateRecordsResponse{}, err
+	}
+	diagnostics := generateValidationDiagnostics(idx, scope)
+	ok := true
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Severity == DiagnosticSeverityError {
+			ok = false
+			break
+		}
+	}
+	return CurrentValidateRecordsResponse{
+		OK:          ok,
+		Scope:       scopeName,
+		Summary:     currentValidationSubjectSummary(idx, scope, diagnostics),
+		Diagnostics: diagnostics,
+	}, nil
+}
+
 func ValidateRecords(ctx context.Context, idx *Index, req ValidateRecordsRequest) (ValidateRecordsResponse, error) {
 	if err := ctx.Err(); err != nil {
 		return ValidateRecordsResponse{}, err
@@ -867,7 +1099,12 @@ func ValidateRecords(ctx context.Context, idx *Index, req ValidateRecordsRequest
 	if err != nil {
 		return ValidateRecordsResponse{}, err
 	}
-	scope.ns = idx.NamespacePrefix
+	if scope.appNamespace != "" && !knownAppNamespace(idx, scope.appNamespace) {
+		return ValidateRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unknown app_namespace %q", scope.appNamespace))
+	}
+	if scope.ref != "" && !validCurrentRefSelector(idx, scope.ref) {
+		return ValidateRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unsupported current ref selector %q", scope.ref))
+	}
 	diagnostics := generateValidationDiagnostics(idx, scope)
 	ok := true
 	for _, diagnostic := range diagnostics {
