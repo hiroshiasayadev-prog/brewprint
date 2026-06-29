@@ -2,7 +2,7 @@
 
 - **id**: DRMCP-TASK-MCP-009-03
 - **status**: done
-- **date**: 2026-06-28
+- **date**: 2026-06-29
 - **work_item**: DRMCP-WORK-MCP-009
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **estimate**: 2d
@@ -89,6 +89,29 @@ Record `full_package_gate: deferred_to_T04`.
 - Spec date retained in `Record.Date`
 - `full_package_gate: deferred_to_T04`
 
+### Corrective implementation after T04 review
+
+T04 independent implementation review found that root-level `spec/index.md` returned no path-derived ref and could fall back to metadata `id`.
+This contradicted the accepted root-index identity `spec:<app_namespace>` and the no-fallback identity rule.
+
+Corrective scope:
+
+- `deriveSpecRef` now derives `spec:<app_namespace>` for root `spec/index.md`;
+- `parseCurrentSpecRecord` no longer uses metadata `id` as an identity fallback;
+- `TestCurrentSpecRootIndexUsesPathDerivedIdentity` covers matching, mismatched, and missing metadata `id` while preserving the path-derived identity;
+- `TestDeriveSpecRef` directly covers the root-index case.
+
+Corrective verification completed on 2026-06-29:
+
+- `gofmt -w` completed for `parser.go` and `parser_index_test.go`;
+- root-index and adjacent current-spec parser tests passed with `-count=10`;
+- the exact T04 active-index test set passed with `-count=10`;
+- package compile passed with the no-test compile command;
+- full-package execution failed only in the previously assigned T05, T06, T07, and T08 stale-test groups;
+- scoped `git diff --check` passed with LF-to-CRLF conversion warnings only.
+
+The root-index parser finding is corrected and verified. T03 returned to `done`; T04 remains responsible for scoped re-review acceptance.
+
 ### Implementation mapping
 
 ```yaml
@@ -136,9 +159,18 @@ implementation_mapping:
 
   verification:
     - path: drmcp/src/internal/designrecords/types_test.go
-      tests: []
+      tests:
+        - TestCurrentGetRecordsResponseShape
+        - TestCurrentValidateRecordsResponseShape
+        - TestDiagnosticLocationShape
+        - TestCurrentConflictShape
+        - TestCurrentListedRecordJSONNullFields
+        - TestCurrentListRecordsRequestJSONShape
+        - TestCurrentListRecordsResponseJSONShape
     - path: drmcp/src/internal/designrecords/parser_index_test.go
-      tests: []
+      tests:
+        - TestCurrentSpecRootIndexUsesPathDerivedIdentity
+        - TestDeriveSpecRef
 
   future_canonicalization:
     internal_design_ref: pending

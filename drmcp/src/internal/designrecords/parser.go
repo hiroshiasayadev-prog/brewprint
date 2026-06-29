@@ -1626,9 +1626,6 @@ func parseCurrentSpecRecord(path, raw, recordsRoot, appNamespace string) (*Recor
 	}
 
 	recordID := derivedRef
-	if recordID == "" {
-		recordID = specMeta.ID
-	}
 
 	record := &Record{
 		ID:           recordID,
@@ -1702,11 +1699,12 @@ func deriveSpecRef(path, recordsRoot, appNamespace string) string {
 	if len(segments) > 0 && segments[len(segments)-1] == "index" {
 		segments = segments[:len(segments)-1]
 	}
+	baseRef := "spec:" + appNamespace
 	if len(segments) == 0 {
-		return ""
+		return baseRef
 	}
 	for i, seg := range segments {
 		segments[i] = strings.ReplaceAll(seg, "-", "_")
 	}
-	return "spec:" + appNamespace + "." + strings.Join(segments, ".")
+	return baseRef + "." + strings.Join(segments, ".")
 }

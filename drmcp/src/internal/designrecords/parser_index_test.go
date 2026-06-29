@@ -385,6 +385,39 @@ func TestCurrentSpecRecordParser_C07_Index(t *testing.T) {
 	}
 }
 
+func TestCurrentSpecRootIndexUsesPathDerivedIdentity(t *testing.T) {
+	recordsRoot := "current/product/records"
+	path := recordsRoot + "/spec/index.md"
+	tests := []struct {
+		name         string
+		metadataLine string
+		wantMismatch bool
+	}{
+		{name: "matching metadata", metadataLine: "- **id**: `spec:product`\n"},
+		{name: "mismatched metadata", metadataLine: "- **id**: `spec:product.wrong`\n", wantMismatch: true},
+		{name: "missing metadata id"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			raw := "# Product specifications\n" + tc.metadataLine + "- **status**: accepted\n- **date**: 2026-06-29\n- **parent**: `spec:product`\n"
+			record, candidate, issues := parseCurrentSpecRecord(path, raw, recordsRoot, "product")
+			if record == nil {
+				t.Fatalf("record is nil; issues = %#v", issues)
+			}
+			if record.ID != "spec:product" {
+				t.Fatalf("record.ID = %q, want spec:product", record.ID)
+			}
+			if candidate.ID != "spec:product" {
+				t.Fatalf("candidate.ID = %q, want spec:product", candidate.ID)
+			}
+			if got := hasIssue(issues, DiagnosticFilenameIDMismatch); got != tc.wantMismatch {
+				t.Fatalf("filename mismatch issue = %v, want %v; issues = %#v", got, tc.wantMismatch, issues)
+			}
+		})
+	}
+}
+
 // ── C11: mixed sequential + spec (no repair) ──────────────────────────────────
 
 func TestCurrentMixedInputsNoRepair_C11(t *testing.T) {
@@ -528,6 +561,13 @@ func TestDeriveSpecRef(t *testing.T) {
 			recordsRoot: "current/product/records",
 			appNS:       "product",
 			want:        "spec:product.fixture_baseline.overview",
+		},
+		{
+			name:        "root index collapses to app ref",
+			path:        "current/product/records/spec/index.md",
+			recordsRoot: "current/product/records",
+			appNS:       "product",
+			want:        "spec:product",
 		},
 		{
 			name:        "index collapses to parent",
