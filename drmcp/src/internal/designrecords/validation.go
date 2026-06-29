@@ -1,6 +1,7 @@
 package designrecords
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strconv"
@@ -853,4 +854,30 @@ func extractSectionBody(raw, headingText string, headingLevel int) string {
 		}
 	}
 	return strings.Join(bodyLines, "\n")
+}
+
+func ValidateRecords(ctx context.Context, idx *Index, req ValidateRecordsRequest) (ValidateRecordsResponse, error) {
+	if err := ctx.Err(); err != nil {
+		return ValidateRecordsResponse{}, err
+	}
+	if idx == nil {
+		return ValidateRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
+	}
+	scope, err := newValidationScope(req)
+	if err != nil {
+		return ValidateRecordsResponse{}, err
+	}
+	scope.ns = idx.NamespacePrefix
+	diagnostics := generateValidationDiagnostics(idx, scope)
+	ok := true
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Severity == DiagnosticSeverityError {
+			ok = false
+			break
+		}
+	}
+	return ValidateRecordsResponse{
+		OK:          ok,
+		Diagnostics: diagnostics,
+	}, nil
 }

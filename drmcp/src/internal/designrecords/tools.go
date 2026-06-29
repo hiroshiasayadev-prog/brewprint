@@ -140,34 +140,6 @@ func GetRecords(ctx context.Context, idx *Index, req GetRecordsRequest) (GetReco
 	return GetRecordsResponse{Items: items, Diagnostics: diagnostics}, nil
 }
 
-// ValidateRecords checks the Phase 1 index materials and emits MVP validation
-// diagnostics for the selected record scope.
-func ValidateRecords(ctx context.Context, idx *Index, req ValidateRecordsRequest) (ValidateRecordsResponse, error) {
-	if err := ctx.Err(); err != nil {
-		return ValidateRecordsResponse{}, err
-	}
-	if idx == nil {
-		return ValidateRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
-	}
-	scope, err := newValidationScope(req)
-	if err != nil {
-		return ValidateRecordsResponse{}, err
-	}
-	scope.ns = idx.NamespacePrefix
-	diagnostics := generateValidationDiagnostics(idx, scope)
-	ok := true
-	for _, diagnostic := range diagnostics {
-		if diagnostic.Severity == DiagnosticSeverityError {
-			ok = false
-			break
-		}
-	}
-	return ValidateRecordsResponse{
-		OK:          ok,
-		Diagnostics: diagnostics,
-	}, nil
-}
-
 // SuggestNextRecord suggests the next decision ADR ID and path from the
 // already-populated index. It is read-only and does not create files.
 func SuggestNextRecord(ctx context.Context, idx *Index, req SuggestNextRecordRequest) (SuggestNextRecordResponse, error) {
@@ -340,21 +312,6 @@ func getRecordResponseRecord(record Record, includeBody bool) GetRecordRecord {
 		out.Body = &body
 	}
 	return out
-}
-
-// ResolveReference resolves an MVP canonical reference candidate without
-// selecting an arbitrary target when the index is ambiguous.
-func ResolveReference(ctx context.Context, idx *Index, req ResolveReferenceRequest) (ResolveReferenceResponse, error) {
-	if err := ctx.Err(); err != nil {
-		return ResolveReferenceResponse{}, err
-	}
-	if idx == nil {
-		return ResolveReferenceResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
-	}
-	if req.Ref == "" {
-		return ResolveReferenceResponse{}, newToolError(ErrorCodeInvalidRequest, "ref is required")
-	}
-	return resolveReference(idx, req.Ref), nil
 }
 
 func cloneDecisionDetail(in *DecisionDetail) *DecisionDetail {

@@ -1,6 +1,7 @@
 package designrecords
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"sort"
@@ -22,6 +23,19 @@ const (
 	resolveStatusUnresolved  = "unresolved"
 	resolveStatusUnsupported = "unsupported"
 )
+
+func ResolveReference(ctx context.Context, idx *Index, req ResolveReferenceRequest) (ResolveReferenceResponse, error) {
+	if err := ctx.Err(); err != nil {
+		return ResolveReferenceResponse{}, err
+	}
+	if idx == nil {
+		return ResolveReferenceResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
+	}
+	if req.Ref == "" {
+		return ResolveReferenceResponse{}, newToolError(ErrorCodeInvalidRequest, "ref is required")
+	}
+	return resolveReference(idx, req.Ref), nil
+}
 
 func resolveReference(idx *Index, ref string) ResolveReferenceResponse {
 	kind := classifyReference(ref)
