@@ -141,6 +141,19 @@ AI assistant は、現在利用可能なツール境界を明示して作業す�
 - ユーザーが Codex / Opus / reviewer agent への分担を示唆した場合
 
 委譲時は、単に「他agentに聞いて」と返さない。
+
+#### Prompt target declaration
+
+- handoff、review依頼、実装依頼、検証依頼など、他sessionまたは他agentへ渡すpromptを作成する場合、prompt本文の前に実行対象を明示する。
+- 対象例: `ChatGPT`、`Claude Code Sonnet`、`Claude Code Haiku`、`Codex`、`Opus / independent reviewer`。
+- 対象を明示せず、同じpromptを複数agent向けに使い回さない。
+- 対象の能力と役割に応じて、読むべきinstruction、許可する判断、変更可能範囲、実行command、期待出力を分ける。
+- ChatGPT向けhandoffでは、必ず最初にrepository rootの`prompt_chappy.md`を読むよう指示する。
+- ChatGPT向けhandoffに`prompt_chappy.md`を読まないよう指示してはならない。過去taskの局所的な制約をChatGPT向けhandoffへ自動継承しない。
+- Claude Code、Codex、Opus、reviewer向けpromptでは、そのagentに必要なinstruction / policy docsだけを明示し、ChatGPT向けhandoffの規則と混同しない。
+- implementation review、Design Record review、workflow amendment reviewは目的が異なるため、原則として別promptへ分離する。
+- promptを出す前に、誰向けのpromptかをユーザーへ明示する。
+
 以下を含む ready-to-run prompt を作成する。
 
 - repository path
