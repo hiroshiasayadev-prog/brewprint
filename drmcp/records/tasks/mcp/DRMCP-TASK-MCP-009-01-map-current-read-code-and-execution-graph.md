@@ -2,7 +2,7 @@
 
 - **id**: DRMCP-TASK-MCP-009-01
 - **status**: done
-- **date**: 2026-06-28
+- **date**: 2026-06-29
 - **work_item**: DRMCP-WORK-MCP-009
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **estimate**: 1d
@@ -53,7 +53,7 @@ This Task does not modify Go source, Go tests, fixtures, accepted ADRs, Requirem
 | Current canonical resolution | `resolver.go`, `resolve_reference_test.go` | Resolves semantic aliases and paths, normalizes IDs, and exposes physical paths. | T06 |
 | Current repository validation and shared diagnostics | `validation.go`, `validation_test.go` | Uses kind/range selectors, old category names, scalar paths, semantic aliases, and obsolete spec checks. | T07 |
 | Accepted current fixture integration | `testdata/read-baseline/manifest.json` and current arrangements | Accepted fixture bytes exist, but production runtime coverage is not yet connected. | T08 |
-| Authoring non-regression boundary | `authoring.go`, `authoring_test.go`, authoring guidance files | These files consume shared record, index, parser, and diagnostic types. They are not W009 change targets. | T03 and final package verification |
+| Authoring non-regression boundary | `authoring.go`, `authoring_test.go`, `authoring_guidance_test.go`, authoring guidance files | Authoring source consumes shared record, index, parser, and diagnostic types. Existing test setup still assumes auto-discovered `records`, non-app IDs, and YAML-front-matter specs. Production authoring behavior is protected; test-only migration is required after the current read API stabilizes. | T03 compile preservation; T08 test-only fixture/config migration and full-package verification |
 
 ### Accepted fixture allocation
 
@@ -92,7 +92,7 @@ T04 serial foundation integration
 - active index
 - public operation ownership split
 - shared API freeze
-- compile/full-package integration gate
+- compile/full-package classification gate
                  │
                  ▼
 ├── P3: T05 list/get/catalog
@@ -108,11 +108,12 @@ T09 review and closure
 ```
 
 T02 and T03 have disjoint source boundaries.
-T02 and T03 defer full-package PASS to T04.
+T02 and T03 defer the full-package integration run and failure classification to T04.
 T04 integrates T02 and T03, freezes shared APIs, and separates public operation ownership before P3 starts.
 T04 must not retain stale behavior only to force full-package PASS.
+T04 may hand off failures caused solely by protected authoring test setup that still assumes retired current-root, identity, or spec-format behavior. T08 owns that test-only migration, and authoring source remains unchanged.
 T05, T06, and T07 have disjoint source and test boundaries after T04 freezes `tools.go`, `resolver.go`, and `validation.go` ownership.
-T08 cannot begin until T05, T06, and T07 are merged and the P3 integration full-package gate passes.
+T08 cannot begin until T05, T06, and T07 are merged, their owned tests pass, and any remaining full-package failures are limited to T08-owned authoring test migration.
 Parallel slices must use separate branches or worktrees and merge only after their dependency gate is accepted.
 
 ## Done condition
@@ -135,10 +136,10 @@ Parallel slices must use separate branches or worktrees and merge only after the
 - Compare the graph with W003 through W009 and the W008 manifest.
 - Confirm all Task IDs are unused before creation.
 - Confirm T02 and T03 file boundaries do not overlap.
-- Confirm T02 and T03 defer full-package PASS to T04.
+- Confirm T02 and T03 defer the full-package integration run and failure classification to T04.
 - Confirm T04 owns serial foundation integration, public operation ownership split, shared API freeze, and package compile.
 - Confirm T05, T06, and T07 post-T04 file boundaries do not overlap.
-- Confirm T08 records the P3 integration full-package PASS gate as a start condition.
+- Confirm T08 starts after T05-T07 owned tests pass and owns the first required full-package PASS after its authoring test-only migration.
 - Confirm T05 and T09 use expanded changed-boundary format verification.
 - Confirm every downstream Task depends on the owner that freezes its shared input.
 - Confirm no legacy implementation or retained spec-validator implementation is assigned to W009.
@@ -171,14 +172,15 @@ No repository-wide source traversal was used.
 - T04 cannot begin until T02 and T03 reach targeted acceptance.
 - T04 owns the merged T02/T03 serial gate, active index, public operation ownership split, shared API freeze, and full-package integration run.
 - T04 must make the package compile before closure.
-- T04 may record only named T05-T07 stale-operation test failures as expected transitional failures.
-- T04 must return unresolved ownership or API mismatch to T03.
+- T04 may record named T05-T07 stale-operation failures and protected authoring test-setup failures assigned to T08 as expected transitional failures.
+- Authoring source remains protected. T08 may change only `authoring_test.go` and `authoring_guidance_test.go` setup, fixture shape, and expected canonical identities required by the final current-only contracts; authoring behavior assertions must remain intact.
+- T04 must return any other unresolved ownership or shared API mismatch to T03.
 - T05, T06, and T07 must not edit `types.go`, `config.go`, `parser.go`, or `index.go`.
 - T05 owns `tools.go` list/get behavior after T04 moves resolver and validation public entrypoints out of that file.
 - T06 owns `resolver.go` resolver semantics after T04 moves or isolates `ResolveReference`.
 - T07 owns `validation.go` validation semantics after T04 moves or isolates `ValidateRecords`.
 - A downstream API mismatch is an escalation to the owning Task, not permission to cross the boundary.
-- `authoring.go` and authoring tests are protected non-regression inputs, not implementation targets.
+- `authoring.go` remains a protected non-regression input. `authoring_test.go` and `authoring_guidance_test.go` are T08 test-only migration targets; their authoring behavior assertions must not be weakened.
 
 ### Changed-file manifest
 
@@ -267,4 +269,19 @@ Review-finding correction is limited to the W009, hub T09, and T01-T09 Design Re
 - Closure readiness: accepted.
 - T02 and T03 parallel-start readiness: ready.
 
-The metadata date remains 2026-06-28 because this synchronization adds review Evidence without changing Task scope or done conditions.
+On 2026-06-29, implementation evidence exposed an ownership gap for protected authoring test setup. The graph was amended to assign test-only current-root, identity, and spec-fixture migration to T08 while keeping authoring production source protected.
+
+### Authoring test migration amendment review
+
+- Review date: 2026-06-29.
+- Verdict: PASS.
+- Blocking findings: none.
+- Major findings: none.
+- Minor findings: none.
+- Amendment acceptance readiness: ready.
+- T05, T06, and T07 parallel-start readiness: ready.
+- Authoring production source remains protected.
+- Accepted W008 fixture bytes remain read-only.
+- T08 owns test-only migration and the first required full-package PASS after T05, T06, and T07 are accepted and merged.
+- T09 retains final changed-file inventory and full affected-package verification ownership.
+- Repository-wide cleanliness was not checked or inferred.

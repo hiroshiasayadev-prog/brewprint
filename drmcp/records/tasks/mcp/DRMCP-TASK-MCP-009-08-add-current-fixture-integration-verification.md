@@ -2,22 +2,25 @@
 
 - **id**: DRMCP-TASK-MCP-009-08
 - **status**: not_started
-- **date**: 2026-06-28
+- **date**: 2026-06-29
 - **work_item**: DRMCP-WORK-MCP-009
 - **source_requirement**: DRMCP-REQ-MCP-001
-- **estimate**: 1.5d
+- **estimate**: 2d
 - **depends_on**:
   - DRMCP-TASK-MCP-009-05
   - DRMCP-TASK-MCP-009-06
   - DRMCP-TASK-MCP-009-07
 - **outputs**:
   - drmcp/src/internal/designrecords/current_read_fixture_test.go
+  - drmcp/src/internal/designrecords/authoring_test.go
+  - drmcp/src/internal/designrecords/authoring_guidance_test.go
 
 ## Goal
 
 Verify the complete current-only read path against accepted W008 fixtures without configured legacy roots.
 
 Prove package integration, public current operations, path hiding, and authoring non-regression before independent review.
+Migrate only protected authoring test setup and fixture identities to the final explicit current-root contract without changing authoring source or assertion semantics.
 
 ## Work
 
@@ -27,9 +30,11 @@ Prove package integration, public current operations, path hiding, and authoring
 - Exercise configuration, parsing, active indexing, listing, exact retrieval, current resolution, current validation, diagnostics, and path hiding.
 - Run without configured legacy roots.
 - Treat the complete W008 fixture tree as read-only.
-- Confirm T05, T06, and T07 are merged and the P3 integration full-package gate passes before starting fixture integration.
-- Run complete affected-package tests after the three P3 branches merge.
-- Verify authoring tests still pass without authoring source changes.
+- Confirm T05, T06, and T07 are merged and their owned tests pass before starting fixture integration.
+- Migrate `authoring_test.go` and `authoring_guidance_test.go` from auto-discovered or shape-invalid roots, non-app identities, and YAML-front-matter spec setup to the final current-only test shape.
+- Preserve the tested authoring behavior, proposal assertions, diagnostics, and write semantics; change only setup, fixture paths/content, and canonical identities required by the final read contracts.
+- Run complete affected-package tests after the three P3 branches merge and the test-only migration is complete.
+- Verify authoring tests pass without authoring production changes.
 
 C17 and R21 through R23 remain W-SPEC-owned.
 All L cases and other legacy-owned R cases remain W010-owned.
@@ -38,8 +43,8 @@ All L cases and other legacy-owned R cases remain W010-owned.
 
 | slice | owner model | parallel group | dependency | exact file boundary or inventory method | allowed changes | prohibited changes | commands | expected evidence | escalation condition |
 |---|---|---|---|---|---|---|---|---|---|
-| S08A integration oracle and test | Sonnet | P4 | T05, T06, and T07 accepted, merged, and passing the P3 integration full-package gate | Add `current_read_fixture_test.go` only. Read `testdata/read-baseline/**` without modification. | New integration tests and local test-only helpers in the one new file. | Production files, existing tests, fixture bytes, legacy behavior, W-SPEC validators, authoring files. | `gofmt -w`; targeted integration test; full affected-package tests. | Exact case-to-assertion matrix, command outputs, fixture read-only proof, P3 integration PASS pointer. | Any case requires production correction; reopen the owning T02-T07 Task instead of editing production here. |
-| S08B complete verification | Haiku | P4 | S08A complete | New test file plus final T02-T07 changed-file manifests; read-only. | No file changes. | Test repair, production correction, or case reinterpretation. | `gofmt -d`; targeted integration test; full package tests; optional race test when supported; scoped Git check. | Raw outputs, case count, affected-package pass results, exact changed paths. | Any failure, missing case, fixture modification, or legacy execution; escalate to Sonnet. |
+| S08A integration oracle and test migration | Sonnet | P4 | T05, T06, and T07 accepted and merged; their owned tests pass | Add `current_read_fixture_test.go`; modify only `authoring_test.go` and `authoring_guidance_test.go`; fixtures read-only. | New integration tests and test-only migration of config, paths, content, and canonical identities. | Production files, fixture bytes, authoring behavior changes, legacy behavior, W-SPEC validators, or weakened assertions. | `gofmt -w`; targeted authoring tests; targeted integration test; full affected-package tests. | Case matrix, authoring migration diff, command outputs, fixture read-only proof, and P3 owned-test PASS pointers. | Any required production or authoring semantic correction; reopen the owning T02-T07 Task or stop for reviewed boundary change. |
+| S08B complete verification | Haiku | P4 | S08A complete | The three T08 test files plus final T02-T07 changed-file manifests; read-only. | No file changes. | Test repair, production correction, assertion weakening, or case reinterpretation. | `gofmt -d`; targeted authoring and integration tests; full package tests; optional race test when supported; scoped Git check. | Raw outputs, case count, authoring non-regression result, affected-package pass results, and exact changed paths. | Any failure, missing case, fixture modification, assertion weakening, or legacy execution; escalate to Sonnet. |
 
 ## Done condition
 
@@ -49,13 +54,14 @@ All L cases and other legacy-owned R cases remain W010-owned.
 - No L case, legacy fallback, legacy validation subject, or legacy active-index behavior executes.
 - C17 and R21 through R23 are not claimed as W009 coverage.
 - T05, T06, and T07 are integrated before this Task starts.
-- The P3 integration full-package gate passes before this Task starts.
+- T05, T06, and T07 owned tests pass before this Task starts.
 - Normal list, retrieval, and resolver outputs contain no physical path.
 - Current-only operation succeeds with legacy roots omitted.
 - Fixture bytes remain unchanged.
+- `authoring_test.go` and `authoring_guidance_test.go` use explicit current roots, app-aware canonical identities, and current spec fixtures without weakening authoring behavior assertions.
 - Full `designrecords` tests pass, including authoring tests.
 - Every package added by the T05 catalog boundary passes its full test command.
-- Only the new integration test file changes in T08.
+- Only `current_read_fixture_test.go`, `authoring_test.go`, and `authoring_guidance_test.go` change in T08.
 
 ## Verification
 
@@ -63,6 +69,8 @@ Run from repository root:
 
 ```powershell
 gofmt -d drmcp/src/internal/designrecords/current_read_fixture_test.go
+gofmt -d drmcp/src/internal/designrecords/authoring_test.go drmcp/src/internal/designrecords/authoring_guidance_test.go
+go test ./drmcp/src/internal/designrecords -run '^(TestAuthoring.*|TestPropose.*|TestBodyCache.*|TestExactID.*|TestReplaceNamedSection.*|TestMultiOp.*|TestDiffMode.*|TestListAuthoringGuides|TestGetAuthoringGuidance.*|TestBuildIndexIgnoresAuthoringGuides)' -count=1
 go test ./drmcp/src/internal/designrecords -run 'TestCurrentReadFixtureBaseline' -count=1
 go test ./drmcp/src/internal/designrecords -count=1
 ```
@@ -80,12 +88,13 @@ A missing race-detector prerequisite is an accurately recorded limitation, not a
 
 Record:
 
-- the exact T05/T06/T07 integration evidence used as the P3 start gate;
+- the exact T05/T06/T07 owned-test evidence used as the P3 start gate;
 - the exact W008 case-to-test matrix;
 - fixture root and configuration used by each integration group;
 - proof that `legacy_roots` is omitted;
 - targeted, full package, and optional race outputs;
 - fixture scoped status and whitespace result;
+- scoped authoring test-migration diff and proof that authoring production files are unchanged;
 - authoring non-regression result;
 - any reopened upstream Task and its accepted correction evidence.
 
@@ -133,6 +142,10 @@ implementation_mapping:
   implementation: []
   verification:
     - path: drmcp/src/internal/designrecords/current_read_fixture_test.go
+      tests: []
+    - path: drmcp/src/internal/designrecords/authoring_test.go
+      tests: []
+    - path: drmcp/src/internal/designrecords/authoring_guidance_test.go
       tests: []
   future_canonicalization:
     internal_design_ref: pending

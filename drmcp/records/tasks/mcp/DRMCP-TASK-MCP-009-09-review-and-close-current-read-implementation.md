@@ -2,7 +2,7 @@
 
 - **id**: DRMCP-TASK-MCP-009-09
 - **status**: not_started
-- **date**: 2026-06-28
+- **date**: 2026-06-29
 - **work_item**: DRMCP-WORK-MCP-009
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **estimate**: 1d
@@ -92,6 +92,8 @@ $files = @(
   "drmcp/src/internal/designrecords/validation.go",
   "drmcp/src/internal/designrecords/validation_test.go",
   "drmcp/src/internal/designrecords/current_read_fixture_test.go",
+  "drmcp/src/internal/designrecords/authoring_test.go",
+  "drmcp/src/internal/designrecords/authoring_guidance_test.go",
   "drmcp/src/internal/designrecordsmcp/tools.go",
   "drmcp/src/internal/designrecordsmcp/tools_call.go",
   "drmcp/src/internal/designrecordsmcp/tools_call_test.go",

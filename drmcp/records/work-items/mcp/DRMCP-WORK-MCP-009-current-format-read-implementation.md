@@ -2,7 +2,7 @@
 
 - **id**: DRMCP-WORK-MCP-009
 - **status**: in_progress
-- **date**: 2026-06-28
+- **date**: 2026-06-29
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **impact_refs**:
   - DRMCP-ADR-MCP-001
@@ -96,21 +96,22 @@ This Work Item must not implement legacy behavior through those seams.
 | P0 | T01 | W003-W008 accepted | Freeze the contract-to-code map, file ownership, execution slices, and review gates. |
 | P1 | T02 | T01 accepted | Replace current-root auto-discovery with explicit configured current roots and defer the full-package gate to T04. |
 | P1 | T03 | T01 accepted | Freeze shared current read types, implement exact current parsers, and defer the full-package gate to T04. |
-| P2 | T04 | T02 and T03 targeted acceptance | Integrate T02/T03, build the active index, split public operation ownership, freeze shared APIs, and run the serial foundation gate. |
+| P2 | T04 | T02 and T03 targeted acceptance | Integrate T02/T03, build the active index, split public operation ownership, freeze shared APIs, and classify transitional failures for T05-T07 or T08 ownership. |
 | P3 | T05 | T04 accepted | Implement compact listing, exact retrieval, path hiding, and retired-tool cleanup on the post-T04 `tools.go` boundary. |
 | P3 | T06 | T04 accepted | Implement exact current canonical resolution on the post-T04 `resolver.go` boundary. |
 | P3 | T07 | T04 accepted | Implement current validation and portable diagnostics on the post-T04 `validation.go` boundary. |
-| P4 | T08 | T05, T06, and T07 accepted, merged, and passing the P3 integration gate | Run accepted current fixture integration with no legacy roots. |
+| P4 | T08 | T05, T06, and T07 accepted and merged; their owned tests pass; remaining package failures are limited to T08-owned authoring test migration | Migrate protected authoring test setup to the final current-only fixture/config shape, then run accepted current fixture and full-package integration. |
 | P5 | T09 | T08 accepted | Run independent review, corrections, and synchronized closure. |
 
 P1 and P3 may run in parallel only in separate branches or worktrees.
 T02 and T03 individual branches require targeted acceptance, scoped format checks, scoped Git evidence, and package compile.
 T02 and T03 do not require full-package PASS before individual acceptance.
 T04 owns the serial foundation integration gate for the merged T02/T03 branches.
-T04 must make the package compile and must record any remaining full-package failures by failing test and T05-T07 owner.
-T04 must reject unresolved ownership, API mismatch, or stale-behavior workarounds.
+T04 must make the package compile and must record remaining full-package failures by failing test and assigned T05-T07 or T08 owner.
+Protected authoring tests may remain transitional only when failure is caused by retired current-root, identity, or spec-format setup; T08 owns their test-only migration after P3 stabilizes the read API.
+T04 must reject any other unresolved ownership, API mismatch, or stale-behavior workaround.
 Post-T04 P3 file boundaries are disjoint.
-T08 cannot start until T05, T06, and T07 are integrated and their combined state reaches full-package PASS.
+T08 cannot start until T05, T06, and T07 are integrated and their owned tests pass. T08 then owns authoring test-only migration and the first required full-package PASS.
 A downstream slice must escalate to the owning upstream Task instead of editing an upstream-owned shared file.
 Configured legacy fallback proceeds only after this Work Item is accepted.
 
@@ -125,7 +126,7 @@ Configured legacy fallback proceeds only after this Work Item is accepted.
 | T05 | Sonnet implementation and catalog inventory; Haiku verification | `tools.go`, `id_range.go`, list/get tests, retired public catalog files | T04. |
 | T06 | Sonnet implementation; Haiku verification | `resolver.go`, `resolve_reference_test.go` | T04. |
 | T07 | Sonnet implementation; Haiku verification | `validation.go`, `validation_test.go` | T04. |
-| T08 | Sonnet integration test; Haiku complete verification | new `current_read_fixture_test.go`; fixtures read-only | T05-T07. |
+| T08 | Sonnet integration and test-only migration; Haiku complete verification | new `current_read_fixture_test.go`, `authoring_test.go`, and `authoring_guidance_test.go`; production authoring source and fixtures read-only | T05-T07. |
 | T09 | Sonnet review/correction; Haiku closure sync | accepted Task boundaries, then three closure records | T08. |
 
 Haiku never owns contract interpretation, shared-type design, parser behavior, index semantics, resolver behavior, diagnostic semantics, or review findings.
