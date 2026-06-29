@@ -2,213 +2,253 @@ package designrecords
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"testing"
 )
 
-func TestResolveReferenceSemanticAndRecordTargets(t *testing.T) {
-	root := t.TempDir()
-	writeTestFile(t, root, "records/adr/088-test.md", "# ADR-088: Test ADR\n- **status**: accepted\n")
-	writeTestFile(t, root, "records/spec/trace.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:trace\n  - spec:trace.resolve-and-validation\nsections:\n  spec:trace.resolve: Resolve\n  spec:trace.validation: Validation\n\ndesign_record:\n  id: SPEC-trace\n  kind: spec\n  status: draft\n---\n# Trace spec\n## Resolve\n## Validation\n")
-	writeTestFile(t, root, "records/spec/project-artifact-model/index.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:project-artifact-model\nsections:\n  spec:project-artifact-model.responsibilities: Artifact responsibility matrix\n\ndesign_record:\n  id: SPEC-project-artifact-model\n  kind: spec\n  status: draft\n---\n# Project artifact model\n## Artifact responsibility matrix\n")
-	writeTestFile(t, root, "records/investigations/docs/INV-DOCS-001-test.md", "# INV-DOCS-001: Test investigation\n- **status**: concluded\n- **date**: 2026-05-19\n- **trigger**: ADR-088\n- **scope**: test\n- **non_scope**: none\n- **source_refs**:\n  - ADR-088\n- **follow_up_candidates**:\n  - SPEC-trace\n")
-	idx := buildTestIndex(t, root)
+func TestResolveReferenceCurrentUniqueTargets(t *testing.T) {
+	idx := buildCurrentResolverIndex(t)
 
-	for _, tt := range []struct {
-		ref  string
-		path string
+	tests := []struct {
+		ref        string
+		refKind    string
+		targetType string
+		kind       RecordKind
+		title      string
+		status     RecordStatus
 	}{
-		{ref: "spec:trace", path: "records/spec/trace.md"},
-		{ref: "spec:project-artifact-model", path: "records/spec/project-artifact-model/index.md"},
-		{ref: "spec:trace.resolve-and-validation", path: "records/spec/trace.md"},
-	} {
-		document, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: tt.ref})
-		if err != nil {
-			t.Fatalf("ResolveReference document %s: %v", tt.ref, err)
-		}
-		if document.Status != resolveStatusResolved || document.RefKind != refKindSemanticRef || document.Target == nil || document.Target.TargetType != "document" || document.Target.Path != tt.path {
-			t.Fatalf("%s document resolve = %#v", tt.ref, document)
-		}
+		{ref: "PRODUCT-ADR-SPEC-901", refKind: refKindCurrentRecordID, targetType: "record", kind: RecordKindDecision, title: "Product ADR", status: RecordStatusAccepted},
+		{ref: "DRMCP-INV-MCP-001", refKind: refKindCurrentRecordID, targetType: "record", kind: RecordKindInvestigation, title: "DRMCP investigation", status: RecordStatusConcluded},
+		{ref: "DRMCP-REQ-MCP-001", refKind: refKindCurrentRecordID, targetType: "record", kind: RecordKindRequirement, title: "DRMCP requirement", status: RecordStatusCaptured},
+		{ref: "DRMCP-WORK-MCP-001", refKind: refKindCurrentRecordID, targetType: "record", kind: RecordKindWorkItem, title: "DRMCP work item", status: RecordStatusInProgress},
+		{ref: "DRMCP-TASK-MCP-001-01", refKind: refKindCurrentRecordID, targetType: "record", kind: RecordKindTask, title: "DRMCP task", status: RecordStatusInProgress},
+		{ref: "spec:product.beta", refKind: refKindCurrentSpecRef, targetType: "spec", kind: RecordKindSpec, title: "Product beta", status: RecordStatusAccepted},
 	}
 
-	section, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: "spec:trace.resolve"})
-	if err != nil {
-		t.Fatalf("ResolveReference section: %v", err)
-	}
-	if section.Status != resolveStatusResolved || section.Target == nil || section.Target.TargetType != "section" || section.Target.Section != "Resolve" {
-		t.Fatalf("section resolve = %#v", section)
-	}
-
-	for _, id := range []string{"ADR-088", "SPEC-trace", "INV-DOCS-001"} {
-		resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: id})
-		if err != nil {
-			t.Fatalf("ResolveReference %s: %v", id, err)
-		}
-		if resp.Status != resolveStatusResolved || resp.RefKind != refKindRecordID || resp.Target == nil || resp.Target.TargetType != "record" || resp.Target.RecordID != id {
-			t.Fatalf("%s resolve = %#v", id, resp)
-		}
+	for _, tt := range tests {
+		t.Run(tt.ref, func(t *testing.T) {
+			resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: tt.ref})
+			if err != nil {
+				t.Fatalf("ResolveReference: %v", err)
+			}
+			if resp.Ref != tt.ref || resp.RefKind != tt.refKind || resp.Status != resolveStatusResolved {
+				t.Fatalf("classification = %#v", resp)
+			}
+			if resp.Target == nil {
+				t.Fatalf("target is nil")
+			}
+			if resp.Target.TargetType != tt.targetType || resp.Target.RecordID != tt.ref || resp.Target.RecordKind != tt.kind || resp.Target.Title != tt.title || resp.Target.Status != tt.status {
+				t.Fatalf("target = %#v", resp.Target)
+			}
+			if resp.Target.Path != "" || resp.Target.Section != "" {
+				t.Fatalf("resolved target leaked path or section: %#v", resp.Target)
+			}
+			raw, err := json.Marshal(resp)
+			if err != nil {
+				t.Fatalf("Marshal: %v", err)
+			}
+			if strings.Contains(string(raw), ".md") || strings.Contains(string(raw), "/records/") || strings.Contains(string(raw), `\`) {
+				t.Fatalf("resolved JSON leaked physical path: %s", raw)
+			}
+		})
 	}
 }
 
-func TestResolveReferenceWorkflowRecordTargets(t *testing.T) {
-	root := t.TempDir()
-	writeTestFile(t, root, "records/requirements/mcp/REQ-MCP-003-test.md", "# REQ-MCP-003: Test requirement\n- **id**: REQ-MCP-003\n- **status**: accepted\n- **date**: 2026-05-25\n- **source_refs**:\n- **work_items**:\n  - WORK-MCP-003\n")
-	writeTestFile(t, root, "records/work-items/mcp/WORK-MCP-003-test.md", "# WORK-MCP-003: Test work item\n- **id**: WORK-MCP-003\n- **status**: implementation_pending\n- **date**: 2026-05-26\n- **source_requirement**: REQ-MCP-003\n- **impact_refs**:\n- **tasks**:\n  - TASK-MCP-003-01\n")
-	writeTestFile(t, root, "records/tasks/mcp/TASK-MCP-003-01-test.md", "# TASK-MCP-003-01: Test task\n- **id**: TASK-MCP-003-01\n- **status**: todo\n- **date**: 2026-05-26\n- **work_item**: WORK-MCP-003\n- **source_requirement**: REQ-MCP-003\n- **estimate**: 0.5d\n- **depends_on**:\n- **outputs**:\n  - test\n")
-	idx := buildTestIndex(t, root)
+func TestResolveReferenceCurrentMissingAndConflict(t *testing.T) {
+	idx := buildCurrentResolverIndex(t)
 
-	for _, tt := range []struct {
-		ref  string
-		kind RecordKind
+	tests := []struct {
+		name       string
+		ref        string
+		refKind    string
+		category   DiagnosticCategory
+		status     string
+		targetMust bool
 	}{
-		{ref: "REQ-MCP-003", kind: RecordKindRequirement},
-		{ref: "WORK-MCP-003", kind: RecordKindWorkItem},
-		{ref: "TASK-MCP-003-01", kind: RecordKindTask},
-	} {
-		resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: tt.ref})
+		{name: "missing current record", ref: "DRMCP-REQ-MCP-999", refKind: refKindCurrentRecordID, category: DiagnosticUnresolvedReference, status: resolveStatusUnresolved},
+		{name: "missing current spec", ref: "spec:product.missing", refKind: refKindCurrentSpecRef, category: DiagnosticUnresolvedReference, status: resolveStatusUnresolved},
+		{name: "conflicting current record", ref: "DRMCP-REQ-MCP-980", refKind: refKindCurrentRecordID, category: DiagnosticAmbiguousReference, status: resolveStatusUnresolved},
+		{name: "conflicting current spec", ref: "spec:product.alpha", refKind: refKindCurrentSpecRef, category: DiagnosticAmbiguousReference, status: resolveStatusUnresolved},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: tt.ref})
+			if err != nil {
+				t.Fatalf("ResolveReference: %v", err)
+			}
+			if resp.Ref != tt.ref || resp.RefKind != tt.refKind || resp.Status != tt.status || resp.Target != nil || !hasDiagnostic(resp.Diagnostics, tt.category) {
+				t.Fatalf("response = %#v", resp)
+			}
+		})
+	}
+}
+
+func TestResolveReferenceNestedCurrentSpecs(t *testing.T) {
+	const childRef = "spec:product.beta.resolve"
+
+	t.Run("exact child resolves when parent exists", func(t *testing.T) {
+		idx := buildNestedCurrentSpecResolverIndex(t, 1)
+
+		resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: childRef})
 		if err != nil {
-			t.Fatalf("ResolveReference %s: %v", tt.ref, err)
+			t.Fatalf("ResolveReference: %v", err)
 		}
-		if resp.Status != resolveStatusResolved || resp.RefKind != refKindRecordID || resp.Target == nil || resp.Target.TargetType != "record" || resp.Target.RecordID != tt.ref || resp.Target.RecordKind != tt.kind {
-			t.Fatalf("%s resolve = %#v", tt.ref, resp)
+		if resp.Ref != childRef || resp.RefKind != refKindCurrentSpecRef || resp.Status != resolveStatusResolved {
+			t.Fatalf("response = %#v", resp)
 		}
-	}
+		if resp.Target == nil || resp.Target.RecordID != childRef || resp.Target.RecordKind != RecordKindSpec {
+			t.Fatalf("target = %#v", resp.Target)
+		}
+		if resp.Target.Path != "" || resp.Target.Section != "" {
+			t.Fatalf("resolved target leaked path or section: %#v", resp.Target)
+		}
+	})
+
+	t.Run("exact child conflict does not select winner", func(t *testing.T) {
+		idx := buildNestedCurrentSpecResolverIndex(t, 2)
+
+		resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: childRef})
+		if err != nil {
+			t.Fatalf("ResolveReference: %v", err)
+		}
+		if resp.Ref != childRef || resp.RefKind != refKindCurrentSpecRef || resp.Status != resolveStatusUnresolved || resp.Target != nil || !hasDiagnostic(resp.Diagnostics, DiagnosticAmbiguousReference) {
+			t.Fatalf("response = %#v", resp)
+		}
+	})
+
+	t.Run("missing child below existing parent is unsupported", func(t *testing.T) {
+		idx := buildNestedCurrentSpecResolverIndex(t, 0)
+
+		resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: childRef})
+		if err != nil {
+			t.Fatalf("ResolveReference: %v", err)
+		}
+		if resp.Ref != childRef || resp.RefKind != refKindUnsupported || resp.Status != resolveStatusUnsupported || resp.Target != nil || !hasDiagnostic(resp.Diagnostics, DiagnosticUnsupportedReference) {
+			t.Fatalf("response = %#v", resp)
+		}
+	})
 }
 
-func TestResolveReferenceUsesSemanticRefsFromNonRecordSpec(t *testing.T) {
-	root := t.TempDir()
-	writeTestFile(t, root, "records/spec/non-record.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:non-record.doc\nsections:\n  spec:non-record.section: Target Section\n---\n# Non-record spec\n## Target Section\n")
-	idx := buildTestIndex(t, root)
+func TestResolveReferenceRejectsUnsupportedForms(t *testing.T) {
+	idx := buildCurrentResolverIndex(t)
 
-	listResp, err := ListRecords(context.Background(), idx, ListRecordsRequest{})
-	if err != nil {
-		t.Fatalf("ListRecords: %v", err)
-	}
-	if len(listResp.Records) != 0 {
-		t.Fatalf("non-record semantic source leaked into list_records: %#v", listResp.Records)
-	}
-	if _, err := GetRecord(context.Background(), idx, GetRecordRequest{ID: "SPEC-non-record"}); err == nil {
-		t.Fatalf("GetRecord succeeded for non-record semantic source")
-	}
-
-	document, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: "spec:non-record.doc"})
-	if err != nil {
-		t.Fatalf("ResolveReference document: %v", err)
-	}
-	if document.Status != resolveStatusResolved || document.Target == nil || document.Target.TargetType != "document" || document.Target.Path != "records/spec/non-record.md" {
-		t.Fatalf("document resolve = %#v", document)
-	}
-
-	section, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: "spec:non-record.section"})
-	if err != nil {
-		t.Fatalf("ResolveReference section: %v", err)
-	}
-	if section.Status != resolveStatusResolved || section.Target == nil || section.Target.TargetType != "section" || section.Target.Section != "Target Section" {
-		t.Fatalf("section resolve = %#v", section)
-	}
-}
-
-func TestValidateRecordsSemanticRefDiagnosticsFromNonRecordSpec(t *testing.T) {
-	root := t.TempDir()
-	writeTestFile(t, root, "records/spec/non-record.md", "---\nstatus: draft\nsemantic_refs:\n  - Bad:Ref\nsections:\n  spec:non-record.missing: Missing\n  spec:non-record.ambiguous: Duplicate\n---\n# Non-record spec\n## Duplicate\n## Duplicate\n")
-	idx := buildTestIndex(t, root)
-
-	resp, err := ValidateRecords(context.Background(), idx, ValidateRecordsRequest{})
-	if err != nil {
-		t.Fatalf("ValidateRecords: %v", err)
-	}
-	for _, category := range []DiagnosticCategory{
-		DiagnosticInvalidSemanticRefDeclaration,
-		DiagnosticMissingSectionTarget,
-		DiagnosticAmbiguousSectionTarget,
+	for _, ref := range []string{
+		"ADR-SPEC-901",
+		"REQ-MCP-001",
+		"WORK-MCP-001",
+		"TASK-MCP-001-01",
+		"PRODUCT-REQ-MCP",
+		"PRODUCT-REQ-MCP-00",
+		"product-req-mcp-001",
+		"PRODUCT-REQ-mcp-001",
+		"PRODUCT-SPEC-beta",
+		"V01-ADR-088",
+		"product/records/spec/beta/index.md",
+		"records/spec/beta.md",
+		"spec:product..beta",
+		"spec:product.beta/",
+		"spec:Product.beta",
+		"internal-design:resolver.semantic-ref-index",
+		"coverage:trace",
+		"COV-TRACE-001",
 	} {
-		if !hasDiagnostic(resp.Diagnostics, category) {
-			t.Fatalf("missing %s in %#v", category, resp.Diagnostics)
-		}
+		t.Run(ref, func(t *testing.T) {
+			resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: ref})
+			if err != nil {
+				t.Fatalf("ResolveReference: %v", err)
+			}
+			if resp.Ref != ref || resp.RefKind != refKindUnsupported || resp.Status != resolveStatusUnsupported || resp.Target != nil || !hasDiagnostic(resp.Diagnostics, DiagnosticUnsupportedReference) {
+				t.Fatalf("unsupported response = %#v", resp)
+			}
+		})
 	}
-	for _, diagnostic := range resp.Diagnostics {
-		if diagnostic.Path != "records/spec/non-record.md" {
-			t.Fatalf("diagnostic path = %q, want non-record spec path: %#v", diagnostic.Path, diagnostic)
+}
+
+func TestResolveReferenceIgnoresSemanticAliasesAndLegacyFallback(t *testing.T) {
+	idx := &Index{
+		NamespacePrefix: "V01-",
+		Records: []Record{
+			{ID: "V01-ADR-088", Kind: RecordKindDecision, Title: "Legacy ADR", Status: RecordStatusAccepted, Path: "v01/records/ADR/ADR-088.md"},
+			{ID: "spec:product.beta", Kind: RecordKindSpec, Title: "Product beta", Status: RecordStatusAccepted, Path: "product/records/spec/beta/index.md"},
+		},
+		SemanticRefs: []SemanticRefDecl{
+			{Ref: "spec:legacy.alias", Path: "product/records/spec/beta/index.md", TargetType: SemanticTargetDocument},
+			{Ref: "spec:legacy.alias.section", Path: "product/records/spec/beta/index.md", TargetType: SemanticTargetSection, Section: "Section"},
+		},
+	}
+
+	legacy, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: "V01-ADR-088"})
+	if err != nil {
+		t.Fatalf("ResolveReference legacy: %v", err)
+	}
+	if legacy.Status != resolveStatusUnsupported || legacy.RefKind != refKindUnsupported || legacy.Target != nil {
+		t.Fatalf("legacy fallback response = %#v", legacy)
+	}
+
+	for _, ref := range []string{"spec:legacy.alias", "spec:legacy.alias.section"} {
+		resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: ref})
+		if err != nil {
+			t.Fatalf("ResolveReference %s: %v", ref, err)
 		}
-		if diagnostic.RecordID != "" {
-			t.Fatalf("non-record spec diagnostic should not have record_id: %#v", diagnostic)
+		if resp.Status != resolveStatusUnresolved || resp.RefKind != refKindCurrentSpecRef || resp.Target != nil || !hasDiagnostic(resp.Diagnostics, DiagnosticUnresolvedReference) {
+			t.Fatalf("semantic alias response = %#v", resp)
 		}
 	}
 }
 
-func TestResolveReferenceRepositoryBootstrapIDs(t *testing.T) {
-	root := findRepoRoot(t)
-	cfg, err := NewConfig(root, "v01/records")
+func buildNestedCurrentSpecResolverIndex(t *testing.T, childCopies int) *Index {
+	t.Helper()
+
+	root := t.TempDir()
+	writeTestFile(t, root, "product/records/spec/beta/index.md", currentSpecSource("spec:product.beta", "Product beta", "spec:product"))
+	if childCopies >= 1 {
+		writeTestFile(t, root, "product/records/spec/beta/resolve/index.md", currentSpecSource("spec:product.beta.resolve", "Product beta resolve index", "spec:product.beta"))
+	}
+	if childCopies >= 2 {
+		writeTestFile(t, root, "product/records/spec/beta/resolve.md", currentSpecSource("spec:product.beta.resolve", "Product beta resolve leaf", "spec:product.beta"))
+	}
+
+	cfg, err := NormalizeConfig(root, []CurrentRoot{
+		{AppNamespace: "product", RecordsRoot: "product/records"},
+	})
 	if err != nil {
-		t.Fatalf("NewConfig: %v", err)
+		t.Fatalf("NormalizeConfig: %v", err)
 	}
 	idx, err := BuildIndex(context.Background(), cfg)
 	if err != nil {
 		t.Fatalf("BuildIndex: %v", err)
 	}
-	for _, id := range []string{"V01-ADR-088", "V01-INV-DOCS-001", "V01-INV-DOCS-002", "V01-INV-DOCS-003", "V01-REQ-MCP-003", "V01-WORK-MCP-003", "V01-TASK-MCP-003-01"} {
-		resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: id})
-		if err != nil {
-			t.Fatalf("ResolveReference %s: %v", id, err)
-		}
-		if resp.Status != resolveStatusResolved || resp.Target == nil || resp.Target.RecordID != id {
-			t.Fatalf("%s resolve = %#v", id, resp)
-		}
-	}
+	return idx
 }
 
-func TestResolveReferenceUnresolvedAmbiguousAndUnsupported(t *testing.T) {
-	idx := &Index{
-		Records: []Record{
-			{ID: "ADR-001", NormalizedID: "ADR-001", Kind: RecordKindDecision, Title: "One", Status: RecordStatusAccepted, Path: "records/adr/001-one.md"},
-			{ID: "ADR-001", NormalizedID: "ADR-001", Kind: RecordKindDecision, Title: "Duplicate", Status: RecordStatusAccepted, Path: "records/adr/001-duplicate.md"},
-		},
-		SemanticRefs: []SemanticRefDecl{
-			{Ref: "spec:trace.duplicate", Path: "records/spec/a.md", TargetType: SemanticTargetDocument},
-			{Ref: "spec:trace.duplicate", Path: "records/spec/b.md", TargetType: SemanticTargetDocument},
-		},
-	}
+func buildCurrentResolverIndex(t *testing.T) *Index {
+	t.Helper()
 
-	unresolved, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: "ADR-999"})
+	root := t.TempDir()
+	writeTestFile(t, root, "product/records/adr/spec/PRODUCT-ADR-SPEC-901-product.md", currentADRSource("PRODUCT-ADR-SPEC-901", "Product ADR"))
+	writeTestFile(t, root, "product/records/spec/alpha.md", currentSpecSource("spec:product.alpha", "Product alpha leaf", "spec:product"))
+	writeTestFile(t, root, "product/records/spec/alpha/index.md", currentSpecSource("spec:product.alpha", "Product alpha index", "spec:product"))
+	writeTestFile(t, root, "product/records/spec/beta/index.md", currentSpecSource("spec:product.beta", "Product beta", "spec:product"))
+
+	writeTestFile(t, root, "drmcp/records/investigations/mcp/DRMCP-INV-MCP-001-current.md", currentInvestigationSource("DRMCP-INV-MCP-001", "DRMCP investigation"))
+	writeTestFile(t, root, "drmcp/records/requirements/mcp/DRMCP-REQ-MCP-001-current.md", currentRequirementSource("DRMCP-REQ-MCP-001", "DRMCP requirement"))
+	writeTestFile(t, root, "drmcp/records/requirements/mcp/DRMCP-REQ-MCP-980-duplicate-a.md", currentRequirementSource("DRMCP-REQ-MCP-980", "Duplicate A"))
+	writeTestFile(t, root, "drmcp/records/requirements/mcp/DRMCP-REQ-MCP-980-duplicate-b.md", currentRequirementSource("DRMCP-REQ-MCP-980", "Duplicate B"))
+	writeTestFile(t, root, "drmcp/records/work-items/mcp/DRMCP-WORK-MCP-001-current.md", currentWorkItemSource("DRMCP-WORK-MCP-001", "DRMCP work item"))
+	writeTestFile(t, root, "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-01-current.md", currentTaskSource("DRMCP-TASK-MCP-001-01", "DRMCP task"))
+
+	cfg, err := NormalizeConfig(root, []CurrentRoot{
+		{AppNamespace: "product", RecordsRoot: "product/records"},
+		{AppNamespace: "drmcp", RecordsRoot: "drmcp/records"},
+	})
 	if err != nil {
-		t.Fatalf("ResolveReference unresolved: %v", err)
+		t.Fatalf("NormalizeConfig: %v", err)
 	}
-	if unresolved.Status != resolveStatusUnresolved || unresolved.Target != nil || !hasDiagnostic(unresolved.Diagnostics, DiagnosticUnresolvedReference) {
-		t.Fatalf("unresolved = %#v", unresolved)
-	}
-
-	for _, ref := range []string{"REQ-MCP-999", "WORK-MCP-999", "TASK-MCP-999-99"} {
-		resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: ref})
-		if err != nil {
-			t.Fatalf("ResolveReference unresolved %s: %v", ref, err)
-		}
-		if resp.Status != resolveStatusUnresolved || resp.RefKind != refKindRecordID || resp.Target != nil || !hasDiagnostic(resp.Diagnostics, DiagnosticUnresolvedReference) {
-			t.Fatalf("%s unresolved response = %#v", ref, resp)
-		}
-	}
-
-	ambiguousRecord, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: "ADR-001"})
+	idx, err := BuildIndex(context.Background(), cfg)
 	if err != nil {
-		t.Fatalf("ResolveReference ambiguous record: %v", err)
+		t.Fatalf("BuildIndex: %v", err)
 	}
-	if ambiguousRecord.Status != resolveStatusUnresolved || ambiguousRecord.Target != nil || !hasDiagnostic(ambiguousRecord.Diagnostics, DiagnosticAmbiguousReference) {
-		t.Fatalf("ambiguous record = %#v", ambiguousRecord)
-	}
-
-	ambiguousSemantic, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: "spec:trace.duplicate"})
-	if err != nil {
-		t.Fatalf("ResolveReference ambiguous semantic: %v", err)
-	}
-	if ambiguousSemantic.Status != resolveStatusUnresolved || ambiguousSemantic.Target != nil || !hasDiagnostic(ambiguousSemantic.Diagnostics, DiagnosticAmbiguousReference) {
-		t.Fatalf("ambiguous semantic = %#v", ambiguousSemantic)
-	}
-
-	for _, ref := range []string{"internal-design:resolver.semantic-ref-index", "coverage:trace", "COV-TRACE-001", "records/spec/trace.md", "ADR-abc", "TASK-MCP-003-1", "REQ-mcp-003", "WORK-MCP-003-extra-01"} {
-		resp, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: ref})
-		if err != nil {
-			t.Fatalf("ResolveReference unsupported %s: %v", ref, err)
-		}
-		if resp.Status != resolveStatusUnsupported || resp.Target != nil || !hasDiagnostic(resp.Diagnostics, DiagnosticUnsupportedReference) {
-			t.Fatalf("%s unsupported response = %#v", ref, resp)
-		}
-	}
+	return idx
 }

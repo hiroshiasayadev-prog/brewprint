@@ -9,15 +9,16 @@ import (
 )
 
 var (
-	activeSpecRefPattern = regexp.MustCompile(`^spec:[a-z0-9-]+(?:\.[a-z0-9-]+)*$`)
-	recordIDRefPattern   = regexp.MustCompile(`^(ADR-\d{3}|SPEC-[A-Za-z0-9][A-Za-z0-9-]*|INV-[A-Z0-9-]+-\d{3})$`)
-	unsupportedIDPattern = regexp.MustCompile(`^COV-`)
+	activeSpecRefPattern      = regexp.MustCompile(`^spec:[a-z0-9-]+(?:\.[a-z0-9-]+)*$`)
+	currentSpecRefPattern     = regexp.MustCompile(`^spec:[a-z0-9-]+(?:\.[a-z0-9_]+)*$`)
+	currentNamespaceIDPattern = regexp.MustCompile(`^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-(ADR-[A-Z][A-Z0-9]*-\d{3}|INV-[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?-\d{3}|REQ-[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?-\d{3}|WORK-[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?-\d{3}|TASK-[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?-\d{3}-\d{2})$`)
+	unsupportedIDPattern      = regexp.MustCompile(`^COV-`)
 )
 
 const (
-	refKindSemanticRef = "semantic_ref"
-	refKindRecordID    = "record_id"
-	refKindUnsupported = "unsupported"
+	refKindCurrentSpecRef  = "current_spec_ref"
+	refKindCurrentRecordID = "current_record_id"
+	refKindUnsupported     = "unsupported"
 
 	resolveStatusResolved    = "resolved"
 	resolveStatusUnresolved  = "unresolved"
@@ -39,111 +40,112 @@ func ResolveReference(ctx context.Context, idx *Index, req ResolveReferenceReque
 
 func resolveReference(idx *Index, ref string) ResolveReferenceResponse {
 	kind := classifyReference(ref)
-	if kind == refKindUnsupported {
-		// Accept fully-qualified public IDs for any known namespace prefix.
-		// e.g. "V01-ADR-088", "PRODUCT-REQ-SPEC-001", "DRMCP-WORK-MCP-001"
-		for _, e := range idx.RecordsEntries {
-			if e.NamespacePrefix == "" {
-				continue
-			}
-			if bare := strings.TrimPrefix(ref, e.NamespacePrefix); bare != ref && isSupportedRecordIDReference(bare) {
-				kind = refKindRecordID
-				break
-			}
-		}
-		// Fallback: single-root / backward-compat path when RecordsEntries is empty.
-		if kind == refKindUnsupported && idx.NamespacePrefix != "" {
-			if bare := strings.TrimPrefix(ref, idx.NamespacePrefix); bare != ref && isSupportedRecordIDReference(bare) {
-				kind = refKindRecordID
-			}
-		}
-	}
 	switch kind {
-	case refKindSemanticRef:
-		return resolveSemanticReference(idx, ref)
-	case refKindRecordID:
-		return resolveRecordReference(idx, ref)
-	default:
-		return ResolveReferenceResponse{
-			Ref:     ref,
-			RefKind: refKindUnsupported,
-			Status:  resolveStatusUnsupported,
-			Target:  nil,
-			Diagnostics: []Diagnostic{{
-				Category: DiagnosticUnsupportedReference,
-				Severity: DiagnosticSeverityInfo,
-				Message:  "reference form is outside the MVP resolver contract",
-			}},
+	case refKindCurrentSpecRef:
+		if hasCurrentConflict(idx, ref) {
+			return ambiguousResponse(ref, kind)
 		}
+		if response, ok := resolveExactCurrentReference(idx, ref, kind); ok {
+			return response
+		}
+		if isCurrentSpecAliasOrPartial(idx, ref) {
+			return unsupportedResponse(ref)
+		}
+		return unresolvedResponse(ref, kind)
+	case refKindCurrentRecordID:
+		return resolveCurrentReference(idx, ref, kind)
+	default:
+		return unsupportedResponse(ref)
 	}
 }
 
 func classifyReference(ref string) string {
-	if activeSpecRefPattern.MatchString(ref) {
-		return refKindSemanticRef
+	if currentSpecRefPattern.MatchString(ref) {
+		return refKindCurrentSpecRef
 	}
-	if isSupportedRecordIDReference(ref) {
-		return refKindRecordID
+	if currentNamespaceIDPattern.MatchString(ref) {
+		return refKindCurrentRecordID
 	}
 	return refKindUnsupported
 }
 
-func isSupportedRecordIDReference(ref string) bool {
-	return recordIDRefPattern.MatchString(ref) ||
-		requirementIDPattern.MatchString(ref) ||
-		workItemIDPattern.MatchString(ref) ||
-		taskIDPattern.MatchString(ref)
-}
-
 func isSupportedInvestigationRecordIDReference(ref string) bool {
-	return recordIDRefPattern.MatchString(ref) ||
-		requirementIDPattern.MatchString(ref) ||
-		workItemIDPattern.MatchString(ref)
+	return currentNamespaceIDPattern.MatchString(ref) && strings.Contains(ref, "-INV-")
 }
 
-func resolveSemanticReference(idx *Index, ref string) ResolveReferenceResponse {
-	targets := semanticTargetsByRef(idx)[ref]
-	switch len(targets) {
-	case 0:
-		return unresolvedResponse(ref, refKindSemanticRef)
-	case 1:
-		target := targets[0]
-		out := &ResolvedTarget{
-			TargetType: string(target.TargetType),
-			Path:       target.Path,
-		}
-		if target.TargetType == SemanticTargetSection {
-			out.Section = target.Section
-		}
-		return ResolveReferenceResponse{Ref: ref, RefKind: refKindSemanticRef, Status: resolveStatusResolved, Target: out, Diagnostics: []Diagnostic{}}
-	default:
-		return ambiguousResponse(ref, refKindSemanticRef)
+func resolveCurrentReference(idx *Index, ref, refKind string) ResolveReferenceResponse {
+	if hasCurrentConflict(idx, ref) {
+		return ambiguousResponse(ref, refKind)
 	}
+	if response, ok := resolveExactCurrentReference(idx, ref, refKind); ok {
+		return response
+	}
+	return unresolvedResponse(ref, refKind)
 }
 
-func resolveRecordReference(idx *Index, ref string) ResolveReferenceResponse {
-	records := recordsByNormalizedID(idx)[normalizeRecordID(ref)]
-	switch len(records) {
-	case 0:
-		return unresolvedResponse(ref, refKindRecordID)
-	case 1:
-		record := records[0]
+func resolveExactCurrentReference(idx *Index, ref, refKind string) (ResolveReferenceResponse, bool) {
+	for _, record := range idx.Records {
+		if record.ID != ref {
+			continue
+		}
 		return ResolveReferenceResponse{
 			Ref:     ref,
-			RefKind: refKindRecordID,
+			RefKind: refKind,
 			Status:  resolveStatusResolved,
 			Target: &ResolvedTarget{
-				TargetType: "record",
-				Path:       record.Path,
+				TargetType: targetTypeForRecord(record),
 				RecordID:   record.ID,
 				RecordKind: record.Kind,
 				Title:      record.Title,
 				Status:     record.Status,
 			},
 			Diagnostics: []Diagnostic{},
+		}, true
+	}
+	return ResolveReferenceResponse{}, false
+}
+
+func hasCurrentConflict(idx *Index, ref string) bool {
+	for _, conflict := range idx.ConflictGroups {
+		if conflict.Ref == ref {
+			return true
 		}
-	default:
-		return ambiguousResponse(ref, refKindRecordID)
+	}
+	return false
+}
+
+func targetTypeForRecord(record Record) string {
+	if record.Kind == RecordKindSpec {
+		return "spec"
+	}
+	return "record"
+}
+
+func isCurrentSpecAliasOrPartial(idx *Index, ref string) bool {
+	for _, record := range idx.Records {
+		if record.Kind == RecordKindSpec && strings.HasPrefix(ref, record.ID+".") {
+			return true
+		}
+	}
+	for _, conflict := range idx.ConflictGroups {
+		if strings.HasPrefix(ref, conflict.Ref+".") {
+			return true
+		}
+	}
+	return false
+}
+
+func unsupportedResponse(ref string) ResolveReferenceResponse {
+	return ResolveReferenceResponse{
+		Ref:     ref,
+		RefKind: refKindUnsupported,
+		Status:  resolveStatusUnsupported,
+		Target:  nil,
+		Diagnostics: []Diagnostic{{
+			Category: DiagnosticUnsupportedReference,
+			Severity: DiagnosticSeverityInfo,
+			Message:  "reference form is outside the MVP resolver contract",
+		}},
 	}
 }
 
@@ -190,16 +192,6 @@ func semanticTargetsByRef(idx *Index) map[string][]SemanticRefDecl {
 			}
 			return out[ref][i].Path < out[ref][j].Path
 		})
-	}
-	return out
-}
-
-func recordsByNormalizedID(idx *Index) map[string][]Record {
-	out := make(map[string][]Record, len(idx.Records))
-	for _, record := range idx.Records {
-		if record.NormalizedID != "" {
-			out[record.NormalizedID] = append(out[record.NormalizedID], record)
-		}
 	}
 	return out
 }
