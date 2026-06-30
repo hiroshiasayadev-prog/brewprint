@@ -1,7 +1,7 @@
 # DRMCP-WORK-MCP-009: Current-format read implementation
 
 - **id**: DRMCP-WORK-MCP-009
-- **status**: in_progress
+- **status**: blocked
 - **date**: 2026-06-28
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **impact_refs**:
@@ -154,6 +154,8 @@ This Work Item is complete when all of the following are true:
 - final evidence records changed code, tests, commands, results, review verdict, and residual limitations.
 
 ## Evidence
+
+- 2026-06-30: The implementation plan in this Work Item is retired for the `brewprint-rebuild` line. Production code produced under the old implementation plan must not be reused. Existing architecture may be consulted only as non-authoritative reference because the rebuild may adopt different application routing and structural boundaries.
 
 - `DRMCP-ADR-MCP-001`: Accepted current-format-first implementation sequence.
 - `DRMCP-INV-MCP-002`: Implementation and test drift baseline.
