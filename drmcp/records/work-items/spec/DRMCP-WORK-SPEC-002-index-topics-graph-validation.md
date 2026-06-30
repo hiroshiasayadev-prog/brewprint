@@ -10,7 +10,7 @@
   - DRMCP-WORK-MCP-006
   - DRMCP-WORK-MCP-007
   - DRMCP-WORK-MCP-008
-  - DRMCP-WORK-MCP-009
+  - DRMCP-WORK-MCP-012
   - spec:product.design_records.spec_format.document_shape
   - spec:product.design_records.spec_format.topics_table
   - spec:product.design_records.spec_format.spec_id_as_ref
@@ -59,7 +59,7 @@ This Work Item does not own:
 - validation request forms, diagnostic taxonomy, severity, source locations, or response representation;
 - PRODUCT rule text or severity policy;
 - shared fixture authoring or fixture-local structural checks;
-- general current-read implementation or tests owned by `DRMCP-WORK-MCP-009`;
+- general current-read implementation or tests owned by `DRMCP-WORK-MCP-012`;
 - PRODUCT owner-pointer synchronization.
 
 The canonical Topics row does not contain `file` or row-level `parent`.
@@ -75,7 +75,7 @@ Alias, redirect, and stale-ref lookup are not accepted graph inputs.
 | `DRMCP-WORK-MCP-006` | Supplies validation execution and diagnostic representation contracts. |
 | `DRMCP-WORK-MCP-007` | Supplies the accepted `retain` disposition and rebaseline boundary. |
 | `DRMCP-WORK-MCP-008` | Supplies shared Topics and graph fixtures. |
-| `DRMCP-WORK-MCP-009` | Retains general current-read implementation and test ownership outside this validator. |
+| `DRMCP-WORK-MCP-012` | Retains general current-read implementation and test ownership outside this validator. |
 | PRODUCT Topics-table authority | Supplies the `title/kind/ref/summary` row and authoritative-parent semantics. |
 | PRODUCT document-shape authority | Supplies child H1-adjacent `parent` marker semantics. |
 | PRODUCT ID-as-ref authority | Supplies canonical `ref` grammar and exact path-derived identity semantics. |
@@ -124,7 +124,7 @@ This Work Item is complete when all of the following are true:
 - graph results use W006 diagnostic contracts without inventing categories, severity, or representation;
 - shared fixtures are consumed from W008 without duplicating fixture ownership;
 - graph algorithm tests and runtime integration tests pass;
-- general current-read tests remain in W009;
+- general current-read tests remain in W012;
 - PRODUCT semantic text is cited rather than copied as independent DRMCP authority;
 - independent review reports no blocking or major findings;
 - `DRMCP-REQ-MCP-001` lists this Work Item in `work_items`;
@@ -140,5 +140,5 @@ This Work Item is complete when all of the following are true:
 - `DRMCP-WORK-MCP-006` remains the validation-execution and diagnostic-representation authority.
 - PRODUCT spec-format records remain the semantic and severity authorities.
 - `DRMCP-WORK-MCP-008` remains the shared fixture owner.
-- `DRMCP-WORK-MCP-009` remains the general current-read implementation and test owner.
+- `DRMCP-WORK-MCP-012` is the replacement general current-read implementation and test owner.
 - Implementation, automated-test, command, and independent-review evidence remain pending future child Tasks.

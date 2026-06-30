@@ -14,7 +14,9 @@
   - DRMCP-WORK-MCP-006
   - DRMCP-WORK-MCP-007
   - DRMCP-WORK-MCP-008
+  - DRMCP-WORK-MCP-011
   - DRMCP-TASK-MCP-001-09
+  - spec:drmcp.implementation
   - spec:drmcp.design_records_mcp.overview
   - spec:drmcp.design_records_mcp.schema.overview
   - spec:drmcp.design_records_mcp.tools.overview
@@ -168,3 +170,17 @@ Planning lifecycle began on 2026-06-28.
 The T01 planning gate was accepted on 2026-06-28 after an independent review returned PASS with no blocking, major, or minor finding.
 T02 and T03 are ready to start in parallel under the accepted P1 boundaries.
 No production Go source, existing Go test, or accepted fixture was changed during Task graph authoring or closure synchronization.
+
+### Rebuild-line disposition
+
+Disposition: replaced and retired for the rebuild line.
+
+- W009's former production structure, Task graph, file ownership, and extension seam are not execution authority.
+- Do not resume implementation Tasks under W009.
+- Do not carry production code created under W009 into the replacement implementation.
+- Accepted public contracts and fixtures remain valid.
+- A new implementation Work Item must consume the architecture reviewed under `DRMCP-WORK-MCP-011`.
+- W009 remains `blocked` until the replacement Work Item exists.
+- W009 is not `done`.
+- No unsupported `canceled` status is introduced.
+- W009 Task graph, Task statuses, production source, and tests remain unchanged by this closure.

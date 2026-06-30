@@ -11,6 +11,7 @@
   - DRMCP-REQ-MCP-003
   - PRODUCT-REQ-SPEC-003
   - DRMCP-WORK-MCP-001
+  - DRMCP-WORK-MCP-011
   - PRODUCT-WORK-SPEC-013
   - DRMCP-WORK-SPEC-001
   - DRMCP-WORK-SPEC-002
@@ -206,3 +207,12 @@ While this state remains, T03 must not execute and no Work Item sourced from `DR
 The next milestone action is T03 execution after T11 and T12 readiness is accepted.
 The independent T02 review returned `PASS` with no blocking, major, or minor findings. The producer package gate remains accepted.
 This Work Item remains `in_progress` because later milestone Tasks remain.
+
+### W011 closure handling
+
+- W011 design closure is accepted as read-runtime architecture evidence.
+- W001 remains `in_progress`.
+- W001 T11 and T12 readiness has not been established.
+- W002 consumer-side T03 must not execute yet.
+- No Work Item sourced from `DRMCP-REQ-MCP-003` or `DRMCP-REQ-MCP-002` is created by this closure.
+- W002 remains `in_progress`.

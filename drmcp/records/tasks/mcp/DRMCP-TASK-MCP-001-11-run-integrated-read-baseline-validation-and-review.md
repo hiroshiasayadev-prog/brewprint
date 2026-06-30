@@ -2,7 +2,7 @@
 
 - **id**: DRMCP-TASK-MCP-001-11
 - **status**: not_started
-- **date**: 2026-06-26
+- **date**: 2026-06-30
 - **work_item**: DRMCP-WORK-MCP-001
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **estimate**: 2d
@@ -11,44 +11,59 @@
   - DRMCP-TASK-MCP-001-08
   - DRMCP-TASK-MCP-001-09
   - DRMCP-TASK-MCP-001-10
+  - DRMCP-TASK-MCP-001-16
+  - DRMCP-TASK-MCP-001-17
 - **outputs**:
   - DRMCP-WORK-MCP-001
 
 ## Goal
 
-Validate the integrated current read baseline and obtain an independent review verdict.
+Run the sole integrated verification gate for the complete rebuilt read baseline.
+
+Obtain an independent integrated review verdict.
 
 ## Work
 
-- Confirm that every lifecycle-tracking Task records a `done` child Work Item and accepted evidence.
-- Run the full scoped DRMCP validation and automated test set.
-- Verify current-only behavior without `legacy_roots`.
-- Verify configured fallback and legacy leakage prevention.
-- Compare implementation behavior with corrected contracts and fixtures.
-- Request an independent contract and implementation review.
-- Route every substantive correction to the owning child Work Item.
-- Reopen the affected lifecycle gate until the child Work Item closes the finding.
-- Record final validation and review evidence in this Task and the parent Work Item.
+- Confirm T09 records reviewed W012 completion.
+- Confirm T10 records reviewed W010 completion.
+- Confirm T16 records reviewed W-SPEC-001 completion.
+- Confirm T17 records reviewed W-SPEC-002 completion.
+- Verify the W012 current runtime.
+- Verify W-SPEC-001 per-file detectors.
+- Verify W-SPEC-002 Topics graph validation.
+- Verify W010 configured legacy fallback.
+- Verify current-only, configured-fallback, and non-leakage behavior.
+- Verify accepted diagnostic and path-exposure contracts.
+- Run full affected-package tests.
+- Request an independent integrated review.
+- Route every failure to its owning Work Item.
+- Record final verification and review evidence here and in W001.
 
-This Task may perform integrated verification only.
-This Task must not absorb corrective contract or implementation work from a child Work Item.
+This Task is the sole integrated verification owner.
+This Task must not repair implementation failures.
 
 ## Done condition
 
-- All required scoped validation and automated tests pass.
-- Current-only and configured-fallback scenarios match `DRMCP-REQ-MCP-001`.
+- W012, W010, W-SPEC-001, and W-SPEC-002 are reviewed and `done`.
+- Full affected-package tests pass.
+- Current-only behavior matches the accepted contracts.
+- Configured-fallback behavior matches the accepted contracts.
 - No legacy record leaks into normal listing, current validation, or authoring targets.
-- Physical paths remain absent from normal listing and retrieval responses.
-- Every substantive finding is closed in its owning child Work Item.
-- Independent review reports no blocking or major findings.
-- Final validation commands, results, review verdict, and residual limitations are recorded.
+- Accepted diagnostic and path-exposure contracts pass.
+- Every failure is closed by its owning Work Item.
+- Independent integrated review reports no blocking or major findings.
+- Final commands, results, review verdict, and residual limitations are recorded.
 
 ## Verification
 
-- Re-run the accepted validation and test commands after all routed findings close.
-- Inspect the final review against `DRMCP-ADR-MCP-001` and `DRMCP-REQ-MCP-001`.
-- Confirm that corrective diffs reside in child Work Item evidence rather than this Task.
+- Run the accepted full affected-package test commands after all owning Work Items close routed failures.
+- Confirm W012, W010, W-SPEC-001, and W-SPEC-002 evidence is complete.
+- Confirm current-only, configured-fallback, non-leakage, diagnostic, and path-exposure behavior.
+- Confirm T11 contains no corrective implementation diff.
+- Confirm each failure is routed to its owning Work Item.
 
 ## Evidence
 
-Pending child Work Item completion.
+Pending T09, T10, T16, and T17 completion.
+
+T11 remains the sole integrated read-baseline verification owner.

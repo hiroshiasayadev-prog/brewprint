@@ -2,7 +2,7 @@
 
 - **id**: DRMCP-WORK-MCP-001
 - **status**: in_progress
-- **date**: 2026-06-26
+- **date**: 2026-06-30
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **impact_refs**:
   - DRMCP-ADR-MCP-001
@@ -23,11 +23,16 @@
   - DRMCP-WORK-MCP-008
   - DRMCP-WORK-MCP-009
   - DRMCP-WORK-MCP-010
+  - DRMCP-WORK-MCP-011
+  - DRMCP-WORK-MCP-012
+  - DRMCP-WORK-MCP-013
+  - DRMCP-WORK-MCP-014
   - DRMCP-WORK-SPEC-001
   - DRMCP-WORK-SPEC-002
   - spec:product.brewprint.compatibility.legacy_id_compatibility
   - spec:product.design_records.authoring_standards.spec_authoring
   - spec:product.design_records.spec_format.validation_policy
+  - spec:drmcp.implementation
   - spec:drmcp.design_records_mcp.overview
   - spec:drmcp.design_records_mcp.schema.overview
   - spec:drmcp.design_records_mcp.tools.overview
@@ -44,6 +49,13 @@
   - DRMCP-TASK-MCP-001-10
   - DRMCP-TASK-MCP-001-11
   - DRMCP-TASK-MCP-001-12
+  - DRMCP-TASK-MCP-001-13
+  - DRMCP-TASK-MCP-001-14
+  - DRMCP-TASK-MCP-001-15
+  - DRMCP-TASK-MCP-001-16
+  - DRMCP-TASK-MCP-001-17
+  - DRMCP-TASK-MCP-001-18
+  - DRMCP-TASK-MCP-001-19
 
 ## Goal
 
@@ -107,8 +119,12 @@ Their implementation Tasks must belong to separate Work Items with matching `sou
 | `DRMCP-WORK-MCP-007` | DRMCP-owned disposition and rebaseline Work Item for existing validation Work Items tracked through T07. |
 | `PRODUCT-WORK-SPEC-015` | PRODUCT-owned validation owner-pointer synchronization Work Item tracked through T07. |
 | `DRMCP-WORK-MCP-008` | DRMCP-owned current and legacy fixture-baseline Work Item tracked through T08. |
-| `DRMCP-WORK-MCP-009` | DRMCP-owned current-format read implementation Work Item tracked through T09. |
-| `DRMCP-WORK-MCP-010` | DRMCP-owned configured legacy archive fallback implementation Work Item tracked through T10. |
+| `DRMCP-WORK-MCP-009` | Historical retired current-format implementation planning. It is not a completion gate for the rebuild line. |
+| `DRMCP-WORK-MCP-010` | Retained configured legacy archive fallback implementation Work Item tracked through T10 after W012 completion and rebaseline. |
+| `DRMCP-WORK-MCP-011` | Accepted replacement read-runtime architecture input. |
+| `DRMCP-WORK-MCP-012` | Replacement current-read implementation Work Item. It remains blocked until W013 and W014 complete reviewed closure. |
+| `DRMCP-WORK-MCP-013` | Responsibility-contract design hub tracked through T18. |
+| `DRMCP-WORK-MCP-014` | Function-level internal-specification design hub tracked through T19 after W013. |
 | `DRMCP-WORK-MCP-002` | Owns downstream child Work Item creation, lifecycle tracking, and integrated milestone closure. |
 | `spec:product.brewprint.compatibility.legacy_id_compatibility` | Must remove `V01-SPEC-*` before legacy fallback implementation lands. |
 | `spec:product.design_records.authoring_standards.spec_authoring` | Requires later synchronization for logical spec create selectors. Not changed by the read-baseline tasks. |
@@ -126,9 +142,15 @@ Their implementation Tasks must belong to separate Work Items with matching `sou
 | B. Cross-owner prerequisites | `DRMCP-TASK-MCP-001-02`, `DRMCP-TASK-MCP-001-07` | Phase A | Complete Brewprint compatibility correction and validation-work disposition through their owning Work Items. |
 | C. Read-contract correction | `DRMCP-TASK-MCP-001-03` through `DRMCP-TASK-MCP-001-06` | Phase A; compatibility policy fixed where required | Complete discovery, index, query, retrieval, resolver, validation, diagnostic, and path-exposure child Work Items. |
 | D. Fixture baseline | `DRMCP-TASK-MCP-001-08` | Phases B-C | Complete the current-format and legacy-fallback fixture child Work Item. |
-| E. Implementation | `DRMCP-TASK-MCP-001-09`, `DRMCP-TASK-MCP-001-10` | Corrected contracts and fixtures | Complete current read and configured legacy-fallback implementation child Work Items. |
-| F. Integrated verification | `DRMCP-TASK-MCP-001-11` | Phase E | Run hub-level validation and independent review. Route substantive corrections back to the owning child Work Item. |
-| G. Downstream handoff | `DRMCP-TASK-MCP-001-12` | Phase F | Record readiness signals for `DRMCP-WORK-MCP-002`. |
+| E. Architecture closure | W011 `done` | Accepted D-001 through D-009 | Supply the replacement runtime architecture to the amended graph. |
+| F. Historical graph-amendment defect | `DRMCP-TASK-MCP-001-13`; T14 and T15 blocked | Phase E | Preserve evidence that the first W012 release path omitted responsibility-contract and function-level internal-specification design. Release nothing. |
+| G. Responsibility contract design | `DRMCP-TASK-MCP-001-18` | Phase E and T13 | Track W013 through work-partition investigation, child decision workflows, overall review, and closure. |
+| H. Function-level internal specification | `DRMCP-TASK-MCP-001-19` | T18 and W013 reviewed closure | Track W014 through work-partition investigation, child decision workflows, overall review, and closure. |
+| I. Replacement current runtime | `DRMCP-TASK-MCP-001-09` | T19 and corrected contracts and fixtures | Track blocked W012 through execution-graph authoring, implementation, review, and `done`. |
+| J. Retained validation | `DRMCP-TASK-MCP-001-16` -> `DRMCP-TASK-MCP-001-17` | T09; T17 after T16 | Track W-SPEC-001, then W-SPEC-002, through reviewed completion. |
+| K. Legacy fallback | `DRMCP-TASK-MCP-001-10` | T09 and its future rebaseline release | Track rebaselined W010 after the completed W012 runtime. T10 may proceed in parallel with T16 after their own graphs are reviewed and released. |
+| L. Integrated verification | `DRMCP-TASK-MCP-001-11` | T09, T10, T16, and T17 | Run the sole integrated validation and independent review gate. Route every failure to its owning Work Item. |
+| M. Downstream handoff | `DRMCP-TASK-MCP-001-12` | T11 | Record readiness signals for `DRMCP-WORK-MCP-002`. |
 
 Detailed work does not execute inside lifecycle-tracking Tasks.
 A lifecycle-tracking Task closes only after its named child Work Item is `done` and its completion evidence is accepted.
@@ -145,13 +167,22 @@ A lifecycle-tracking Task closes only after its named child Work Item is `done` 
 | `DRMCP-TASK-MCP-001-06` | Track `DRMCP-WORK-MCP-006` as the validation and response-boundary contract gate. | Correct validation, diagnostics, and path-exposure contracts. | T03-T05. |
 | `DRMCP-TASK-MCP-001-07` | Track `DRMCP-WORK-MCP-007` and `PRODUCT-WORK-SPEC-015` as the validation-work disposition gate. | Decide `DRMCP-WORK-SPEC-001/002` disposition and synchronize PRODUCT owner pointers. | T01. |
 | `DRMCP-TASK-MCP-001-08` | Track `DRMCP-WORK-MCP-008` as the fixture-baseline gate. | Create current-format and legacy-fallback fixtures. | T02-T07. |
-| `DRMCP-TASK-MCP-001-09` | Track `DRMCP-WORK-MCP-009` as the current read implementation gate. | Implement and test the corrected active index and current record handling. | T03-T08. |
-| `DRMCP-TASK-MCP-001-10` | Track `DRMCP-WORK-MCP-010` as the configured legacy-fallback implementation gate. | Implement and test the separate legacy archive index and fallback behavior. | T05-T09. |
-| `DRMCP-TASK-MCP-001-11` | Run integrated validation and independent review. Route substantive corrections to child Work Items. | Child Work Items own all corrective implementation. | T07-T10. |
+| `DRMCP-TASK-MCP-001-09` | Track `DRMCP-WORK-MCP-012` as the sole replacement current-read implementation gate. | W012 owns graph authoring, clean implementation, aggregate verification, independent review, and closure. | T03-T08 and T19; W012 T01 begins only after reviewed W013 and W014 closure. |
+| `DRMCP-TASK-MCP-001-10` | Track rebaselined `DRMCP-WORK-MCP-010`. | W010 owns configured legacy fallback after completed W012 output and its own reviewed graph release. | T02, T05, T08, T09. |
+| `DRMCP-TASK-MCP-001-11` | Run the sole integrated validation and independent review gate. Route every failure to its owning Work Item. | W012, W010, W-SPEC-001, and W-SPEC-002 own corrective implementation. | T07-T10, T16, T17. |
 | `DRMCP-TASK-MCP-001-12` | Record downstream readiness and evidence pointers for `DRMCP-WORK-MCP-002`. | Downstream Work Item creation and lifecycle tracking remain outside this Work Item. | T11. |
+| `DRMCP-TASK-MCP-001-13` | Author the amended W001 graph and exact future contracts. | No production implementation. | W011 closure. |
+| `DRMCP-TASK-MCP-001-14` | Preserve the blocked review disposition for the incomplete T13 graph. | No releaseable verdict. | T13. |
+| `DRMCP-TASK-MCP-001-15` | Preserve an empty release set for the stale T13 path. | Release nothing. | T14 remains blocked. |
+| `DRMCP-TASK-MCP-001-16` | Track retained `DRMCP-WORK-SPEC-001`. | W-SPEC-001 owns per-file detectors. | T09. |
+| `DRMCP-TASK-MCP-001-17` | Track retained `DRMCP-WORK-SPEC-002`. | W-SPEC-002 owns Topics graph validation. | T16. |
+| `DRMCP-TASK-MCP-001-18` | Track `DRMCP-WORK-MCP-013`. | W013 owns responsibility-contract partitioning, child decision workflows, overall review, and closure. | T13 and W011 closure. |
+| `DRMCP-TASK-MCP-001-19` | Track `DRMCP-WORK-MCP-014`. | W014 owns function-level internal-specification partitioning, child decision workflows, overall review, and closure. | T18. |
 
-Tasks T02-T10 are lifecycle-tracking Tasks, not implementation containers.
-T01 selected an exact existing or newly created Work Item ID for every T02-T10 gate.
+Tasks T02-T10 and T16-T19 are lifecycle-tracking Tasks, not implementation containers.
+T14 and T15 remain blocked as the stale review and release path created by T13.
+T18 and T19 establish the required detailed-design predecessors for W012.
+T01 records the historical initial child split; T13 created W012 but omitted its required detailed-design gates.
 Each delegated Work Item owns detailed Tasks, execution evidence, and local review.
 
 ## Completion Condition
@@ -167,9 +198,16 @@ This Work Item is complete when all of the following are true:
 - legacy records do not leak into normal listing, current repository validation, or authoring targets;
 - physical paths are absent from normal listing and retrieval responses except for explicit diagnostic or debug surfaces;
 - current-format and legacy-fallback fixtures cover accepted and rejected cases;
+- W013 completes reviewed responsibility-contract design;
+- W014 completes reviewed function-level internal-specification design after W013;
+- W012 completes the clean replacement current runtime after W013 and W014 without treating W009 structure as authority;
+- W-SPEC-001 completes retained per-file detector implementation;
+- W-SPEC-002 completes retained Topics graph validation after W-SPEC-001;
+- W010 completes configured legacy fallback after W012 and its own graph rebaseline;
 - implementation tests validate the corrected contracts rather than legacy assumptions;
 - `DRMCP-WORK-SPEC-001/002` disposition is coordinated with PRODUCT validation-policy owner pointers;
-- an independent review returns no blocking or major findings;
+- T11 remains the sole integrated verification owner;
+- an independent integrated review returns no blocking or major findings;
 - `DRMCP-WORK-MCP-002` accepts the readiness signals for `PRODUCT-WORK-SPEC-013` lifecycle tracking and REQ-003/REQ-002 child Work Item creation; this Work Item does not own their creation or lifecycle tracking;
 - `DRMCP-REQ-MCP-001` links this Work Item in its `work_items` metadata;
 - completion evidence and any residual limitations are recorded here before status changes to `done`.
@@ -210,10 +248,46 @@ This Work Item is complete when all of the following are true:
 - `DRMCP-WORK-MCP-007`: DRMCP-owned validation Work Item disposition and rebaseline tracked by T07.
 - `PRODUCT-WORK-SPEC-015`: PRODUCT-owned validation owner-pointer synchronization tracked by T07.
 - `DRMCP-WORK-MCP-008`: DRMCP-owned current and legacy fixture baseline tracked by T08.
-- `DRMCP-WORK-MCP-009`: DRMCP-owned current-format read implementation tracked by T09.
-- `DRMCP-WORK-MCP-010`: DRMCP-owned configured legacy archive fallback implementation tracked by T10.
+- `DRMCP-WORK-MCP-009`: Historical retired implementation planning. It is no longer tracked as the T09 completion gate.
+- `DRMCP-WORK-MCP-010`: Retained configured legacy archive fallback implementation tracked by T10 after W012 completion and rebaseline.
+- `DRMCP-WORK-MCP-011`: Accepted replacement runtime architecture.
+- `DRMCP-WORK-MCP-012`: Blocked replacement current-read implementation gate tracked by T09.
+- `DRMCP-WORK-MCP-013`: Responsibility-contract design hub tracked by T18.
+- `DRMCP-WORK-MCP-014`: Function-level internal-specification design hub tracked by T19 after T18.
+- `DRMCP-WORK-SPEC-001`: Retained per-file detector owner tracked by T16.
+- `DRMCP-WORK-SPEC-002`: Retained Topics graph owner tracked by T17 after T16.
 - `DRMCP-WORK-MCP-002`: Owner of downstream child Work Item creation, lifecycle tracking, and integrated closure.
 - `PRODUCT-ADR-SPEC-001`: Accepted semantic ownership boundary.
 - 2026-06-26 hub restructuring: the Work Item now delegates independently executable contract, fixture, and implementation work to child Work Items.
-- `DRMCP-TASK-MCP-001-01` through `DRMCP-TASK-MCP-001-12`: accepted hub task graph. T01 selected and created the exact T02-T10 child Work Item graph on 2026-06-26.
-- Implementation, fixture, validation, and independent-review evidence: pending task execution.
+- `DRMCP-TASK-MCP-001-01` through `DRMCP-TASK-MCP-001-12`: historical accepted hub graph before rebuild amendment.
+- `DRMCP-TASK-MCP-001-13`: completed graph-amendment authoring contract.
+- `DRMCP-TASK-MCP-001-14` and `DRMCP-TASK-MCP-001-15`: blocked stale review and release path.
+- `DRMCP-TASK-MCP-001-16` and `DRMCP-TASK-MCP-001-17`: retained-validation lifecycle gates.
+- `DRMCP-TASK-MCP-001-18` and `DRMCP-TASK-MCP-001-19`: responsibility-contract and internal-specification lifecycle gates.
+- Production implementation, validation implementation, and integrated-review evidence: pending downstream Task execution.
+
+### W011 architecture input
+
+- W011 is `done` and supplies the accepted replacement architecture.
+- D-001 through D-009 are `recorded`.
+- W009 remains replaced and retired.
+- W010 remains retained and `blocked` pending post-W012 rebaseline.
+- W-SPEC-001 and W-SPEC-002 remain retained, separate, and `not_started`.
+
+### Rebuild detailed-design and implementation state
+
+- T13 is `done`, but its graph omitted required detailed-design gates.
+- T14 is `blocked` and cannot produce a releaseable review verdict.
+- T15 is `blocked` with an empty release set.
+- W013 exists as the responsibility-contract design hub tracked by T18.
+- W014 exists as the function-level internal-specification design hub tracked by T19 after T18.
+- W012 and W012 T01 are `blocked` until W013 and W014 complete reviewed closure.
+- T09 tracks W012 rather than W009 and depends on T19.
+- T16 tracks W-SPEC-001.
+- T17 tracks W-SPEC-002 after T16.
+- T10 remains blocked pending completed W012 and its own rebaseline.
+- T11 remains the sole integrated verification owner.
+- T12 remains dependent on T11.
+- No execution leaf is released.
+- Production implementation remains blocked.
+- W001 remains `in_progress`.
