@@ -32,6 +32,50 @@ New records must be created under an active app namespace. Creating new files un
 - Agent authoring policy: `spec:product.design_records.authoring_standards.agent_authoring_policy`。
 - Note: DRMCP-dependent sections are TBD。DRMCP operational までは、この参照は partial と扱う。
 
+### Mandatory design-decision workflow skill
+
+設計、仕様、ADR、Requirement、Work Item、Taskについて複数の未決事項を整理する場合、またはユーザーへ一問ずつ確認しながら決定をrepositoryへ逐次永続化する場合は、作業開始前に次を必ず読む。
+
+- `C:\Users\imved\projects\brewprint\skills\design-decision-workflow\SKILL.md`
+
+次の場合にも適用する。
+
+- design topicをWork Itemとして起票または再構成する場合
+- decision inventoryまたはdecision ledgerを作成・更新する場合
+- interactive design decision loopを開始、引継ぎ、再開する場合
+- user judgment待ちの設計事項を整理する場合
+- confirmed decisionのADR要否を判定する場合
+- ADRの作成、更新、supersessionからSpecification反映へ進む場合
+- design review、finding correction、finding closure re-review、closure synchronizationのsequenceを設計する場合
+- implementation Task authoring中に未解決の設計判断が発覚した場合
+
+現在のphaseに応じて、同skill directoryのcompanion文書も必ず読む。
+
+- decision inventory、質問、逐次永続化、中断、引継ぎ、再開: `interactive-decision-loop.md`
+- ADR要否、既存ADR coverage、amend、supersede: `adr-routing.md`
+- independent design review、finding correction、re-review、closure: `design-review-gate.md`
+
+このskillは実装方法ではなく、accepted designを確定してreview済みにするまでを扱う。
+必要なdecisionが`open`、`in_discussion`、またはcanonical反映前の`decided`である間は、production implementation promptを作成しない。
+
+Work Itemはdesign topicとTask graphを所有し、decision-loop Taskはworkflow stateを所有する。ADRはdurable choiceとrationaleを、Specificationはcurrent normative stateを所有する。Task ledgerだけをcanonical design sourceとして扱わない。
+
+### Mandatory Claude Code prompt-authoring skill
+
+Claude Code向けのprompt、Task graph、handoff、review、re-review、finding correction、closure synchronizationを作成・修正・評価する前に、次のskill文書を必ず読む。
+
+- `C:\Users\imved\projects\brewprint\skills\claude-code-token-budget\SKILL.md`
+- `C:\Users\imved\projects\brewprint\skills\claude-code-token-budget\executor-ready-task-design.md`
+- `C:\Users\imved\projects\brewprint\skills\claude-code-token-budget\execution-hub-task-pattern.md`（同文書のapplication triggerに該当する場合）
+
+この必読条件は、Haiku / Sonnet / Opusへのmodel routing、実装Taskの分割・並列化、writer ownership、integration gate、実装symbol、test case、verification command、token消費やcontext削減を扱う場合にも適用する。
+
+このskillはdownstream agentへ読むよう依頼して済ませるものではない。Claude Code用promptを設計する現在のChatGPTが内容を理解し、promptへ反映する。未読のままready-to-run promptを出さない。skill変更時、phase変更時、model routing変更時、Task分割変更時は再読する。
+
+skill pathをdownstream agentのStartupへ機械的に追加するだけでは、この必読条件を満たさない。
+
+Execution hub applicability and persistence follow `execution-hub-task-pattern.md`.
+
 ### Chat style
 
 - タメ語・簡潔に。
@@ -94,13 +138,15 @@ New records must be created under an active app namespace. Creating new files un
 ### Git worktree inspection
 
 - Gitの変更状態とwhitespace検査には、利用可能な場合は `git.inspect_worktree` を優先して使う。
+- textual patchの確認には、利用可能な場合は `git.inspect_diff` を使う。review対象が限定されている場合は必ず`paths`を指定し、`scope`でstaged / unstagedを区別する。
 - `cwd` には `C:\Users\imved\projects\brewprint` を指定する。
 - taskやreviewの対象が限定されている場合は、対象pathを `paths` に明示し、無関係なworking-tree変更を結果へ混ぜない。
 - repository全体の状態が必要な場合だけ `paths` を省略する。
 - `result: pass` はwhitespace検査の成功を示す。working tree cleanの判定には `changes_present`、`scope_clean`、`repository_wide_clean` を使う。
+- `git.inspect_diff` の `result: truncated` はpatchの一部だけが返った状態。完全レビューに必要なら`paths`を狭めるか`max_bytes`を増やして再取得する。
 - `git diff --no-index --check` 相当のuntracked exit code `1` は、whitespace findingがなければ正常な差分として扱う。
 - LF/CRLF変換warningはadvisoryとして扱い、whitespace failureと混同しない。
-- `git.inspect_worktree` はread-onlyなstatusとwhitespace確認専用。test、formatter、generator、任意のGit操作の代替にはしない。
+- `git.inspect_worktree` と `git.inspect_diff` はread-onlyなinspection専用。test、formatter、generator、任意のGit変更操作の代替にはしない。
 
 ### Encoding / PowerShell
 
@@ -133,8 +179,8 @@ AI assistant は、現在利用可能なツール境界を明示して作業す�
 以下の場合は、無理に単独で完結させず、Codex / Opus / reviewer agent への委譲を提案する。
 
 - repo-local command execution が必要だが、現在の assistant tool から実行できない場合
-  - Git statusとwhitespace確認は、まず `git.inspect_worktree` の対応範囲を使う。
-  - 例: `go test`, `go run`, formatter, generator, renderer、または `git.inspect_worktree` が対応しないGit操作
+  - Git statusとwhitespace確認は`git.inspect_worktree`、textual patch確認は`git.inspect_diff`の対応範囲を先に使う。
+  - 例: `go test`, `go run`, formatter, generator, renderer、または両Git inspection toolが対応しないGit操作
 - 実行ログ・テスト結果・diagnostic 再現が判断根拠として必須の場合
 - 大きな実装差分の静的調査が必要で、grep / AST / test execution を組み合わせた方が安全な場合
 - 仕様・ADR・実装・fixture の境界が絡み、独立レビューを挟む価値が高い場合
@@ -153,6 +199,10 @@ AI assistant は、現在利用可能なツール境界を明示して作業す�
 - Claude Code、Codex、Opus、reviewer向けpromptでは、そのagentに必要なinstruction / policy docsだけを明示し、ChatGPT向けhandoffの規則と混同しない。
 - implementation review、Design Record review、workflow amendment reviewは目的が異なるため、原則として別promptへ分離する。
 - promptを出す前に、誰向けのpromptかをユーザーへ明示する。
+- 他sessionまたは他agentへ渡すready-to-run promptを出力する直前に、この`Prompt target declaration`以下の依頼先別ルールと、該当するmandatory skillを改めて確認する。この最終確認は省略しない。
+- Claude Code向けpromptでは、`Mandatory Claude Code prompt-authoring skill`で指定されたskill文書を現在のphaseに対して再確認し、minimum context pack、one prompt one responsibility、executor-ready gate、execution-hub gate、model routing、writer ownership、verification ownershipへ実際に適合していることを確認する。
+- 最終確認で不適合が見つかった場合、ready-to-run promptを出力しない。Task authoring、scope-freeze、graph amendment、または依頼先の再選定へ戻る。
+- downstream promptのStartupへskill pathを記載しただけでは、この最終確認を満たさない。
 
 以下を含む ready-to-run prompt を作成する。
 
