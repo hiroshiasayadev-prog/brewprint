@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.overview`
 - **status**: draft
-- **date**: 2026-06-28
+- **date**: 2026-06-30
 - **parent**: `spec:drmcp.design_records_mcp.overview`
 
 ## What this is
@@ -21,6 +21,26 @@ Provides the navigation-first catalog for Design Records MCP tools and points ea
 | Warning and diagnostic entry representation | `spec:drmcp.design_records_mcp.schema.diagnostics`. Individual operation contracts own trigger conditions and response placement. |
 
 This overview does not define a shared record response shape. Individual operations select the projection they return.
+
+### Application and transport boundary
+
+`list_records`, `get_records`, `resolve_reference`, and `validate_records` each invoke one dedicated application use case. No generic App Router is part of the accepted architecture for those four operations.
+
+Each of those application use cases owns a typed input, typed output, operation sequencing, and projection into the accepted public meaning.
+
+Core services return domain values, lookup states, conflicts, and validation findings. Core services do not construct complete tool responses.
+
+The MCP adapter owns protocol schemas, decoding, structural JSON validation, invocation, and encoding. MCP SDK types do not enter application or core contracts.
+
+Expected semantic states remain normal result data when an operation contract defines them. A failure that prevents a trustworthy result is an execution error.
+
+`spec:drmcp.implementation` owns the layer, port, adapter, and package architecture for those four operations.
+
+`list_authoring_guides` and `get_authoring_guidance` remain in the public catalog. Their application architecture remains with the authoring-guidance contracts.
+
+Authoring-transaction tools remain in the public catalog. Their application, snapshot, and package architecture is deferred to `DRMCP-REQ-MCP-002`.
+
+This scope clarification does not change any public request, response, status, diagnostic, warning, or error behavior.
 
 ### Public read and navigation tools
 

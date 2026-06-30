@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.authoring_transaction_model`
 - **status**: draft
-- **date**: 2026-06-28
+- **date**: 2026-06-30
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 
 ## What this is
@@ -44,6 +44,12 @@ Expired proposals are not returned as retained proposals; they produce a `propos
 - Every affected target and source-backed diagnostic can construct the required portable location before writing begins.
 
 When any check fails, `accept_proposed_write` returns `written: false` and MUST NOT modify repository files.
+
+Current-format post-write validation integration is deferred to `DRMCP-REQ-MCP-002`.
+
+This Specification does not require the current authoring transaction to use the W011 snapshot architecture. It does not treat retained proposal state as an integrated substitute for current-format persisted-source validation.
+
+Proposal lifecycle, pre-write validation, write eligibility, and write-result semantics remain owned by this Specification. `spec:drmcp.implementation` does not own current authoring-transaction validation behavior.
 
 ### Common authoring response fields
 

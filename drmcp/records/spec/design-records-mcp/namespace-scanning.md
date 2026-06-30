@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.namespace_scanning`
 - **status**: draft
-- **date**: 2026-06-27
+- **date**: 2026-06-30
 - **parent**: `spec:drmcp.design_records_mcp.overview`
 
 ## What this is
@@ -191,6 +191,18 @@ Legacy sources remain excluded from current repository-wide validation and all a
 The absence of legacy roots does not affect current-only operation.
 Legacy-only startup is not supported because at least one current root is required.
 
+## Runtime snapshot boundary
+
+The composition root validates configuration at server startup. Invalid startup configuration prevents server start.
+
+Each invocation of `list_records`, `get_records`, `resolve_reference`, or `validate_records` rebuilds the current active index and configured legacy lookup map from the filesystem. One invocation of one of those operations uses one immutable snapshot from start to finish.
+
+Filesystem changes become visible on the next invocation of one of those operations. DRMCP does not mutate or incrementally patch a shared process-wide index for this W011 slice.
+
+Application use cases for those operations access configuration and source data through narrow ports. Concrete filesystem enumeration, source reading, and configuration loading belong to outer adapters.
+
+`spec:drmcp.implementation` owns the lifecycle, port, adapter, and package architecture for those four operations. This Specification remains the authority for configured-root and index semantics. Authoring-guidance and authoring-transaction runtime architecture are outside this boundary.
+
 ## Explicit exclusions
 
 This specification does not define:
@@ -203,7 +215,7 @@ This specification does not define:
 - resolver fallback order;
 - validation diagnostic identifiers or response shapes;
 - fixture design;
-- runtime implementation mechanics;
+- parser and index algorithm details beyond the runtime snapshot and adapter boundary;
 - authoring target selection.
 
 ## Related specs
@@ -222,6 +234,7 @@ This specification does not define:
 | `spec:drmcp.design_records_mcp.schema.record_source` | DRMCP source representation for discovered records. |
 | `spec:drmcp.design_records_mcp.schema.record_model` | DRMCP indexed record representation and canonical identity handling. |
 | `spec:drmcp.design_records_mcp.schema.diagnostics` | Diagnostic identifiers and representations for configuration and indexing failures. |
+| `spec:drmcp.implementation` | Request-scoped snapshot lifecycle and outbound-adapter architecture. |
 
 ## Sources
 
@@ -230,3 +243,5 @@ This specification does not define:
 - `DRMCP-TASK-MCP-003-02`: Accepted configured-root and index-separation decisions.
 - `DRMCP-TASK-MCP-005-03`: Configured legacy-root and minimal lookup-map decisions.
 - `DRMCP-TASK-MCP-005-04`: Rejected-input and operation-pointer synchronization.
+- `DRMCP-ADR-MCP-002`: Request-scoped snapshot and runtime lifecycle.
+- `DRMCP-ADR-MCP-003`: Application-owned ports and outer adapters.

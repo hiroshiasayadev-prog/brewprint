@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.responsibility_boundary`
 - **status**: draft
-- **date**: 2026-06-28
+- **date**: 2026-06-30
 - **parent**: `spec:drmcp.design_records_mcp.overview`
 
 ## What this is
@@ -34,6 +34,24 @@ PRODUCT namespace, repository-layout, authoring, traceability, and spec-format c
 `list_records` does not perform exact retrieval or resolution. It queries the active index for one app namespace, supported sequential kind, and domain.
 
 `get_records` is the sole exact-retrieval operation. A single retrieval uses one `refs` element. Exact retrieval does not invoke the resolver.
+
+### Internal implementation boundary
+
+`spec:drmcp.implementation` is the current implementation-architecture authority.
+
+| layer | responsibility |
+|---|---|
+| Composition root | Startup configuration, construction, wiring, run, and shutdown only. |
+| MCP adapter | Protocol schemas, structural validation, application invocation, and encoding. |
+| Application use cases | Operation input, output, sequencing, projection, and request-snapshot orchestration. |
+| Core | Transport-neutral parsing, indexing, resolution, validation, and finding values. |
+| Filesystem and configuration adapters | Concrete external access through application-owned narrow ports. |
+
+`list_records`, `get_records`, `resolve_reference`, and `validate_records` each invoke one dedicated application use case. No generic App Router or all-purpose repository interface is part of the accepted architecture for those operations.
+
+Authoring-guidance and authoring-transaction operations are outside this internal architecture boundary. Their use cases, snapshot lifecycle, and package placement remain with their owning contracts.
+
+Dependencies point from adapters to application and from application to core. Core does not depend on MCP, filesystem, configuration, or application packages.
 
 ### Boundary against filesystem tools
 

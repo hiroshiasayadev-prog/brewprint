@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.overview`
 - **status**: draft
-- **date**: 2026-06-28
+- **date**: 2026-06-30
 - **parent**: `-`
 
 ## What this is
@@ -56,6 +56,14 @@ Design Records MCP operates on a separate data source from the existing brewprin
 | Design Records MCP | Current Markdown records under explicitly configured app roots; H1-adjacent metadata; path-derived current spec identity; optional configured legacy archive sources in a separate index | Design record and workflow artifact discovery, indexing, read operations, validation execution, and reference resolution under their owning contracts |
 
 Normal list and exact-retrieval representation is owned by `DRMCP-WORK-MCP-004`. Successful resolver target projection is owned by `DRMCP-WORK-MCP-005`. Shared warning and diagnostic representation, portable source-location exposure, and the no-current-absolute-path boundary are defined by `spec:drmcp.design_records_mcp.schema.diagnostics`. Any future absolute physical-path output requires a separate privileged operation contract.
+
+### Implementation architecture
+
+`spec:drmcp.implementation` owns the W011 architecture for `list_records`, `get_records`, `resolve_reference`, and `validate_records`.
+
+Each invocation of one of those four operations uses one fresh immutable snapshot. The snapshot keeps the current active index separate from the optional legacy lookup map.
+
+This architecture does not apply to the complete public tool catalog. Authoring-guidance and authoring-transaction internal architecture remains with their owning contracts. Public operation behavior remains owned by this Specification area and its child contracts.
 
 ## Topics
 

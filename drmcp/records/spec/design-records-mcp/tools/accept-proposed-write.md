@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.accept_proposed_write`
 - **status**: draft
-- **date**: 2026-06-28
+- **date**: 2026-06-30
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
 
@@ -59,7 +59,13 @@
 
 `written: true` means repository files were modified. Each `files_written[].path` uses the same normalized repository-relative spelling as the corresponding proposal target, `diff.files[]` entry, and unified-diff operand. Absolute host paths and backslash-separated Windows paths are prohibited.
 
+Current-format post-write validation integration is deferred to `DRMCP-REQ-MCP-002`.
+
+This contract does not require the current authoring transaction to invoke the W011 snapshot architecture after writing. It does not treat YAML or V01-SPEC authoring semantics as integrated with current-format validation.
+
 If post-write validation fails after writing, the response must still return `written: true`, include validation diagnostics, and provide repair guidance. MVP does not automatically roll back accepted writes after post-write validation failure. The caller should create a repair proposal. An implementation failure discovered after files were actually modified must not report `written: false` or erase the actual written-file state.
+
+This contract retains `written`, `files_written`, post-write failure reporting, repair guidance, and no-automatic-rollback behavior. `spec:drmcp.implementation` does not own current authoring-transaction validation integration.
 
 Force-accepting invalid proposals (proposals with pre-write error diagnostics) is outside MVP. Pre-write error diagnostics cause `written: false`.
 

@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.schema.diagnostics`
 - **status**: draft
-- **date**: 2026-06-28
+- **date**: 2026-06-30
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
 
 ## What this is
@@ -25,6 +25,18 @@ PRODUCT specifications own whether record content, document shape, lifecycle sta
 | Authoring operation outcomes | operation-level `diagnostics` | Uses the shared envelope while preserving authoring-owned categories and trigger semantics. |
 
 Request-shape errors and execution failures are not normal warning or validation-diagnostic entries when the owning operation contract says that no normal response wrapper is returned.
+
+### Internal producer boundary
+
+Core validators return transport-neutral findings as data. Validators do not format MCP responses and perform no filesystem I/O.
+
+Application use cases aggregate findings, suppress semantic duplicates, apply deterministic ordering, and project operation diagnostics or warnings.
+
+The MCP adapter encodes the application result. The adapter does not redefine category, severity, association, ordering, or execution-error meaning.
+
+A failure that prevents a trustworthy diagnostic collection is an application execution error. It is not converted into a normal diagnostic entry.
+
+The complete internal architecture is defined by `spec:drmcp.implementation`.
 
 ### Shared envelope
 
@@ -503,6 +515,7 @@ This contract does not define or retain:
 | `spec:drmcp.design_records_mcp.tools.get_records` | Exact-retrieval warning triggers, ordered occurrence behavior, and placement. |
 | `spec:drmcp.design_records_mcp.schema.record_model` | Current source retention, addressability, and conflict groups. |
 | `spec:drmcp.design_records_mcp.namespace_scanning` | Current and legacy root state and separate legacy lookup map. |
+| `spec:drmcp.implementation` | Finding production, aggregation, projection, and execution-error ownership. |
 | `spec:product.design_records.traceability.resolve_and_validation` | PRODUCT-owned relation and identity invalidity. |
 | `spec:product.design_records.authoring_standards` | PRODUCT-owned kind-specific authoring rules. |
 
@@ -511,3 +524,5 @@ This contract does not define or retain:
 - `DRMCP-TASK-MCP-006-01`: Authority, contradiction, and changed-file baseline.
 - `DRMCP-TASK-MCP-006-02`: Validation execution, subject, relation-lookup, and response-wrapper contract.
 - `DRMCP-TASK-MCP-006-03`: Accepted D01 through D11 diagnostic representation decisions.
+- `DRMCP-ADR-MCP-004`: Operation result and diagnostic ownership.
+- `DRMCP-ADR-MCP-005`: Validation finding aggregation and projection boundary.

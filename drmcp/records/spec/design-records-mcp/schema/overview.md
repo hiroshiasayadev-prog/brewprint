@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.schema.overview`
 - **status**: draft
-- **date**: 2026-06-27
+- **date**: 2026-06-30
 - **parent**: `spec:drmcp.design_records_mcp.overview`
 
 ## What this is
@@ -17,9 +17,12 @@ The schema group covers:
 - Which metadata and H1 values each record kind supplies.
 - How complete current sequential IDs and path-derived spec refs establish canonical identity.
 - How valid, invalid, identity-less, and duplicate sources participate in the active index and validation inputs.
+- How source, parsed, index, conflict, finding, and public-projection states remain separate internally.
 - How validation diagnostics are categorized and what fields they carry.
 - How authoring guides are discovered and served.
 - How authoring transactions use proposals, body cache, and section selectors.
+
+`spec:drmcp.implementation` owns the concrete internal layer and Go package architecture. Schema Specifications own the public and semantic structures consumed by that architecture.
 
 ## Topics
 

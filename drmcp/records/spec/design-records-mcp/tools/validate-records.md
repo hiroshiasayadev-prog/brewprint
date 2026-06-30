@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.validate_records`
 - **status**: draft
-- **date**: 2026-06-28
+- **date**: 2026-06-30
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
 
@@ -98,6 +98,26 @@ Execution rules:
 - A valid current root with zero discovered records is valid and contributes an empty subject set.
 - Missing `legacy_roots` and an explicit empty list are valid and mean legacy fallback is disabled.
 - A required direct, conflict-member, or conflict-candidate location that cannot be constructed makes the diagnostic collection untrustworthy; validation does not omit that entry, source, member, or candidate and does not return a partial normal wrapper.
+
+## Validation orchestration
+
+`validate_records` builds one fresh immutable snapshot for the invocation.
+
+The runtime completes source enumeration, source reading, parsing, and index construction before validation passes begin.
+
+Validation pass order:
+
+1. Per-source syntax, metadata, identity, and document-shape validation.
+2. Current relation validation against the complete active index.
+3. Accepted legacy relation validation against the separate configured lookup map.
+4. Topics graph validation after per-source state and complete index state are available.
+5. Finding aggregation, semantic duplicate suppression, deterministic ordering, and response projection.
+
+Individual validators perform no filesystem I/O. Validators do not rescan roots, call public MCP tools, or format the MCP response.
+
+Validators return transport-neutral findings. The application use case owns aggregation and the normal validation output. The MCP adapter owns protocol encoding only.
+
+`spec:drmcp.implementation` owns the complete implementation architecture. This contract remains the authority for validation request, subject, lookup, result, and error behavior.
 
 ## Current relation validation
 
@@ -232,5 +252,6 @@ An unresolved exact `ref` selector is not converted into `ok: true` with an empt
 | `spec:drmcp.design_records_mcp.resolver` | Current-first and accepted legacy lookup orchestration boundary. |
 | `spec:drmcp.design_records_mcp.tools.resolve_reference` | Public resolver contract that repository validation does not invoke. |
 | `spec:drmcp.design_records_mcp.schema.diagnostics` | Shared envelope, categories, severity, ordering, duplicate suppression, and T04 location handoff. |
+| `spec:drmcp.implementation` | Fresh-snapshot and validator orchestration architecture. |
 | `spec:product.design_records.traceability.resolve_and_validation` | PRODUCT-owned lookup and invalidity semantics. |
 | `spec:product.design_records.namespace_model.artifact_id_grammar` | Current sequential artifact ID grammar. |

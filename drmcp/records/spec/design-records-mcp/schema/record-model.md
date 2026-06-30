@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.schema.record_model`
 - **status**: draft
-- **date**: 2026-06-27
+- **date**: 2026-06-30
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
 
 ## What this is
@@ -47,7 +47,24 @@ An invalid but addressable record may have missing or invalid fields.
 - A parsed invalid value remains available for validation; it is not replaced with a default.
 - DRMCP does not synthesize title text, lifecycle status, dates, or relation values from filenames or unrelated content.
 
-Exact implementation types are not prescribed here.
+### Internal state boundary
+
+The runtime keeps these states separate:
+
+| state | contract |
+|---|---|
+| Source state | Raw source data and provenance. |
+| Parsed state | Parsed fields and document structure, including invalid present values. |
+| Addressable index entry | One uniquely addressable canonical identity. |
+| Invalid but addressable state | One canonical identity with invalid or missing non-identity content. |
+| Identity conflict | Every source claiming one canonical identity, with no winner. |
+| Validation finding | Transport-neutral finding data. |
+| Public projection | Operation-specific result created by an application use case. |
+
+No nullable record type spans source loading, parsing, indexing, validation, application, and MCP transport.
+
+Concrete Go struct names are not prescribed here. `spec:drmcp.implementation` owns the internal layer and package architecture.
+
 Public omission, null, warning, heading, and body representation are owned by `DRMCP-WORK-MCP-004`.
 Exact diagnostic identifiers, severity, and source-location fields are owned by `DRMCP-WORK-MCP-006`.
 
@@ -59,9 +76,11 @@ Exact diagnostic identifiers, severity, and source-location fields are owned by 
 | `spec:drmcp.design_records_mcp.schema.fields` | Common and kind-specific parsed field vocabulary. |
 | `spec:drmcp.design_records_mcp.schema.id_normalization` | Canonical identity mapping. |
 | `spec:drmcp.design_records_mcp.namespace_scanning` | Configured current roots and active-index construction. |
+| `spec:drmcp.implementation` | Internal state separation and package ownership. |
 
 ## Sources
 
 - `DRMCP-TASK-MCP-003-02`: Duplicate identity and active-index separation decisions.
 - `DRMCP-TASK-MCP-003-03`: Current spec invalid-source and identity decisions.
 - `DRMCP-TASK-MCP-003-04`: Shared record integration decisions.
+- `DRMCP-ADR-MCP-004`: Internal state and operation-contract separation.
