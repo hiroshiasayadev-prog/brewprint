@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.artifact_model.artifact_responsibility_matrix`
 - **status**: draft
-- **date**: 2026-06-24
+- **date**: 2026-07-01
 - **parent**: `spec:product.design_records.artifact_model`
 
 ## What this is
@@ -16,10 +16,34 @@ It does not define BPDSL artifacts, implementation source artifacts, render arti
 |---|---|---|
 | ADR | Accepted design decisions, rationale for adoption, and rejected alternatives. | Current specifications, exploration logs, progress management, or implementation state. |
 | investigation | Research results, evidence, uncertainties, options, and follow-up artifact candidates. | Decisions, current specs, cross-cutting progress, or completion state. |
-| requirement | The need, gap, request, and stable requirement identity. | Research process, implementation procedure, or design decision. |
-| work item | Requirement resolution flow, goal state, cross-cutting progress, layer-by-layer impact tracking, and task graph. | Spec body, decision history, research report, or canonical subordinate task status. |
-| task | Concrete closeable work, completion conditions, individual status, and verification evidence. | Canonical requirements, design decisions, current specs, or work item goal state. |
+| requirement | The need, gap, request, and stable requirement identity. | Research process, implementation procedure, design decision, or persisted derived Work Item membership. |
+| work item | Direct material provenance, bounded resolution flow, goal state, cross-cutting progress, layer-by-layer impact tracking, Task graph, and Task-originated downstream decomposition. | Spec body, decision history, research report, canonical subordinate Task status, or implicit parent-child Work Item hierarchy. |
+| task | Concrete closeable work, completion conditions, individual status, verification Evidence, and temporary or historical decision-workflow state. | Canonical requirements, canonical design state, durable decision rationale, current Specifications, Work Item goal state, or duplicated source provenance. |
 | spec | Current specifications, scope, and currently valid contracts. | Decision history, exploration logs, progress state, or implementation authority. |
+
+## Canonical design-state boundary
+
+| artifact | design-state responsibility |
+|---|---|
+| Task | Owns resumable decision-workflow state and historical checkpoints. Does not own canonical design state. |
+| ADR | Owns durable choice, alternatives, rationale, consequences, and supersession history. |
+| spec | Owns the current normative behavior, structure, boundary, and constraint. |
+
+A decision Task may retain questions, options, answers, concise reasons, routing state, and cursor position.
+The Task ledger must not replace an ADR or Specification.
+
+## Source-relation ownership boundary
+
+| owner | responsibility |
+|---|---|
+| PRODUCT | Persisted provenance semantics, canonical relation meaning, direct material source selection, invalid conditions, and migration semantics. |
+| DRMCP | Parsing, indexing, Task-owner resolution mechanics, direct reverse lookup, transitive traversal, cycle-analysis algorithms, diagnostics, response schemas, and user-visible projections. |
+
+Work Item `source_refs` is the only persisted workflow provenance field.
+Task provenance is reached through Task `work_item`.
+Requirement-to-Work-Item reverse membership is derived from direct Work Item refs.
+
+The ownership split does not change Task workflow-state ownership or ADR and Specification design-state ownership.
 
 ## Extracted implementation responsibilities
 
@@ -52,3 +76,9 @@ This file keeps only the matrix-local pointer.
 |---|---|
 | `spec:product.design_records.artifact_model` | Parent artifact-model overview. |
 | `spec:product.bpdsl.artifact_responsibilities` | Temporary preservation of extracted BPDSL and implementation-flow responsibility rows. |
+| PRODUCT-REQ-SPEC-005 | Typed single-responsibility Task contract. |
+| PRODUCT-REQ-SPEC-006 | Generic workflow source-relation requirement. |
+| PRODUCT-ADR-SPEC-001 | PRODUCT semantic ownership and app-local implementation boundary. |
+| PRODUCT-ADR-SPEC-006 | Decision checkpoints and canonical design-state boundary. |
+| PRODUCT-ADR-SPEC-007 | Canonical workflow provenance and validity semantics. |
+| PRODUCT-ADR-SPEC-008 | Atomic workflow relation migration semantics. |

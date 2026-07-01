@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.traceability.metadata_schema`
 - **status**: draft
-- **date**: 2026-06-24
+- **date**: 2026-07-01
 - **parent**: `spec:product.design_records.traceability`
 
 ## What this is
@@ -54,28 +54,51 @@ The full investigation metadata field set, lifecycle, and authoring form belong 
 
 ## Workflow relation metadata
 
-Workflow artifact relations are declared through complete public IDs in metadata fields.
+Current persisted workflow relations are:
 
-| source artifact | field | target |
+| source artifact | field | target or meaning |
 |---|---|---|
-| requirement | `work_items` | Complete work item public ID. |
-| work item | `source_requirement` | Complete requirement public ID. |
-| work item | `tasks` | Complete task public ID. |
-| task | `work_item` | Complete work item public ID. |
-| task | `source_requirement` | Complete requirement public ID. |
-| task | `depends_on` | Complete task public ID. |
+| work item | `source_refs` | Required non-empty unordered set of active canonical refs for direct material sources. |
+| work item | `tasks` | Complete Task public IDs owned by the Work Item. |
+| task | `work_item` | Complete owning Work Item public ID. |
+| task | `depends_on` | Complete prerequisite Task public IDs. |
 
-The current semantic checks are:
+Task records persist no source field.
+Requirement records persist no `work_items` field.
 
-| condition | PRODUCT-owned invalid condition |
+Work Item `source_refs` semantics:
+
+| condition | contract |
 |---|---|
-| Missing target | A declared workflow relation points to a non-existent supported target. |
-| Requirement/work item mismatch | `requirement.work_items` and `work_item.source_requirement` disagree. |
-| Work item/task mismatch | `work_item.tasks` and `task.work_item` disagree. |
-| Source requirement mismatch | A task's `source_requirement` differs from its parent work item's `source_requirement`. |
-| Noncanonical relation value | A physical path, bare grammar fragment, or semantic prefix is used where a public ID is required. |
+| Cardinality | At least one ref is required. |
+| Ordering | Order has no semantic meaning. Reordering alone does not change provenance. |
+| Reference classes | Every entry uses an active canonical reference class from `spec:product.design_records.traceability.artifact_refs`. |
+| Selection | Include every direct material source. Exclude incidental context and merely transitive ancestors unless independently material. |
+| Duplicates | Duplicate canonical refs are invalid. Persistence does not silently deduplicate them. |
+| Self-reference | A Work Item must not include its own canonical identity. |
+| Resolution | Every entry must resolve. Unresolved and unrecognized refs are invalid. |
 
-Task dependency existence is in scope. Dependency-cycle detection and execution-order projection are not current PRODUCT traceability semantics.
+The direct Requirement reverse relation is derived from Work Item metadata.
+It is the unordered, duplicate-free set of Work Items whose `source_refs` directly contain the Requirement ID.
+Transitive descendants are excluded from the direct reverse relation.
+
+Work Item `tasks` and Task `work_item` remain the explicit ownership relation.
+Task `depends_on` remains the explicit Task dependency relation.
+
+### Migration state
+
+Repository-wide staged migration is allowed.
+Each record transitions atomically.
+
+| artifact | transition contract |
+|---|---|
+| Work Item | Convert `source_requirement` to a one-element `source_refs` list and remove the old field in the same update. Infer no additional source. |
+| Task | Remove `source_requirement` without replacement. Preserve `work_item` and `depends_on`. Do not create Task `source_refs`. |
+| Requirement | Remove `work_items` only after exact equality with the derived direct reverse set. Compare unordered, duplicate-free sets. A mismatch blocks migration. |
+
+A Work Item must not persist both `source_requirement` and `source_refs`.
+Migration must not silently repair relation mismatches.
+The repository may contain migrated and unmigrated records during staged migration.
 
 ## Metadata boundary
 
@@ -83,6 +106,8 @@ No internal-design canonical metadata contract is current.
 No external coverage metadata contract is current.
 No BPDSL YAML endpoint metadata contract is current.
 No DRMCP writer schema is owned by PRODUCT.
+PRODUCT owns the persisted relation meaning, invalid conditions, and migration semantics.
+DRMCP owns parsing, indexing, reverse lookup, traversal, Task-owner resolution, diagnostics, response schemas, and projections.
 Historical disposition evidence is recorded in T05.
 
 ## Related specs
@@ -94,3 +119,6 @@ Historical disposition evidence is recorded in T05.
 | `spec:product.design_records.spec_format.topics_table` | Authoritative child-topic relationship owner. |
 | `spec:product.design_records.traceability.artifact_refs` | Supported reference classes. |
 | `spec:product.design_records.traceability.resolve_and_validation` | Lookup sources and invalid condition boundary. |
+| PRODUCT-REQ-SPEC-006 | Generic workflow source-relation requirement. |
+| PRODUCT-ADR-SPEC-007 | Canonical Work Item provenance and direct Requirement reverse relation. |
+| PRODUCT-ADR-SPEC-008 | Staged atomic migration contract. |

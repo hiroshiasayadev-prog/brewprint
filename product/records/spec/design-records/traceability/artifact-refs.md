@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.traceability.artifact_refs`
 - **status**: draft
-- **date**: 2026-06-24
+- **date**: 2026-07-01
 - **parent**: `spec:product.design_records.traceability`
 
 ## What this is
@@ -69,16 +69,18 @@ Physical paths are not canonical references in these fields.
 
 ## Workflow relation identity
 
-Workflow relations use complete public IDs in declared metadata fields.
+Work Item `source_refs` reuses the active reference classes defined in this file.
+It does not create a Work Item-only reference taxonomy or a new semantic prefix.
 
 | source field | target identity |
 |---|---|
-| `requirement.work_items` | Complete work item public ID. |
-| `work_item.source_requirement` | Complete requirement public ID. |
-| `work_item.tasks` | Complete task public ID. |
-| `task.work_item` | Complete work item public ID. |
-| `task.source_requirement` | Complete requirement public ID. |
-| `task.depends_on` | Complete task public ID. |
+| `work_item.source_refs` | Any active canonical reference class in `## Active reference classes`. |
+| `work_item.tasks` | Complete Task public ID. |
+| `task.work_item` | Complete Work Item public ID. |
+| `task.depends_on` | Complete Task public ID. |
+
+Task records have no source relation field.
+Requirement direct reverse membership is derived and is not a persisted identity field.
 
 Relations are not inferred from physical paths, file names, parent directories, or ID string structure.
 
@@ -97,4 +99,7 @@ Historical disposition evidence is recorded in T05.
 | `spec:product.brewprint.compatibility` | Legacy issued-ID retention pointer. |
 | V01-ADR-087 | Investigation reference validation. |
 | V01-ADR-088 | Canonical reference foundation and deferred endpoint evidence. |
-| V01-ADR-092 | Workflow relation identity boundary. |
+| V01-ADR-092 | Historical workflow relation identity boundary. |
+| PRODUCT-REQ-SPEC-006 | Generic workflow source-relation requirement. |
+| PRODUCT-ADR-SPEC-007 | Active canonical reference reuse for Work Item provenance. |
+| PRODUCT-ADR-SPEC-008 | Legacy workflow field transition boundary. |

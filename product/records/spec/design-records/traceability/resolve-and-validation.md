@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.traceability.resolve_and_validation`
 - **status**: draft
-- **date**: 2026-06-24
+- **date**: 2026-07-01
 - **parent**: `spec:product.design_records.traceability`
 
 ## What this is
@@ -67,14 +67,20 @@ DRMCP owns any concrete diagnostic label or response representation for these co
 
 | condition | invalid when |
 |---|---|
-| Target existence | A declared requirement, work item, or task relation points to a missing target. |
-| Requirement/work item reciprocity | `requirement.work_items` and `work_item.source_requirement` do not agree. |
-| Work item/task reciprocity | `work_item.tasks` and `task.work_item` do not agree. |
-| Task source requirement | `task.source_requirement` does not match the parent work item's `source_requirement`. |
-| Task dependency target | `task.depends_on` points to a missing task. |
-| Noncanonical value | A physical path, bare grammar fragment, or unsupported semantic prefix is used as a relation value. |
+| Work Item source cardinality | `source_refs` is missing or empty. |
+| Source target existence | A Work Item `source_refs` entry does not resolve. |
+| Source canonical identity | A Work Item `source_refs` entry uses an unrecognized or noncanonical ref form. |
+| Duplicate source | The same canonical ref appears more than once in one Work Item `source_refs` set. |
+| Work Item self-reference | A Work Item includes its own canonical identity in `source_refs`. |
+| Work Item/Task ownership | `work_item.tasks` and `task.work_item` do not agree. |
+| Task dependency target | `task.depends_on` points to a missing Task. |
+| Semantic provenance cycle | The normalized Work Item provenance graph contains a cycle. |
 
-These checks validate declared relations. They do not search for orphan artifacts, project progress, traversal trees, cycles, or execution order.
+For provenance-cycle semantics, a Work Item source ref to a Task is normalized to the Task's owning Work Item.
+Work Item `tasks`, Task `work_item`, derived Requirement reverse relations, and Task `depends_on` do not independently create provenance edges.
+
+PRODUCT defines the invalid states and normalization meaning.
+DRMCP defines the Task-owner resolution mechanism and cycle-analysis algorithm.
 
 ## Duplicate identity conditions
 
@@ -95,6 +101,9 @@ Duplicate identity conditions for `coverage:`, `COV-*`, `internal-design:`, `yam
 | Diagnostic category names and severities | DRMCP. |
 | Parser behavior | DRMCP. |
 | Persistence and indexing implementation | DRMCP. |
+| Task-owner resolution mechanism | DRMCP. |
+| Direct reverse lookup and transitive traversal | DRMCP. |
+| Cycle-analysis algorithm | DRMCP. |
 | UI and tool APIs | DRMCP. |
 | Writer behavior, dry-run diff, confirmation, conflict handling, format preservation, and permission boundaries | DRMCP app-local specifications. |
 
@@ -102,7 +111,8 @@ Duplicate identity conditions for `coverage:`, `COV-*`, `internal-design:`, `yam
 
 Active resolve and validation contracts are defined by the sections above.
 No `yaml:`, `internal-design:`, `coverage:`, `COV-*`, or fixture lookup is active.
-Workflow orphan diagnostics, progress projection, traversal, cycle detection, and execution-order checks belong to DRMCP app-local specifications.
+Workflow orphan diagnostics, progress projection, traversal mechanisms, cycle-analysis algorithms, and execution-order checks belong to DRMCP app-local specifications.
+Semantic provenance-cycle invalidity remains a PRODUCT rule.
 Historical disposition evidence is recorded in T05.
 
 ## Related specs
@@ -113,3 +123,6 @@ Historical disposition evidence is recorded in T05.
 | `spec:product.design_records.traceability.metadata_schema` | Metadata and relation fields. |
 | `spec:product.design_records.spec_format.spec_id_as_ref` | Spec lookup source and path-derived identity. |
 | `spec:product.brewprint.compatibility` | Legacy issued-ID compatibility pointer. |
+| PRODUCT-REQ-SPEC-006 | Generic workflow source-relation requirement. |
+| PRODUCT-ADR-SPEC-007 | Source-ref validity and semantic provenance-cycle rules. |
+| PRODUCT-ADR-SPEC-008 | Atomic migration and mismatch-blocking boundary. |
