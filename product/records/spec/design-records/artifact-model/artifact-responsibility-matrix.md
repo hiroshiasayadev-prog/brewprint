@@ -32,6 +32,29 @@ It does not define BPDSL artifacts, implementation source artifacts, render arti
 A decision Task may retain questions, options, answers, concise reasons, routing state, and cursor position.
 The Task ledger must not replace an ADR or Specification.
 
+## Completed workflow record boundary
+
+Completed decision, authoring, and review Tasks remain historical Evidence.
+Later design judgment uses a new decision, authoring, and integrated review Task chain.
+Completed records do not change their outcome, Evidence, verdict, or finding set to represent later work.
+
+Correction owns repair of named findings.
+A later independent review owns finding closure.
+The correction owner must not close the repaired findings.
+
+## Synchronization ownership boundary
+
+Synchronization owns only exact mechanically derivable propagation named by its contract:
+
+- lifecycle state;
+- closure Evidence;
+- completion-result propagation;
+- relation propagation.
+
+Synchronization does not own canonical authoring, correction, Task graph changes, or new judgment.
+Synchronization must not rewrite a completed record's outcome, Evidence, verdict, or finding set.
+Synchronization stops when required state cannot be derived mechanically.
+
 ## Source-relation ownership boundary
 
 | owner | responsibility |
@@ -82,3 +105,5 @@ This file keeps only the matrix-local pointer.
 | PRODUCT-ADR-SPEC-006 | Decision checkpoints and canonical design-state boundary. |
 | PRODUCT-ADR-SPEC-007 | Canonical workflow provenance and validity semantics. |
 | PRODUCT-ADR-SPEC-008 | Atomic workflow relation migration semantics. |
+| PRODUCT-ADR-SPEC-013 | Finding-driven correction and closure-review materialization. |
+| PRODUCT-ADR-SPEC-014 | Completed-record preservation and synchronization write ownership. |

@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.authoring_standards.adr_authoring`
 - **status**: draft
-- **date**: 2026-06-23
+- **date**: 2026-07-01
 - **parent**: `spec:product.design_records.authoring_standards`
 
 ## What this is
@@ -101,7 +101,11 @@ Rules:
 
 - A replacing ADR lists the replaced ADR in `supersedes`.
 - Do not rewrite an accepted ADR to overturn its decision.
-- Create a new ADR and supersede the accepted ADR.
+- Create a new ADR and supersede the accepted ADR when the selected alternative or core ownership architecture changes materially.
+- An accepted ADR may be amended when the selected alternative, core architecture, and rationale remain valid.
+- A non-material amendment may clarify or extract an overloaded responsibility inside the accepted architecture.
+- Responsibility extraction alone does not require supersession.
+- ADR routing must record the materiality judgment before authoring begins.
 - ADR lifecycle state is carried by `status` and the supersession chain.
 
 ### Kind-specific authoring rules
@@ -177,4 +181,5 @@ Concrete tool contracts belong to DRMCP specs.
 | `spec:drmcp.design_records_mcp.schema.metadata_grammar` | ADR metadata parsing grammar. |
 | `spec:drmcp.design_records_mcp.schema.authoring_transaction_schema` | Concrete authoring transaction contract. |
 | PRODUCT-REQ-SPEC-002 | Source requirement. |
+| PRODUCT-ADR-SPEC-006 | ADR routing, amendment, and supersession boundary. |
 | PRODUCT-WORK-SPEC-011 | Source work item. |

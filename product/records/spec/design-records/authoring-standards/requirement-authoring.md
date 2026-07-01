@@ -117,6 +117,18 @@ Requirement-specific rules:
 - Do not record current specifications or contracts in a requirement — use a spec.
 - Do not record implementation progress, concrete steps, or completion state — use a work item or task.
 
+#### Requirement identity during design convergence
+
+| condition | required disposition |
+|---|---|
+| The motivating problem and Required Outcome remain the same. The change only clarifies meaning or adjusts the same outcome boundary. | Amend the existing Requirement. |
+| The motivating problem or Required Outcome changes materially. The new request can be accepted or rejected independently. | Create a new Requirement. |
+| The original Requirement remains completable. An adjacent additional need appears. | Create a follow-up Requirement. |
+| The Requirement remains valid. A downstream decision departed from it. | Keep the Requirement unchanged and return the conflict to a `decision` owner. |
+
+An in-place amendment makes the same Requirement accurate.
+It must not absorb a materially different request or erase an independent acceptance boundary.
+
 Requirement-to-Work-Item reverse relation:
 
 - Requirement records do not persist `work_items` metadata.
@@ -195,4 +207,5 @@ Concrete tool contracts belong to DRMCP specs.
 | PRODUCT-REQ-SPEC-006 | Generic workflow source-relation requirement. |
 | PRODUCT-ADR-SPEC-007 | Canonical Work Item provenance and derived Requirement reverse relation. |
 | PRODUCT-ADR-SPEC-008 | Atomic migration and exact-match Requirement transition. |
+| PRODUCT-ADR-SPEC-011 | Requirement and Work Item identity continuity. |
 | PRODUCT-WORK-SPEC-011 | Original source Work Item. |

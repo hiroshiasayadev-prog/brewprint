@@ -32,6 +32,7 @@ Permit exactly one value from this closed set:
 - `correction`
 - `verification`
 - `coordination`
+- `work_item_decomposition`
 - `synchronization`
 
 Each value owns one primary outcome and one completion judgment.
@@ -45,7 +46,8 @@ Each value owns one primary outcome and one completion judgment.
 | `review` | One bounded independent verdict and finding set. | The result is `PASS` or `NEEDS REVISION` with complete finding evidence. | Authoring, implementation, finding correction, finding closure by the correction author, or lifecycle synchronization. |
 | `correction` | One bounded named finding set repaired. | The named repairs and direct verification pass. | Independent finding closure, unrelated improvement, new decision adoption, or lifecycle synchronization. |
 | `verification` | One bounded objective acceptance gate. | Every predefined check is executed and the overall result is `PASS`, `FAIL`, or validly `BLOCKED`. | Artifact modification, undefined semantic judgment, repair, independent review verdict, or lifecycle synchronization. |
-| `coordination` | One parent Work Item overview of child Work Items and responsibility boundaries. | Required child Work Items exist with distinguishable, non-overlapping responsibilities. | Child-owned investigation, decision, authoring, implementation, review, correction, or verification deliverables. |
+| `coordination` | One bounded workflow-graph change. | Required Task, dependency, blocker, owner, writer-order, review-order, and release-route changes are persisted. | Work Item decomposition, child-owned deliverables, implementation, review, correction, or synchronization. |
+| `work_item_decomposition` | One bounded parent-to-child Work Item decomposition. | Required child Work Items exist with distinguishable, non-overlapping responsibilities and parent-level routing. | Task-graph coordination, child-owned deliverables, implementation, review, correction, or synchronization. |
 | `synchronization` | One bounded accepted-state propagation. | All specified lifecycle, Evidence, completion-result, and relation state expresses the same accepted result. | New design judgment, decomposition, substantive deliverable creation, implementation, review, or correction. |
 
 Task authoring must persist `task_type` on create.
@@ -64,7 +66,7 @@ The taxonomy therefore supports writer ownership, review independence, and relia
 A required scalar field avoids ambiguous multi-label Tasks.
 The field also gives future validators a stable input without assigning validation behavior to PRODUCT.
 
-The nine values cover the complete accepted design workflow and implementation workflow without introducing a generic catch-all type.
+The ten values cover the complete accepted design workflow and implementation workflow without introducing a generic catch-all type.
 
 ## Rejected alternatives
 
@@ -80,7 +82,7 @@ The nine values cover the complete accepted design workflow and implementation w
 ## Consequences
 
 - `spec:product.design_records.authoring_standards.task_authoring` must add `task_type` to its metadata and authoring interface.
-- The Task authoring Specification must define the nine type contracts.
+- The Task authoring Specification must define the ten type contracts.
 - `spec:product.design_records.authoring_standards.work_item_authoring` must preserve the coordination boundary where needed.
 - Downstream DRMCP work must consume the accepted field and closed value set.
 - Existing Task migration remains separate future work.

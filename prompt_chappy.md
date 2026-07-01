@@ -32,11 +32,11 @@ New records must be created under an active app namespace. Creating new files un
 - Agent authoring policy: `spec:product.design_records.authoring_standards.agent_authoring_policy`。
 - Note: DRMCP-dependent sections are TBD。DRMCP operational までは、この参照は partial と扱う。
 
-### Mandatory design-decision workflow skill
+### Mandatory design-convergence workflow skill
 
 設計、仕様、ADR、Requirement、Work Item、Taskについて複数の未決事項を整理する場合、またはユーザーへ一問ずつ確認しながら決定をrepositoryへ逐次永続化する場合は、作業開始前に次を必ず読む。
 
-- `C:\Users\imved\projects\brewprint\skills\design-decision-workflow\SKILL.md`
+- `C:\Users\imved\projects\brewprint\skills\design-convergence-workflow\SKILL.md`
 
 次の場合にも適用する。
 
@@ -52,13 +52,19 @@ New records must be created under an active app namespace. Creating new files un
 現在のphaseに応じて、同skill directoryのcompanion文書も必ず読む。
 
 - decision inventory、質問、逐次永続化、中断、引継ぎ、再開: `interactive-decision-loop.md`
-- ADR要否、既存ADR coverage、amend、supersede: `adr-routing.md`
-- independent design review、finding correction、re-review、closure: `design-review-gate.md`
+- decision impact、conflict、graph-change候補、shared-writer候補の調査: `impact-investigation.md`
+- mismatch分類、Requirement / Work Item / Taskの継続・分割・戻し先判断: `convergence-routing.md`
+- Task追加・分割、dependency、blocker、writer order、review orderの変更: `graph-coordination.md`
+- 決定済みのparent-to-child Work Item作成・分割: `work-item-decomposition.md`
+- ADR要否、既存ADR coverage、境界分割、create / amend / reuse / supersede: `adr-routing.md`
+- ADR、Specification、originating artifact、skillのauthoring: `design-authoring.md`
+- integrated independent review、finding routing、correction、finding-closure review: `design-review-gate.md`
+- lifecycle、Evidence、relation、Work Item closureの同期: `closure-synchronization.md`
 
-このskillは実装方法ではなく、accepted designを確定してreview済みにするまでを扱う。
-必要なdecisionが`open`、`in_discussion`、またはcanonical反映前の`decided`である間は、production implementation promptを作成しない。
+このskillは実装方法ではなく、design topicの発生からreview済みclosureまでを扱う。
+必要なdecisionが`open`または`in_discussion`である間、または必須Investigation、canonical authoring、integrated review、closure synchronizationが未完了である間は、production implementation promptを作成しない。
 
-Work Itemはdesign topicとTask graphを所有し、decision-loop Taskはworkflow stateを所有する。ADRはdurable choiceとrationaleを、Specificationはcurrent normative stateを所有する。Task ledgerだけをcanonical design sourceとして扱わない。
+Work Itemはdesign topicとTask graph overviewを所有する。decision Taskはworkflow stateを、Investigationはimpactとconflict Evidenceを所有する。coordination TaskはTask graph changeを、work_item_decomposition Taskは決定済みのparent-to-child Work Item作成・分割を所有する。ADRはdurable choiceとrationaleを、Specificationはcurrent normative stateを所有する。Task ledgerだけをcanonical design sourceとして扱わない。
 
 ### Mandatory Claude Code prompt-authoring skill
 

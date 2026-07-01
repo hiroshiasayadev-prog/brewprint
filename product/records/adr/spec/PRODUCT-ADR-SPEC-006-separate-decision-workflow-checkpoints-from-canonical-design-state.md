@@ -55,9 +55,38 @@ A later ADR-routing step classifies the decision.
 | routing result | action |
 |---|---|
 | Durable rationale required | Create, amend, or supersede an ADR in a separate authoring Task. |
-| Existing accepted ADR covers the decision | Reference the accepted ADR and synchronize the Specification. |
+| Existing accepted ADR covers the decision | Record reuse in routing Evidence and synchronize the Specification. |
 | ADR not required | Synchronize the accepted result directly into the relevant Specification or scope record. |
 | Routing blocked | Stop authoring until the named authority or decision exists. |
+
+ADR routing also owns:
+
+- coherent ADR-boundary partitioning across several decision items;
+- prevention of oversized omnibus ADRs;
+- prevention of mechanical one-row-per-ADR fragmentation;
+- create, amend, reuse, or supersede disposition;
+- exact decision-ID and Specification-target mapping.
+
+ADR routing does not author ADR body content.
+
+### Amendment and supersession materiality
+
+Use an in-place ADR amendment when:
+
+- the selected alternative remains unchanged;
+- the core architecture and rationale remain valid;
+- the change clarifies or extracts a responsibility inside that architecture;
+- the amendment does not conceal a reversal.
+
+Responsibility extraction is not automatically a material ownership change.
+Routing must record the materiality judgment.
+
+Use supersession when:
+
+- the selected alternative changes;
+- the core ownership architecture changes materially;
+- an accepted constraint is removed or reversed;
+- the previous rationale no longer justifies the current state.
 
 An ADR is not required merely because a decision occurred.
 An ADR is required when alternatives, rationale, consequences, ownership, or supersession history must remain understandable.
@@ -71,7 +100,9 @@ An ADR is required when alternatives, rationale, consequences, ownership, or sup
 | Current normative behavior, structure, boundary, and constraint | Specification |
 | Complete requirement-resolution graph | Work Item |
 
-After ADR authoring, the Task retains its workflow history and references the ADR.
+After ADR authoring, the completed decision Task retains its workflow history unchanged.
+ADR authoring, Specification synchronization, review, and closure Tasks own their own references and Evidence.
+Downstream progress must not be written back into the completed decision Task.
 The ADR becomes the canonical durable rationale.
 The Specification remains the canonical current-state contract.
 
@@ -109,6 +140,10 @@ Keeping current contracts in Specifications prevents ADRs from becoming stale op
 - `spec:product.design_records.authoring_standards.artifact_boundary` must distinguish workflow checkpointing from durable ADR recording.
 - `spec:product.design_records.artifact_model.artifact_responsibility_matrix` must distinguish Task workflow state from canonical design state.
 - Decision Tasks and authoring Tasks remain separate phases even when one session executes both.
+- ADR routing and ADR authoring remain separate responsibilities.
+- ADR routing records whether a responsibility refinement preserves or materially changes the accepted ownership architecture.
+- `spec:product.design_records.authoring_standards.adr_authoring` and the active ADR-routing workflow must use the same amendment boundary.
+- Completed decision Tasks do not track downstream ADR, Specification, review, or closure progress.
 - Independent review remains a later Task and is not performed by the authoring session.
 - Existing Task migration remains outside W016.
 
@@ -120,3 +155,8 @@ Keeping current contracts in Specifications prevents ADRs from becoming stale op
 - `PRODUCT-TASK-SPEC-016-04`: C-006, C-007, C-013, and C-014.
 - `PRODUCT-TASK-SPEC-016-05`: ADR routing and this ADR boundary.
 - `skills/design-decision-workflow/adr-routing.md`: conditional ADR-routing authority.
+- `PRODUCT-TASK-SPEC-018-01`: D-019 and D-021.
+- `PRODUCT-TASK-SPEC-018-02`: B-007 clarification-amendment route.
+- `PRODUCT-TASK-SPEC-018-03`: meaning-preserving clarification amendment.
+- `PRODUCT-TASK-SPEC-018-07`: F-BLK-01.
+- `PRODUCT-TASK-SPEC-018-16`: accepted ADR amendment materiality decision.

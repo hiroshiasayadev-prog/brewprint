@@ -126,8 +126,10 @@ Work-item-specific rules:
 - `## Task flow` shows execution order and dependencies — it is a view, not the canonical Task status source.
 - Do not copy individual Task completion state into the Work Item body. Individual Task status is owned by each Task artifact.
 
-Parent coordination boundary:
+Parent coordination and decomposition boundary:
 
+- A `work_item_decomposition` Task creates or splits child Work Items after the identity decision is fixed.
+- A `coordination` Task may route the decomposition but does not create child Work Items.
 - A coordinating parent Work Item may list each child Work Item ID.
 - The parent may record each child's one-line purpose and responsibility boundary.
 - The parent may record coarse inter-child routing and parent-level completion state.
@@ -143,6 +145,36 @@ Parent coordination boundary:
 - Do not reproduce current specification text in the work item — use a spec.
 - Put research, options, and uncertainty into an investigation, not the work item.
 - `tasks` lists task IDs belonging to this work item; it does not replace task-level status tracking.
+
+#### Work Item identity and design-convergence review
+
+| condition | required disposition |
+|---|---|
+| The Work Item resolves the same Requirement. Its Goal and Completion Conditions retain their meaning. | Continue the existing Work Item. |
+| Only Tasks, dependencies, blockers, or ordering change inside the same delivery boundary. | Continue the existing Work Item. |
+| A new Requirement appears. | Create a distinct Work Item for the new resolution boundary. |
+| The scope has an independent completion judgment, owner, release timing, or primary deliverable. | Create or split another Work Item. |
+
+The decision Task selects the disposition.
+A `work_item_decomposition` Task authors the resulting child Work Item boundary.
+Task count alone does not require a Work Item split.
+A larger graph remains in one Work Item while the resolution identity and completion boundary remain coherent.
+
+Shared writers must be serialized when Tasks write the same artifact or section.
+Coordination persists the writer order.
+Each later writer preserves accepted semantics from earlier writers.
+One integrated independent review follows the final writer.
+
+Each Work Item has one final integrated review for its complete design state.
+An independently closable design boundary belongs in another Work Item with its own integrated review.
+
+Correction and finding-closure review Tasks are not materialized before named findings exist.
+A `PASS` verdict proceeds to closure synchronization.
+A `NEEDS REVISION` verdict uses coordination to create finding-specific correction and independent closure-review Tasks.
+
+A new design judgment after a completed review uses a new decision Task.
+The revised state also uses new authoring and integrated review Tasks.
+Completed decision, authoring, and review Tasks remain historical Evidence.
 
 Persisted workflow relation invariants:
 
@@ -227,4 +259,8 @@ Concrete tool contracts belong to DRMCP specs.
 | PRODUCT-ADR-SPEC-005 | Parent coordination and child responsibility boundary. |
 | PRODUCT-ADR-SPEC-007 | Canonical Work Item provenance and Task-created Work Item rules. |
 | PRODUCT-ADR-SPEC-008 | Atomic Work Item migration contract. |
+| PRODUCT-ADR-SPEC-011 | Requirement and Work Item identity continuity. |
+| PRODUCT-ADR-SPEC-012 | Shared-writer serialization and final integrated review. |
+| PRODUCT-ADR-SPEC-013 | Finding-driven repair Task materialization. |
+| PRODUCT-ADR-SPEC-014 | Append-only reconvergence after completed workflow records. |
 | PRODUCT-WORK-SPEC-011 | Original source Work Item. |

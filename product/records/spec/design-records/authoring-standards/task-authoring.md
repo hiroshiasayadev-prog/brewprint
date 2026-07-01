@@ -87,7 +87,7 @@ Rules:
 
 - `date` uses strict `YYYY-MM-DD` format.
 - `task_type` is a required scalar. It permits exactly one value.
-- Allowed `task_type` values are `investigation`, `decision`, `authoring`, `implementation`, `review`, `correction`, `verification`, `coordination`, and `synchronization`.
+- Allowed `task_type` values are `investigation`, `decision`, `authoring`, `implementation`, `review`, `correction`, `verification`, `coordination`, `work_item_decomposition`, and `synchronization`.
 - PRODUCT owns `task_type` semantics and the closed value set.
 - DRMCP owns downstream parsing, validation, diagnostics, indexing, and tool projections.
 - Update `date` when the task scope or done condition changes meaningfully.
@@ -134,7 +134,8 @@ Cross-artifact selection follows `spec:product.design_records.authoring_standard
 | `review` | One bounded independent verdict and finding set. | The result is `PASS` or `NEEDS REVISION`, with complete finding Evidence and the Task Done condition satisfied. | Authoring, implementation, correction, self-closure of repaired findings, or lifecycle synchronization. | The reviewer must be independent of the reviewed authoring, implementation, or correction work. |
 | `correction` | One bounded named finding set repaired. | The named repairs, Task Done condition, and direct verification pass. | Independent finding closure, unrelated improvement, new decision adoption, or lifecycle synchronization. | Finding closure belongs to a later independent `review` Task. |
 | `verification` | One bounded objective acceptance gate. | Every predefined check is executed, expected and actual results are recorded, and the result is `PASS`, `FAIL`, or validly `BLOCKED`. | Artifact modification, undefined semantic judgment, repair, independent review verdict, or lifecycle synchronization. | Multiple checks may share one Task only under one acceptance gate. |
-| `coordination` | One parent Work Item overview of child Work Items and responsibility boundaries. | Required child Work Items exist with distinguishable responsibilities and the Task Done condition is satisfied. | Child-owned investigation, decision, authoring, implementation, review, correction, or verification deliverables. | Child Work Items may exist before their internal Task composition is known. |
+| `coordination` | One bounded workflow-graph change. | Required Task, dependency, blocker, owner, writer-order, review-order, and release-route changes are persisted and the Task Done condition is satisfied. | Work Item decomposition, child-owned deliverables, implementation, review, correction, or synchronization. | Coordination changes the workflow graph only. |
+| `work_item_decomposition` | One bounded parent-to-child Work Item decomposition. | Required child Work Items exist with distinguishable, non-overlapping responsibilities, parent-level routing, and the Task Done condition is satisfied. | Task-graph coordination, child-owned deliverables, implementation, review, correction, or synchronization. | The Work Item identity decision must be fixed before decomposition begins. |
 | `synchronization` | One bounded propagation of an accepted result. | All specified lifecycle, Evidence, completion-result, and relation state expresses the same accepted result. | New design judgment, decomposition, substantive deliverables, implementation, review, or correction. | Only mechanically derivable state changes are allowed. |
 
 #### Single responsibility
@@ -198,6 +199,7 @@ Every cell must be substantive before the Task becomes `done`.
 |---|---|
 | `review` versus `verification` | Review owns semantic soundness and findings. Verification owns predefined objective criteria. Commands may support a review without creating a verification Task. |
 | `correction` versus finding closure | Correction repairs a formally recorded finding. A later independent review decides `CLOSED` or `OPEN`. The correction Task must not close its own finding. |
+| `coordination` versus `work_item_decomposition` | Coordination changes the Task graph and release structure. Work Item decomposition creates or splits child Work Items after identity is decided. |
 | `coordination` versus `synchronization` | Coordination changes graph, owner, dependency, blocker, release order, or next-step structure. Synchronization only propagates accepted state. |
 | implementation detail versus contract decision | Implementation may choose observable-equivalent local details. Contract, external behavior, acceptance, validation, diagnostics, persistence, fallback, or Specification changes return to `decision`. |
 | `decision` versus `authoring` | Decision fixes the selected outcome and canonical target. Authoring writes those fixed inputs into canonical artifacts. |
@@ -221,14 +223,57 @@ A `decision` Task may retain temporary and historical workflow Evidence:
 - selected option;
 - rejected-option IDs;
 - a concise one-to-three-sentence reason;
+- responsibility boundary and scope;
 - canonical target;
 - ADR-routing state;
 - cursor and workflow state.
 
-The Task does not own canonical durable rationale.
-When an ADR is required, the ADR owns detailed rationale, alternatives, consequences, and supersession history.
-The Task retains workflow history and references the canonical ADR after authoring.
-A decision that does not require an ADR synchronizes directly into the relevant Specification.
+The Task does not own canonical durable rationale or current normative design state.
+An ADR owns durable rationale, alternatives, consequences, and supersession history when an ADR is required.
+A Specification owns the current normative rule.
+
+A decision Task completes when every owned item is `decided`, `deferred`, or validly `blocked`.
+The completed Task preserves the workflow checkpoint that satisfied its Done condition.
+Downstream ADR, Specification, review, and closure progress must not be written back into the completed Task.
+Downstream Tasks own their own references, outputs, and Evidence.
+A `decided` to `recorded` transition does not exist.
+
+ADR routing and ADR authoring are separate responsibilities.
+A bounded routing Task classifies decisions, partitions coherent ADR boundaries, and selects `create`, `amend`, `reuse`, or `supersede`.
+The routing Task does not author ADR body content.
+
+A later change to the selected option, rationale, responsibility boundary, scope, or canonical target requires a new `decision` Task.
+Do not reopen or substantively rewrite the completed decision Task.
+A meaning-preserving editorial or broken-reference correction may update the original Task.
+The correction must not change the decision or its completion judgment.
+
+#### Task continuation and reconvergence routes
+
+Amend an existing incomplete Task only when `task_type`, owned outcome, and completion judgment remain unchanged.
+The amendment may expand target artifacts, dependencies, or bounded procedure while preserving one responsibility.
+Create a separate Task when type, outcome, completion judgment, owner, release boundary, or required independence differs.
+A new judgment after completed review requires new decision, authoring, and integrated review Tasks.
+Completed prior Tasks remain historical Evidence.
+
+| discovered condition | required route |
+|---|---|
+| Authoring, review, or synchronization exposes unresolved design judgment. | Stop downstream work and return to a `decision` owner. |
+| The earlier decision Task is complete or the route is missing. | Use `coordination` to create or repair the new decision route. |
+| A review finding only identifies an incorrect projection of an accepted decision. | Use `correction`, then an independent finding-closure `review`. |
+| A review finding requires a new choice or resolves conflicting accepted decisions. | Return to `decision`, not `correction`. |
+
+Correction repairs only named findings.
+The correction Task records direct verification but does not close its findings.
+A later independent review decides each finding as `CLOSED` or `OPEN`.
+
+Do not materialize correction or finding-closure review Tasks before named findings exist.
+A `PASS` verdict proceeds directly to closure synchronization.
+A `NEEDS REVISION` verdict uses coordination to create finding-specific Tasks.
+Do not create placeholder or no-op Tasks for an unused branch.
+
+Synchronization changes only exact mechanically derivable lifecycle, Evidence, completion-result, or relation state named by its contract.
+Synchronization must not author canonical content or change the Task graph.
+Synchronization must stop when missing work, graph change, or unresolved judgment is discovered.
 
 #### General Task rules
 
@@ -333,4 +378,6 @@ Concrete tool contracts belong to DRMCP specs.
 | PRODUCT-ADR-SPEC-006 | Decision checkpoints and canonical design-state boundary. |
 | PRODUCT-ADR-SPEC-007 | Task provenance through the owning Work Item. |
 | PRODUCT-ADR-SPEC-008 | Removal-only Task source migration. |
+| PRODUCT-ADR-SPEC-013 | Finding-driven correction and closure-review Task materialization. |
+| PRODUCT-ADR-SPEC-014 | Completed-record preservation and append-only reconvergence. |
 | PRODUCT-WORK-SPEC-011 | Original source Work Item. |

@@ -72,17 +72,22 @@ The same person may perform both phases only as separate Tasks or sessions.
 
 An issue found and fixed inside the original Task needs no separate closure Task when no formal finding was opened.
 
-### Coordination and synchronization
+### Coordination, Work Item decomposition, and synchronization
 
 A `coordination` Task may create or change:
 
-- child Work Item inventory;
-- responsibility boundaries;
+- Task inventory;
 - owner assignment;
 - dependency structure;
 - blockers;
+- writer order;
+- review order;
 - release order;
 - next-step routing.
+
+A `work_item_decomposition` Task creates or splits child Work Items after the Work Item identity decision is fixed.
+It owns child Work Item identity, responsibility boundaries, and parent-level routing.
+It does not own child-internal deliverables or Task-graph coordination.
 
 A coordinating parent Work Item may summarize each child ID, purpose, responsibility boundary, coarse inter-child routing, and parent-level completion state.
 It must not duplicate child-internal Task graphs, procedures, detailed dependencies, release conditions, or next-step decisions.
@@ -148,7 +153,7 @@ Explicit stop conditions prevent implementation and synchronization from becomin
 
 - `spec:product.design_records.authoring_standards.task_authoring` must define mandatory cohesion and type-aligned section rules.
 - The Task authoring Specification must define the review, verification, correction, synchronization, and implementation stop boundaries.
-- `spec:product.design_records.authoring_standards.work_item_authoring` must prohibit parent duplication of child Work Item internals.
+- `spec:product.design_records.authoring_standards.work_item_authoring` must define Work Item decomposition ownership and prohibit parent duplication of child Work Item internals.
 - `implementation` Tasks require the separately defined conditional `## Implementation contract` shape.
 - Downstream validators may later enforce the accepted boundaries.
 - Validator behavior and diagnostics remain outside W016.
