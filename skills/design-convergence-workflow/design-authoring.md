@@ -12,7 +12,7 @@ Artifact-specific authoring standards remain authoritative for file shape and me
 Begin authoring only when:
 
 - the decision boundary is terminal;
-- mandatory impact Investigation is complete;
+- every selected impact Investigation is complete;
 - originating-artifact disposition is fixed;
 - required graph owners and dependencies exist;
 - ADR routing is complete for the authoring scope;

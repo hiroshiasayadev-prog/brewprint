@@ -13,7 +13,7 @@ Read:
 
 - parent Work Item;
 - completed decision Task and exact decision IDs;
-- completed impact Investigation;
+- completed impact Investigation when one was selected;
 - reconciliation disposition;
 - accepted ADRs that may cover or conflict with the decision;
 - affected Specification targets;

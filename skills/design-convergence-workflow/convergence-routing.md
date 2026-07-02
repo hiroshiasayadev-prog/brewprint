@@ -13,7 +13,7 @@ Read:
 
 - parent Work Item;
 - completed decision Task;
-- completed impact Investigation;
+- completed impact Investigation when one was selected;
 - directly governing Requirements, ADRs, and Specifications;
 - relevant authoring standards;
 - current Task graph when graph drift is a candidate.
@@ -183,6 +183,6 @@ Stop when:
 - an existing completed decision would need substantive rewriting;
 - the correct Requirement or Work Item identity cannot be determined;
 - artifact ownership is ambiguous;
-- the Investigation lacks evidence required for disposition.
+- a selected Investigation lacks evidence required for disposition.
 
 Do not let authoring, coordination, correction, or synchronization absorb unresolved reconciliation judgment.

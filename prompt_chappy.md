@@ -32,16 +32,38 @@ New records must be created under an active app namespace. Creating new files un
 - Agent authoring policy: `spec:product.design_records.authoring_standards.agent_authoring_policy`。
 - Note: DRMCP-dependent sections are TBD。DRMCP operational までは、この参照は partial と扱う。
 
+### Mandatory Work Item framing workflow skill
+
+Requirementからrepository-persistentなWork Item planningを開始する前に、次を必ず読む。
+
+- `C:\Users\imved\projects\brewprint\skills\work-item-framing\SKILL.md`
+
+次の場合に適用する。
+
+- Requirementを具体的なWork Itemへ進める場合
+- userとAIのDesired Outcome認識を合わせる場合
+- Requirementのamend / split / follow-up / replace / reject / defer / Investigation / blockedを判断する場合
+- Work ItemのGoal、Boundary、Completion Condition、unknown handling、initial routeを決める場合
+- framing decisionから必要なTaskだけをmaterializeする場合
+
+現在のphaseに応じて、同skill directoryのcompanion文書も必ず読む。
+
+- 一問一答、逐次永続化、resume、conditional Task materialization: `interactive-framing-loop.md`
+- source disposition、unknown handling、downstream route: `framing-routing.md`
+
+repository-persistent framingはRequirement起点とする。Requirementがない場合は、ProblemとDesired OutcomeをRequirementへcaptureしてからframing Work Itemを開始する。
+初期Task graphは`decision` Task 1件のみとし、追加Taskはdecision結果から必要性が確定した場合だけmaterializeする。
+既存のunframed Work Item migrationや修復はこのskillのscope外とする。
+
 ### Mandatory design-convergence workflow skill
 
-設計、仕様、ADR、Requirement、Work Item、Taskについて複数の未決事項を整理する場合、またはユーザーへ一問ずつ確認しながら決定をrepositoryへ逐次永続化する場合は、作業開始前に次を必ず読む。
+framingがrepository-persistent design convergenceを選択した場合、または既存のaccepted downstream workで未解決の設計判断が発覚した場合は、作業開始前に次を必ず読む。
 
 - `C:\Users\imved\projects\brewprint\skills\design-convergence-workflow\SKILL.md`
 
 次の場合にも適用する。
 
-- design topicをWork Itemとして起票または再構成する場合
-- decision inventoryまたはdecision ledgerを作成・更新する場合
+- framing済みWork Itemのdecision inventoryまたはdecision ledgerを作成・更新する場合
 - interactive design decision loopを開始、引継ぎ、再開する場合
 - user judgment待ちの設計事項を整理する場合
 - confirmed decisionのADR要否を判定する場合
@@ -62,8 +84,8 @@ New records must be created under an active app namespace. Creating new files un
 - integrated independent review、finding routing、correction、finding-closure review: `design-review-gate.md`
 - lifecycle、Evidence、relation、Work Item closureの同期: `closure-synchronization.md`
 
-このskillは実装方法ではなく、design topicの発生からreview済みclosureまでを扱う。
-必要なdecisionが`open`または`in_discussion`である間、または必須Investigation、canonical authoring、integrated review、closure synchronizationが未完了である間は、production implementation promptを作成しない。
+このskillは実装方法ではなく、accepted framing handoffからreview済みdesign closureまでを扱う。
+必要なdecisionが`open`または`in_discussion`である間、またはrequired Investigation、canonical authoring、mandatory integrated review、closure synchronizationが未完了である間は、production implementation promptを作成しない。
 
 Work Itemはdesign topicとTask graph overviewを所有する。decision Taskはworkflow stateを、Investigationはimpactとconflict Evidenceを所有する。coordination TaskはTask graph changeを、work_item_decomposition Taskは決定済みのparent-to-child Work Item作成・分割を、work_item_execution Taskは起票済みchild Work Itemのparent graph上の完了境界を所有する。ADRはdurable choiceとrationaleを、Specificationはcurrent normative stateを所有する。Task ledgerだけをcanonical design sourceとして扱わない。
 

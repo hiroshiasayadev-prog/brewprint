@@ -4,7 +4,8 @@
 
 Own one bounded Investigation record that determines how the accepted decision set affects repository authority, workflow structure, and shared writers.
 
-This phase is mandatory for every design-convergence Work Item.
+This phase is conditional.
+Use it when framing or a later design decision selects one bounded research question that needs durable Evidence, uncertainty, and options.
 
 ## Investigation Task contract
 
@@ -28,7 +29,7 @@ It does not adopt a design choice, amend the graph, author canonical content, or
 
 Before investigating:
 
-1. Read the parent Work Item and completed decision Task.
+1. Read the framing handoff, parent Work Item, and completed decision Task.
 2. Read exact accepted authority named by the Work Item or decision targets.
 3. Read existing ADRs that may cover or conflict with the decision.
 4. Read only adjacent artifacts required to confirm a scoped relation or contradiction.

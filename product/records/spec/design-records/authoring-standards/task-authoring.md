@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.authoring_standards.task_authoring`
 - **status**: draft
-- **date**: 2026-07-02
+- **date**: 2026-07-03
 - **parent**: `spec:product.design_records.authoring_standards`
 
 ## What this is
@@ -55,18 +55,18 @@ Body section schema:
 
 | section | heading presence | substantive content | content |
 |---|---|---|---|
-| `## Goal` | always | required when `done` | The one primary outcome owned by the Task. |
+| `## Goal` | always | required when `done` or `cancelled` | The one primary outcome owned by the Task. |
 | `## Work` | always | required when `done` | Only actions needed to produce the primary outcome. |
 | `## Implementation contract` | only when `task_type` is `implementation`; prohibited otherwise | required when an implementation Task is `done` | Target-level required change, acceptance criterion, and verification. |
-| `## Done condition` | always | required when `done` | The one completion judgment for the primary outcome. |
+| `## Done condition` | always | required when `done` or `cancelled` | The one completion judgment for the primary outcome. |
 | `## Verification` | always | required when `done` | Confirmation of the Done condition without new acceptance requirements. |
-| `## Evidence` | always | required when `done` | Execution results, verification outcomes, and workflow references. |
+| `## Evidence` | always | required when `done` or `cancelled` | Execution results, verification outcomes, lifecycle disposition, and workflow references. |
 
 All canonical Task headings use English.
 
 Create every Task with all common sections to preserve a stable document shape.
 Create `## Implementation contract` only for `task_type: implementation`.
-Sections not yet written may contain `TBD` while the Task is not `done`.
+Sections not yet written may contain `TBD` while lifecycle-specific substantive-content rules do not require them.
 
 ### Metadata schema
 
@@ -117,14 +117,28 @@ The parsing grammar is defined by `spec:drmcp.design_records_mcp.schema.metadata
 | `in_progress` | Work is actively under way. |
 | `blocked` | Progress is stopped pending a dependency or external decision. |
 | `done` | The done condition is satisfied and evidence is recorded. |
+| `cancelled` | Work intentionally ended before the done condition was satisfied. |
 
 Rules:
 
+- A Task may move to `cancelled` only from `not_started`, `in_progress`, or `blocked`.
+- A `done` or `cancelled` Task cannot be cancelled.
+- `cancelled` is terminal. Only meaning-preserving editorial correction, broken-reference repair, factual Evidence correction, and mechanical relation repair are allowed afterward.
+- Materially resumed work requires a new Task. Its owning Work Item may cite the cancelled record as a direct material source when applicable; the Task itself still has no source field.
 - When `status` is `done`, every section required for the declared `task_type` must be substantive.
+- When `status` is `cancelled`, `## Goal`, `## Done condition`, and `## Evidence` must be substantive.
+- Cancellation alone does not require substantive `## Work`, `## Verification`, or `## Implementation contract` content. Preserve any existing substantive content as history.
+- A cancelled Task Evidence section records the intentional-stop reason, the decision or change that made the Task unnecessary, and every directly dependent Task moved to or retained in `blocked`.
 - `TBD` is placeholder content, not substantive content.
-- `TBD` must not remain in any done-gated section when `status` is `done`.
+- `TBD` must not remain in any lifecycle-gated section.
 - A done implementation Task must contain substantive values in every `## Implementation contract` cell.
 - `blocked` records an external stop; the reason belongs in `## Evidence` or a linked investigation.
+- A cancelled prerequisite does not satisfy `depends_on`.
+- Every directly dependent `not_started` Task becomes `blocked`; an already `blocked` direct dependent remains `blocked` and records the dependency failure.
+- Cancellation does not automatically propagate through Task dependencies.
+- Independent Task cancellation does not change the parent Work Item status.
+- Task cancellation is one atomic lifecycle operation over the target Task and every directly affected dependent Task. The complete affected set is fixed before writing, and the result is all changes or no changes.
+- Cancellation is not a Task responsibility. Concrete transaction, command, parser, diagnostic, and implementation mechanics belong to downstream app-local authority.
 
 ### Semantic responsibility validation usage
 
@@ -134,9 +148,10 @@ This Task authoring Specification does not redefine validator criteria, result s
 | invocation point | caller responsibility |
 |---|---|
 | After Task authoring | The authoring workflow must invoke the standalone validator before normal downstream execution. |
-| After final Task Evidence | The Task completion or release workflow must invoke the same standalone validator before normal completion or release. |
+| After final Task Evidence and before `done` | The successful Task completion or release workflow must invoke the same standalone validator before normal completion or release. |
 
 Both invocation points use the same validator contract.
+The post-Evidence invocation does not run before `cancelled`; cancellation readiness is governed by the lifecycle and Evidence rules above.
 A compliant semantic result permits the caller to continue its normal route.
 A semantic violation requires explicit human acceptance or rejection under the validator Specification.
 The validator does not correct, rewrite, split, complete, release, accept, or reject a Task.
@@ -153,7 +168,7 @@ Cross-artifact selection follows `spec:product.design_records.authoring_standard
 | task type | primary outcome | completion judgment | prohibited overlaps | type-specific notes |
 |---|---|---|---|---|
 | `investigation` | One Investigation record for one bounded research question. | The Investigation satisfies its own completion requirements and the Task Done condition. | Decision adoption, canonical authoring, implementation, independent review, correction, or synchronization. | Research, evidence, uncertainty, and options remain in the Investigation. |
-| `decision` | One bounded decision ledger. | Every owned item is `decided`, `deferred`, or validly `blocked`, and the Task Done condition is satisfied. | Investigation authoring, canonical ADR or Specification authoring, implementation, independent review, correction, or final synchronization. | The ledger may retain workflow Evidence defined below. |
+| `decision` | One bounded decision ledger. | Every owned item is `decided`, `deferred`, or validly `blocked`, and the Task Done condition is satisfied. | Investigation authoring, canonical ADR or Specification authoring, implementation, independent review, correction, or final synchronization. | The ledger may retain workflow Evidence defined below. An active framing decision may use the bounded materialization exception below. |
 | `authoring` | One bounded artifact set from already decided inputs. | The artifacts satisfy their authoring requirements and the Task Done condition. | Unresolved decision work, implementation, independent review, finding correction, or lifecycle synchronization. | Investigation-record authoring remains `investigation`. Finding-driven changes remain `correction`. |
 | `implementation` | One bounded implementation outcome. | The Implementation contract, Task Done condition, and declared verification pass. | Unresolved design decisions, canonical design authoring, independent review, finding correction, coordination, or synchronization. | `## Implementation contract` is mandatory. |
 | `review` | One bounded independent verdict and finding set. | The result is `PASS` or `NEEDS REVISION`, with complete finding Evidence and the Task Done condition satisfied. | Authoring, implementation, correction, self-closure of repaired findings, or lifecycle synchronization. | The reviewer must be independent of the reviewed authoring, implementation, or correction work. |
@@ -161,7 +176,7 @@ Cross-artifact selection follows `spec:product.design_records.authoring_standard
 | `verification` | One bounded objective acceptance gate. | Every predefined check is executed, expected and actual results are recorded, and the result is `PASS`, `FAIL`, or validly `BLOCKED`. | Artifact modification, undefined semantic judgment, repair, independent review verdict, or lifecycle synchronization. | Multiple checks may share one Task only under one acceptance gate. |
 | `coordination` | One bounded workflow-graph change. | Required Task, dependency, blocker, owner, writer-order, review-order, and release-route changes are persisted and the Task Done condition is satisfied. | Work Item decomposition, child-owned deliverables, implementation, review, correction, or synchronization. | Coordination changes the workflow graph only. |
 | `work_item_decomposition` | One bounded parent-to-child Work Item decomposition. | Required child Work Items exist with distinguishable, non-overlapping responsibilities, parent-level routing, and the Task Done condition is satisfied. | Task-graph coordination, child-owned deliverables, implementation, review, correction, or synchronization. | The Work Item identity decision must be fixed before decomposition begins. |
-| `work_item_execution` | One already-created child Work Item represented as one parent-graph execution unit. | The referenced child Work Item is `done`, the Task records that status as Evidence, and the Task Done condition is satisfied. | Work Item creation or split, Task-graph coordination, child-owned work, independent review, correction, or synchronization. | `work_item_ref` identifies exactly one child. A blocked child may block the Task. A `not_started` or `in_progress` child does not satisfy completion. |
+| `work_item_execution` | One already-created child Work Item represented as one parent-graph execution unit. | The referenced child Work Item is `done`, the Task records that status as Evidence, and the Task Done condition is satisfied. | Work Item creation or split, Task-graph coordination, child-owned work, independent review, correction, or synchronization. | `work_item_ref` identifies exactly one child. A blocked child may block the Task. A `not_started` or `in_progress` child does not satisfy completion. A `cancelled` child cancels the execution Task, blocks its direct dependents through the normal prerequisite rule, and does not change the parent Work Item status. |
 | `synchronization` | One bounded propagation of an accepted result. | All specified lifecycle, Evidence, completion-result, and relation state expresses the same accepted result. | New design judgment, decomposition, substantive deliverables, implementation, review, or correction. | Only mechanically derivable state changes are allowed. |
 
 #### Single responsibility
@@ -271,6 +286,33 @@ ADR routing and ADR authoring are separate responsibilities.
 A bounded routing Task classifies decisions, partitions coherent ADR boundaries, and selects `create`, `amend`, `reuse`, or `supersede`.
 The routing Task does not author ADR body content.
 
+#### Framing decision Task materialization exception
+
+One active framing `decision` Task may directly create and register another Task as a supporting projection of an accepted framing judgment.
+
+The exception applies only under `skills/work-item-framing/` and only when all conditions hold:
+
+- the created Task belongs to the same framing Work Item;
+- the accepted decision uniquely determines the created Task type;
+- the accepted decision uniquely determines the primary outcome and completion judgment;
+- dependencies and release route are uniquely determined;
+- the parent Work Item Task list and flow can be updated without another graph choice;
+- no completed Task is substantively changed;
+- no external Work Item graph is changed.
+
+The framing decision Task may write:
+
+- the new Task record;
+- the parent Work Item `tasks`, Task flow, and Task candidate projection;
+- its own decision Evidence and outputs.
+
+The materialization owns no separate graph judgment or completion boundary.
+The decision Task still completes only from its bounded decision ledger.
+
+Use `coordination` when graph repair, alternative Task decomposition, shared-writer order, cross-Work-Item change, blocker policy, review order, or release-order judgment remains.
+Use `work_item_decomposition` to create or split a downstream Work Item.
+Do not generalize this exception to arbitrary decision workflows.
+
 A later change to the selected option, rationale, responsibility boundary, scope, or canonical target requires a new `decision` Task.
 Do not reopen or substantively rewrite the completed decision Task.
 A meaning-preserving editorial or broken-reference correction may update the original Task.
@@ -279,6 +321,7 @@ The correction must not change the decision or its completion judgment.
 #### Task continuation and reconvergence routes
 
 Amend an existing incomplete Task only when `task_type`, owned outcome, and completion judgment remain unchanged.
+A `cancelled` Task is terminal and is not an incomplete Task eligible for amendment or reactivation.
 The amendment may expand target artifacts, dependencies, or bounded procedure while preserving one responsibility.
 Create a separate Task when type, outcome, completion judgment, owner, release boundary, or required independence differs.
 A new judgment after completed review requires new decision, authoring, and integrated review Tasks.
@@ -370,7 +413,7 @@ The author does not supply:
 The body begins with `## Goal` and excludes H1 and bullet metadata.
 Include all common canonical sections.
 Include `## Implementation contract` only for `task_type: implementation`.
-Use `TBD` only before completion.
+Use `TBD` only where the status-lifecycle rules permit it. A cancelled Task still requires substantive Goal, Done condition, and Evidence.
 
 ### Update
 
@@ -413,6 +456,9 @@ Concrete tool contracts belong to DRMCP specs.
 | PRODUCT-ADR-SPEC-013 | Finding-driven correction and closure-review Task materialization. |
 | PRODUCT-ADR-SPEC-014 | Completed-record preservation and append-only reconvergence. |
 | PRODUCT-ADR-SPEC-016 | Standalone semantic validator ownership and current DRMCP separation. |
-| PRODUCT-ADR-SPEC-017 | Post-authoring and post-Evidence invocation with human-owned exceptions. |
+| PRODUCT-ADR-SPEC-017 | Post-authoring and successful-completion post-Evidence invocation with human-owned exceptions. |
+| PRODUCT-ADR-SPEC-018 | Terminal cancellation lifecycle and atomic propagation. |
 | `spec:product.responsibility_boundary_validator` | Owns semantic evaluation, result, failure, invocation, and exception semantics. |
 | PRODUCT-WORK-SPEC-011 | Original source Work Item. |
+| PRODUCT-REQ-SPEC-010 | Work Item framing workflow requirement. |
+| PRODUCT-WORK-SPEC-024 | Framing workflow design and activation Work Item. |

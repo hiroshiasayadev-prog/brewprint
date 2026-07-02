@@ -37,7 +37,8 @@ skills/design-convergence-workflow/
 
 Status: `decided`
 
-The workflow starts immediately after a design topic is raised, before decision inventory and interactive questioning.
+PRODUCT-TASK-SPEC-024-01 D-018 supersedes the original immediate-start rule.
+The workflow now starts only after Work Item framing selects design convergence and provides an accepted downstream boundary.
 
 ### D-005 — Workflow completion
 
@@ -69,7 +70,9 @@ The workflow distinguishes these responsibility units:
 10. independent finding-closure review;
 11. lifecycle, Evidence, and relation synchronization.
 
-Decision-impact investigation and integrated independent review are mandatory. Other units are conditional when their owned outcome is unnecessary.
+PRODUCT-TASK-SPEC-024-01 D-012 and D-018 supersede mandatory decision-impact Investigation.
+Formal Investigation is conditional, while integrated independent review remains mandatory.
+Other units remain conditional when their owned outcome is unnecessary.
 
 ### D-007 — Impact-investigation artifact
 
@@ -220,7 +223,7 @@ The integrated review inspects:
 
 - the originating Requirement;
 - the Work Item Goal, Boundary, and Completion Conditions;
-- decided outcomes and the supporting Investigation;
+- decided outcomes and any selected supporting Investigation;
 - required ADRs;
 - the final Specification state;
 - added or amended Task graph structure;

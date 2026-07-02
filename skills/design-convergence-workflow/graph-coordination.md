@@ -23,20 +23,24 @@ Use a `coordination` Task when one or more of these must change:
 - a completed Task requires a new successor Task for revised work.
 
 Do not add coordination merely because an inconsistency exists.
-Use it only when the graph must change.
+Use it only when the graph must change through an independently owned graph judgment.
+
+An active framing `decision` Task may directly materialize a uniquely determined same-Work-Item Task under `skills/work-item-framing/SKILL.md`.
+Do not add coordination only to repeat that already fixed materialization route.
 
 ## Inputs
 
 Read:
 
 - parent Work Item;
-- completed decision and Investigation records;
+- completed decision and any selected Investigation records;
 - reconciliation disposition;
 - current child Task contracts;
 - exact artifact and writer candidates;
 - accepted Task and Work Item authoring standards.
 
 Every graph change must trace to an accepted decision, named finding, or mechanically necessary owner repair.
+The framing direct-materialization exception is not a general coordination replacement.
 
 ## Coordination outputs
 
@@ -86,7 +90,10 @@ Create a new Task when:
 
 ## Completed-record rule
 
-Do not reopen completed decision, authoring, review, correction, or synchronization Tasks to represent later work.
+Do not reopen completed or cancelled Tasks to represent later work.
+
+Completed decision, authoring, review, correction, and synchronization Tasks preserve their accepted outcome.
+Cancelled Tasks preserve their intentional-stop outcome and require a new Task for materially resumed work.
 
 Create successor Tasks that:
 
@@ -148,6 +155,8 @@ Coordination may create or release a `work_item_execution` Task only when:
 Coordination fixes dependencies, blockers, and release order around the execution Task.
 The execution Task owns no graph change.
 The execution Task completes only after the referenced child Work Item is `done`.
+When the referenced child Work Item becomes `cancelled`, the execution Task becomes `cancelled`, its direct dependents follow the cancelled-prerequisite rule, and the parent Work Item status remains unchanged.
+The atomic lifecycle operation owns those status and Evidence writes; coordination does not perform cancellation.
 
 Route child creation or split to `work_item_decomposition` before creating the execution relation.
 
@@ -184,7 +193,7 @@ Confirm:
 - unique Task IDs and correct parent sequence;
 - no missing dependencies;
 - no circular writer order;
-- no completed Task was substantively rewritten;
+- no completed or cancelled Task was substantively rewritten;
 - every `work_item_execution` Task references exactly one existing child Work Item;
 - no speculative correction or review Task exists;
 - downstream release conditions match the accepted route.

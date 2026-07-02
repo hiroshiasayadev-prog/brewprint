@@ -19,7 +19,7 @@ Closure synchronization remains a separate phase.
 Return `NOT READY` unless:
 
 - the decision boundary is terminal;
-- mandatory impact Investigation is complete;
+- every selected impact Investigation is complete;
 - reconciliation and graph changes are complete;
 - every decision has an ADR route;
 - required ADR authoring is complete;
@@ -46,7 +46,7 @@ The review Task names exact:
 
 - parent Work Item;
 - decision Task and decision IDs;
-- impact Investigation;
+- impact Investigation when one was selected;
 - reconciliation and coordination Evidence;
 - ADR-routing Task;
 - new, amended, reused, or superseded ADRs;
@@ -82,7 +82,7 @@ For every reviewed decision, verify:
 
 ```text
 decision Task
-  -> Investigation impact
+  -> selected Investigation impact or exact-authority resolution
   -> reconciliation and graph route
   -> ADR required / covered / not_required / blocked
   -> exact canonical artifact projection
@@ -127,7 +127,7 @@ Verify:
 
 Verify:
 
-- every material impact was investigated;
+- every material impact required by the accepted route was investigated or resolved from exact authority;
 - mismatch classes match evidence;
 - Requirement and Work Item identity dispositions are coherent;
 - graph changes have explicit owners;

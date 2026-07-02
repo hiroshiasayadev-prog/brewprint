@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This skill governs repository-persistent design work from the moment a design topic is raised through reviewed design closure.
+This skill governs repository-persistent design work from an accepted framing handoff through reviewed design closure.
 
 It prevents:
 
@@ -21,7 +21,7 @@ This skill coordinates the workflow. Repository authoring standards remain autho
 
 Use this workflow when repository work requires one or more of the following:
 
-- design-topic intake and scope formation;
+- design decision inventory inside an accepted Work Item boundary;
 - decision inventory or interactive user judgment;
 - impact and conflict investigation;
 - Requirement, Work Item, or Task reconciliation;
@@ -67,8 +67,8 @@ Re-read the relevant companion when responsibility, target artifact, writer, dep
 
 ## End-to-end boundary
 
-The workflow starts immediately after a design topic is raised.
-It starts before decision inventory and interactive questioning.
+The workflow starts only after Work Item framing selects design convergence.
+It starts from an accepted Goal, Boundary, Completion Condition, direct source, unknown-handling decision, and initial route.
 
 The workflow completes only after:
 
@@ -105,7 +105,7 @@ A Task ledger is workflow Evidence. It is not canonical design state.
 Use these responsibility units:
 
 1. decision inventory and interactive decision loop;
-2. mandatory decision-impact and conflict investigation;
+2. conditional decision-impact and conflict investigation;
 3. conflict resolution and originating-artifact reconciliation decision;
 4. conditional execution-graph amendment;
 5. conditional Work Item decomposition;
@@ -118,18 +118,18 @@ Use these responsibility units:
 12. independent finding-closure review;
 13. lifecycle, Evidence, and relation synchronization.
 
-Investigation and integrated review are mandatory.
-Other units are conditional when their owned outcome is unnecessary.
+Integrated independent review is mandatory.
+Investigation and the other units are conditional when their owned outcome is unnecessary.
 
 Do not combine distinct primary outcomes or completion judgments merely because one session can perform several phases.
 
 ## Normal flow
 
 ```text
-design topic
+accepted framing handoff
   -> bounded Work Item and decision owner
   -> interactive decision loop
-  -> impact and conflict Investigation
+  -> impact and conflict Investigation when required
   -> reconciliation decision when needed
   -> graph coordination when needed
   -> Work Item decomposition when a child boundary is accepted
@@ -224,7 +224,7 @@ A completed decision remains `decided`; there is no downstream `recorded` state.
 
 Stop and report the exact route when:
 
-- required authority or Investigation Evidence is missing;
+- required authority or selected Investigation Evidence is missing;
 - the user answer allows materially different interpretations;
 - accepted authorities conflict and no disposition is decided;
 - the canonical target cannot be identified safely;
@@ -242,7 +242,7 @@ Before declaring design closure, verify:
 
 - the Work Item has one coherent resolution and completion boundary;
 - all required decisions are `decided`, `deferred`, or validly `blocked`;
-- the mandatory Investigation exists;
+- every selected Investigation exists and is complete;
 - originating-artifact disposition and graph route are fixed;
 - every required child execution relation uses one `work_item_execution` Task and one `work_item_ref`;
 - every decision has an ADR routing outcome;

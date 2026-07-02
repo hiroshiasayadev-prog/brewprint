@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Mechanically propagate one accepted reviewed result into lifecycle, Evidence, relation, and Work Item closure state.
+Mechanically propagate one accepted reviewed result into lifecycle, Evidence, relation, and successful Work Item closure state.
 
-Closure synchronization is not design authoring, correction, coordination, or review.
+Closure synchronization is not design authoring, correction, coordination, review, or cancellation execution.
 
 ## Entry gate
 
@@ -64,6 +64,7 @@ Closure synchronization must not:
 - choose a Requirement, Work Item, ADR, or Specification disposition;
 - author or correct canonical design content;
 - start production implementation;
+- cancel a Work Item or Task;
 - hide missing work by weakening Completion Conditions.
 
 When any prohibited action is needed, stop and return to the correct owner.
@@ -110,10 +111,10 @@ Record downstream refs here rather than in completed decision Tasks.
 
 ## Work Item closure
 
-Set the Work Item to its terminal status only when:
+Set the Work Item to `done` only when:
 
 - every required decision is terminal;
-- mandatory Investigation is complete;
+- every selected Investigation is complete;
 - required ADRs and canonical artifacts are accepted for the closure contract;
 - integrated review passed or every required finding is independently closed;
 - all Completion Conditions are satisfied;
@@ -121,6 +122,8 @@ Set the Work Item to its terminal status only when:
 - lifecycle and relations express the same accepted result.
 
 Do not close the Work Item merely because all currently authored Tasks are done.
+Do not use reviewed-success closure synchronization to set `cancelled`.
+Cancellation follows the separate atomic lifecycle operation and does not require integrated-review PASS.
 
 A validly blocked item may remain only when:
 
@@ -212,4 +215,5 @@ Stop when:
 - a value requires judgment rather than mechanical derivation;
 - canonical artifacts and review Evidence disagree;
 - closing the Work Item would leave an unsatisfied Completion Condition;
+- the requested lifecycle outcome is `cancelled` rather than reviewed-success `done`;
 - relation synchronization would require guessing.
