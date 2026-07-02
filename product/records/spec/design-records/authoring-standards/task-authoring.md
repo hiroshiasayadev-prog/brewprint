@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.authoring_standards.task_authoring`
 - **status**: draft
-- **date**: 2026-07-01
+- **date**: 2026-07-02
 - **parent**: `spec:product.design_records.authoring_standards`
 
 ## What this is
@@ -78,6 +78,7 @@ Task metadata uses H1-adjacent bullet fields.
 | `status` | required | optional | required | Current task lifecycle state. |
 | `date` | required | optional | required | Date the task was opened or last received a substantive scope change. |
 | `work_item` | supplied as parent Work Item ID; generated into metadata | optional; correction only | required | The parent Work Item ID. Supplied by the author at the top level, not as a metadata field. MCP generates the persisted `work_item` value from it. Task provenance is reached through this relation. |
+| `work_item_ref` | required only for `work_item_execution`; prohibited otherwise | optional | conditional | The one already-created child Work Item represented by a `work_item_execution` Task. |
 | `task_type` | required | optional | required | Exactly one primary Task type from the closed PRODUCT-owned value set. |
 | `estimate` | required | optional | required | Rough effort estimate for this task. |
 | `depends_on` | required; empty allowed | optional | required | Task IDs that must complete before this task can start. |
@@ -87,12 +88,18 @@ Rules:
 
 - `date` uses strict `YYYY-MM-DD` format.
 - `task_type` is a required scalar. It permits exactly one value.
-- Allowed `task_type` values are `investigation`, `decision`, `authoring`, `implementation`, `review`, `correction`, `verification`, `coordination`, `work_item_decomposition`, and `synchronization`.
+- Allowed `task_type` values are `investigation`, `decision`, `authoring`, `implementation`, `review`, `correction`, `verification`, `coordination`, `work_item_decomposition`, `work_item_execution`, and `synchronization`.
 - PRODUCT owns `task_type` semantics and the closed value set.
 - DRMCP owns downstream parsing, validation, diagnostics, indexing, and tool projections.
 - Update `date` when the task scope or done condition changes meaningfully.
 - Do not update `date` for editorial corrections or evidence additions.
 - Change `work_item` only to correct the parent Work Item relation. The corrected parent must share the same app namespace, domain, and work sequence as the Task ID. Moving a task to a Work Item with a different work sequence is not a correction; create a new Task or perform an explicit migration instead. A correction must align both the old and new parent Work Item `tasks` fields.
+- `work_item_ref` is required when `task_type` is `work_item_execution` and prohibited for every other type.
+- `work_item_ref` contains exactly one existing Work Item public ID.
+- The referenced Work Item must use the same app namespace and domain as the Task.
+- The referenced Work Item must differ from the parent `work_item`.
+- `work_item_ref` does not replace Task ownership through `work_item`.
+- No reverse execution field is required on the referenced Work Item.
 - A Task persists no source field. Do not add `source_requirement` or `source_refs`.
 - Task provenance is reached through the owning `work_item` relation.
 - `depends_on` and `outputs` normalize empty values to empty lists.
@@ -119,6 +126,24 @@ Rules:
 - A done implementation Task must contain substantive values in every `## Implementation contract` cell.
 - `blocked` records an external stop; the reason belongs in `## Evidence` or a linked investigation.
 
+### Semantic responsibility validation usage
+
+`spec:product.responsibility_boundary_validator` owns semantic validator behavior.
+This Task authoring Specification does not redefine validator criteria, result shape, aggregation, or failure semantics.
+
+| invocation point | caller responsibility |
+|---|---|
+| After Task authoring | The authoring workflow must invoke the standalone validator before normal downstream execution. |
+| After final Task Evidence | The Task completion or release workflow must invoke the same standalone validator before normal completion or release. |
+
+Both invocation points use the same validator contract.
+A compliant semantic result permits the caller to continue its normal route.
+A semantic violation requires explicit human acceptance or rejection under the validator Specification.
+The validator does not correct, rewrite, split, complete, release, accept, or reject a Task.
+
+Current DRMCP retains structural parsing, structural validation, diagnostics, indexing, and current tool projections.
+This usage rule does not integrate the standalone validator into current DRMCP.
+
 ### Kind-specific authoring rules
 
 Cross-artifact selection follows `spec:product.design_records.authoring_standards.artifact_boundary`.
@@ -136,6 +161,7 @@ Cross-artifact selection follows `spec:product.design_records.authoring_standard
 | `verification` | One bounded objective acceptance gate. | Every predefined check is executed, expected and actual results are recorded, and the result is `PASS`, `FAIL`, or validly `BLOCKED`. | Artifact modification, undefined semantic judgment, repair, independent review verdict, or lifecycle synchronization. | Multiple checks may share one Task only under one acceptance gate. |
 | `coordination` | One bounded workflow-graph change. | Required Task, dependency, blocker, owner, writer-order, review-order, and release-route changes are persisted and the Task Done condition is satisfied. | Work Item decomposition, child-owned deliverables, implementation, review, correction, or synchronization. | Coordination changes the workflow graph only. |
 | `work_item_decomposition` | One bounded parent-to-child Work Item decomposition. | Required child Work Items exist with distinguishable, non-overlapping responsibilities, parent-level routing, and the Task Done condition is satisfied. | Task-graph coordination, child-owned deliverables, implementation, review, correction, or synchronization. | The Work Item identity decision must be fixed before decomposition begins. |
+| `work_item_execution` | One already-created child Work Item represented as one parent-graph execution unit. | The referenced child Work Item is `done`, the Task records that status as Evidence, and the Task Done condition is satisfied. | Work Item creation or split, Task-graph coordination, child-owned work, independent review, correction, or synchronization. | `work_item_ref` identifies exactly one child. A blocked child may block the Task. A `not_started` or `in_progress` child does not satisfy completion. |
 | `synchronization` | One bounded propagation of an accepted result. | All specified lifecycle, Evidence, completion-result, and relation state expresses the same accepted result. | New design judgment, decomposition, substantive deliverables, implementation, review, or correction. | Only mechanically derivable state changes are allowed. |
 
 #### Single responsibility
@@ -200,6 +226,9 @@ Every cell must be substantive before the Task becomes `done`.
 | `review` versus `verification` | Review owns semantic soundness and findings. Verification owns predefined objective criteria. Commands may support a review without creating a verification Task. |
 | `correction` versus finding closure | Correction repairs a formally recorded finding. A later independent review decides `CLOSED` or `OPEN`. The correction Task must not close its own finding. |
 | `coordination` versus `work_item_decomposition` | Coordination changes the Task graph and release structure. Work Item decomposition creates or splits child Work Items after identity is decided. |
+| `work_item_decomposition` versus `work_item_execution` | Decomposition creates or splits child Work Items. Execution references one already-created child and waits for its completion. |
+| `coordination` versus `work_item_execution` | Coordination creates or changes the parent Task graph. Execution owns no graph change and only represents one child completion boundary. |
+| `work_item_execution` versus `synchronization` | Execution waits for ongoing child completion. Synchronization only propagates an already accepted result. |
 | `coordination` versus `synchronization` | Coordination changes graph, owner, dependency, blocker, release order, or next-step structure. Synchronization only propagates accepted state. |
 | implementation detail versus contract decision | Implementation may choose observable-equivalent local details. Contract, external behavior, acceptance, validation, diagnostics, persistence, fallback, or Specification changes return to `decision`. |
 | `decision` versus `authoring` | Decision fixes the selected outcome and canonical target. Authoring writes those fixed inputs into canonical artifacts. |
@@ -290,6 +319,8 @@ Persisted workflow relation invariants:
 
 - The parent Work Item lists this Task in its `tasks` field.
 - Task `work_item` and Work Item `tasks` remain the explicit ownership relation.
+- A `work_item_execution` Task uses `work_item_ref` for exactly one already-created child Work Item.
+- `work_item_ref` is a one-way execution relation and does not create a reverse child field.
 - Task provenance is inherited only through `work_item`; the Task does not repeat Work Item `source_refs`.
 
 Migration rules:
@@ -325,7 +356,7 @@ The author supplies:
 - parent Work Item ID (used to derive the `<WORK-SEQUENCE>` segment);
 - title;
 - exact ID or `<APP>-TASK-<DOMAIN>-<WORK-SEQUENCE>-new` placeholder;
-- all create-required metadata fields except `id` and `work_item`, including `task_type`; no Task source field is accepted;
+- all create-required metadata fields except `id` and `work_item`, including `task_type` and conditional `work_item_ref`; no Task source field is accepted;
 - Task body sections required for the declared `task_type`.
 
 The author does not supply:
@@ -352,7 +383,8 @@ Rules:
 - Named section updates use the canonical English H2 headings.
 - `id` is not a metadata update target.
 - `task_type` is an allowed metadata update target.
-- A `task_type` update must realign Goal, Work, Done condition, Verification, and conditional section presence.
+- `work_item_ref` is an allowed metadata update target only for `work_item_execution`.
+- A `task_type` update must realign Goal, Work, Done condition, Verification, conditional `work_item_ref`, and conditional section presence.
 - Change `work_item` only to correct the parent Work Item relation; see Metadata schema rules.
 - Task updates must not add `source_requirement` or `source_refs`.
 
@@ -380,4 +412,7 @@ Concrete tool contracts belong to DRMCP specs.
 | PRODUCT-ADR-SPEC-008 | Removal-only Task source migration. |
 | PRODUCT-ADR-SPEC-013 | Finding-driven correction and closure-review Task materialization. |
 | PRODUCT-ADR-SPEC-014 | Completed-record preservation and append-only reconvergence. |
+| PRODUCT-ADR-SPEC-016 | Standalone semantic validator ownership and current DRMCP separation. |
+| PRODUCT-ADR-SPEC-017 | Post-authoring and post-Evidence invocation with human-owned exceptions. |
+| `spec:product.responsibility_boundary_validator` | Owns semantic evaluation, result, failure, invocation, and exception semantics. |
 | PRODUCT-WORK-SPEC-011 | Original source Work Item. |

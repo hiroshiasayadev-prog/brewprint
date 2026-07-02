@@ -56,6 +56,7 @@ New records must be created under an active app namespace. Creating new files un
 - mismatch分類、Requirement / Work Item / Taskの継続・分割・戻し先判断: `convergence-routing.md`
 - Task追加・分割、dependency、blocker、writer order、review orderの変更: `graph-coordination.md`
 - 決定済みのparent-to-child Work Item作成・分割: `work-item-decomposition.md`
+- 起票済みchild Work Itemをparent Task graph上の1実行単位として扱う場合: `work-item-execution.md`
 - ADR要否、既存ADR coverage、境界分割、create / amend / reuse / supersede: `adr-routing.md`
 - ADR、Specification、originating artifact、skillのauthoring: `design-authoring.md`
 - integrated independent review、finding routing、correction、finding-closure review: `design-review-gate.md`
@@ -64,7 +65,7 @@ New records must be created under an active app namespace. Creating new files un
 このskillは実装方法ではなく、design topicの発生からreview済みclosureまでを扱う。
 必要なdecisionが`open`または`in_discussion`である間、または必須Investigation、canonical authoring、integrated review、closure synchronizationが未完了である間は、production implementation promptを作成しない。
 
-Work Itemはdesign topicとTask graph overviewを所有する。decision Taskはworkflow stateを、Investigationはimpactとconflict Evidenceを所有する。coordination TaskはTask graph changeを、work_item_decomposition Taskは決定済みのparent-to-child Work Item作成・分割を所有する。ADRはdurable choiceとrationaleを、Specificationはcurrent normative stateを所有する。Task ledgerだけをcanonical design sourceとして扱わない。
+Work Itemはdesign topicとTask graph overviewを所有する。decision Taskはworkflow stateを、Investigationはimpactとconflict Evidenceを所有する。coordination TaskはTask graph changeを、work_item_decomposition Taskは決定済みのparent-to-child Work Item作成・分割を、work_item_execution Taskは起票済みchild Work Itemのparent graph上の完了境界を所有する。ADRはdurable choiceとrationaleを、Specificationはcurrent normative stateを所有する。Task ledgerだけをcanonical design sourceとして扱わない。
 
 ### Mandatory Claude Code prompt-authoring skill
 

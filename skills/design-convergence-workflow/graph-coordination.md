@@ -19,6 +19,7 @@ Use a `coordination` Task when one or more of these must change:
 - review order or release conditions must change;
 - downstream work must be blocked or released;
 - routing to another Work Item must be represented in the Task graph;
+- the parent graph must wait for one already-created child Work Item;
 - a completed Task requires a new successor Task for revised work.
 
 Do not add coordination merely because an inconsistency exists.
@@ -48,6 +49,7 @@ Coordination may:
 - persist writer serialization;
 - persist review and release order;
 - route an accepted Work Item creation or split to a `work_item_decomposition` owner;
+- create or release one `work_item_execution` Task when the parent graph must wait for one already-created child Work Item;
 - materialize finding-specific correction and closure-review Tasks;
 - identify exact next owners and release conditions.
 
@@ -134,6 +136,21 @@ When an accepted decision requires a child Work Item:
 
 The decomposition owner follows `work-item-decomposition.md`.
 
+## Work Item execution handoff
+
+Coordination may create or release a `work_item_execution` Task only when:
+
+- the child Work Item already exists;
+- the parent graph must represent the child as one execution unit;
+- exactly one child Work Item ID is known;
+- the Task can use `work_item_ref` without duplicating child internals.
+
+Coordination fixes dependencies, blockers, and release order around the execution Task.
+The execution Task owns no graph change.
+The execution Task completes only after the referenced child Work Item is `done`.
+
+Route child creation or split to `work_item_decomposition` before creating the execution relation.
+
 ## Pre-authoring release gate
 
 Release ADR and canonical authoring only when:
@@ -168,6 +185,7 @@ Confirm:
 - no missing dependencies;
 - no circular writer order;
 - no completed Task was substantively rewritten;
+- every `work_item_execution` Task references exactly one existing child Work Item;
 - no speculative correction or review Task exists;
 - downstream release conditions match the accepted route.
 

@@ -1,10 +1,10 @@
 # PRODUCT-ADR-SPEC-001: PRODUCT spec semantic ownership boundary
 
 - **status**: accepted
-- **date**: 2026-06-24
+- **date**: 2026-07-01
 - **depends_on**: []
 - **supersedes**: []
-- **migrated_to_spec**: null
+- **migrated_to_spec**: 2026-07-01
 
 ## Context
 
@@ -34,6 +34,7 @@ product/records/spec/
   design-records/
   brewprint/
   bpdsl/
+  responsibility-boundary-validator/
 ```
 
 `concepts/` is not retained as a target semantic area.
@@ -52,7 +53,7 @@ The root index defines:
 
 | responsibility | required treatment |
 |---|---|
-| Top-level areas | Route content to `design-records/`, `brewprint/`, or temporary `bpdsl/`. |
+| Top-level areas | Route content to `design-records/`, `brewprint/`, temporary `bpdsl/`, or the standalone `responsibility-boundary-validator/` area. |
 | Ownership boundary | State each area's owned and prohibited content. |
 | Dependency direction | Keep Design Records semantics independent from DRMCP and BPDSL. |
 | Placement tests | Route by semantic ownership, not current physical location. |
@@ -67,9 +68,13 @@ The root index defines:
 | `design-records/` | App-independent Design Records identity, responsibilities, authoring, format, record placement, and traceability semantics. | DRMCP parser, storage, UI, tool, or authoring behavior; canonical BPDSL internals; Brewprint registry facts; Brewprint compatibility state. |
 | `brewprint/` | Brewprint-specific profile, current repository state, current namespace assignments, and Brewprint compatibility history. | Generic Design Records rules; DRMCP operational contracts; canonical BPDSL language, render, resolver, generation, runtime, or MCP contracts. |
 | `bpdsl/` | Temporary preservation of BPDSL-related material removed from mixed PRODUCT specifications. | Canonical BPDSL ownership claims; BPDSL redesign; new integration design; unrelated new BPDSL specifications. |
+| `responsibility-boundary-validator/` | Standalone semantic Task responsibility-boundary validation behavior, result semantics, outcome separation, and workflow-use boundary. | Generic Design Records authoring rules; exact checklist artifacts; executable implementation; current DRMCP behavior; future DRMCP integration. |
 
 Cross-owner references remain pointers.
 A PRODUCT spec uses a pointer to an app-local contract instead of restating its content.
+
+The standalone validator area may consume the PRODUCT Task responsibility contract.
+Placement under PRODUCT does not assign validator implementation to Design Records or DRMCP.
 
 ### Brewprint compatibility placement
 
@@ -129,6 +134,8 @@ This ADR does not choose the destination for every statement.
 | Design Records ↔ BPDSL integration | No normative dependency in either direction. Integration is deferred until a concrete requirement defines endpoints, direction, validation, and owner. |
 | Brewprint profile → Design Records | Allowed. Brewprint may instantiate generic Design Records contracts. |
 | Temporary PRODUCT BPDSL staging → canonical BPDSL | Contextual reference only. Staging creates no ownership claim. |
+| Responsibility-boundary validator → Design Records | Allowed. The validator may evaluate Tasks against PRODUCT-owned Task semantics. |
+| Responsibility-boundary validator → DRMCP | No current normative dependency. Future integration requires separate authority. |
 
 ### Implementation sequencing constraints
 
@@ -159,6 +166,9 @@ Brewprint profile and compatibility content can change without rewriting generic
 Temporary BPDSL staging bounds the current work.
 Temporary BPDSL staging avoids both premature migration and indefinite PRODUCT ownership.
 
+A direct validator area keeps standalone semantic behavior outside generic Design Records ownership.
+The direct area also avoids implying that current DRMCP must implement the validator.
+
 Separating semantic rewrites from moves and ref synchronization prevents another broad mixed diff.
 
 ## Rejected alternatives
@@ -169,6 +179,7 @@ Separating semantic rewrites from moves and ref synchronization prevents another
 | Use only PRODUCT-versus-DRMCP ownership | The model cannot classify Brewprint profile, compatibility, BPDSL, or deferred integration material. |
 | Create top-level `compatibility/` | Current compatibility material is Brewprint-specific. |
 | Create `deferred-integration/` specs | Unadopted mechanisms are not current contracts. |
+| Place the standalone responsibility validator under `design-records/`. | The validator evaluates Design Records Tasks but is not a generic Design Records authoring or artifact-semantics contract. |
 | Move all BPDSL material directly now | Final BPDSL ownership requires a separate migration review. |
 | Combine rewrites, moves, and ref synchronization | The combined diff would be difficult to review and validate. |
 
@@ -176,13 +187,19 @@ Separating semantic rewrites from moves and ref synchronization prevents another
 
 - `PRODUCT-INV-SPEC-005` becomes the source classification for later planning.
 - A separate Work Item will plan and execute the staged restructuring.
-- PRODUCT spec files are not changed by this ADR.
-- The root router and area overviews are created only after acceptance.
+- PRODUCT spec files change only through bounded authoring after acceptance.
+- The root router and area overviews are authored only after acceptance.
 - Mechanical reference changes occur after semantic ownership and paths are accepted.
 - The temporary BPDSL area requires an explicit migration trigger and exit review.
+- `responsibility-boundary-validator/` is a direct PRODUCT child area.
+- `spec:product` registers `spec:product.responsibility_boundary_validator` directly.
+- `spec:product.design_records` does not own or register the validator.
 
 ## Evidence
 
 - PRODUCT-INV-SPEC-005: Full file-level classification and required mixed-file section classification.
 - PRODUCT-WORK-NAMESPACE-001: Historical namespace restructuring context only.
 - PRODUCT-INV-SPEC-004: Evidence that the earlier binary ownership model was insufficient.
+- PRODUCT-TASK-SPEC-019-07 R-002: Selects the direct PRODUCT validator target.
+- PRODUCT-ADR-SPEC-016: Defines the standalone validator and current DRMCP separation.
+- PRODUCT-TASK-SPEC-019-16: Projects the direct PRODUCT-root ownership amendment and canonical Specification.

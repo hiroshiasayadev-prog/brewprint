@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.brewprint.namespaces.domain_catalog`
 - **status**: draft
-- **date**: 2026-06-24
+- **date**: 2026-07-02
 - **parent**: `spec:product.brewprint.namespaces`
 
 ## What this is
@@ -17,6 +17,7 @@ Records Brewprint domain namespace assignments as profile and registry content.
 | `DRMCP` | `SPEC` | Active assignment. | DRMCP-owned spec-format implementation work. | Current IDs include `DRMCP-WORK-SPEC-001` and `DRMCP-WORK-SPEC-002`. |
 | `PRODUCT` | `NAMESPACE` | Active assignment. | Namespace-model cleanup and migration work. | Current IDs include `PRODUCT-WORK-NAMESPACE-001` and `PRODUCT-TASK-NAMESPACE-001-01`. |
 | `PRODUCT` | `SPEC` | Active assignment. | PRODUCT specification format and semantic restructuring work. | Current IDs include `PRODUCT-REQ-SPEC-001`, `PRODUCT-WORK-SPEC-012`, and `PRODUCT-TASK-SPEC-012-03`. |
+| `TRV` | `SPEC` | Active assignment. | TRV app-local design and later implementation design records. | `spec:trv` exists, and `TRV-WORK-SPEC-001` is the accepted first sequential record boundary. |
 
 ## Legacy-effective assignments
 

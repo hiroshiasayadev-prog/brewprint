@@ -36,9 +36,21 @@ It must not:
 
 - select whether the parent continues or splits;
 - change existing Task dependencies, blockers, owners, or release conditions;
+- wait for or claim completion of child Work Item execution;
 - author child-owned decisions, investigations, Specifications, ADRs, or implementation;
 - duplicate child-internal Task graphs in the parent Work Item;
 - perform review or lifecycle synchronization.
+
+## Execution handoff
+
+Decomposition ends after the selected child Work Items and parent-level routing exist.
+
+When the parent graph must wait for one child:
+
+- coordination creates or releases one `work_item_execution` Task;
+- the execution Task uses `work_item_ref` for the already-created child;
+- the execution Task owns the child completion boundary;
+- decomposition does not remain open until the child finishes.
 
 ## Completion condition
 
@@ -49,7 +61,8 @@ Decomposition is complete when:
 - child responsibilities do not overlap;
 - direct material sources are preserved;
 - parent-level routing is recorded;
-- no child-owned deliverable was authored.
+- no child-owned deliverable was authored;
+- any required child completion tracking is handed to `work_item_execution`.
 
 ## Verification
 

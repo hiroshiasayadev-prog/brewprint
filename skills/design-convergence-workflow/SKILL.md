@@ -57,6 +57,7 @@ Read the companion for every active phase:
 | mismatch classification and artifact disposition | `convergence-routing.md` |
 | Task graph, dependency, blocker, writer, or review-order changes | `graph-coordination.md` |
 | parent-to-child Work Item creation or split | `work-item-decomposition.md` |
+| parent-graph tracking of one already-created child Work Item | `work-item-execution.md` |
 | ADR classification and coherent ADR boundaries | `adr-routing.md` |
 | ADR, Specification, or originating-artifact writing | `design-authoring.md` |
 | integrated review, finding routing, correction, and closure review | `design-review-gate.md` |
@@ -88,6 +89,7 @@ Implementation planning begins after design closure.
 | bounded research question, facts, uncertainty, conflicts, and candidates | Investigation record owned by an `investigation` Task |
 | Task graph, dependency, blocker, writer order, review order, or release change | `coordination` Task |
 | parent-to-child Work Item creation or split | `work_item_decomposition` Task |
+| one already-created child Work Item represented in the parent graph | `work_item_execution` Task |
 | durable choice, alternatives, rationale, consequences, and supersession | ADR |
 | current normative behavior, structure, boundary, and constraint | Specification |
 | one bounded decided artifact set | `authoring` Task |
@@ -107,13 +109,14 @@ Use these responsibility units:
 3. conflict resolution and originating-artifact reconciliation decision;
 4. conditional execution-graph amendment;
 5. conditional Work Item decomposition;
-6. ADR routing and ADR-boundary partitioning;
-7. conditional ADR authoring;
-8. Specification and originating-artifact authoring;
-9. mandatory integrated independent review;
-10. named-finding correction;
-11. independent finding-closure review;
-12. lifecycle, Evidence, and relation synchronization.
+6. conditional Work Item execution tracking;
+7. ADR routing and ADR-boundary partitioning;
+8. conditional ADR authoring;
+9. Specification and originating-artifact authoring;
+10. mandatory integrated independent review;
+11. named-finding correction;
+12. independent finding-closure review;
+13. lifecycle, Evidence, and relation synchronization.
 
 Investigation and integrated review are mandatory.
 Other units are conditional when their owned outcome is unnecessary.
@@ -130,6 +133,7 @@ design topic
   -> reconciliation decision when needed
   -> graph coordination when needed
   -> Work Item decomposition when a child boundary is accepted
+  -> Work Item execution tracking when the parent graph must wait for one child
   -> ADR routing and boundary partitioning
   -> ADR authoring when required
   -> Specification and originating-artifact authoring
@@ -240,6 +244,7 @@ Before declaring design closure, verify:
 - all required decisions are `decided`, `deferred`, or validly `blocked`;
 - the mandatory Investigation exists;
 - originating-artifact disposition and graph route are fixed;
+- every required child execution relation uses one `work_item_execution` Task and one `work_item_ref`;
 - every decision has an ADR routing outcome;
 - required ADRs exist at the required lifecycle state;
 - current Specifications and originating artifacts reflect accepted design;

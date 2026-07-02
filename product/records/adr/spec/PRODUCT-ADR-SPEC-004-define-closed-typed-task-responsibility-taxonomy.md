@@ -1,7 +1,7 @@
 # PRODUCT-ADR-SPEC-004: Define the closed typed Task responsibility taxonomy
 
 - **status**: accepted
-- **date**: 2026-07-01
+- **date**: 2026-07-02
 - **depends_on**: []
 - **supersedes**: []
 - **migrated_to_spec**: null
@@ -33,6 +33,7 @@ Permit exactly one value from this closed set:
 - `verification`
 - `coordination`
 - `work_item_decomposition`
+- `work_item_execution`
 - `synchronization`
 
 Each value owns one primary outcome and one completion judgment.
@@ -48,6 +49,7 @@ Each value owns one primary outcome and one completion judgment.
 | `verification` | One bounded objective acceptance gate. | Every predefined check is executed and the overall result is `PASS`, `FAIL`, or validly `BLOCKED`. | Artifact modification, undefined semantic judgment, repair, independent review verdict, or lifecycle synchronization. |
 | `coordination` | One bounded workflow-graph change. | Required Task, dependency, blocker, owner, writer-order, review-order, and release-route changes are persisted. | Work Item decomposition, child-owned deliverables, implementation, review, correction, or synchronization. |
 | `work_item_decomposition` | One bounded parent-to-child Work Item decomposition. | Required child Work Items exist with distinguishable, non-overlapping responsibilities and parent-level routing. | Task-graph coordination, child-owned deliverables, implementation, review, correction, or synchronization. |
+| `work_item_execution` | One already-created child Work Item represented as one parent-graph execution unit. | The referenced child Work Item is `done`, and the Task records that status as completion Evidence. | Work Item creation or split, Task-graph coordination, child-owned work, independent review, correction, or synchronization. |
 | `synchronization` | One bounded accepted-state propagation. | All specified lifecycle, Evidence, completion-result, and relation state expresses the same accepted result. | New design judgment, decomposition, substantive deliverable creation, implementation, review, or correction. |
 
 Task authoring must persist `task_type` on create.
@@ -66,7 +68,7 @@ The taxonomy therefore supports writer ownership, review independence, and relia
 A required scalar field avoids ambiguous multi-label Tasks.
 The field also gives future validators a stable input without assigning validation behavior to PRODUCT.
 
-The ten values cover the complete accepted design workflow and implementation workflow without introducing a generic catch-all type.
+The eleven values cover the complete accepted design workflow and implementation workflow without introducing a generic catch-all type.
 
 ## Rejected alternatives
 
@@ -82,7 +84,7 @@ The ten values cover the complete accepted design workflow and implementation wo
 ## Consequences
 
 - `spec:product.design_records.authoring_standards.task_authoring` must add `task_type` to its metadata and authoring interface.
-- The Task authoring Specification must define the ten type contracts.
+- The Task authoring Specification must define the eleven type contracts.
 - `spec:product.design_records.authoring_standards.work_item_authoring` must preserve the coordination boundary where needed.
 - Downstream DRMCP work must consume the accepted field and closed value set.
 - Existing Task migration remains separate future work.
@@ -95,3 +97,4 @@ The ten values cover the complete accepted design workflow and implementation wo
 - `PRODUCT-TASK-SPEC-016-04`: C-001 and C-002 conflict dispositions.
 - `PRODUCT-TASK-SPEC-016-05`: ADR routing and this ADR boundary.
 - `V01-ADR-091`: compatible historical Work Item and Task separation context.
+- `PRODUCT-TASK-SPEC-022-01`: accepted `work_item_execution` contract and non-material amendment disposition.

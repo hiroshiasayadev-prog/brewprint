@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.authoring_standards.work_item_authoring`
 - **status**: draft
-- **date**: 2026-07-01
+- **date**: 2026-07-02
 - **parent**: `spec:product.design_records.authoring_standards`
 
 ## What this is
@@ -126,16 +126,21 @@ Work-item-specific rules:
 - `## Task flow` shows execution order and dependencies — it is a view, not the canonical Task status source.
 - Do not copy individual Task completion state into the Work Item body. Individual Task status is owned by each Task artifact.
 
-Parent coordination and decomposition boundary:
+Parent coordination, decomposition, and execution boundary:
 
 - A `work_item_decomposition` Task creates or splits child Work Items after the identity decision is fixed.
 - A `coordination` Task may route the decomposition but does not create child Work Items.
+- A `work_item_execution` Task represents exactly one already-created child Work Item in the parent Task graph.
+- The execution Task uses `work_item_ref`; the child Work Item receives no reverse execution field.
+- The execution Task may become `done` only after the child Work Item is `done` and the Task records that status as Evidence.
+- Child status does not automatically close the parent Work Item.
 - A coordinating parent Work Item may list each child Work Item ID.
 - The parent may record each child's one-line purpose and responsibility boundary.
 - The parent may record coarse inter-child routing and parent-level completion state.
 - The parent must not duplicate child Task lists or child-internal Task order.
 - The parent must not duplicate child procedures, detailed dependencies, or release conditions.
 - The parent must not own child-local next-step decisions.
+- A `work_item_execution` Task must not duplicate child Tasks, deliverables, procedures, decisions, or review Evidence.
 - Each child Work Item owns its internal Task graph and execution procedure.
 - A Work Item created or decomposed from a Task must include the exact source Task ID in `source_refs`.
 - Do not automatically add the source Task's owning Work Item.
@@ -180,6 +185,8 @@ Persisted workflow relation invariants:
 
 - Every Task listed in `tasks` references this Work Item in its `work_item` field.
 - Work Item `tasks` and Task `work_item` remain the explicit ownership relation.
+- A child execution relation is owned by the parent Task's scalar `work_item_ref`.
+- The referenced child Work Item does not persist a reverse execution field.
 - Work Item provenance is owned only by `source_refs`; child Tasks do not repeat it.
 
 Migration rules:

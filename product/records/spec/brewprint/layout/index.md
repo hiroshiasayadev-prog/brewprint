@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.brewprint.layout`
 - **status**: draft
-- **date**: 2026-06-23
+- **date**: 2026-07-02
 - **parent**: `spec:product.brewprint`
 
 ## What this is
@@ -23,6 +23,9 @@ drmcp/
 
 bpdsl/
   records/
+
+trv/
+  records/
 ```
 
 | app namespace | directories currently present | current state |
@@ -30,6 +33,7 @@ bpdsl/
 | `product/` | `records/` | Records-only product and cross-app governance namespace. |
 | `drmcp/` | `records/`, `src/` | Design records plus handwritten implementation source. No app-local `dsl/` yet. |
 | `bpdsl/` | `records/` | Namespaced design records are present. App-local DSL and source placement are not established yet. |
+| `trv/` | `records/` | Records-only Task Responsibility Validator namespace. App-local design remains pending. |
 
 ## Other current repository areas
 

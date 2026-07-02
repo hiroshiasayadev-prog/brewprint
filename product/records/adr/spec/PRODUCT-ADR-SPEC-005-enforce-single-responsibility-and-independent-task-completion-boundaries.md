@@ -1,7 +1,7 @@
 # PRODUCT-ADR-SPEC-005: Enforce single-responsibility and independent Task completion boundaries
 
 - **status**: accepted
-- **date**: 2026-07-01
+- **date**: 2026-07-02
 - **depends_on**:
   - PRODUCT-ADR-SPEC-004
 - **supersedes**: []
@@ -72,7 +72,7 @@ The same person may perform both phases only as separate Tasks or sessions.
 
 An issue found and fixed inside the original Task needs no separate closure Task when no formal finding was opened.
 
-### Coordination, Work Item decomposition, and synchronization
+### Coordination, Work Item decomposition, Work Item execution, and synchronization
 
 A `coordination` Task may create or change:
 
@@ -88,6 +88,13 @@ A `coordination` Task may create or change:
 A `work_item_decomposition` Task creates or splits child Work Items after the Work Item identity decision is fixed.
 It owns child Work Item identity, responsibility boundaries, and parent-level routing.
 It does not own child-internal deliverables or Task-graph coordination.
+
+A `work_item_execution` Task represents exactly one already-created child Work Item as one parent-graph execution unit.
+The Task uses `work_item_ref` for the child relation.
+The Task may become `done` only after the referenced child Work Item is `done` and the Task records that status as Evidence.
+A blocked child may block the Task.
+A child in `not_started` or `in_progress` does not satisfy Task completion.
+The execution Task does not create, split, redefine, or duplicate the child Work Item or its internal work.
 
 A coordinating parent Work Item may summarize each child ID, purpose, responsibility boundary, coarse inter-child routing, and parent-level completion state.
 It must not duplicate child-internal Task graphs, procedures, detailed dependencies, release conditions, or next-step decisions.
@@ -147,13 +154,14 @@ Explicit stop conditions prevent implementation and synchronization from becomin
 | Require a separate verification Task for every command. | Commands may be supporting Evidence for another Task's one completion judgment. |
 | Let synchronization repair inconsistent graph state. | Graph repair requires judgment and belongs to coordination or decision work. |
 | Let implementation resolve missing contract details. | Contract-affecting choices must remain explicit design decisions. |
+| Use `work_item_decomposition` to wait for child completion. | Child creation and child execution have different outcomes and completion judgments. |
 | Copy every child Task graph into the parent Work Item. | Duplicate graph state becomes stale and creates competing ownership. |
 
 ## Consequences
 
 - `spec:product.design_records.authoring_standards.task_authoring` must define mandatory cohesion and type-aligned section rules.
 - The Task authoring Specification must define the review, verification, correction, synchronization, and implementation stop boundaries.
-- `spec:product.design_records.authoring_standards.work_item_authoring` must define Work Item decomposition ownership and prohibit parent duplication of child Work Item internals.
+- `spec:product.design_records.authoring_standards.work_item_authoring` must define Work Item decomposition and execution ownership and prohibit parent duplication of child Work Item internals.
 - `implementation` Tasks require the separately defined conditional `## Implementation contract` shape.
 - Downstream validators may later enforce the accepted boundaries.
 - Validator behavior and diagnostics remain outside W016.
@@ -166,3 +174,4 @@ Explicit stop conditions prevent implementation and synchronization from becomin
 - `PRODUCT-TASK-SPEC-016-02`: D-013 through D-018.
 - `PRODUCT-TASK-SPEC-016-04`: C-003, C-005, and C-008 through C-012.
 - `PRODUCT-TASK-SPEC-016-05`: ADR routing and this ADR boundary.
+- `PRODUCT-TASK-SPEC-022-01`: accepted one-child execution relation and completion boundary.

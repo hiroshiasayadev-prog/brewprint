@@ -88,6 +88,7 @@ Create or split another Work Item when:
 
 The reconciliation decision selects the Work Item disposition.
 A later `work_item_decomposition` Task creates or splits the child Work Item.
+A later `work_item_execution` Task represents the existing child in the parent graph when parent completion must wait for it.
 Task count alone does not require a new Work Item.
 
 ## Existing Task amendment boundary
@@ -142,6 +143,13 @@ Do not change the graph in the reconciliation decision Task.
 
 Hand the fixed identity and completion boundary to `work-item-decomposition.md`.
 Do not create or split the Work Item in the reconciliation or coordination Task.
+
+### Accepted child Work Item execution relation
+
+Hand one already-created child Work Item to `work-item-execution.md` when the parent graph must wait for child completion.
+Use one `work_item_execution` Task and one scalar `work_item_ref`.
+Do not duplicate child Tasks, procedures, or completion Evidence in the parent Task.
+Use coordination when the execution Task, dependency, blocker, or release route must be added or changed.
 
 ## Shared-writer disposition
 
