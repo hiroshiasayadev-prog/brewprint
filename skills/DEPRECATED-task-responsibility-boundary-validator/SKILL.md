@@ -1,4 +1,12 @@
-# Task responsibility-boundary validator prompts
+# DEPRECATED: Task responsibility-boundary validator prompts
+
+## Deprecation status
+
+Do not use this skill as an automated semantic validator or workflow gate.
+
+TRV-ADR-SPEC-006 suspends semantic-validator delivery after TRV-INV-SPEC-001 through TRV-INV-SPEC-005 failed to establish reliable cross-model responsibility interpretation.
+
+Keep these prompt assets only as historical evidence and source material for controlled-vocabulary work.
 
 ## Purpose
 
