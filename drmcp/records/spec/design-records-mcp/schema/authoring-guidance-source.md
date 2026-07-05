@@ -2,42 +2,58 @@
 
 - **id**: `spec:drmcp.design_records_mcp.schema.authoring_guidance_source`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-07-04
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
 
 ## What this is
 
-Defines how authoring guides are discovered, how guide IDs and titles are derived, and what each authoring tool returns.
+Defines the fixed Current Records scope and projection used by the authoring-guidance operations.
 
 ## Current contract
 
-Authoring guidance is treated as a separate read-only guidance source, distinct from the Design Records record model.
+Authoring guidance is a public projection over ordinary current Spec records.
+It is not a separate source, record kind, parser, index, or logical model.
 
-### Guide source
+### Current Records source
 
-Guide source directory:
-
-```text
-docs/guides/
-```
-
-Guide file discovery rule:
+The portable standards package is configured as a spec-tree Current Records source with:
 
 ```text
-docs/guides/*.md
+app namespace: design_records
+root Spec: spec:design_records
 ```
 
-### Guide ID and title
+Package files use normal current Spec discovery, path-derived identity, active-index, retrieval, resolution, and validation behavior.
+DRMCP performs no runtime namespace rewrite.
 
-Guide ID is the filename stem.
+### Guidance scope
 
-Example:
+Normal list scope is fixed to addressable child Specs below:
 
 ```text
-docs/guides/adr-authoring.md → adr-authoring
+spec:design_records.authoring_standards.*
 ```
 
-Guide title is extracted from the first H1. Guide abstract is extracted from the body of the `## Abstract` section.
+The root Spec is excluded from normal Guidance listing:
+
+```text
+spec:design_records.authoring_standards
+```
+
+Detail lookup accepts one exact canonical ref inside the child subtree.
+Filename stems, basenames, physical paths, titles, aliases, fuzzy values, and inferred candidates are not Guidance identities.
+
+### Guide projection
+
+| field | projection rule |
+|---|---|
+| `id` | Canonical package Spec ref. |
+| `title` | First H1 text. |
+| `abstract` | Body of the `## What this is` section. |
+| `content` | Complete Markdown source verbatim. |
+
+Record Domain / Logical Tree owns canonical identity and parsed source structure.
+The Guidance Application Use Cases own fixed scope, canonical-ref ordering, response shape, and operation-specific errors.
 
 ### Tool response contracts
 
@@ -46,6 +62,5 @@ Guide title is extracted from the first H1. Guide abstract is extracted from the
 | `list_authoring_guides` | `id` / `title` / `abstract` |
 | `get_authoring_guidance` | `id` / `title` / `content` |
 
-Guide source file path is not part of the public response contract. Path is resolved internally from the guide ID as an implementation detail.
-
-Guides are not record kinds. They are not treated as Design Records record IDs, record status, record paths, record headings, record diagnostics, or canonical reference resolver targets.
+Normal responses do not expose physical source paths.
+Current invalid-source, duplicate-identity, and addressability behavior remains owned by the normal Current Records contracts.

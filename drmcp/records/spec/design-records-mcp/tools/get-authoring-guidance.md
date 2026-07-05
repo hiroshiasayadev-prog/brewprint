@@ -2,50 +2,68 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.get_authoring_guidance`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-07-04
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
 
 ## What this is
 
-`get_authoring_guidance` retrieves authoring guidance Markdown content by guide ID. It returns the guide Markdown verbatim; it does not return record metadata, record path, record headings, or record lifecycle status.
+`get_authoring_guidance` returns one exact authoring-standard child Spec from the portable `design_records` Current Records scope as a Guidance projection.
+
+The operation reuses shared exact-retrieval orchestration. It does not call the public `get_records` use case and does not maintain a separate guide lookup map.
 
 ## Request
 
 ```json
 {
-  "id": "adr-authoring"
+  "id": "spec:design_records.authoring_standards.adr_authoring"
 }
 ```
 
 | field | required | type | meaning |
 |---|---:|---|---|
-| `id` | yes | string | Target guide ID (exact match) |
+| `id` | yes | string | Exact canonical package Spec ref inside the Guidance child subtree. |
 
-`id` is evaluated as an exact guide ID lookup key. Whitespace trimming, case normalization, physical path lookup, and record ID resolution are not performed.
+Accepted IDs match this fixed scope:
+
+```text
+spec:design_records.authoring_standards.*
+```
+
+The root `spec:design_records.authoring_standards` is not a normal Guidance detail target.
+
+The input is evaluated exactly as supplied.
+Whitespace trimming, case normalization, basename lookup, filename-stem lookup, physical-path lookup, title lookup, aliases, fuzzy lookup, inferred candidates, and reference-resolution fallback are not performed.
 
 ## Response
 
+Response shape:
+
 ```json
 {
-  "id": "adr-authoring",
-  "title": "ADR Authoring Guide",
-  "content": "# ADR Authoring Guide\n\n## Abstract\n\n..."
+  "id": "spec:design_records.authoring_standards.adr_authoring",
+  "title": "Reference: ADR authoring",
+  "content": "<complete Markdown source returned verbatim>"
 }
 ```
 
+The `content` placeholder documents the response field only. An implementation returns the complete source string and does not return the placeholder or a truncated example.
+
 | field | required | meaning |
 |---|---:|---|
-| `id` | yes | Guide ID from the request |
-| `title` | yes | First H1 text from the guide file |
-| `content` | yes | Full Markdown content of the guide file |
+| `id` | yes | Exact canonical package Spec ref. |
+| `title` | yes | First H1 text from the current Spec source. |
+| `content` | yes | Complete Markdown source verbatim. |
 
-`content` returns the original Markdown verbatim. Formatting, summarization, normalization, and truncation are prohibited.
-
-Guide source file path MUST NOT be included in the response.
+Formatting, summarization, normalization, and truncation are prohibited.
+Normal responses MUST NOT include physical source paths, record metadata, or internal index state.
 
 ## Errors
 
 | code | condition |
 |---|---|
-| `guide_not_found` | Specified guide ID does not exist |
+| `guide_not_found` | The exact canonical ref is absent or outside the accepted Guidance child subtree. |
+| `guide_unavailable` | The in-scope canonical identity is conflicted, unreadable, or cannot supply the required title or complete content projection. |
+| `invalid_request` | The request shape or `id` type is invalid. |
+
+The operation does not select a duplicate winner or map an in-scope conflicted identity to `guide_not_found`.

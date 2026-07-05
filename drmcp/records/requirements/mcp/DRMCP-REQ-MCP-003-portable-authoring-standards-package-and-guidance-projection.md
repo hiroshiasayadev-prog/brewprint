@@ -2,10 +2,12 @@
 
 - **id**: DRMCP-REQ-MCP-003
 - **status**: accepted
-- **date**: 2026-06-26
+- **date**: 2026-07-04
 - **source_refs**:
   - DRMCP-INV-MCP-002
   - DRMCP-ADR-MCP-001
+  - DRMCP-TASK-MCP-016-09
+  - DRMCP-TASK-MCP-016-12
   - PRODUCT-ADR-SPEC-001
   - PRODUCT-REQ-SPEC-003
   - spec:product.design_records.authoring_standards
@@ -14,191 +16,167 @@
   - spec:product.design_records.spec_format
   - spec:product.design_records.traceability
   - spec:product.design_records.artifact_model
-  - spec:drmcp.design_records_mcp.schema.authoring_guidance_source
-- **work_items**: []
 
 ## Requirement
 
-DRMCP authoring and semantic validation must load and consume a portable, operationally standalone Design Records standards package produced under `PRODUCT-REQ-SPEC-003`.
+DRMCP authoring and semantic validation must consume the portable Design Records standards package produced under `PRODUCT-REQ-SPEC-003`.
 
-The runtime package boundary must work outside the Brewprint repository.
+DRMCP must register the selected package spec tree as ordinary Current Records under the reserved `design_records` app namespace.
+The package must use the normal current Spec discovery, identity, logical-tree, active-index, retrieval, resolution, and validation semantics.
+
+The runtime boundary must work outside the Brewprint repository.
 It must not depend on a host repository's `product` namespace, Brewprint compatibility history, or legacy guide directory.
-It must not resolve package refs through a host app registry, and root resolution must not depend on the process working directory.
+DRMCP must not rewrite package refs at runtime.
+Root resolution must not depend on the process working directory.
 
-For this requirement, operationally standalone means package files can be distributed and discovered outside Brewprint and loaded without a host repository or host `product` namespace.
-It does not mean that producer warnings for external, unresolved, duplicate, or unrewritten refs block generation or package use.
-
-DRMCP must load the selected package root operationally and build localized indexes over readable package specs.
-Authoring guidance tools must project indexed package specs rather than read a separate legacy guide source.
+Authoring guidance tools must project indexed Current Records under `spec:design_records.authoring_standards`.
+They must not read a separate guide source or maintain a package-specific record model.
 
 ## Evidence
 
-- `DRMCP-INV-MCP-002` found three incompatible guidance sources: declared `docs/guides/*.md`, implemented `records/guides/*.md`, and current PRODUCT authoring-standard spec records.
-- `DRMCP-ADR-MCP-001` requires a portable, fixed-namespace distribution of PRODUCT semantics before portable authoring is complete.
-- `PRODUCT-REQ-SPEC-003` owns the whole-tree source boundary, package generation or synchronization, ref-prefix rewrite rules, producer warning emission, operational generation failures, and generation and review evidence.
-- DRMCP still requires consumer-side configuration, operational loading, localized indexing, capability exposure, guidance projection, and authoring integration.
-- `spec:drmcp.design_records_mcp.schema.authoring_guidance_source` is cited as the legacy guidance contract being replaced, not as current semantic authority.
+- `DRMCP-INV-MCP-002` found incompatible legacy guide and PRODUCT Spec sources.
+- `DRMCP-ADR-MCP-001` requires a portable fixed-namespace distribution of PRODUCT semantics.
+- `PRODUCT-REQ-SPEC-003` produces a whole-tree copy at `<exe-dir>/design-records/` and rewrites refs to `spec:design_records.*`.
+- The package files follow the same current Spec format used by ordinary Current Records.
+- T09 found that the direct PRODUCT-directory Guidance model contradicted accepted package authority.
+- T12 selected normal Current Records treatment and fixed-scope Guidance aliases.
+- A second package index, parser, logical tree, or Guidance source would duplicate the current record model.
 
 ## Required Outcome
 
-### Package consumption boundary
+### Current Records source registration
 
-DRMCP must consume the fixed package namespace, bundled or configured physical root, package spec tree root, guidance root, prefix-rewritten canonical refs, and package-internal refs defined by `PRODUCT-REQ-SPEC-003`.
+DRMCP configuration must select one portable standards spec tree and associate it with `app_namespace: design_records`.
 
-The DRMCP consumer contract must define:
+The selected source may be:
 
-- bundled and configured package-root behavior;
-- deterministic root and file resolution independent of process working directory;
-- fixed-namespace indexing for readable package specs;
-- package-internal ref indexing with localized unresolved behavior;
-- localized handling of unrewritten `spec:product.design_records` refs in package content;
-- separation from host records indexes and app registries;
-- package unavailability when the selected root is absent, unreadable as a directory, or cannot be enumerated.
+- the bundled default `<exe-dir>/design-records/`; or
+- one explicit configured override.
 
-DRMCP must not select or redefine the package namespace.
-It must not rewrite package refs into the host project's namespace.
+An explicit override disables silent fallback to the bundled default.
+Root resolution must be deterministic and independent of the process working directory.
+The exact configuration serialization remains a downstream contract.
 
-### Package configuration
+The selected package source is mandatory when package-dependent capabilities are enabled.
+It follows the same source-availability and trustworthy-index rules as other mandatory Current Records sources.
 
-DRMCP configuration must identify the standards package root.
+### Normal current Spec processing
 
-The configuration contract must define:
-
-- default bundled-package behavior, when provided by a distribution;
-- explicit package-root override behavior;
-- deterministic path resolution independent of process working directory;
-- missing or unreadable package behavior;
-- separation from active records roots and legacy archive roots;
-- localized file warning behavior for unreadable or unparseable package files.
-
-When an explicit configured root is supplied, DRMCP must use only that configured root and must not silently fall back to the bundled package.
-
-When no configured root is supplied, the bundled default is `<exe-dir>/design-records/`.
-
-If the selected package root is absent, unreadable as a directory, or cannot be enumerated, the package is unavailable. This requirement does not choose startup exit behavior, process failure behavior, or capability-degradation protocol.
-
-Any read-only raw retrieval retained when the package is unavailable must be explicitly separated from standards-dependent operations.
-
-### Operational loading and localized indexing
-
-DRMCP must discover package Markdown files recursively:
+The package root is a configured spec-tree source.
+DRMCP must discover Markdown files recursively under that root.
 
 ```text
 <package-root>/**/*.md
 ```
 
-Discovery must not require Topics-graph reachability.
+The package root itself is the effective current Spec tree root.
+`<package-root>/index.md` derives `spec:design_records`.
+Child paths derive `spec:design_records.<suffix>` through the normal current Spec identity rules.
 
-For an individual Markdown file that cannot be read or parsed, DRMCP must emit a warning identifying that file, exclude only that file from the package index, and continue loading and using other readable files.
+Package Specs must enter the same active Current Records index as other current records.
+The index retains the explicit `design_records` app association.
+DRMCP must not create a package-specific index, logical tree, parser, resolver, validator, or record model.
 
-`<package-root>/index.md` has no special parse-success gate. It is an ordinary root spec when readable and indexable.
+Normal Current Records behavior governs:
 
-A readable spec with a valid canonical ID under `spec:design_records` or `spec:design_records.*` is eligible for the canonical package index.
+- invalid but addressable Specs;
+- duplicate canonical identity;
+- unresolved refs;
+- exact retrieval;
+- reference resolution;
+- validation inputs and findings;
+- physical-path hiding in normal responses.
 
-DRMCP must maintain package indexes separately from host records indexes and must not resolve package refs through a host app registry.
+Legacy Archive remains a separate compatibility state and does not absorb package Specs.
 
-Operational loading consumes the released package contract. It does not replace PRODUCT-side generation, warning emission, or source-authoring correction.
+### Fixed package namespace
 
-### Duplicate, unresolved, and unrewritten-ref behavior
+The producer supplies visible IDs and refs under `spec:design_records`.
+DRMCP must not select, remap, or rewrite that namespace at runtime.
 
-When multiple readable documents declare the same canonical package ref, DRMCP must not use first-wins or last-wins. It must mark only that ref ambiguous. Exact get or resolve for that ref cannot select a document, unrelated unique refs remain usable, and the whole package is not rejected.
+An unrewritten `spec:product.design_records.*` value receives normal current Spec mismatch or unresolved-ref handling.
+It does not create a package alias or trigger consumer repair.
 
-When a readable document contains an unresolved canonical ref, the document remains readable. List and get remain available where they do not require that resolution. Only resolution of that ref returns unresolved. The document and package are not rejected.
+### Authoring guidance aliases
 
-DRMCP must not repair unrewritten source-prefix refs. As a body ref, an unrewritten `spec:product.design_records.*` ref remains unresolved. As a visible document ID, an unrewritten `spec:product.design_records.*` document is not entered into the canonical `spec:design_records` package index. Other documents remain usable and the package remains loaded.
+Authoring guidance operations must use shared record-query orchestration over the Current Records snapshot.
+They must not call another public use case.
 
-### Authoring guidance projection
+The fixed list scope is:
 
-Authoring guidance must resolve from indexed package specs.
+- app namespace: `design_records`;
+- kind: `spec`;
+- canonical subtree: `spec:design_records.authoring_standards.*`;
+- excluded list root: `spec:design_records.authoring_standards`.
 
-The corrected guidance contracts must define:
+The fixed detail scope accepts an exact canonical ref under that child subtree.
 
-- package specs under `spec:design_records.authoring_standards` that qualify for authoring-guidance projection;
-- list projection fields such as canonical ref, title, summary, artifact kind, and applicable operation;
-- detail retrieval by exact canonical package ref;
-- ordering and filtering behavior;
-- unreadable file, ambiguous ref, unresolved ref, invalid, or unsupported guidance diagnostics;
-- path hiding in normal guidance responses.
+Guidance projection is:
 
-The guidance list scope covers readable, indexable child specs under `<package-root>/authoring-standards/`, equivalently `spec:design_records.authoring_standards.*`.
+| field | rule |
+|---|---|
+| `id` | Canonical package Spec ref. |
+| `title` | First H1 text. |
+| `abstract` | Body of the `## What this is` section. |
+| `content` | Complete source Markdown verbatim. |
 
-The guidance root itself, `spec:design_records.authoring_standards`, is excluded from normal guidance listing and remains available through explicit exact get.
-
-Guidance get accepts only an exact canonical ref. The first contract does not support basename lookup, filename lookup, physical-path lookup, title lookup, fuzzy lookup, aliases, or inferred candidates.
-
-Legacy `docs/guides/*.md` and `records/guides/*.md` files must not remain canonical guidance sources.
-DRMCP must not keep a separate legacy guide parser as the current guidance implementation.
-
-Existing guidance tool names may be retained only when their corrected behavior is a projection over indexed package specs.
-Tool retention does not preserve legacy guide IDs or filename-derived identity.
+List ordering uses canonical-ref ASCII lexical order.
+Normal Guidance responses do not expose physical paths.
+Legacy guide files, filename-stem IDs, title lookup, fuzzy lookup, and inferred candidates are not current Guidance authority.
 
 ### Integration with authoring and validation
 
-`DRMCP-REQ-MCP-002` runtime authoring operations must consume the loaded and indexed package for semantic mappings.
+`DRMCP-REQ-MCP-002` authoring operations and package-dependent validation must consume the same request-scoped Current Records state.
 
-The integration contract must define:
-
-- unsupported operation behavior when required package contracts are unavailable;
-- accept-time handling when the package changes after proposal creation;
-- diagnostic ownership between package loading/indexing and record validation;
-- caching and invalidation behavior without weakening correctness.
-
-A proposal created against one loaded and indexed package state must not be silently accepted against changed semantics.
+A proposal created against one package state must not be silently accepted against changed semantics.
+Detailed staleness, caching, and accept-time checks remain downstream authoring contracts.
 Runtime implementation must not hard-code PRODUCT semantics or assume the Brewprint repository layout.
 
 ### Distribution consumption and portability verification
 
-A DRMCP distribution that supports package-dependent authoring or validation must include or obtain a package released under `PRODUCT-REQ-SPEC-003`.
+A package-dependent DRMCP distribution must include or obtain a package released under `PRODUCT-REQ-SPEC-003`.
 
 Verification must cover:
 
 - loading outside the Brewprint repository;
 - loading with a different process working directory;
-- host records with no `product` namespace;
-- package root at `<exe-dir>/design-records/` when bundled;
-- package root `spec:design_records`;
-- guidance root `spec:design_records.authoring_standards`;
-- recursive Markdown discovery without Topics reachability;
-- localized warning and exclusion for unreadable or unparseable individual files;
-- duplicate canonical refs marked ambiguous without whole-package rejection;
-- unresolved refs kept local to the affected resolution;
-- unrewritten source-prefix refs not repaired by the consumer;
-- guidance list and detail projection;
-- authoring and validation using package-provided mappings;
-- package change between proposal and acceptance.
+- a host with no `product` app namespace;
+- bundled and explicit package roots;
+- explicit `design_records` app association;
+- recursive current Spec discovery;
+- normal active-index and invalid-source behavior;
+- no runtime namespace rewrite;
+- exact retrieval and resolution of package Specs;
+- Guidance list and detail aliases;
+- authoring and validation use of package-provided semantics.
 
 ### Follow-up tracking
 
-The first DRMCP Work Item for this requirement is P0 and covers only:
+Downstream Work Items may still be required for:
 
-- consumer package contract correction;
-- loader and configuration contracts;
-- operational loading and localized indexing;
-- minimum fixtures and portability verification.
-
-Later Work Items may be required for:
-
-- full guidance projection correction;
+- concrete current-source configuration serialization;
+- implementation and fixtures;
 - authoring and validation integration;
 - proposal reproducibility guards;
-- broader package-dependent capability exposure;
-- independent end-to-end review.
+- package-dependent capability exposure;
+- end-to-end portability review.
 
-PRODUCT whole-tree source boundary definition, package generation or synchronization, producer warning emission, and operational generation failure handling must be tracked under `PRODUCT-REQ-SPEC-003` and must not become tasks of a DRMCP Work Item.
+PRODUCT whole-tree source selection, package production, ref rewriting, producer warnings, and generation failures remain owned by `PRODUCT-REQ-SPEC-003`.
 
 ## Explicitly Excluded Scope
 
-- Defining or changing the PRODUCT whole-tree source boundary.
-- Selecting the fixed package namespace.
-- Producing or synchronizing the portable package from PRODUCT sources.
-- PRODUCT-side source/package drift detection, producer checks, or warning emission tooling.
-- Copying Brewprint compatibility rules into the portable package.
-- Defining DRMCP tool schemas inside the portable package.
+- Changing the PRODUCT whole-tree source boundary.
+- Selecting or rewriting the fixed package namespace at runtime.
+- Producing or synchronizing the portable package.
+- PRODUCT-side source checks or warning tooling.
+- Copying Brewprint compatibility rules into the package.
+- Defining DRMCP tool schemas inside the package.
 - Replacing PRODUCT specs as semantic authority.
-- Defining query, resolver, and legacy archive behavior owned by `DRMCP-REQ-MCP-001`.
-- Defining artifact authoring transaction behavior owned by `DRMCP-REQ-MCP-002`.
-- General-purpose package registries or network package distribution.
-- Relative refs, namespace remapping, or package-local alias design for the first package release.
+- Redesigning generic query, resolver, validation, or Legacy Archive semantics.
+- Defining authoring transaction behavior owned by `DRMCP-REQ-MCP-002`.
+- A package-specific parser, logical tree, active index, resolver, validator, or Guidance domain.
+- General-purpose package registries or network distribution.
+- Relative refs, namespace remapping, or package-local aliases.
 - UI behavior.
 - BPDSL design or migration.
 
@@ -206,28 +184,27 @@ PRODUCT whole-tree source boundary definition, package generation or synchroniza
 
 PRODUCT owns under `PRODUCT-REQ-SPEC-003`:
 
-- authoritative whole-tree source boundary;
-- producer warning emission during generation or check execution;
-- fixed package namespace;
-- bundled physical root;
-- ref-prefix rewrite rules;
-- deterministic package generation or synchronization;
-- operational generation failure handling;
+- the authoritative whole-tree source;
+- the fixed `design_records` package namespace;
+- the bundled physical root;
+- ref-prefix rewriting;
+- deterministic package generation;
+- producer warnings and generation failures;
 - generation and review evidence.
 
 The portable package owns no independent semantics.
-It is a copied and ref-rewritten distribution artifact derived from PRODUCT authority.
+It is a copied and ref-rewritten distribution of PRODUCT authority.
 
 DRMCP owns:
 
-- package configuration and loading;
-- operational package availability checks;
-- package record indexing;
+- selecting and registering the package spec-tree source;
+- explicit `design_records` app association;
+- normal Current Records loading and active-index participation;
 - package-dependent capability exposure;
-- guidance projection request and response contracts;
+- Guidance alias request and response contracts;
 - authoring and validation integration;
 - proposal and validation reproducibility guards;
-- consumer-side package diagnostics.
+- consumer-side diagnostics.
 
 Brewprint profile specs own project-specific registry, compatibility, archive, and migration facts.
-Those facts remain outside the portable package and DRMCP's portable consumer contract.
+Those facts remain outside the package and the portable consumer contract.

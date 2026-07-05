@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.schema.record_source`
 - **status**: draft
-- **date**: 2026-06-27
+- **date**: 2026-07-04
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
 
 ## What this is
@@ -26,8 +26,7 @@ Design Records MCP builds design records from Markdown files. The following sour
 | Markdown H1 | `title` extraction and `kind` extraction for current specs |
 | File path | Repository placement for canonical spec ref derivation; record path / filename ID validation for sequential kinds |
 | Markdown headings | Readable source material available for operation-specific projections. |
-| Markdown body | Readable source material available for operation-specific projections. |
-| Authoring guide Markdown | Guide ID / title / abstract / content from `docs/guides/*.md` for `list_authoring_guides` / `get_authoring_guidance` |
+| Markdown body | Readable source material available for operation-specific projections, including Guidance aliases. |
 
 DRMCP does not infer dependency or migration state from Markdown body natural language.
 
@@ -39,7 +38,7 @@ YAML front matter is not a current spec metadata source. A current spec file tha
 
 Current spec metadata is sourced entirely from the H1-adjacent visible metadata block, following the grammar defined by `spec:drmcp.design_records_mcp.schema.metadata_grammar`.
 
-Current spec canonical identity is derived from the configured `app_namespace` and repository placement (file path under `<records_root>/spec/`), as defined by `spec:product.design_records.spec_format.spec_id_as_ref` and mapped by `spec:drmcp.design_records_mcp.schema.id_normalization`. YAML, `SPEC-*`, and `V01-SPEC-*` values do not participate in identity derivation.
+Current Spec canonical identity is derived from the configured `app_namespace` and the file path relative to the effective Spec tree root. A records-root source uses `<records_root>/spec/`; a spec-tree source uses its configured root directly. The derivation is defined by `spec:product.design_records.spec_format.spec_id_as_ref` and mapped by `spec:drmcp.design_records_mcp.schema.id_normalization`. YAML, `SPEC-*`, and `V01-SPEC-*` values do not participate in identity derivation.
 
 ### Metadata source per record kind
 
@@ -58,7 +57,7 @@ For the exact bullet metadata grammar, see `spec:drmcp.design_records_mcp.schema
 
 | source element | content mapped |
 |---|---|
-| Repository placement (`<records_root>/spec/**/*.md`) | Path-derived canonical `spec:` ref |
+| Placement below the configured effective Spec tree root | Path-derived canonical `spec:` ref |
 | Real ATX H1 (`# <SpecKind>: <Title>`) | Spec kind and human-readable title |
 | H1-adjacent metadata block | `id` (consistency value), `status`, `date`, `parent`, `contract_class` (required for `Contract` specs; prohibited for non-`Contract` specs) |
 | Markdown headings | Readable spec source material. |
@@ -66,7 +65,7 @@ For the exact bullet metadata grammar, see `spec:drmcp.design_records_mcp.schema
 
 The path-derived canonical ref is the authoritative current spec identity. The H1-adjacent `id` is a required consistency value that must exactly match the path-derived canonical ref. It is not an independent identity authority.
 
-This mapping does not define whether headings or body content appear in a public read response. `DRMCP-WORK-MCP-004` owns that contract.
+This mapping does not define whether headings or body content appear in a public read response. `DRMCP-WORK-MCP-004` owns the generic read contract. Guidance operation Specifications own their fixed-scope projections over the same parsed current Spec state.
 
 ## Related specs
 

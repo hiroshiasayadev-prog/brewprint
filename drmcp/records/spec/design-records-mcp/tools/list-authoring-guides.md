@@ -2,13 +2,15 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.list_authoring_guides`
 - **status**: draft
-- **date**: 2026-06-17
+- **date**: 2026-07-04
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
 
 ## What this is
 
-`list_authoring_guides` returns the project authoring guidance catalog so that an AI assistant can discover the correct authoring guide by guide ID for a given authoring target. This tool does not return the Design Records record index. Guides are not a record kind — they are a separate authoring guidance retrieval surface.
+`list_authoring_guides` returns authoring-standard child Specs from the portable `design_records` Current Records scope as a compact Guidance projection.
+
+The operation is a fixed-scope Application Use Case over shared record-query orchestration. It does not call the public `list_records` use case and does not create a separate guide index.
 
 ## Request
 
@@ -20,13 +22,26 @@ No request fields. Implementations may reject requests containing unknown fields
 
 ## Response
 
+The operation applies this fixed Current Records scope:
+
+| scope | value |
+|---|---|
+| app namespace | `design_records` |
+| record kind | `spec` |
+| included canonical refs | `spec:design_records.authoring_standards.*` |
+| excluded root | `spec:design_records.authoring_standards` |
+
+Every addressable current Spec in that child subtree is a catalog candidate.
+A candidate is projectable only when its canonical identity, first H1, `## What this is` body, and source read are available.
+The operation does not broaden to another app, kind, topic, physical path, or legacy source.
+
 ```json
 {
   "guides": [
     {
-      "id": "adr-authoring",
-      "title": "ADR Authoring Guide",
-      "abstract": "ADR を起票・レビュー・更新するときの実践ルールを定める。ADR は設計判断の履歴を所有し、現行仕様本文や作業 checklist を所有しない。"
+      "id": "spec:design_records.authoring_standards.adr_authoring",
+      "title": "Reference: ADR authoring",
+      "abstract": "Authoring rules for Architecture Decision Record artifacts.\n\nThis guide defines ADR IDs, paths, file shape, metadata, lifecycle, references, and author-facing inputs."
     }
   ]
 }
@@ -36,14 +51,22 @@ No request fields. Implementations may reject requests containing unknown fields
 
 | field | required | meaning |
 |---|---:|---|
-| `id` | yes | Guide ID derived from the filename stem of `docs/guides/<id>.md` |
-| `title` | yes | First H1 text from the guide file |
-| `abstract` | yes | Content of the `## Abstract` section from the guide file |
+| `id` | yes | Canonical package Spec ref. |
+| `title` | yes | First H1 text from the current Spec source. |
+| `abstract` | yes | Body of the `## What this is` section. |
 
-Guide source file path MUST NOT be included in the response.
+Normal responses MUST NOT include physical source paths.
 
-`guides[]` is ordered by `id` in ASCII lexical order.
+`guides[]` is ordered by canonical `id` in ASCII lexical order.
+The operation uses shared current-record query primitives without exposing generic query fields in its request.
 
 ## Errors
 
-No tool-level errors are defined for this tool beyond `invalid_request` for malformed requests.
+| code | condition |
+|---|---|
+| `invalid_request` | The request is not the accepted empty-object shape. |
+| `guidance_catalog_unavailable` | An in-scope canonical identity is conflicted, unreadable, or cannot supply the required title or abstract projection. |
+
+A valid request with no in-scope addressable child Specs returns `guides: []`.
+The operation does not omit an unprojectable in-scope candidate and return a misleading partial catalog.
+Current source invalidity, duplicate identity, and source-read state remain owned by the normal Current Records model. The operation does not select a duplicate winner or fall back to physical-path enumeration.

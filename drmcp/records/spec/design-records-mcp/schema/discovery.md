@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.schema.discovery`
 - **status**: draft
-- **date**: 2026-06-27
+- **date**: 2026-07-04
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
 
 ## What this is
@@ -15,17 +15,25 @@ Kind-level path-pattern conventions are defined by `spec:product.design_records.
 
 ### Candidate paths
 
-Every regular Markdown file under `<records_root>/spec/**/*.md` is a current spec candidate.
+A current Spec candidate is every regular Markdown file under one configured effective Spec tree root.
 
-- Discovery is recursive to arbitrary depth below `spec/`.
-- Both `index.md` files and non-index leaf files are candidates.
-- Non-Markdown files are outside current spec discovery.
-- Auxiliary or non-spec Markdown files are not allowed inside the current spec tree.
-- Symlinked files are not current spec candidates.
-- Symlinked directories and filesystem aliases are not traversed for current spec discovery.
-- A canonicalized source that resolves outside the configured spec tree is not adopted through the visible alias path.
+| current source form | effective Spec tree root | candidate pattern |
+|---|---|---|
+| Records-root source | `<records_root>/spec/` | `<records_root>/spec/**/*.md` |
+| Spec-tree source | `<spec_tree_root>/` | `<spec_tree_root>/**/*.md` |
 
-The path pattern is consumed from `spec:product.design_records.repository_layout.record_discovery_paths`. This specification defines DRMCP-specific inclusion and boundary rules only.
+- Discovery is recursive to arbitrary depth below the effective Spec tree root.
+- The root `index.md` and non-index leaf files are candidates.
+- A spec-tree source exposes only `spec` candidates.
+- Non-Markdown files are outside current Spec discovery.
+- Auxiliary or non-Spec Markdown files are not allowed inside an effective Spec tree.
+- Symlinked files are not current Spec candidates.
+- Symlinked directories and filesystem aliases are not traversed.
+- A canonicalized source outside the configured effective Spec tree is not adopted through an alias path.
+
+Records-root placement consumes `spec:product.design_records.repository_layout.record_discovery_paths`.
+The explicit spec-tree form supports the portable package layout defined by `PRODUCT-REQ-SPEC-003`.
+Both forms use the same valid-source, addressability, conflict, and validation rules.
 
 ### Candidate versus valid source
 

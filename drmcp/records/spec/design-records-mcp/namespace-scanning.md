@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.namespace_scanning`
 - **status**: draft
-- **date**: 2026-06-30
+- **date**: 2026-07-05
 - **parent**: `spec:drmcp.design_records_mcp.overview`
 
 ## What this is
@@ -14,90 +14,98 @@ This specification defines how DRMCP consumes those authorities.
 
 ## Configuration contract
 
-DRMCP configuration declares one `repository_root` and a non-empty `current_roots` collection.
+DRMCP configuration declares a non-empty collection of current sources.
+Each source associates one physical root with one explicit app namespace.
+The concrete configuration serialization is owned by the runtime configuration contract.
 
-Each current-root entry contains:
+Current sources have two semantic forms:
 
-| field | contract |
-|---|---|
-| `app_namespace` | Explicit app namespace associated with the root. It is not inferred from the filesystem. |
-| `records_root` | Repository-relative path to the app's current Design Records root. |
+| source form | effective discovery root | allowed record kinds |
+|---|---|---|
+| Records-root source | `<records_root>/` | All current kinds allowed by PRODUCT repository layout. |
+| Spec-tree source | `<spec_tree_root>/` | Current `spec` records only. The root `index.md` is the app root Spec. |
 
-Conceptual example:
+Every source declares an explicit `app_namespace`.
+DRMCP does not infer the app namespace from a directory name.
+
+Conceptual example, not a required serialization:
 
 ```yaml
-repository_root: C:/work/brewprint
-current_roots:
+current_sources:
   - app_namespace: product
-    records_root: product/records
+    records_root: C:/work/brewprint/product/records
   - app_namespace: drmcp
-    records_root: drmcp/records
+    records_root: C:/work/brewprint/drmcp/records
+  - app_namespace: design_records
+    spec_tree_root: C:/tools/drmcp/design-records
 ```
 
-The concrete configuration serialization is owned by the runtime configuration contract.
-The semantic requirements in this specification apply regardless of serialization.
+The portable standards source uses `app_namespace: design_records`.
+The bundled default is resolved from `<exe-dir>/design-records/`.
+One explicit override may replace that default.
+An explicit override does not silently fall back to the bundled source.
+Root resolution does not depend on the process working directory.
 
-## Current-root rules
+## Current-source rules
 
-- `current_roots` must contain at least one entry.
-- One `app_namespace` may appear in exactly one current-root entry.
-- One canonical filesystem root may appear in exactly one current-root entry.
-- `records_root` is resolved relative to the configured `repository_root`, not relative to the process working directory.
-- The portable configuration form does not require a host-specific absolute `records_root`.
-- After repository-relative normalization, each entry must satisfy `records_root == <app_namespace>/records`.
-- The explicit `app_namespace` and `records_root` values are checked for consistency; the namespace is not derived from the path.
-- DRMCP does not auto-discover `*/records/` directories.
-- Folder-local ignore files do not add, remove, or redefine configured current roots.
-
-The placement check consumes `spec:product.design_records.repository_layout`.
-It does not redefine the generic placement rule.
+- At least one current source is required.
+- One `app_namespace` appears in exactly one current-source entry.
+- One canonical filesystem root appears in exactly one current-source entry.
+- An entry selects exactly one source form.
+- A records-root source must satisfy the PRODUCT placement rules for an app Design Records root.
+- A spec-tree source exposes only current Specs and may use the portable package layout fixed by `PRODUCT-REQ-SPEC-003`.
+- The explicit app namespace and visible Spec IDs must agree through normal path-derived identity validation.
+- DRMCP does not auto-discover current sources.
+- Folder-local ignore files do not add, remove, or redefine configured sources.
+- DRMCP performs no runtime namespace or canonical-ref rewrite.
 
 ## Root validation
 
-Every configured current root is mandatory.
+Every configured current source is mandatory.
 
-Active-index construction fails as a whole when any configured current root is:
+Active-index construction fails as a whole when any configured current source is:
 
 - missing;
 - not a directory;
-- unreadable;
-- outside the configured `repository_root` after canonical resolution;
-- inconsistent with its explicit `app_namespace`;
-- duplicated by another current-root entry;
-- canonically identical to another configured root where uniqueness is required;
-- overlapping a configured legacy root.
+- unreadable or not enumerable;
+- inconsistent with its declared source form;
+- duplicated by another current source;
+- canonically identical to another configured root;
+- overlapping a configured legacy root;
+- associated with an app namespace already used by another current source.
 
-DRMCP does not omit an invalid configured current root and continue with a partial active index.
+DRMCP does not omit an invalid mandatory source and continue with a partial active index.
 Exact diagnostic identifiers and response representation are owned by the validation and diagnostics contracts.
 
-A valid current root may contain zero discoverable current records.
-Such a root contributes an empty app-scoped portion to the active index and does not make configuration invalid.
+A valid source may contain zero discoverable current records.
+Such a source contributes an empty app-scoped portion to the active index.
 Root validity and discovered record count are separate concerns.
 
 ## Active-index construction
 
-DRMCP builds one active read index over discovered current records under all configured current roots.
+DRMCP builds one active read index over discovered records from every configured current source.
 Current parsing contracts determine whether a source becomes a unique addressable entry, a conflicted entry, or a validation-only source.
 
 The active index:
 
 - contains current records only;
-- retains the explicit app association of each source root;
-- uses current canonical identities defined by PRODUCT authorities and mapped by DRMCP parsing contracts;
-- supports records from multiple configured app namespaces in one operational index;
+- retains the explicit app association and source provenance;
+- applies one current record model to records-root and spec-tree sources;
+- uses current canonical identities defined by PRODUCT authorities and DRMCP parsing contracts;
+- supports multiple configured app namespaces in one operational index;
+- includes portable package Specs under `spec:design_records` and `spec:design_records.*`;
 - excludes all configured legacy roots and legacy archive records;
-- marks a canonical identity as conflicted when two or more discovered current records produce that identity;
-- does not create one addressable active-index entry for a conflicted identity;
-- keeps unaffected current records available to normal read operations;
-- retains all conflicting sources as validation inputs with source provenance;
-- never selects one duplicate by filesystem traversal order.
+- marks duplicate canonical identity as conflicted without selecting a winner;
+- keeps unaffected current records available;
+- retains every conflicting source as validation input.
 
-Record-kind path patterns are consumed from `spec:product.design_records.repository_layout.record_discovery_paths`.
-Current spec parsing and path-derived spec identity are defined by the current spec discovery contracts, not by this specification.
+A spec-tree source does not create a package-specific index, parser, logical tree, resolver, or validator.
+Record-kind path patterns apply to records-root sources.
+Current Spec discovery and path-derived identity rules apply to both source forms from their effective Spec tree roots.
 
 Duplicate canonical identity is an index-entry conflict, not a configured-root failure.
-A duplicate does not invalidate the configured discovery scope or make unrelated records unavailable.
-Exact diagnostics and response representation remain owned by the validation and read-operation contracts.
+A duplicate does not invalidate unrelated current identities.
+Exact diagnostics and response representation remain owned by validation and read-operation contracts.
 
 ## Current and legacy root separation
 
@@ -195,13 +203,32 @@ Legacy-only startup is not supported because at least one current root is requir
 
 The composition root validates configuration at server startup. Invalid startup configuration prevents server start.
 
-Each invocation of `list_records`, `get_records`, `resolve_reference`, or `validate_records` rebuilds the current active index and configured legacy lookup map from the filesystem. One invocation of one of those operations uses one immutable snapshot from start to finish.
+Each invocation of a Read, Validation, or Guidance operation builds one fresh immutable Current Records snapshot from every configured mandatory current source.
 
-Filesystem changes become visible on the next invocation of one of those operations. DRMCP does not mutate or incrementally patch a shared process-wide index for this W011 slice.
+The covered operations are:
 
-Application use cases for those operations access configuration and source data through narrow ports. Concrete filesystem enumeration, source reading, and configuration loading belong to outer adapters.
+- `list_records`;
+- `get_records`;
+- `resolve_reference`;
+- `validate_records`;
+- `list_authoring_guides`;
+- `get_authoring_guidance`.
 
-`spec:drmcp.implementation` owns the lifecycle, port, adapter, and package architecture for those four operations. This Specification remains the authority for configured-root and index semantics. Authoring-guidance and authoring-transaction runtime architecture are outside this boundary.
+One invocation uses its Current Records snapshot from start to finish and discards the snapshot when the invocation ends.
+Filesystem changes become visible to the next invocation.
+DRMCP does not mutate or incrementally patch a shared process-wide Current Records index.
+
+Legacy lookup state remains separate from Current Records state.
+Each operation-specific use case loads Legacy state only when that operation requires legacy compatibility.
+Guidance operations do not require Legacy state.
+
+Application Use Cases access configuration and source data through inward-owned source contracts.
+Concrete filesystem enumeration, source reading, and configuration loading belong to Infrastructure I/O Adapters.
+
+`spec:drmcp.application_architecture.runtime_and_state` owns request-scoped state lifetime and operation collaboration.
+`spec:drmcp.application_architecture.dependency_and_responsibility` owns source-contract direction and Guidance alias ownership.
+This Specification remains the authority for configured current-source and active-index semantics.
+Authoring-transaction runtime architecture remains outside this boundary.
 
 ## Explicit exclusions
 
@@ -234,7 +261,8 @@ This specification does not define:
 | `spec:drmcp.design_records_mcp.schema.record_source` | DRMCP source representation for discovered records. |
 | `spec:drmcp.design_records_mcp.schema.record_model` | DRMCP indexed record representation and canonical identity handling. |
 | `spec:drmcp.design_records_mcp.schema.diagnostics` | Diagnostic identifiers and representations for configuration and indexing failures. |
-| `spec:drmcp.implementation` | Request-scoped snapshot lifecycle and outbound-adapter architecture. |
+| `spec:drmcp.application_architecture.runtime_and_state` | Request-scoped Current Records and Legacy state lifecycle. |
+| `spec:drmcp.application_architecture.dependency_and_responsibility` | Source-contract direction and Guidance alias ownership. |
 
 ## Sources
 
@@ -243,5 +271,5 @@ This specification does not define:
 - `DRMCP-TASK-MCP-003-02`: Accepted configured-root and index-separation decisions.
 - `DRMCP-TASK-MCP-005-03`: Configured legacy-root and minimal lookup-map decisions.
 - `DRMCP-TASK-MCP-005-04`: Rejected-input and operation-pointer synchronization.
-- `DRMCP-ADR-MCP-002`: Request-scoped snapshot and runtime lifecycle.
-- `DRMCP-ADR-MCP-003`: Application-owned ports and outer adapters.
+- `DRMCP-ADR-MCP-011`: Inward ownership and Guidance query aliases.
+- `DRMCP-ADR-MCP-012`: Unified Current Records state and application lifecycle.

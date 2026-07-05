@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.schema.id_normalization`
 - **status**: draft
-- **date**: 2026-06-27
+- **date**: 2026-07-04
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
 
 ## What this is
@@ -70,12 +70,17 @@ Authority: `spec:product.design_records.namespace_model.artifact_id_grammar` and
 
 ### Current spec path-derived canonical ref
 
-Current spec identity is derived from the configured `app_namespace` and the file path relative to `<records_root>/spec/`.
+Current Spec identity is derived from the configured `app_namespace` and the file path relative to the effective Spec tree root.
+
+| current source form | effective Spec tree root |
+|---|---|
+| Records-root source | `<records_root>/spec/` |
+| Spec-tree source | `<spec_tree_root>/` |
 
 Derivation steps:
 
-1. Resolve the file path relative to the configured `records_root` and normalize path separators.
-2. Remove the leading `spec/` portion.
+1. Resolve the file path relative to the configured effective Spec tree root.
+2. Normalize path separators.
 3. Remove the `.md` extension.
 4. Omit a final segment equal to `index`.
 5. Convert remaining path separators to `.`.
@@ -102,15 +107,16 @@ DRMCP does not lowercase or otherwise repair invalid segments. An invalid identi
 
 Examples, not exhaustive:
 
-| spec-relative path | configured app namespace | canonical ref |
+| path relative to effective Spec tree root | configured app namespace | canonical ref |
 |---|---|---|
-| `spec/index.md` | `exampleapp` | `spec:exampleapp` |
-| `spec/search/index.md` | `exampleapp` | `spec:exampleapp.search` |
-| `spec/search/query-contract.md` | `exampleapp` | `spec:exampleapp.search.query_contract` |
+| `index.md` | `exampleapp` | `spec:exampleapp` |
+| `search/index.md` | `exampleapp` | `spec:exampleapp.search` |
+| `search/query-contract.md` | `exampleapp` | `spec:exampleapp.search.query_contract` |
+| `authoring-standards/adr-authoring.md` | `design_records` | `spec:design_records.authoring_standards.adr_authoring` |
 
 These examples illustrate derivation only and do not define repository-specific topics.
 
-The path-derived canonical ref is authoritative. The H1-adjacent metadata `id` is a required visible consistency value and must match exactly.
+The path-derived canonical ref is authoritative. The source form does not alter canonical identity after the effective Spec tree root is selected. The H1-adjacent metadata `id` is a required visible consistency value and must match exactly.
 
 A stale or mismatched metadata `id`:
 

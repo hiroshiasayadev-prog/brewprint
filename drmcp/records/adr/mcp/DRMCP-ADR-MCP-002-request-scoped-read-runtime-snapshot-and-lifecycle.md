@@ -1,6 +1,6 @@
 # DRMCP-ADR-MCP-002: Request-scoped read-runtime snapshot and lifecycle
 
-- **status**: accepted
+- **status**: superseded
 - **date**: 2026-06-30
 - **depends_on**:
   - DRMCP-ADR-MCP-001
