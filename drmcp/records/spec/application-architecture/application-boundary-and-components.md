@@ -28,6 +28,34 @@ The authoring extension family remains inside the whole-application boundary. Cu
 
 DRMCP has five application-level components.
 
+```mermaid
+flowchart LR
+    actor["MCP client or host"]
+
+    subgraph drmcp["DRMCP application boundary"]
+        composition["Composition / Lifecycle"]
+        inbound["MCP Inbound Adapter"]
+        application["Application Use Cases<br/>Read and query<br/>Validation<br/>Guidance<br/>Deferred authoring seam"]
+        domain["Record Domain / Logical Tree"]
+        infrastructure["Infrastructure I/O Adapters"]
+    end
+
+    subgraph providers["External providers and authorities"]
+        current["Configured Current Records sources"]
+        legacy["Optional Legacy Archive roots"]
+        standards["PRODUCT standards<br/>External semantic authority"]
+        config["Runtime configuration"]
+        authoring["Deferred authoring storage<br/>and repository writing"]
+    end
+
+    actor --> inbound
+    config --> composition
+    current --> infrastructure
+    legacy --> infrastructure
+    standards -. "distributed through portable package" .-> current
+    authoring -. "future boundary only" .-> drmcp
+```
+
 | component | owned responsibility | excluded responsibility |
 |---|---|---|
 | Composition / Lifecycle | Validate configuration, construct dependencies, wire the application, start the server, and shut resources down. | Operation policy, record semantics, and concrete source behavior. |

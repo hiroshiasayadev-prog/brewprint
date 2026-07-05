@@ -13,6 +13,30 @@ Inward dependency and policy-placement contract for DRMCP. This view owns allowe
 
 Dependencies point inward toward application and domain policy.
 
+```mermaid
+flowchart LR
+    composition["Composition / Lifecycle"]
+    inbound["MCP Inbound Adapter"]
+    domain["Record Domain / Logical Tree"]
+    infrastructure["Infrastructure I/O Adapters"]
+
+    subgraph application["Application Use Cases"]
+        usecases["Operation-specific use cases<br/>and shared orchestration"]
+        ports[["Application-owned<br/>source-port contracts"]]
+
+        usecases -->|"depends on"| ports
+    end
+
+    inbound -->|"depends on"| usecases
+    usecases -->|"depends on"| domain
+    infrastructure -->|"depends on"| ports
+
+    composition -. "constructs and wires" .-> inbound
+    composition -. "constructs and wires" .-> usecases
+    composition -. "constructs and wires" .-> domain
+    composition -. "constructs and wires" .-> infrastructure
+```
+
 | dependent | allowed dependency | purpose |
 |---|---|---|
 | MCP Inbound Adapter | Application Use Cases | Map protocol requests to public application behavior. |

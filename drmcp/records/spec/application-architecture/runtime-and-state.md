@@ -26,6 +26,40 @@ Shared application orchestration is not a public use case. It is not a seventh t
 
 The five top-level components remain authoritative in `spec:drmcp.application_architecture.application_boundary_and_components`.
 
+```mermaid
+sequenceDiagram
+    participant Client as MCP client or host
+    participant MCP as MCP Inbound Adapter
+    participant UseCase as Operation-specific use case
+    participant Orchestration as Shared application orchestration
+    participant Current as Current Records source port
+    participant Legacy as Legacy Archive source port
+    participant Domain as Record Domain / Logical Tree
+
+    Client->>MCP: Public operation request
+    MCP->>UseCase: Invoke operation
+
+    UseCase->>Orchestration: Build request-scoped record state
+    Orchestration->>Current: Load all mandatory Current Records sources
+    Current-->>Orchestration: Current source inputs
+    Orchestration->>Domain: Build immutable logical state
+    Domain-->>Orchestration: Fresh Current Records snapshot
+
+    opt Operation requires Legacy Archive
+        Orchestration->>Legacy: Load required legacy lookup state
+        Legacy-->>Orchestration: Separate Legacy lookup state
+    end
+
+    Orchestration-->>UseCase: Current snapshot and optional Legacy state
+    UseCase->>Domain: Execute query, resolution, or validation
+    Domain-->>UseCase: Modeled semantic outcome
+
+    UseCase-->>MCP: Selected result or operation error
+    MCP-->>Client: MCP response
+
+    Note over UseCase,Domain: Request state is discarded when the request ends
+```
+
 ### Request-scoped record state
 
 Each Read, Validation, or Guidance request builds one fresh immutable Current Records snapshot.

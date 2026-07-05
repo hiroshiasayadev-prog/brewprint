@@ -38,6 +38,27 @@ The durable rationale is recorded by:
 
 The four child views are the authoritative partition of the current application architecture. Each architecture decision has one primary view. Other views use canonical cross-references instead of duplicating the same normative rule.
 
+```mermaid
+flowchart TD
+    architecture["DRMCP application architecture"]
+
+    subgraph views["Authoritative architecture views"]
+        boundary["Application boundary and components<br/>Scope, actors, operation families,<br/>and five top-level components"]
+        dependency["Dependency and responsibility<br/>Inward dependencies, policy ownership,<br/>source ports, and forbidden edges"]
+        runtime["Runtime and state<br/>Use-case collaboration, state lifetimes,<br/>configuration, and lifecycle"]
+        failure["Failure and evolution<br/>Failure ownership, trustworthy results,<br/>local refinement, and return triggers"]
+    end
+
+    downstream["Downstream module contracts<br/>and detailed specifications"]
+
+    architecture --> views
+    boundary --> downstream
+    dependency --> downstream
+    runtime --> downstream
+    failure --> downstream
+    downstream -. "architecture-return trigger crossed" .-> architecture
+```
+
 ## Topics
 
 | title | kind | ref | summary |
