@@ -24,6 +24,36 @@ Contract-level components:
 Enumeration and reading are internal operations or downstream port refinements.
 They are not separate W018 contract-level components.
 
+### Source-family split view
+
+The diagram shows source-family separation and inward-owned contract implementation.
+It does not define port fields, fixture shape, or filesystem APIs.
+
+```mermaid
+flowchart LR
+  subgraph APP["Application-owned assembly"]
+    CSA["Current Records Snapshot Assembly"]
+    LSA["Legacy Lookup State Assembly"]
+    CP["Current source contract"]
+    LP["Legacy source contract"]
+  end
+
+  subgraph INFRA["Infrastructure I/O Adapters"]
+    CUR["Current Records Source Access"]
+    LEG["Legacy Archive Source Access"]
+  end
+
+  CSA -->|"calls"| CP
+  LSA -->|"calls"| LP
+  CUR -. "implements" .-> CP
+  LEG -. "implements" .-> LP
+  CUR -->|"current source results"| CSA
+  LEG -->|"legacy source results"| LSA
+
+  DOM["Record Domain / Logical Tree\nno I/O"]
+  MCP["MCP Inbound Adapter\nno source access"]
+```
+
 ## Non-goals
 
 - Application operation sequencing.

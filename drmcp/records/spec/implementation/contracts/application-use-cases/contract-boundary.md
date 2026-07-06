@@ -35,6 +35,70 @@ Shared orchestration components:
 Shared orchestration may be reused by operation-specific use cases.
 Public use cases do not call one another.
 
+### Application-owned orchestration view
+
+The diagram separates public use cases from shared orchestration.
+It does not add an operation behavior Specification.
+
+```mermaid
+flowchart LR
+  MCP["MCP Inbound Adapter"] -->|"one matching invocation"| UCS
+
+  subgraph APP["Application-owned components"]
+    UCS["Public use cases\nlist, get, resolve, validate, list guidance, get guidance"]
+    CSA["Current Records Snapshot Assembly"]
+    LSA["Legacy Lookup State Assembly"]
+    CP["Current source contract"]
+    LP["Legacy source contract"]
+  end
+
+  subgraph DOMAIN["Domain-owned semantic components"]
+    PARSER["Record Parser"]
+    TREE["Current Records Logical Tree"]
+    GRAPH["Record Relation Graph"]
+    RESOLVER["Reference Resolution"]
+    LOCAL["Local Record Validation"]
+    RELVAL["Relation Graph Validation"]
+  end
+
+  UCS -->|"may reuse"| CSA
+  UCS -->|"may reuse when operation requires Legacy"| LSA
+  CSA -->|"calls"| CP
+  LSA -->|"calls"| LP
+  CSA -->|"coordinates semantic construction"| PARSER
+  CSA -->|"coordinates semantic construction"| TREE
+  CSA -->|"coordinates semantic construction"| GRAPH
+  UCS -->|"uses semantic outcomes"| RESOLVER
+  UCS -->|"uses validation findings"| LOCAL
+  UCS -->|"uses validation findings"| RELVAL
+
+  CURINFRA["Current Records Source Access"] -. "implements" .-> CP
+  LEGINFRA["Legacy Archive Source Access"] -. "implements" .-> LP
+```
+
+### Request-state visibility view
+
+Current Records Snapshot and Legacy Lookup State are request-scoped state.
+The diagram shows allowed readers and excluded observers.
+
+```mermaid
+flowchart LR
+  CSA["Current Records Snapshot Assembly"] --> CRS["Current Records Snapshot\nfresh immutable"]
+  LSA["Legacy Lookup State Assembly"] --> LLS["Legacy Lookup State\nfresh immutable"]
+
+  CRS -->|"read during request"| UCS["Application Use Cases"]
+  LLS -->|"read during request when required"| UCS
+  CRS -->|"read by named collaborators"| DOM["Domain collaborators"]
+  LLS -->|"read by named collaborators"| DOM
+
+  MCP["MCP Inbound Adapter\nexcluded observer"]
+  INFRA["Infrastructure I/O Adapters\nexcluded observer"]
+  END["Request end"]
+
+  CRS -->|"discarded"| END
+  LLS -->|"discarded"| END
+```
+
 ## Non-goals
 
 - Record parser rules.

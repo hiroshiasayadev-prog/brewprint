@@ -26,6 +26,26 @@ It does not own Application policy, Domain semantics, or Infrastructure access.
 The adapter passes transport-neutral public operation requests to Application Use Cases.
 The adapter receives transport-neutral public operation responses or execution failures from Application.
 
+### Request path view
+
+The diagram shows request responsibility.
+It does not define a runtime sequence, function call graph, or implementation API.
+
+```mermaid
+flowchart TB
+  CLIENT["MCP client"] -->|"protocol request"| MCP["MCP Inbound Adapter"]
+  MCP -->|"transport-neutral request"| UC["Matching Application Use Case"]
+  UC -->|"request sequencing and projection"| APP["Application policy"]
+  APP -->|"semantic capability use"| DOM["Domain collaborators"]
+  APP -->|"source access through inward-owned contracts"| PORTS["Source contracts"]
+  INFRA["Infrastructure source access"] -. "implements" .-> PORTS
+  PORTS -->|"source results"| APP
+  DOM -->|"typed states or findings"| APP
+  APP -->|"operation response or execution failure"| UC
+  UC -->|"transport-neutral output"| MCP
+  MCP -->|"protocol response"| CLIENT
+```
+
 ## Non-goals
 
 - Operation-specific semantic decisions.

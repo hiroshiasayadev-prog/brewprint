@@ -26,6 +26,25 @@ It does not own operation policy, Domain semantics, or source reading semantics.
 Server-lifetime configuration is visible to active use cases only as validated dependencies.
 Composition / Lifecycle does not expose mutable runtime configuration to Domain components.
 
+### Lifecycle and request-state boundary
+
+The diagram shows construction responsibility only.
+Request-state assembly belongs to Application Use Cases after startup dependencies exist.
+
+```mermaid
+flowchart TB
+  CONFIG["Server-lifetime configuration"] -->|"validated at startup"| CL["Composition / Lifecycle"]
+  CL -->|"constructs validated dependencies"| MCP["MCP Inbound Adapter"]
+  CL -->|"constructs validated dependencies"| APP["Application Use Cases"]
+  CL -->|"constructs validated dependencies"| DOM["Record Domain / Logical Tree"]
+  CL -->|"constructs validated dependencies"| INFRA["Infrastructure I/O Adapters"]
+
+  APP -->|"request-level orchestration"| CRS["Current Records Snapshot\nfresh immutable request state"]
+  APP -->|"optional request-level orchestration"| LLS["Legacy Lookup State\nfresh immutable request state"]
+  CRS -->|"discarded after request"| END["Request end"]
+  LLS -->|"discarded after request"| END
+```
+
 ## Non-goals
 
 - Operation-specific request or response policy.

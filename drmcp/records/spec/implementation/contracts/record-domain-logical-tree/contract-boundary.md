@@ -32,6 +32,39 @@ The Current Records Logical Tree has these identity branches:
 | Sequential-artifact branch | App namespace, domain namespace, kind, and record identity. |
 | Spec branch | App namespace and path-derived topic segments. |
 
+### Domain responsibility split
+
+The diagram shows semantic ownership inside Record Domain / Logical Tree.
+It does not define storage layout, traversal algorithms, structs, or validation handler decomposition.
+
+```mermaid
+flowchart TB
+  RAW["Raw Markdown plus provenance"] --> PARSER["Record Parser"]
+  PARSER --> TS["Typed source"]
+  PARSER --> TR["Typed record"]
+  PARSER --> PF["Parse finding"]
+
+  TR --> TREE["Current Records Logical Tree"]
+  TREE --> GRAPH["Record Relation Graph"]
+
+  TREE -->|"current lookup"| RES["Reference Resolution"]
+  LLS["Legacy Lookup State\noptional request state"] -->|"fallback lookup"| RES
+
+  TS -->|"one selected subject"| LOCAL["Local Record Validation"]
+  TR -->|"one selected subject"| LOCAL
+
+  TREE --> RELVAL["Relation Graph Validation"]
+  GRAPH --> RELVAL
+  LLS --> RELVAL
+
+  RES --> RO["Resolution outcome"]
+  LOCAL --> VF["Validation finding"]
+  RELVAL --> VF
+  PF --> VF
+  RO --> APP["Application response projection"]
+  VF --> APP
+```
+
 ## Non-goals
 
 - Raw filesystem enumeration or reading.
