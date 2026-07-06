@@ -279,6 +279,7 @@ Current and legacy index types remain distinct inside `core/indexing`.
 | `spec:drmcp.design_records_mcp.schema.diagnostics` | Public warning and diagnostic representation. |
 | `spec:drmcp.design_records_mcp.tools.overview` | Public tool catalog and operation contracts. |
 | `spec:drmcp.design_records_mcp.tools.validate_records` | Public validation operation contract. |
+| `spec:drmcp.implementation.contracts` | Architecture-derived module-contract baseline for the current whole-application model. |
 | `DRMCP-ADR-MCP-001` | Current and legacy separation authority. |
 | `DRMCP-ADR-MCP-002` | Snapshot and lifecycle rationale. |
 | `DRMCP-ADR-MCP-003` | Layer and adapter rationale. |
