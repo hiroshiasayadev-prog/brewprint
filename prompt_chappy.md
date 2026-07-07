@@ -30,6 +30,7 @@ New records must be created under an active app namespace. Creating new files un
 - 大きな作業では、この会話で扱うスコープを明確にする。
 - `CLAUDE.md` や `AGENTS.md` は、明示的に依頼された場合だけ読む。
 - Agent authoring policy: `spec:product.design_records.authoring_standards.agent_authoring_policy`。
+- Writing standard: `spec:product.design_records.authoring_standards.writing_standard`。
 - Note: DRMCP-dependent sections are TBD。DRMCP operational までは、この参照は partial と扱う。
 
 ### Mandatory Work Item framing workflow skill

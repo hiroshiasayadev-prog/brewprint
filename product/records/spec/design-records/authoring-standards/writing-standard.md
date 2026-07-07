@@ -36,6 +36,8 @@ Writing rules for brewprint design record prose. Governs sentence style, block t
 | Use bullets for constraints, non-goals, and acceptance criteria. | MUST |
 | Use label-first bullet prefixes (`Rule:` / `Exception:` / `Reason:` / `Evidence:`) when classification aids readability. | SHOULD |
 | Preserve domain terms (`invoke`, `boundary`, `artifact`, `diagnostic`, and equivalent domain vocabulary). Do not replace them with simpler synonyms. | MUST |
+| Prefer the most specific accurate term for a contract surface. Use abstract container terms such as `state`, `context`, `snapshot`, `model`, `surface`, or `capability` only when a more specific term would hide a multi-concept aggregate or increase cognitive load. | MUST |
+| When using an abstract container term, either define the concrete contents at first use or cite existing Specification evidence that already defines the term. | MUST |
 
 Note: BLUF (conclusion before rationale) is enacted structurally by the `## What this is` section. It is not a separate prose rule.
 
