@@ -4,7 +4,7 @@
 
 Represent one already-created child Work Item as one execution unit in the parent Work Item Task graph.
 
-This phase tracks child completion without duplicating child-owned work.
+This phase tracks child completion or cancellation without duplicating child-owned work.
 It does not create the child Work Item or change the parent graph.
 
 ## Inputs
@@ -31,7 +31,8 @@ The Task must:
 - record the child status needed for its own completion Evidence;
 - remain incomplete while the child is `not_started` or `in_progress`;
 - use `blocked` when the child blocks the parent execution route and the Task contract permits it;
-- become `done` only after the child Work Item is `done`.
+- become `done` only after the child Work Item is `done`;
+- become `cancelled` when the child Work Item is `cancelled`, record that terminal child state, and leave the parent Work Item status unchanged.
 
 The Task must not:
 
@@ -67,6 +68,7 @@ The parent Work Item still evaluates its complete Completion Condition.
 | cardinality | exactly one child Work Item |
 | child reverse field | none |
 | target state before Task completion | `done` |
+| target state that cancels the execution Task | `cancelled` |
 
 The child target must use the same app namespace and domain as the execution Task.
 The child target must already exist.
@@ -81,6 +83,18 @@ Work Item execution is complete when:
 - the Task duplicates no child-owned execution detail;
 - the Task Done condition is satisfied.
 
+## Cancellation outcome
+
+When the referenced child Work Item becomes `cancelled`:
+
+- the `work_item_execution` Task becomes `cancelled` through the atomic cancellation lifecycle operation;
+- Task Evidence records the referenced child and observed `cancelled` status;
+- every direct dependent Task follows the cancelled-prerequisite rule and becomes or remains `blocked`;
+- the parent Work Item status does not change automatically;
+- no child Work Item or transitive descendant is cancelled by this relation.
+
+The execution Task does not perform or own the propagation operation.
+
 ## Verification
 
 Confirm:
@@ -89,6 +103,8 @@ Confirm:
 - `work_item_ref` differs from the parent `work_item`;
 - the referenced Work Item exists;
 - the referenced Work Item is `done` before the Task is `done`;
+- a referenced `cancelled` child produces a `cancelled` execution Task with Evidence and blocked direct dependents;
+- child cancellation does not change the parent Work Item status;
 - no child Task graph or deliverable is copied into the execution Task;
 - no graph change, review, correction, or synchronization was absorbed.
 

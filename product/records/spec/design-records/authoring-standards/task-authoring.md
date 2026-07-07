@@ -179,6 +179,19 @@ Cross-artifact selection follows `spec:product.design_records.authoring_standard
 | `work_item_execution` | One already-created child Work Item represented as one parent-graph execution unit. | The referenced child Work Item is `done`, the Task records that status as Evidence, and the Task Done condition is satisfied. | Work Item creation or split, Task-graph coordination, child-owned work, independent review, correction, or synchronization. | `work_item_ref` identifies exactly one child. A blocked child may block the Task. A `not_started` or `in_progress` child does not satisfy completion. A `cancelled` child cancels the execution Task, blocks its direct dependents through the normal prerequisite rule, and does not change the parent Work Item status. |
 | `synchronization` | One bounded propagation of an accepted result. | All specified lifecycle, Evidence, completion-result, and relation state expresses the same accepted result. | New design judgment, decomposition, substantive deliverables, implementation, review, or correction. | Only mechanically derivable state changes are allowed. |
 
+#### Investigation-Task lightweight Evidence exception
+
+An `investigation` Task may record its research result directly in its own `## Evidence` instead of a separate Investigation record when both conditions hold:
+
+- an explicit user judgment determines that a formal Investigation record is disproportionate for the bounded research question;
+- the recorded result receives at least one conclusion from a separate downstream Task, including a conclusion that reflects it into a canonical artifact or a conclusion that explicitly determines no further action is required.
+
+The exception does not change the completion judgment: the Task Done condition must still be satisfied.
+The exception does not authorize decision adoption, canonical authoring, implementation, independent review, correction, or synchronization inside the Investigation Task.
+The Task must record the accepted user judgment and reason in `## Evidence`.
+
+Do not generalize this exception to Tasks without an explicit user judgment.
+
 #### Single responsibility
 
 Every Task must own one primary outcome and one completion judgment matching `task_type`.

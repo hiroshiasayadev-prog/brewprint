@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.responsibility_boundary_validator`
 - **status**: draft
-- **date**: 2026-07-02
+- **date**: 2026-07-03
 - **parent**: `spec:product`
 
 ## What this is
@@ -27,7 +27,7 @@ Current DRMCP does not own or implement this semantic contract.
 | Overall compliance | Derive the overall result through logical AND across all criterion results. |
 | Result identity | Do not require checklist revision identifiers or stable criterion identifiers in the external result contract. |
 | Outcome classes | Keep structural precondition failure, completed semantic evaluation, and execution failure distinct. |
-| Workflow use | Use the same validator contract after Task authoring and after final Evidence is written. |
+| Workflow use | Use the same validator contract after Task authoring and after final Evidence is written before `done`. Do not invoke the final-Evidence check for `cancelled`. |
 | Violation disposition | Route semantic violations to explicit human acceptance or rejection. |
 
 ## Non-goals
@@ -88,10 +88,12 @@ A structural or execution failure does not establish semantic non-compliance.
 ### Workflow invocation and exceptions
 
 - Invoke the validator immediately after Task authoring.
-- Invoke the same validator after final Task Evidence is written.
-- Use the same checklist-selection and result semantics at both points.
+- Invoke the same validator after final Task Evidence is written and before the Task becomes `done`.
+- Do not invoke the post-Evidence validator as a prerequisite for `cancelled`.
+- Use the same checklist-selection and result semantics at both applicable points.
 - The validator reports semantic results but does not enforce workflow continuation or release.
 - A fully compliant result permits the caller to continue its normal route.
+- Cancelled-state readiness is governed by Task lifecycle structure and Evidence rules, not by semantic responsibility validation.
 - Any semantic violation requires explicit human acceptance or rejection.
 - Human acceptance preserves:
   - each violated criterion;
@@ -129,7 +131,8 @@ Historical technology candidates do not become canonical without TRV-local desig
 | PRODUCT-REQ-SPEC-005 | Defines the typed single-responsibility Task requirement being evaluated. |
 | PRODUCT-ADR-SPEC-015 | Defines Task-local semantic result and failure semantics. |
 | PRODUCT-ADR-SPEC-016 | Defines the standalone ownership boundary and excludes current DRMCP integration. |
-| PRODUCT-ADR-SPEC-017 | Defines the two invocation points and human-owned violation exceptions. |
+| PRODUCT-ADR-SPEC-017 | Defines post-authoring and successful-completion post-Evidence invocation with human-owned violation exceptions. |
+| PRODUCT-ADR-SPEC-018 | Defines terminal cancellation outside the post-Evidence validator route. |
 | `spec:product.design_records.authoring_standards.task_authoring` | Defines the canonical Task responsibility contract and narrow usage relation. |
 | PRODUCT-WORK-SPEC-020 | Owns exact checklist authoring and review. |
 | PRODUCT-WORK-SPEC-021 | Owns reviewed PRODUCT conceptual design and TRV namespace bootstrap. |

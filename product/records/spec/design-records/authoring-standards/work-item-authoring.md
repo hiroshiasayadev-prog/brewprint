@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.authoring_standards.work_item_authoring`
 - **status**: draft
-- **date**: 2026-07-02
+- **date**: 2026-07-03
 - **parent**: `spec:product.design_records.authoring_standards`
 
 ## What this is
@@ -54,13 +54,13 @@ Body section schema:
 
 | section | heading presence | substantive content | content |
 |---|---|---|---|
-| `## Goal` | always | required when `done` | The resolution goal for the direct material sources. |
-| `## Boundary` | always | required when `done` | What this work item owns and does not own. |
+| `## Goal` | always | required when `done` or `cancelled` | The resolution goal for the direct material sources. |
+| `## Boundary` | always | required when `done` or `cancelled` | What this work item owns and does not own. |
 | `## Impact Scope` | always | no requirement | Specs and artifacts affected, with impact descriptions. |
 | `## Task flow` | always | no requirement | Order, branching, and dependencies among the tasks in this work item. |
 | `## Task Candidates` | always | no requirement | Candidate tasks with scope descriptions. |
-| `## Completion Condition` | always | no requirement | Observable conditions that define when the work item is done. |
-| `## Evidence` | always | required when `done` | Supporting records, observations, and implementation evidence. |
+| `## Completion Condition` | always | required when `cancelled` | Observable conditions that define successful completion and, when cancelled, what remained unmet. |
+| `## Evidence` | always | required when `done` or `cancelled` | Supporting records, observations, implementation evidence, and lifecycle disposition. |
 
 All canonical work-item headings use English.
 
@@ -104,13 +104,26 @@ The parsing grammar is defined by `spec:drmcp.design_records_mcp.schema.metadata
 | `in_progress` | Work is actively under way. |
 | `blocked` | Progress is stopped pending a dependency or external decision. |
 | `done` | The owned resolution goal is complete; all required evidence and reflection are recorded. |
+| `cancelled` | The Work Item intentionally ended before its Completion Conditions were satisfied. |
 
 Rules:
 
+- A Work Item may move to `cancelled` only from `not_started`, `in_progress`, or `blocked`.
+- A `done` or `cancelled` Work Item cannot be cancelled.
+- `cancelled` is terminal. Only meaning-preserving editorial correction, broken-reference repair, factual Evidence correction, and mechanical relation repair are allowed afterward.
+- Materially resumed work requires a new Work Item. The new Work Item may cite the cancelled record as a direct material source when applicable.
 - When `status` is `done`, `## Goal`, `## Boundary`, and `## Evidence` must be non-empty.
-- `TBD` is placeholder content, not substantive content. `TBD` must not remain in `## Goal`, `## Boundary`, or `## Evidence` when `status` is `done`.
+- When `status` is `cancelled`, `## Goal`, `## Boundary`, `## Completion Condition`, and `## Evidence` must be substantive.
+- Cancellation alone does not require substantive `## Impact Scope`, `## Task flow`, or `## Task Candidates` content. Preserve any existing substantive content as history.
+- A cancelled Work Item Evidence section records the intentional-stop reason, unfinished Goal disposition, owned Tasks preserved as `done`, owned Tasks changed to `cancelled`, and directly affected external dependency or execution records.
+- `TBD` is placeholder content, not substantive content. `TBD` must not remain in any lifecycle-gated section.
 - A work item is not `done` simply because all its tasks are done. Evidence must be recorded and the requirement must be reflected before marking `done`.
 - `blocked` records an external stop; the reason belongs in `## Evidence` or a linked investigation.
+- Cancelling a Work Item changes every owned `not_started`, `in_progress`, or `blocked` Task to `cancelled`; owned `done` Tasks remain `done`.
+- A valid cancelled Work Item owns only `done` or `cancelled` Tasks.
+- Work Item cancellation does not automatically cancel child Work Items or transitive descendants.
+- Work Item cancellation is one atomic lifecycle operation over the Work Item and every directly affected owned, dependent, and `work_item_execution` Task. The complete affected set is fixed before writing, and the result is all changes or no changes.
+- Cancellation is not a Task responsibility. Concrete transaction, command, parser, diagnostic, and implementation mechanics belong to downstream app-local authority.
 
 ### Kind-specific authoring rules
 
@@ -133,7 +146,8 @@ Parent coordination, decomposition, and execution boundary:
 - A `work_item_execution` Task represents exactly one already-created child Work Item in the parent Task graph.
 - The execution Task uses `work_item_ref`; the child Work Item receives no reverse execution field.
 - The execution Task may become `done` only after the child Work Item is `done` and the Task records that status as Evidence.
-- Child status does not automatically close the parent Work Item.
+- When the child Work Item becomes `cancelled`, the execution Task becomes `cancelled`, records the terminal child state, and routes its direct dependents through the cancelled-prerequisite rule.
+- Child status does not automatically close or cancel the parent Work Item.
 - A coordinating parent Work Item may list each child Work Item ID.
 - The parent may record each child's one-line purpose and responsibility boundary.
 - The parent may record coarse inter-child routing and parent-level completion state.
@@ -157,6 +171,7 @@ Parent coordination, decomposition, and execution boundary:
 |---|---|
 | The Work Item resolves the same Requirement. Its Goal and Completion Conditions retain their meaning. | Continue the existing Work Item. |
 | Only Tasks, dependencies, blockers, or ordering change inside the same delivery boundary. | Continue the existing Work Item. |
+| The Work Item is `cancelled` and materially similar work resumes. | Create a new Work Item; do not reactivate the cancelled record. |
 | A new Requirement appears. | Create a distinct Work Item for the new resolution boundary. |
 | The scope has an independent completion judgment, owner, release timing, or primary deliverable. | Create or split another Work Item. |
 
@@ -231,7 +246,7 @@ The author does not supply:
 - a generated H1;
 - a generated file path.
 
-The body begins with `## Goal`. The body excludes H1 and bullet metadata. Include all canonical sections; use `TBD` for sections not yet written.
+The body begins with `## Goal`. The body excludes H1 and bullet metadata. Include all canonical sections; use `TBD` only where the status-lifecycle rules permit it.
 
 ### Update
 
@@ -269,5 +284,6 @@ Concrete tool contracts belong to DRMCP specs.
 | PRODUCT-ADR-SPEC-011 | Requirement and Work Item identity continuity. |
 | PRODUCT-ADR-SPEC-012 | Shared-writer serialization and final integrated review. |
 | PRODUCT-ADR-SPEC-013 | Finding-driven repair Task materialization. |
-| PRODUCT-ADR-SPEC-014 | Append-only reconvergence after completed workflow records. |
+| PRODUCT-ADR-SPEC-014 | Append-only reconvergence after completed and cancelled workflow records. |
+| PRODUCT-ADR-SPEC-018 | Terminal cancellation lifecycle and atomic propagation. |
 | PRODUCT-WORK-SPEC-011 | Original source Work Item. |

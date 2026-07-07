@@ -1,7 +1,7 @@
 # PRODUCT-ADR-SPEC-011: Preserve Requirement and Work Item identity through completion-boundary continuity
 
 - **status**: accepted
-- **date**: 2026-07-01
+- **date**: 2026-07-03
 - **depends_on**:
   - PRODUCT-ADR-SPEC-005
   - PRODUCT-ADR-SPEC-009
@@ -37,6 +37,9 @@ Preserve an existing Work Item identity when:
 - its Goal and Completion Conditions retain their meaning;
 - only Tasks, dependencies, or ordering change inside the same delivery boundary.
 
+A `cancelled` Work Item is terminal and is not eligible for in-place continuation.
+Materially resumed work uses a new Work Item even when it pursues a similar Goal or reuses the cancelled record as historical source Evidence.
+
 Create or split another Work Item when:
 
 - a new Requirement is introduced;
@@ -71,8 +74,11 @@ The same principle applies at both levels: preserve the record while its accepta
 - Reconciliation decisions must classify the originating-artifact disposition before authoring.
 - Coordination may add Tasks without splitting the Work Item when completion identity remains unchanged.
 - A new Requirement normally requires a distinct resolution Work Item.
+- Materially resumed work after Work Item cancellation requires a new Work Item identity rather than reactivating the cancelled record.
 
 ## Evidence
 
 - `PRODUCT-TASK-SPEC-018-01`: D-012 and D-013.
 - `PRODUCT-TASK-SPEC-018-02`: B-003 routing boundary.
+- `PRODUCT-TASK-SPEC-023-01`: D-009 terminality and resumed-work identity.
+- `PRODUCT-TASK-SPEC-023-06`: B-003 non-material amendment route.

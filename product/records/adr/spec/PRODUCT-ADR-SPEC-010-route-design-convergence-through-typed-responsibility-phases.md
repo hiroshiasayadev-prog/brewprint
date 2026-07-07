@@ -1,7 +1,7 @@
 # PRODUCT-ADR-SPEC-010: Route design convergence through typed responsibility phases
 
 - **status**: accepted
-- **date**: 2026-07-02
+- **date**: 2026-07-03
 - **depends_on**:
   - PRODUCT-ADR-SPEC-004
   - PRODUCT-ADR-SPEC-005
@@ -59,6 +59,7 @@ It does not change the Task graph or author child-owned deliverables.
 
 A `work_item_execution` Task represents one already-created child Work Item in the parent Task graph.
 It completes only after the referenced child Work Item is `done`.
+If the referenced child Work Item becomes `cancelled`, the execution Task becomes `cancelled`; its direct dependents follow the cancelled-prerequisite route, and the parent Work Item status remains unchanged.
 It does not create the child, change the parent graph, or duplicate child-owned work.
 
 ## Rationale
@@ -87,6 +88,7 @@ Separating reconciliation, graph amendment, Work Item decomposition, Work Item e
 - Work Items must show conditional routing rather than a universal fixed graph.
 - Accepted Work Item creation or split routes through `work_item_decomposition`.
 - Parent-graph tracking of one already-created child routes through `work_item_execution`.
+- A cancelled child terminates its execution Task without converting child cancellation into parent Work Item completion or cancellation.
 - Authoring must stop when decided inputs permit materially different interpretations.
 - Synchronization must stop when judgment or graph change is required.
 
@@ -97,3 +99,5 @@ Separating reconciliation, graph amendment, Work Item decomposition, Work Item e
 - `PRODUCT-ADR-SPEC-004`: accepted Task taxonomy.
 - `PRODUCT-ADR-SPEC-005`: accepted single-responsibility boundaries.
 - `PRODUCT-TASK-SPEC-022-01`: accepted Work Item execution responsibility and relation.
+- `PRODUCT-TASK-SPEC-023-01`: D-008 cancelled child Work Item effect.
+- `PRODUCT-TASK-SPEC-023-06`: B-002 non-material amendment route.

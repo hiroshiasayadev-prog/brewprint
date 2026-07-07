@@ -1,7 +1,7 @@
 # PRODUCT-ADR-SPEC-014: Preserve completed workflow records through append-only reconvergence
 
 - **status**: accepted
-- **date**: 2026-07-01
+- **date**: 2026-07-03
 - **depends_on**:
   - PRODUCT-ADR-SPEC-005
   - PRODUCT-ADR-SPEC-006
@@ -23,6 +23,10 @@ The workflow needs an append-only return route and an exact closure ownership bo
 
 Treat completed decision, authoring, and review Tasks as historical records.
 Do not change their outcome, Evidence, verdict, or finding set to represent later progress.
+
+Treat cancelled Tasks and Work Items as terminal historical records.
+Do not reactivate them or rewrite their cancelled outcome into resumed work.
+Materially resumed work uses a new Task or Work Item and may cite the cancelled record as historical source Evidence.
 
 When any workflow phase discovers an unresolved design choice:
 
@@ -90,6 +94,7 @@ Distinct return routes preserve review independence and Task completion authorit
 - Correction Tasks cannot close their own findings.
 - Closure synchronization has an explicit writable boundary and stop rule.
 - Work Item history remains append-only across reconvergence cycles.
+- Cancelled Task and Work Item histories remain terminal; materially resumed work receives a new record.
 
 ## Evidence
 
@@ -97,3 +102,5 @@ Distinct return routes preserve review independence and Task completion authorit
 - `PRODUCT-TASK-SPEC-018-02`: B-006 routing boundary.
 - `PRODUCT-ADR-SPEC-006`: completed-decision checkpoint and non-writeback boundary.
 - `PRODUCT-ADR-SPEC-013`: finding-driven Task materialization.
+- `PRODUCT-TASK-SPEC-023-01`: D-009 terminal cancellation history.
+- `PRODUCT-TASK-SPEC-023-06`: B-003 non-material amendment route.

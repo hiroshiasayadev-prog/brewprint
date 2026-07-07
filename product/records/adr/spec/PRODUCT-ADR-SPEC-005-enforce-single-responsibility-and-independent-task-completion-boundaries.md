@@ -1,7 +1,7 @@
 # PRODUCT-ADR-SPEC-005: Enforce single-responsibility and independent Task completion boundaries
 
 - **status**: accepted
-- **date**: 2026-07-02
+- **date**: 2026-07-03
 - **depends_on**:
   - PRODUCT-ADR-SPEC-004
 - **supersedes**: []
@@ -94,6 +94,8 @@ The Task uses `work_item_ref` for the child relation.
 The Task may become `done` only after the referenced child Work Item is `done` and the Task records that status as Evidence.
 A blocked child may block the Task.
 A child in `not_started` or `in_progress` does not satisfy Task completion.
+When the referenced child Work Item becomes `cancelled`, the execution Task becomes `cancelled`, records that terminal child state as Evidence, and routes its direct dependents through the normal cancelled-prerequisite rule.
+The parent Work Item status does not change automatically.
 The execution Task does not create, split, redefine, or duplicate the child Work Item or its internal work.
 
 A coordinating parent Work Item may summarize each child ID, purpose, responsibility boundary, coarse inter-child routing, and parent-level completion state.
@@ -166,6 +168,7 @@ Explicit stop conditions prevent implementation and synchronization from becomin
 - Downstream validators may later enforce the accepted boundaries.
 - Validator behavior and diagnostics remain outside W016.
 - Existing Task migration remains outside W016.
+- `work_item_execution` lifecycle support must include the referenced-child `cancelled` branch without changing its one-child responsibility boundary.
 
 ## Evidence
 
@@ -175,3 +178,5 @@ Explicit stop conditions prevent implementation and synchronization from becomin
 - `PRODUCT-TASK-SPEC-016-04`: C-003, C-005, and C-008 through C-012.
 - `PRODUCT-TASK-SPEC-016-05`: ADR routing and this ADR boundary.
 - `PRODUCT-TASK-SPEC-022-01`: accepted one-child execution relation and completion boundary.
+- `PRODUCT-TASK-SPEC-023-01`: D-008 cancelled child Work Item effect.
+- `PRODUCT-TASK-SPEC-023-06`: B-002 non-material amendment route.
