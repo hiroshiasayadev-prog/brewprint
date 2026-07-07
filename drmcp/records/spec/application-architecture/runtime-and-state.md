@@ -39,18 +39,18 @@ sequenceDiagram
     Client->>MCP: Public operation request
     MCP->>UseCase: Invoke operation
 
-    UseCase->>Orchestration: Build request-scoped record state
+    UseCase->>Orchestration: Build Current Records snapshot and optional Legacy exact lookup map
     Orchestration->>Current: Load all mandatory Current Records sources
     Current-->>Orchestration: Current source inputs
     Orchestration->>Domain: Build immutable logical state
     Domain-->>Orchestration: Fresh Current Records snapshot
 
     opt Operation requires Legacy Archive
-        Orchestration->>Legacy: Load required legacy lookup state
-        Legacy-->>Orchestration: Separate Legacy lookup state
+        Orchestration->>Legacy: Load required Legacy exact lookup map
+        Legacy-->>Orchestration: Separate Legacy exact lookup map
     end
 
-    Orchestration-->>UseCase: Current snapshot and optional Legacy state
+    Orchestration-->>UseCase: Current Records snapshot and optional Legacy exact lookup map
     UseCase->>Domain: Execute query, resolution, or validation
     Domain-->>UseCase: Modeled semantic outcome
 

@@ -13,7 +13,7 @@ Canonical whole-application architecture for DRMCP. This Overview owns the four-
 
 DRMCP uses one whole-application boundary for eleven public operations.
 
-The current architecture has five application-level responsibility components. Dependencies point inward. Read, Validation, and Guidance use one fresh immutable request-scoped Current Records snapshot. Legacy Archive remains separate compatibility state.
+The current architecture has five application-level responsibility components. Dependencies point inward. Read, Validation, and Guidance use one fresh immutable request-scoped Current Records snapshot. Legacy Archive remains separate from Current Records and uses a configured legacy exact lookup map when required.
 
 The architecture defines ownership, collaboration, lifecycle, failure semantics, and evolution boundaries. It does not define module contracts or implementation structure.
 
