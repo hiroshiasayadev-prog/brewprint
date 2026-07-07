@@ -1,0 +1,184 @@
+{
+  "batch_id": "DN03",
+  "files_discovered": 24,
+  "files_failed": 0,
+  "files_scanned": 24,
+  "observation_count": 177,
+  "output_paths": {
+    "coverage": "results/DN03.coverage.json",
+    "observations": "results/DN03.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/adr/mcp/DRMCP-ADR-MCP-001-design-records-mcp-contract-baseline-and-realignment.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/adr/mcp/DRMCP-ADR-MCP-003-layered-read-runtime-application-and-adapter-boundaries.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/adr/mcp/DRMCP-ADR-MCP-005-validation-orchestration-over-fresh-snapshots.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/requirements/mcp/DRMCP-REQ-MCP-002-namespace-aware-authoring-transaction-conformance.md"
+    },
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/requirements/mcp/DRMCP-REQ-MCP-005-establish-drmcp-application-architecture.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/spec/application-architecture/failure-and-evolution.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/spec/design-records-mcp/overview.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/spec/design-records-mcp/responsibility-boundary.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "changed",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/authoring-guidance-source.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/authoring-transaction-schema.md"
+    },
+    {
+      "observation_count": 17,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/diagnostics.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/discovery.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/fields.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/metadata-grammar.md"
+    },
+    {
+      "observation_count": 2,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/overview.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/record-model.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/spec/design-records-mcp/tools/authoring-transaction-model.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "changed",
+      "source_path": "drmcp/records/spec/design-records-mcp/tools/list-authoring-guides.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/spec/design-records-mcp/tools/resolve-reference.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/spec/design-records-mcp/tools/validate-records.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/work-items/mcp/DRMCP-WORK-MCP-003-current-discovery-and-active-index-contract-realignment.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/work-items/mcp/DRMCP-WORK-MCP-004-query-and-exact-retrieval-contract-realignment.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/work-items/mcp/DRMCP-WORK-MCP-013-read-runtime-responsibility-contract-design.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/work-items/spec/DRMCP-WORK-SPEC-001-parser-aware-spec-format-validation.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "drmcp/records/adr/mcp/DRMCP-ADR-MCP-001-design-records-mcp-contract-baseline-and-realignment.md",
+    "drmcp/records/adr/mcp/DRMCP-ADR-MCP-003-layered-read-runtime-application-and-adapter-boundaries.md",
+    "drmcp/records/adr/mcp/DRMCP-ADR-MCP-005-validation-orchestration-over-fresh-snapshots.md",
+    "drmcp/records/requirements/mcp/DRMCP-REQ-MCP-002-namespace-aware-authoring-transaction-conformance.md",
+    "drmcp/records/requirements/mcp/DRMCP-REQ-MCP-005-establish-drmcp-application-architecture.md",
+    "drmcp/records/spec/application-architecture/failure-and-evolution.md",
+    "drmcp/records/spec/design-records-mcp/overview.md",
+    "drmcp/records/spec/design-records-mcp/responsibility-boundary.md",
+    "drmcp/records/spec/design-records-mcp/schema/authoring-guidance-source.md",
+    "drmcp/records/spec/design-records-mcp/schema/authoring-transaction-schema.md",
+    "drmcp/records/spec/design-records-mcp/schema/diagnostics.md",
+    "drmcp/records/spec/design-records-mcp/schema/discovery.md",
+    "drmcp/records/spec/design-records-mcp/schema/fields.md",
+    "drmcp/records/spec/design-records-mcp/schema/metadata-grammar.md",
+    "drmcp/records/spec/design-records-mcp/schema/overview.md",
+    "drmcp/records/spec/design-records-mcp/schema/record-model.md",
+    "drmcp/records/spec/design-records-mcp/tools/authoring-transaction-model.md",
+    "drmcp/records/spec/design-records-mcp/tools/list-authoring-guides.md",
+    "drmcp/records/spec/design-records-mcp/tools/resolve-reference.md",
+    "drmcp/records/spec/design-records-mcp/tools/validate-records.md",
+    "drmcp/records/work-items/mcp/DRMCP-WORK-MCP-003-current-discovery-and-active-index-contract-realignment.md",
+    "drmcp/records/work-items/mcp/DRMCP-WORK-MCP-004-query-and-exact-retrieval-contract-realignment.md",
+    "drmcp/records/work-items/mcp/DRMCP-WORK-MCP-013-read-runtime-responsibility-contract-design.md",
+    "drmcp/records/work-items/spec/DRMCP-WORK-SPEC-001-parser-aware-spec-format-validation.md"
+  ]
+}

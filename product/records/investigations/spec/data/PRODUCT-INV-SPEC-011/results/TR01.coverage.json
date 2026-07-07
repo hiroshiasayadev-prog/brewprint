@@ -1,0 +1,261 @@
+{
+  "batch_id": "TR01",
+  "files_discovered": 35,
+  "files_failed": 0,
+  "files_scanned": 35,
+  "observation_count": 393,
+  "output_paths": {
+    "coverage": "results/TR01.coverage.json",
+    "observations": "results/TR01.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/adr/spec/TRV-ADR-SPEC-006-suspend-semantic-validator-delivery-pending-controlled-vocabulary.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/investigations/spec/TRV-INV-SPEC-001-evaluate-qwen-task-boundary-detection-capability.md"
+    },
+    {
+      "observation_count": 15,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/investigations/spec/TRV-INV-SPEC-003-architecture-derived-contract-specification-topic-tree-and-placement.md"
+    },
+    {
+      "observation_count": 14,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/investigations/spec/TRV-INV-SPEC-004-decision-task-batching-and-lexical-priming-effects.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/requirements/spec/TRV-REQ-SPEC-001-deliver-task-responsibility-validator-application.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/spec/application-architecture/boundary.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/spec/application-architecture/dependency-model.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/spec/application-architecture/index.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/spec/index.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-01-coordinate-trv-app-local-design-initial-graph.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-03-amend-trv-design-graph.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-04-coordinate-downstream-design-route.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-07-coordinate-decomposed-design-execution-route.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-10-execute-trv-detailed-specifications-work-item.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-11-independently-review-complete-trv-design.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-13-coordinate-contract-work-item-replacement-route.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-15-execute-architecture-derived-contract-specification-work-item.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-02-route-trv-architecture-adrs.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-03-coordinate-trv-architecture-authoring-route.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-05-author-trv-architecture-specifications.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-07-synchronize-trv-architecture-closure.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-08-coordinate-module-dependency-reconvergence.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-10-route-revised-trv-architecture-adrs.md"
+    },
+    {
+      "observation_count": 13,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-14-independently-review-revised-trv-architecture.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-15-synchronize-revised-trv-architecture-closure.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-16-coordinate-revised-architecture-finding-route.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-18-independently-review-revised-architecture-finding-closure.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-003-05-author-trv-contract-specifications.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-003-08-decompose-architecture-derived-contract-specification-work-item.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-005-01-investigate-contract-specification-topic-tree-and-placement.md"
+    },
+    {
+      "observation_count": 21,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-005-02-decide-contract-specification-topic-tree-and-markdown-placement.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-005-03-coordinate-contract-specification-authoring-route.md"
+    },
+    {
+      "observation_count": 16,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/work-items/spec/TRV-WORK-SPEC-002-define-trv-application-architecture.md"
+    },
+    {
+      "observation_count": 15,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/work-items/spec/TRV-WORK-SPEC-003-define-trv-application-contract.md"
+    },
+    {
+      "observation_count": 17,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "trv/records/work-items/spec/TRV-WORK-SPEC-005-define-architecture-derived-trv-contract-specifications.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "trv/records/adr/spec/TRV-ADR-SPEC-006-suspend-semantic-validator-delivery-pending-controlled-vocabulary.md",
+    "trv/records/investigations/spec/TRV-INV-SPEC-001-evaluate-qwen-task-boundary-detection-capability.md",
+    "trv/records/investigations/spec/TRV-INV-SPEC-003-architecture-derived-contract-specification-topic-tree-and-placement.md",
+    "trv/records/investigations/spec/TRV-INV-SPEC-004-decision-task-batching-and-lexical-priming-effects.md",
+    "trv/records/requirements/spec/TRV-REQ-SPEC-001-deliver-task-responsibility-validator-application.md",
+    "trv/records/spec/application-architecture/boundary.md",
+    "trv/records/spec/application-architecture/dependency-model.md",
+    "trv/records/spec/application-architecture/index.md",
+    "trv/records/spec/index.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-001-01-coordinate-trv-app-local-design-initial-graph.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-001-03-amend-trv-design-graph.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-001-04-coordinate-downstream-design-route.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-001-07-coordinate-decomposed-design-execution-route.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-001-10-execute-trv-detailed-specifications-work-item.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-001-11-independently-review-complete-trv-design.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-001-13-coordinate-contract-work-item-replacement-route.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-001-15-execute-architecture-derived-contract-specification-work-item.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-002-02-route-trv-architecture-adrs.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-002-03-coordinate-trv-architecture-authoring-route.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-002-05-author-trv-architecture-specifications.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-002-07-synchronize-trv-architecture-closure.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-002-08-coordinate-module-dependency-reconvergence.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-002-10-route-revised-trv-architecture-adrs.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-002-14-independently-review-revised-trv-architecture.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-002-15-synchronize-revised-trv-architecture-closure.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-002-16-coordinate-revised-architecture-finding-route.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-002-18-independently-review-revised-architecture-finding-closure.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-003-05-author-trv-contract-specifications.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-003-08-decompose-architecture-derived-contract-specification-work-item.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-005-01-investigate-contract-specification-topic-tree-and-placement.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-005-02-decide-contract-specification-topic-tree-and-markdown-placement.md",
+    "trv/records/tasks/spec/TRV-TASK-SPEC-005-03-coordinate-contract-specification-authoring-route.md",
+    "trv/records/work-items/spec/TRV-WORK-SPEC-002-define-trv-application-architecture.md",
+    "trv/records/work-items/spec/TRV-WORK-SPEC-003-define-trv-application-contract.md",
+    "trv/records/work-items/spec/TRV-WORK-SPEC-005-define-architecture-derived-trv-contract-specifications.md"
+  ]
+}

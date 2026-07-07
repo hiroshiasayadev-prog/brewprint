@@ -1,0 +1,156 @@
+{
+  "batch_id": "LA05",
+  "files_discovered": 20,
+  "files_failed": 0,
+  "files_scanned": 20,
+  "observation_count": 73,
+  "output_paths": {
+    "coverage": "results/LA05.coverage.json",
+    "observations": "results/LA05.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 1,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-003-name-resolution-rules.md"
+    },
+    {
+      "observation_count": 2,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-021-model-field-structure.md"
+    },
+    {
+      "observation_count": 2,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-022-dag-node-shapes-and-edge-types.md"
+    },
+    {
+      "observation_count": 2,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-026-fk-cardinality-and-nm-relation.md"
+    },
+    {
+      "observation_count": 2,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-027-module-nesting-and-name-resolution.md"
+    },
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-028-api-table-route-composition.md"
+    },
+    {
+      "observation_count": 2,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-030-yaml-file-type-declaration.md"
+    },
+    {
+      "observation_count": 2,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-037-sequence-diagram-action-less-transition.md"
+    },
+    {
+      "observation_count": 2,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-041-sequence-diagram-message-rendering.md"
+    },
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-043-project-root-layout-and-render-output.md"
+    },
+    {
+      "observation_count": 1,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-044-store-access-edge-labels.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-056-mcp-analyze-impact-tool-design.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-058-subnode-file-private-scope-enforcement.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-061-foreach-returns-collected-asset.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-062-task-return-source.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-070-model-visibility-file-private-helper-model.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-073-tagged-union-model.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-074-dag-asset-node-type-hint.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-077-design-records-mcp-mvp-boundary-and-tool-prioritization.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-085-investigation-artifact-boundary.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "v01/records/adr/V01-ADR-003-name-resolution-rules.md",
+    "v01/records/adr/V01-ADR-021-model-field-structure.md",
+    "v01/records/adr/V01-ADR-022-dag-node-shapes-and-edge-types.md",
+    "v01/records/adr/V01-ADR-026-fk-cardinality-and-nm-relation.md",
+    "v01/records/adr/V01-ADR-027-module-nesting-and-name-resolution.md",
+    "v01/records/adr/V01-ADR-028-api-table-route-composition.md",
+    "v01/records/adr/V01-ADR-030-yaml-file-type-declaration.md",
+    "v01/records/adr/V01-ADR-037-sequence-diagram-action-less-transition.md",
+    "v01/records/adr/V01-ADR-041-sequence-diagram-message-rendering.md",
+    "v01/records/adr/V01-ADR-043-project-root-layout-and-render-output.md",
+    "v01/records/adr/V01-ADR-044-store-access-edge-labels.md",
+    "v01/records/adr/V01-ADR-056-mcp-analyze-impact-tool-design.md",
+    "v01/records/adr/V01-ADR-058-subnode-file-private-scope-enforcement.md",
+    "v01/records/adr/V01-ADR-061-foreach-returns-collected-asset.md",
+    "v01/records/adr/V01-ADR-062-task-return-source.md",
+    "v01/records/adr/V01-ADR-070-model-visibility-file-private-helper-model.md",
+    "v01/records/adr/V01-ADR-073-tagged-union-model.md",
+    "v01/records/adr/V01-ADR-074-dag-asset-node-type-hint.md",
+    "v01/records/adr/V01-ADR-077-design-records-mcp-mvp-boundary-and-tool-prioritization.md",
+    "v01/records/adr/V01-ADR-085-investigation-artifact-boundary.md"
+  ]
+}

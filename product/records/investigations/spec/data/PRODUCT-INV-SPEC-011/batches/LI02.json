@@ -1,0 +1,71 @@
+{
+  "batch_id": "LI02",
+  "bucket": "legacy_investigations",
+  "estimated_input_tokens": 42275,
+  "file_count": 6,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-36-O",
+  "output_paths": {
+    "coverage": "results/LI02.coverage.json",
+    "observations": "results/LI02.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1780911672547965300,
+      "read_error": null,
+      "sha256": "6dcbefec3fd05d852f1779f190b9495905d1ca54622cddd23d42d52c37180f77",
+      "size_bytes": 36769,
+      "source_group": "v01/records/investigations",
+      "source_path": "v01/records/investigations/data/final-review-INV-DATA-002-m15-release-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672556614000,
+      "read_error": null,
+      "sha256": "34058a0aafb6f233a46a3c4511fcaf1b660ba31fb212657e16f6f5b698cac654",
+      "size_bytes": 30455,
+      "source_group": "v01/records/investigations",
+      "source_path": "v01/records/investigations/data/review-INV-DATA-002-m15-minimum-expressiveness-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672563610700,
+      "read_error": null,
+      "sha256": "08298fbcf3a0ecefdac242ddc7b0782f0aa74e75160274e940922ae6031f4e48",
+      "size_bytes": 17177,
+      "source_group": "v01/records/investigations",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-002-external-coverage-artifact-necessity.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672565612200,
+      "read_error": null,
+      "sha256": "fcce22c3005440ca8ea7b3c399c10613ef53d2d7418285b877319fc641debcd2",
+      "size_bytes": 24564,
+      "source_group": "v01/records/investigations",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-003-internal-design-semantic-trace-mvp-necessity.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672569610900,
+      "read_error": null,
+      "sha256": "831a1c100aedef72363aaf552be11bb7fb40a0b42bd7c33f7644736e6e1142a6",
+      "size_bytes": 19958,
+      "source_group": "v01/records/investigations",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-005-doorstop-artifact-model-overlap-and-adoption-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672571609300,
+      "read_error": null,
+      "sha256": "fcffd412285d57a6660a34592543f2a5aa56958018e14167e514416f9e78878a",
+      "size_bytes": 40179,
+      "source_group": "v01/records/investigations",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-006-llm-first-intent-transfer-and-external-tool-evaluation-boundary.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 169102
+}

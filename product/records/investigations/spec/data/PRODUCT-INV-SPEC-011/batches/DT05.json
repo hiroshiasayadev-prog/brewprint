@@ -1,0 +1,161 @@
+{
+  "batch_id": "DT05",
+  "bucket": "drmcp_tasks",
+  "estimated_input_tokens": 51597,
+  "file_count": 16,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-21-O",
+  "output_paths": {
+    "coverage": "results/DT05.coverage.json",
+    "observations": "results/DT05.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1782558534210301200,
+      "read_error": null,
+      "sha256": "a9fd48631be23e26ed05c652f0e69e643d5a31b7c858595edb127be019c1c4a4",
+      "size_bytes": 4029,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-04-track-query-and-exact-retrieval-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782818447896443600,
+      "read_error": null,
+      "sha256": "5bd3c878bafe4cd128e4786d15a7f9454909094b3f484c6829d7c8badc9a0469",
+      "size_bytes": 1670,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-17-track-topics-graph-validation-implementation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783073724376292400,
+      "read_error": null,
+      "sha256": "d22b7555a36ec157baeb46e356940e211cfa44ff060da6b9513f5928e68b2a66",
+      "size_bytes": 2178,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-18-track-read-runtime-responsibility-contract-design.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782547245369502300,
+      "read_error": null,
+      "sha256": "e6c11cb292e799b6a90e3a1ecd96a08c7677d057fc682bad44a4dca062e213b1",
+      "size_bytes": 5580,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-003-05-synchronize-review-and-close-discovery-and-active-index-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782548689511629100,
+      "read_error": null,
+      "sha256": "f26f0bf1d946e9c398be4ecec06b68b2e0d5841e228637b507000ab44d0c2b53",
+      "size_bytes": 17443,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-004-01-establish-query-and-exact-retrieval-correction-baseline.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782558048990716400,
+      "read_error": null,
+      "sha256": "5caf9bd4eb7fc2046698f924b2001dfa9b56f96280e1cfc9de971f8f57ef4756",
+      "size_bytes": 13711,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-004-05-validate-and-close-query-and-exact-retrieval-contract-realignment.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782576215823169600,
+      "read_error": null,
+      "sha256": "e8b9db5fab8a73ab05cf4c1253a97a4d1b025017030f7973f20761230dd3d35c",
+      "size_bytes": 30650,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-006-01-establish-validation-diagnostics-and-path-exposure-correction-baseline.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782633670083908400,
+      "read_error": null,
+      "sha256": "4676340e1ed74ec83bce5ce2c68ae21a8a7ec1df30694436f61c8ead1cd2bb97",
+      "size_bytes": 37761,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-007-01-establish-validation-work-item-audit-baseline.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782648365049385400,
+      "read_error": null,
+      "sha256": "740769b0f744c1a871c8e95d6d3a365c244c0ffd41f7d06277aff917f4afb01c",
+      "size_bytes": 22672,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-008-03-create-configured-legacy-root-read-fixture-baseline.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782650501508250700,
+      "read_error": null,
+      "sha256": "5152d885bc7ae5da297398edf1355b68f09122dea034e1a32f49a3d92f286ef2",
+      "size_bytes": 33917,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-008-04-create-rejected-and-isolation-read-fixture-baseline.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782656706301853700,
+      "read_error": null,
+      "sha256": "16b5f00bbe46028c3da896bce5fbe743e9661ea534bf2af0ef87348e57172bdf",
+      "size_bytes": 5295,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-07-implement-current-validation-and-diagnostics.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782656722757627400,
+      "read_error": null,
+      "sha256": "fe4be8f6315d78e19323e0631886401f9f49b683195694d53113a29acc0c4c20",
+      "size_bytes": 8247,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-09-review-and-close-current-read-implementation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782810371358907800,
+      "read_error": null,
+      "sha256": "2303cfa30066b4dd63ad71e0b40fc2c73b9dcd62d646faac9703170729d5b70f",
+      "size_bytes": 8728,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-011-03-synchronize-rebuild-read-runtime-architecture-specifications.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782817154936604200,
+      "read_error": null,
+      "sha256": "34efd4850b1aca4a75b84276e4c7a6b5782bee0904b22bba77f6e5f4fb028ec7",
+      "size_bytes": 7931,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-011-07-synchronize-rebuild-read-runtime-architecture-design-closure.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783073704699123700,
+      "read_error": null,
+      "sha256": "635213146967c795a6681f68a016eb24a01453324ab70a41b052b22fe73806df",
+      "size_bytes": 4033,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-014-01-investigate-read-runtime-internal-specification-work-partition.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783099176252818600,
+      "read_error": null,
+      "sha256": "1caa955008d16f4f66c8c1f18cd2aecce21b3717f1473d8c8ee018b600d662e3",
+      "size_bytes": 2544,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-09-independently-review-drmcp-application-architecture.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 206389
+}

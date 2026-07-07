@@ -1,0 +1,161 @@
+{
+  "batch_id": "DT02",
+  "bucket": "drmcp_tasks",
+  "estimated_input_tokens": 51613,
+  "file_count": 16,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-18-O",
+  "output_paths": {
+    "coverage": "results/DT02.coverage.json",
+    "observations": "results/DT02.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1782547255973957400,
+      "read_error": null,
+      "sha256": "8dd97829e683c7d69eaafd4148b8de58c437955246e9fdb6b471b6deeade3b16",
+      "size_bytes": 2548,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-03-track-discovery-and-active-index-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782574900699472800,
+      "read_error": null,
+      "sha256": "654d5bc66007d3be771168fa19f83a3432716b7f564335ec797f424ad482b44c",
+      "size_bytes": 3852,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-05-track-resolver-and-legacy-fallback-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782824989595880500,
+      "read_error": null,
+      "sha256": "634cfabd42b79ddc55c1a4930620875a3f348143c69d22b055012aa201e5a2d6",
+      "size_bytes": 1668,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-15-synchronize-reviewed-rebuild-read-baseline-graph-release.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782651288577918200,
+      "read_error": null,
+      "sha256": "0a903a0227279a7591da7ad664ab1bb04c72870f673a7c8b435a5dff6c3e39b9",
+      "size_bytes": 6891,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-002-02-track-portable-package-producer-work-item.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782488777711571600,
+      "read_error": null,
+      "sha256": "9e4673243e9fa9c740f492fa4d6b8ad6d9ab5e0325ff45c28d73455fb7b7967b",
+      "size_bytes": 10733,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-003-01-establish-discovery-and-active-index-correction-baseline.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782566738477234700,
+      "read_error": null,
+      "sha256": "da4dc7ce5fc1bd158a40e0c26a58664522cd5bacc607e3a3cff1549aa029f04b",
+      "size_bytes": 11317,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-005-02-correct-current-first-grammar-and-active-index-resolution-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782571312578435500,
+      "read_error": null,
+      "sha256": "e3f690fb44e2d26f233f9ae519e02927c764679f129111a1d63d777a03738112",
+      "size_bytes": 20057,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-005-03-define-configured-legacy-fallback-and-archive-index-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782580095878198800,
+      "read_error": null,
+      "sha256": "1fa5937c9af3fef2a9fa721963fe85628cee067f542079712b7664b916f8bdba",
+      "size_bytes": 31993,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-006-02-define-current-repository-and-relation-validation-execution-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782584445825311300,
+      "read_error": null,
+      "sha256": "223885450d340f9fe6d1c8ac3991f1af047d8e8cc278143ab54afea2f901f88e",
+      "size_bytes": 51387,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-006-03-define-machine-readable-diagnostic-representation-and-semantic-invalidity-mapping.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782657720341583800,
+      "read_error": null,
+      "sha256": "f938a478cc281d68d08a11d83633f5dd0b030f3156881aa12b28713eb1c5e6a9",
+      "size_bytes": 15196,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-01-map-current-read-code-and-execution-graph.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782656661513214800,
+      "read_error": null,
+      "sha256": "7b1f466e65f46c9ffcafe37d86dd387b5a932e7e83bcc71c7af84a41bc5639f9",
+      "size_bytes": 4425,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-02-implement-configured-current-root-loading.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782656692448020300,
+      "read_error": null,
+      "sha256": "8464a68ad5f83968be87ba05603d5ba5ea762ab36e8334d82f05a021e882625f",
+      "size_bytes": 8125,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-05-implement-current-list-and-exact-retrieval.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782656700642083200,
+      "read_error": null,
+      "sha256": "df90ed0a9c8b147384f2b1838ecb20553d958bb94212c277c71e762909851a9a",
+      "size_bytes": 4691,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-06-implement-current-reference-resolution.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782814609519719900,
+      "read_error": null,
+      "sha256": "23d5b4d7891ac5a3e2abf39f16df19f2024e4908065e2ed9d6261679632946b8",
+      "size_bytes": 6750,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-011-04-independently-review-rebuild-read-runtime-architecture.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783098430565031200,
+      "read_error": null,
+      "sha256": "d11e9f99caf2fd0729b914d0e8eea032e3d5b1904879e8f07a5857a2117e0213",
+      "size_bytes": 24520,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-03-decide-drmcp-application-architecture-graph-and-boundaries.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783099165313429100,
+      "read_error": null,
+      "sha256": "d475758b5c990a699c6ba7340bdac80c3fb6b976a49b58a9eca46e3099718289",
+      "size_bytes": 2299,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-08-correct-authoring-guidance-source-specifications.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 206452
+}

@@ -1,0 +1,197 @@
+{
+  "batch_id": "LA03",
+  "bucket": "legacy_adrs",
+  "estimated_input_tokens": 50503,
+  "file_count": 20,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-32-O",
+  "output_paths": {
+    "coverage": "results/LA03.coverage.json",
+    "observations": "results/LA03.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1780911672025976400,
+      "read_error": null,
+      "sha256": "223edb7da1d7c81d7d4ad78faa59dc8300ee587bc76622a6b9a97f13b3f3357d",
+      "size_bytes": 2121,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-002-folder-as-namespace.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672030977500,
+      "read_error": null,
+      "sha256": "4f3e1fb600dbb4a89ab2433eb690d134d6487ed701b148bf7a3eb98c0aabbc92",
+      "size_bytes": 2197,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-006-node-type-renaming.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672033974600,
+      "read_error": null,
+      "sha256": "fef796da648e80c12e5ec82f749ee4cf2b960a488da6f5396369ab3faa44b284",
+      "size_bytes": 3761,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-008-dag-dataflow-and-field-validation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672034974500,
+      "read_error": null,
+      "sha256": "96af37804c58e159c6a52504bd335d23de706fb6d632184be8fd82c5984b0807",
+      "size_bytes": 4938,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-009-task-io-design.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672043975600,
+      "read_error": null,
+      "sha256": "ef2c23543676cd7f1431a9d8a150b13ed7f92a5c0937c07c3e020a7440d9cc61",
+      "size_bytes": 4169,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-016-foreach-as-flow-construct.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672045976600,
+      "read_error": null,
+      "sha256": "411444da57d14b1cd296be913857d38e28d7d08944c598d2543f5e511d076e20",
+      "size_bytes": 4331,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-018-event-node.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672053973200,
+      "read_error": null,
+      "sha256": "6d0977da039a6d6d9774e292d34be7323077ab3b845daef07019ce49cf79791e",
+      "size_bytes": 3529,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-024-dag-boundary-nodes.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672062973000,
+      "read_error": null,
+      "sha256": "229cc3e3663a8c50bf5f93b239482ab4c20057ce7466e56d8d7ccd77333e91ef",
+      "size_bytes": 5366,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-032-sequence-diagram-scenario-schema.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672066977800,
+      "read_error": null,
+      "sha256": "5858ab3e04adb03d0c3e851408eded7e07fdf3cd861549af14962ab620a121d9",
+      "size_bytes": 8167,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-035-fsm-guard-branch-and-transition-identification.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672075973000,
+      "read_error": null,
+      "sha256": "d71099370caf54843935048ed99ce099510788e9b438cb6c8c3d4e3a426e4422",
+      "size_bytes": 11323,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-042-wireframe-main-and-layout.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672085465900,
+      "read_error": null,
+      "sha256": "0eeb18ad8342e88c0925a07e99779d334664a1458d6241ed25523846d43dfbeb",
+      "size_bytes": 5717,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-049-mcp-query-reference-vocabulary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672093464900,
+      "read_error": null,
+      "sha256": "56c89b2f89099933d4f6eb2d53eaf568e5fe502df4327e2214bef626ab928165",
+      "size_bytes": 16185,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-055-mcp-reference-tree-traversal.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672098463400,
+      "read_error": null,
+      "sha256": "13b3e8be3480989126a44faba4bdbfe1f5403e10e1153b6ba6d131b8b0548de9",
+      "size_bytes": 7259,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-059-task-join-return-primitive-support.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672107469700,
+      "read_error": null,
+      "sha256": "f1803a56b96b03d6a4a166e37fcce1dea1cbd2041e87d730ef108c2218dc2dc0",
+      "size_bytes": 29293,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-064-returns-source-dag-render.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672110469500,
+      "read_error": null,
+      "sha256": "0b2e7c6171f83eef85d24c9c9d921ba6b195f99837158d55176c2ebe1bfa2858",
+      "size_bytes": 8228,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-066-dag-classdef-wcag-fix.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672126086100,
+      "read_error": null,
+      "sha256": "23d1bece7c236803f96f4a1aa50e08a74f7d781d7db287354f26ee207110a743",
+      "size_bytes": 14899,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-076-design-records-mcp.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672132083400,
+      "read_error": null,
+      "sha256": "49d347f2f4ed64e455f42bdffc6947f5bd8559e429cefcb6a529c5ed484e888d",
+      "size_bytes": 19944,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-079-mcp-transition-id-policy.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672134855300,
+      "read_error": null,
+      "sha256": "b319b2775e08d90cd88bbcbf9f164cb2f1b7126e7eba8ddea59ba9ade2e35497",
+      "size_bytes": 19204,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-081-requirement-artifacts-and-spec-traceability.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672134855300,
+      "read_error": null,
+      "sha256": "74b72d72bd4f0193863d7a70ff3df365ec0af21e36f87c9882c5969589b257ec",
+      "size_bytes": 18026,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-082-golden-fixture-and-self-hosting-requirement-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672151912700,
+      "read_error": null,
+      "sha256": "3eb85025ae61b5846db229d70bedbb57c6ddc4298c61466cf8f5389b9cfb50fa",
+      "size_bytes": 13355,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-091-workflow-artifact-work-item-task-milestone.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 202012
+}

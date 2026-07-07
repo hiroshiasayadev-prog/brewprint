@@ -1,0 +1,269 @@
+{
+  "batch_id": "PN01",
+  "bucket": "product_non_tasks",
+  "estimated_input_tokens": 60738,
+  "file_count": 28,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-13-O",
+  "output_paths": {
+    "coverage": "results/PN01.coverage.json",
+    "observations": "results/PN01.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1782893377097653100,
+      "read_error": null,
+      "sha256": "a73d0289d3a59fdf8a59ea82154b7531262df9625c15af9582578355abebecaf",
+      "size_bytes": 3162,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-012-serialize-shared-writers-and-review-the-final-integrated-state.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783009062233794600,
+      "read_error": null,
+      "sha256": "1340a6e50480719f62ed1df15ae0e74bd2c40a014b00df948eb1118554098d62",
+      "size_bytes": 5532,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-017-validate-task-responsibility-after-authoring-and-final-evidence.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781450488904341500,
+      "read_error": null,
+      "sha256": "e96892fb62f72a2c6d74a8fa24076cc70dac081228818e0e10c58ba57417d21a",
+      "size_bytes": 16315,
+      "source_group": "product/records/investigations",
+      "source_path": "product/records/investigations/spec/PRODUCT-INV-SPEC-002-artifact-traceability-ownership-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781367702804735800,
+      "read_error": null,
+      "sha256": "b9affef378577578b6503270e3e0227bebbeeec80b26a20f12191ad612dd0ffd",
+      "size_bytes": 7327,
+      "source_group": "product/records/investigations",
+      "source_path": "product/records/investigations/spec/PRODUCT-INV-SPEC-003-cognitive-load-writing-standard-investigation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782312936042650200,
+      "read_error": null,
+      "sha256": "b580c7ca97039a415ec919bd275068dd14007d121c8b65c68c795e708b06a668",
+      "size_bytes": 64718,
+      "source_group": "product/records/investigations",
+      "source_path": "product/records/investigations/spec/PRODUCT-INV-SPEC-005-product-spec-semantic-layer-and-top-level-ownership-structure.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782311162847287000,
+      "read_error": null,
+      "sha256": "112fb36304e4b4e234005e905918f6150bfe8c8334054e1fcc60dff7e87c3cda",
+      "size_bytes": 2762,
+      "source_group": "product/records/requirements",
+      "source_path": "product/records/requirements/PRODUCT-REQ-SPEC-002-migrate-artifact-authoring-guides-to-product-namespace.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782931913717940300,
+      "read_error": null,
+      "sha256": "c01aa4daeadf1294544beb13200ade106f715ab6baf8ded112687f8cc5253fcd",
+      "size_bytes": 3633,
+      "source_group": "product/records/requirements",
+      "source_path": "product/records/requirements/spec/PRODUCT-REQ-SPEC-008-review-local-mechanical-correction.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783088801456018800,
+      "read_error": null,
+      "sha256": "7e6ff1d577fd42cf44f215744cf5e21c601fd273283584cacc8ad23f470be573",
+      "size_bytes": 3906,
+      "source_group": "product/records/requirements",
+      "source_path": "product/records/requirements/spec/PRODUCT-REQ-SPEC-012-define-task-type-use-cases-and-controlled-responsibility-vocabulary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782310614298464800,
+      "read_error": null,
+      "sha256": "358fe120884b67f2217dc5e7e1228e139fbe8aeb9cb092d665b63e5099a4270c",
+      "size_bytes": 4118,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/bpdsl/repository-implementation-flow.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782321269825129600,
+      "read_error": null,
+      "sha256": "3265a19fea3bba6efe94e6bb48990ae3f1216c030483fb85a3aad447c509d8f5",
+      "size_bytes": 2540,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/brewprint/compatibility/existing-artifacts.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782930774633781500,
+      "read_error": null,
+      "sha256": "3cf68dab0b2fa05b3cc1e5c76837d83c340750f9af15af102c47490e57fe75d1",
+      "size_bytes": 2451,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/brewprint/namespaces/app-namespaces.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782321248616839200,
+      "read_error": null,
+      "sha256": "9d2fe479b65698f4094a39b49503268404a8de03c40d555d9f2a564841848eed",
+      "size_bytes": 9238,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/artifact-model/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782321242820669400,
+      "read_error": null,
+      "sha256": "6188406a345bbb4d9ad8f0aa0852ba41b6f367273380cef2e89fe0826f0f2789",
+      "size_bytes": 2110,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/namespace-model/subdomain-model.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782310976901480600,
+      "read_error": null,
+      "sha256": "baf1786c0af2953242287241d7a8223a6cc9ef612f5a0da363f423c1fd6556fb",
+      "size_bytes": 8175,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/spec-format/document-shape.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782311023381613000,
+      "read_error": null,
+      "sha256": "ce505f100796cb36abf80a24143f561eed81752f2a84969b75f18cb2747539d3",
+      "size_bytes": 6199,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/spec-format/spec-id-as-ref.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782638179124395800,
+      "read_error": null,
+      "sha256": "80882d89fe1a32934d6920c352f40a206421cf891005003aa929922a188a497f",
+      "size_bytes": 4546,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/spec-format/validation-policy.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782838674120393200,
+      "read_error": null,
+      "sha256": "bb77a0b80392f0f12043cba8de3f845cd3025f246412ca331e7f9c89421ef597",
+      "size_bytes": 5793,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/traceability/artifact-refs.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782838688191280900,
+      "read_error": null,
+      "sha256": "d24c29fef379bf63ff084d4b43960b765307f89482950cd093b7558508699705",
+      "size_bytes": 7007,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/traceability/resolve-and-validation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782321281866091700,
+      "read_error": null,
+      "sha256": "9cbc6af23c4d4ff1d5a4c75b645524219b3cc84383ad15dfc4028e9b83837ff1",
+      "size_bytes": 3568,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/traceability/semantic-ref.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782913953163854300,
+      "read_error": null,
+      "sha256": "e0645d7f905f40fec11f22daabb4c53e1eb0de4515d5aa94bea9e20a20b1d1cf",
+      "size_bytes": 4704,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782313049279129900,
+      "read_error": null,
+      "sha256": "7e084e4eebb08540f9ce06ee108d6e35c0b8249579f4d9d7cc0a52c2b254d761",
+      "size_bytes": 8229,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/namespace/PRODUCT-WORK-NAMESPACE-001-namespace-model-canonical-grammar-and-compatibility-boundary-cleanup.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781702586196844900,
+      "read_error": null,
+      "sha256": "7da59c8aadef52dd13252779549f66065c837b21b7a5a41db2a20e8553a8da1d",
+      "size_bytes": 3205,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-004-ownership-boundary-decision-and-relocation-plan.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781282470243116500,
+      "read_error": null,
+      "sha256": "097bde62113a834c0f31163f6bbf79c1d851c5f15562831a88f4d07e70824c05",
+      "size_bytes": 5373,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-007-split-spec-format-index-into-navigation-first-topic-specs.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781281149770342400,
+      "read_error": null,
+      "sha256": "298cdafd0df99e026e74a859f88b708ad3a866b75962966f7e2f28cf80d8f96f",
+      "size_bytes": 2012,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-008-adr-target-specs-traceability-investigation-and-update-plan.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782650509826720200,
+      "read_error": null,
+      "sha256": "6035871917ad94ff32a6fa496522b8535e3a45fe3abdc8fc4d08f836d6735b27",
+      "size_bytes": 21008,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-013-portable-design-records-standards-distribution.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782641662882346100,
+      "read_error": null,
+      "sha256": "4407ea94ad79d57e68b1a070d862bc845ec4570f1d7e839310c370f21efedb42",
+      "size_bytes": 11810,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-015-synchronize-validation-owner-pointers.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782889965137693100,
+      "read_error": null,
+      "sha256": "f133bf9285da9cf1a9de78d4240b2bfebdca0317acbcf01a9291e5b139c83424",
+      "size_bytes": 12837,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-017-define-generic-workflow-source-relations.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783100226243434100,
+      "read_error": null,
+      "sha256": "48646fe920c3e311af4562ab433951ec0d4392a251b891fcc903cc3efd657c11",
+      "size_bytes": 10676,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-027-inventory-brewprint-design-governance-terms.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 242954
+}

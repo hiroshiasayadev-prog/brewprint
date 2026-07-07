@@ -1,0 +1,58 @@
+{
+  "batch_id": "LI02",
+  "files_discovered": 6,
+  "files_failed": 0,
+  "files_scanned": 6,
+  "observation_count": 121,
+  "output_paths": {
+    "coverage": "results/LI02.coverage.json",
+    "observations": "results/LI02.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 18,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/investigations/data/final-review-INV-DATA-002-m15-release-boundary.md"
+    },
+    {
+      "observation_count": 19,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/investigations/data/review-INV-DATA-002-m15-minimum-expressiveness-boundary.md"
+    },
+    {
+      "observation_count": 19,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-002-external-coverage-artifact-necessity.md"
+    },
+    {
+      "observation_count": 19,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-003-internal-design-semantic-trace-mvp-necessity.md"
+    },
+    {
+      "observation_count": 19,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-005-doorstop-artifact-model-overlap-and-adoption-boundary.md"
+    },
+    {
+      "observation_count": 27,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-006-llm-first-intent-transfer-and-external-tool-evaluation-boundary.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "v01/records/investigations/data/final-review-INV-DATA-002-m15-release-boundary.md",
+    "v01/records/investigations/data/review-INV-DATA-002-m15-minimum-expressiveness-boundary.md",
+    "v01/records/investigations/docs/V01-INV-DOCS-002-external-coverage-artifact-necessity.md",
+    "v01/records/investigations/docs/V01-INV-DOCS-003-internal-design-semantic-trace-mvp-necessity.md",
+    "v01/records/investigations/docs/V01-INV-DOCS-005-doorstop-artifact-model-overlap-and-adoption-boundary.md",
+    "v01/records/investigations/docs/V01-INV-DOCS-006-llm-first-intent-transfer-and-external-tool-evaluation-boundary.md"
+  ]
+}

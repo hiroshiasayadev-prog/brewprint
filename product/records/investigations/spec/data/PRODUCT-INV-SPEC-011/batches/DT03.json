@@ -1,0 +1,161 @@
+{
+  "batch_id": "DT03",
+  "bucket": "drmcp_tasks",
+  "estimated_input_tokens": 51572,
+  "file_count": 16,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-19-O",
+  "output_paths": {
+    "coverage": "results/DT03.coverage.json",
+    "observations": "results/DT03.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1782484968346329700,
+      "read_error": null,
+      "sha256": "a8e6e05679353612ff8cce9315a770dd9df6eb3fa24f9ee80f7031d3ad19d42a",
+      "size_bytes": 4265,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-01-define-child-work-item-split-and-ownership-gates.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782651682862203900,
+      "read_error": null,
+      "sha256": "d0e1673bd780c4db5a0c151473d83c0d0e73773081239c6433baa38d61b9ce08",
+      "size_bytes": 4615,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-08-track-current-and-legacy-fixture-baseline.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782825152579119400,
+      "read_error": null,
+      "sha256": "bd7e4c7637ae784f16f1e1e064c989621aea796db9f4071d6a808b9187f5b81d",
+      "size_bytes": 1680,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-14-independently-review-rebuild-read-baseline-graph-amendment.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782543975433771600,
+      "read_error": null,
+      "sha256": "6434db328dd1cb205f0e3e2194bcd99331c6b8de79e92b5f7dd2c9f5626179d2",
+      "size_bytes": 11299,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-003-04-define-shared-record-model-and-invalid-source-integration-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782564068306592500,
+      "read_error": null,
+      "sha256": "c20e3b3c82769237c2baef7ff17eb0cbd911594c8d25f22c09a1f3b647272703",
+      "size_bytes": 32642,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-005-01-establish-resolver-and-configured-legacy-fallback-correction-baseline.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782574880567244900,
+      "read_error": null,
+      "sha256": "7c9136103e742ee10c970d681aebf24df65ece53f42b148f77330994c82231f5",
+      "size_bytes": 16036,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-005-05-validate-review-and-close-resolver-and-legacy-fallback-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782630404119026000,
+      "read_error": null,
+      "sha256": "39578159844d983109cd3d18fe375409eeb5a575dbb5eeaf180e57f4261db23d",
+      "size_bytes": 48665,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-006-04-define-source-location-and-exceptional-path-exposure-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782634550056180400,
+      "read_error": null,
+      "sha256": "97bfcc6759d71988d671c3b5ee6a333af9bbb2739e027305a898d714c3ae83fb",
+      "size_bytes": 25635,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-007-02-decide-validation-work-item-dispositions.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782636937438536100,
+      "read_error": null,
+      "sha256": "0b77e146f429bd21501d88f49787a3c613616ed7390d8aed87d72d4fb6e10588",
+      "size_bytes": 20427,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-007-04-record-product-handoff-and-close-validation-disposition.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782646747370356000,
+      "read_error": null,
+      "sha256": "705281158f19059c6da4c73d4b2b7d10d83e2b58872c228d0281484523f3b6cc",
+      "size_bytes": 10573,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-008-02-create-current-root-read-fixture-baseline.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782656682696950000,
+      "read_error": null,
+      "sha256": "043d927f20869e7eb5ff346c23f1d135f8b0f07444e14ceacc8057b6a3bc88a8",
+      "size_bytes": 8041,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-04-build-deterministic-current-active-index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782809287992792600,
+      "read_error": null,
+      "sha256": "f53128e2adc40f4aa58503b1a6867e45bdd371882c9778b6dc1fbfe655eef727",
+      "size_bytes": 7302,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-011-02-route-rebuild-read-runtime-decisions-to-adrs.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783073694076288900,
+      "read_error": null,
+      "sha256": "c687b332f94c4a6d7a76343e61afe4f595ad0ac8833c44976eca0fdd101a0300",
+      "size_bytes": 3565,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-013-01-investigate-read-runtime-contract-work-partition.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783089243098847800,
+      "read_error": null,
+      "sha256": "687a72ff7c6ef92609b475421b7323bb86bd9e37f1d1526ac6f153eb03bd770c",
+      "size_bytes": 6593,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-015-01-decide-drmcp-application-architecture-framing.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783089279796543500,
+      "read_error": null,
+      "sha256": "8e21fac5049f011c03999d43267bcb10a6142ac45d56870f43e29d3cea0b720c",
+      "size_bytes": 2337,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-015-02-create-drmcp-application-architecture-work-item.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783091615478574100,
+      "read_error": null,
+      "sha256": "e9df935dc9537e1eddb72055b1f5aafeed72c2e8a7c3c8c6951c81b1d130ef98",
+      "size_bytes": 2613,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-01-coordinate-initial-application-architecture-convergence-graph.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 206288
+}

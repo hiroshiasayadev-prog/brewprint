@@ -1,0 +1,170 @@
+{
+  "batch_id": "PT01",
+  "files_discovered": 22,
+  "files_failed": 0,
+  "files_scanned": 22,
+  "observation_count": 135,
+  "output_paths": {
+    "coverage": "results/PT01.coverage.json",
+    "observations": "results/PT01.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-04-restore-drmcp-id-normalization-ownership.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-05-restore-drmcp-namespace-scanning-ownership.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-08-independent-namespace-and-id-as-ref-boundary-review.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-03-bpdsl-dsl-opus-review.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-14-drmcp-spec-authoring.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-18-drmcp-phase2-relocate-to-repository-layout.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-007-03-rebuild-spec-format-index-as-navigation-first-index.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-010-02-spec-authoring.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-06-relocate-authoring-standards-and-spec-format.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-13-apply-review-corrections-and-close.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-013-01-produce-authoritative-projection-source-manifest-and-minimum-transitive-inclusion-boundary.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-09-decide-checklist-and-implementation-work-item-split.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-10-decompose-checklist-authoring-and-validator-implementation-work-items.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-20-coordinate-early-checklist-release-reconsideration.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-01-coordinate-standalone-validator-initial-graph.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-03-investigate-standalone-validator-implementation-impact.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-07-coordinate-post-decision-app-bootstrap-route.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-13-create-trv-app-local-design-work-item.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-023-04-decide-post-investigation-cancellation-contract.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-023-11-synchronize-cancelled-lifecycle-closure.md"
+    },
+    {
+      "observation_count": 13,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-024-01-decide-work-item-framing-workflow.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-024-02-author-and-activate-work-item-framing-workflow.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-04-restore-drmcp-id-normalization-ownership.md",
+    "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-05-restore-drmcp-namespace-scanning-ownership.md",
+    "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-08-independent-namespace-and-id-as-ref-boundary-review.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-03-bpdsl-dsl-opus-review.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-14-drmcp-spec-authoring.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-18-drmcp-phase2-relocate-to-repository-layout.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-007-03-rebuild-spec-format-index-as-navigation-first-index.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-010-02-spec-authoring.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-06-relocate-authoring-standards-and-spec-format.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-13-apply-review-corrections-and-close.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-013-01-produce-authoritative-projection-source-manifest-and-minimum-transitive-inclusion-boundary.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-09-decide-checklist-and-implementation-work-item-split.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-10-decompose-checklist-authoring-and-validator-implementation-work-items.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-20-coordinate-early-checklist-release-reconsideration.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-01-coordinate-standalone-validator-initial-graph.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-03-investigate-standalone-validator-implementation-impact.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-07-coordinate-post-decision-app-bootstrap-route.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-13-create-trv-app-local-design-work-item.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-023-04-decide-post-investigation-cancellation-contract.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-023-11-synchronize-cancelled-lifecycle-closure.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-024-01-decide-work-item-framing-workflow.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-024-02-author-and-activate-work-item-framing-workflow.md"
+  ]
+}

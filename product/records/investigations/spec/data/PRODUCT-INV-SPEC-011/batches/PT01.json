@@ -1,0 +1,215 @@
+{
+  "batch_id": "PT01",
+  "bucket": "product_tasks",
+  "estimated_input_tokens": 51040,
+  "file_count": 22,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-05-O",
+  "output_paths": {
+    "coverage": "results/PT01.coverage.json",
+    "observations": "results/PT01.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1782232703283304100,
+      "read_error": null,
+      "sha256": "b3dfc61dffda4004576a9dc999996e73ad58d922d0e84c8527783b5f9dc86dff",
+      "size_bytes": 2897,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-04-restore-drmcp-id-normalization-ownership.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782232708471484200,
+      "read_error": null,
+      "sha256": "72138dd2817f335be246cb401628c9e3c1950a31608f539400f38ac9dfcc0069",
+      "size_bytes": 3328,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-05-restore-drmcp-namespace-scanning-ownership.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782279938527412200,
+      "read_error": null,
+      "sha256": "dfae42997ed9f153f49d76c0e40365766c24376d1f2196eb0dcfd9095ca3024a",
+      "size_bytes": 6157,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-08-independent-namespace-and-id-as-ref-boundary-review.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781623660349883900,
+      "read_error": null,
+      "sha256": "f74ff2cd024ce67ed7694b304d387dc94564304ad49a50d9e0491d902bb4e6be",
+      "size_bytes": 3906,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-03-bpdsl-dsl-opus-review.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781703929820817200,
+      "read_error": null,
+      "sha256": "c96da901df0a657ff4594625e229370012cb555c4706143e61ffbd855e1f2a45",
+      "size_bytes": 10846,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-14-drmcp-spec-authoring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782099175747923700,
+      "read_error": null,
+      "sha256": "8b725b56d8500dcacabd656feebea98f481ba8958d2c5becf84d76469ad2eecd",
+      "size_bytes": 3464,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-18-drmcp-phase2-relocate-to-repository-layout.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781104504162780600,
+      "read_error": null,
+      "sha256": "3a5eece327b114482fc43940e830e482bfc1914ee3bf9126dd27e98a28df79f7",
+      "size_bytes": 1777,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-007-03-rebuild-spec-format-index-as-navigation-first-index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781532802299330300,
+      "read_error": null,
+      "sha256": "e6a7d29c95826b625160372a6f5af224055ce13d24d60e800c9d9b94f3b9e405",
+      "size_bytes": 1934,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-010-02-spec-authoring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782300733364900700,
+      "read_error": null,
+      "sha256": "d1102d61450a6e49c52688e24e770b5cff87c7d32c5e06100ef0fecd3c481327",
+      "size_bytes": 12454,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-06-relocate-authoring-standards-and-spec-format.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782321574722068800,
+      "read_error": null,
+      "sha256": "b7f171220e9abea319de7d7ff46bc911522ecf9a81ecca8a0b231fffa3d599c7",
+      "size_bytes": 10079,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-13-apply-review-corrections-and-close.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782460801460677700,
+      "read_error": null,
+      "sha256": "2338230de79f72db4bb08ca932efc0f5b4e1559e01c053487a85fd4b825a00f4",
+      "size_bytes": 96641,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-013-01-produce-authoritative-projection-source-manifest-and-minimum-transitive-inclusion-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782904779078655300,
+      "read_error": null,
+      "sha256": "bf1eaf72284ef26d63e91a77181c29a1a2bcaa3d43f853ba19c2597a8d670dad",
+      "size_bytes": 3308,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-09-decide-checklist-and-implementation-work-item-split.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782904696706077900,
+      "read_error": null,
+      "sha256": "5aff5446603a8c4a2935a0ccf313d3e70a306b3122116807213e47567e2e8223",
+      "size_bytes": 2398,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-10-decompose-checklist-authoring-and-validator-implementation-work-items.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782912969120811400,
+      "read_error": null,
+      "sha256": "b34ec4dee55b1a8590a1f6bb854c442ab5cf8e99edb021ed326fd8fe81ddb483",
+      "size_bytes": 2076,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-20-coordinate-early-checklist-release-reconsideration.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782924500681365500,
+      "read_error": null,
+      "sha256": "145b4e501548f0e2f8541fd610b0c157d4c05477b7539b4c8b0bbd169cb8e7a0",
+      "size_bytes": 2777,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-01-coordinate-standalone-validator-initial-graph.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782927921562295800,
+      "read_error": null,
+      "sha256": "e25f2cb795293efd4d029979b55d2fc6941e3d72ae6544b571f847b3702443ec",
+      "size_bytes": 5066,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-03-investigate-standalone-validator-implementation-impact.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782929571825095500,
+      "read_error": null,
+      "sha256": "4de4bf45194c08f0890f2b669300c26c69ffe62f1f8694b46ce7d8bb4596702f",
+      "size_bytes": 4426,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-07-coordinate-post-decision-app-bootstrap-route.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782932211703525000,
+      "read_error": null,
+      "sha256": "4913f978c490630392d4a66d1d71da79e06f3df009d997354094edfa21327355",
+      "size_bytes": 4628,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-13-create-trv-app-local-design-work-item.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008821296905000,
+      "read_error": null,
+      "sha256": "d7d74603e645877451738e48b332fa18ed9979bb85b5b344a1c52bd1f6e8ab04",
+      "size_bytes": 6397,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-023-04-decide-post-investigation-cancellation-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783012824787746300,
+      "read_error": null,
+      "sha256": "151269102fad9302aed424a990b3c286eaac052b8f15b82f3f989043c5fa161a",
+      "size_bytes": 3855,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-023-11-synchronize-cancelled-lifecycle-closure.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008353825313400,
+      "read_error": null,
+      "sha256": "db46a4e4b46c6b778927005e8c03bb06354f91dab9c1c1363256cb91114541db",
+      "size_bytes": 8944,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-024-01-decide-work-item-framing-workflow.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008961533008500,
+      "read_error": null,
+      "sha256": "aab5fc245b3e484f8911d998f66cb8ed8a5f2d20f487dfa39c25faa645e72c0a",
+      "size_bytes": 6804,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-024-02-author-and-activate-work-item-framing-workflow.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 204162
+}

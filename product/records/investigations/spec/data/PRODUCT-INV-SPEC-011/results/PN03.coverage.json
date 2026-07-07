@@ -1,0 +1,226 @@
+{
+  "batch_id": "PN03",
+  "files_discovered": 30,
+  "files_failed": 0,
+  "files_scanned": 30,
+  "observation_count": 314,
+  "output_paths": {
+    "coverage": "results/PN03.coverage.json",
+    "observations": "results/PN03.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-002-generate-portable-design-records-package-through-a-product-owned-rebuild-command.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-007-use-work-item-source-refs-as-canonical-workflow-provenance.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-009-define-end-to-end-design-convergence-workflow-boundary.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-014-preserve-completed-workflow-records-through-append-only-reconvergence.md"
+    },
+    {
+      "observation_count": 17,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/investigations/spec/PRODUCT-INV-SPEC-006-design-convergence-impact-and-conflict-inventory.md"
+    },
+    {
+      "observation_count": 15,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/investigations/spec/PRODUCT-INV-SPEC-007-temporary-standalone-task-validator-impact-and-conflicts.md"
+    },
+    {
+      "observation_count": 14,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/requirements/PRODUCT-REQ-SPEC-003-portable-design-records-standards-distribution.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/requirements/spec/PRODUCT-REQ-SPEC-006-generic-workflow-source-relations.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/requirements/spec/PRODUCT-REQ-SPEC-009-cancelled-work-item-and-task-lifecycle.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/requirements/spec/PRODUCT-REQ-SPEC-011-populate-task-boundary-vocabulary-from-real-corpus-evidence.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/bpdsl/artifact-responsibilities.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/bpdsl/design-flow.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/brewprint/compatibility/legacy-id-compatibility.md"
+    },
+    {
+      "observation_count": 13,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/design-records/artifact-model/artifact-responsibility-matrix.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/design-records/authoring-standards/agent-authoring-policy.md"
+    },
+    {
+      "observation_count": 14,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/design-records/authoring-standards/artifact-boundary.md"
+    },
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/design-records/authoring-standards/index.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/design-records/authoring-standards/requirement-authoring.md"
+    },
+    {
+      "observation_count": 13,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/design-records/authoring-standards/spec-authoring.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/design-records/authoring-standards/writing-standard.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/design-records/namespace-model/existing-artifacts.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/design-records/repository-layout/index.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/design-records/spec-format/topics-table.md"
+    },
+    {
+      "observation_count": 17,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/spec/responsibility-boundary-validator/index.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-001-spec-format-contract-and-follow-up-split.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-005-existing-spec-format-migration-and-restructuring.md"
+    },
+    {
+      "observation_count": 13,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-011-per-artifact-authoring-guide-migration.md"
+    },
+    {
+      "observation_count": 16,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-018-design-convergence-workflow-successor.md"
+    },
+    {
+      "observation_count": 13,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-024-establish-work-item-framing-workflow.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-026-frame-brewprint-design-governance-term-inventory.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "product/records/adr/spec/PRODUCT-ADR-SPEC-002-generate-portable-design-records-package-through-a-product-owned-rebuild-command.md",
+    "product/records/adr/spec/PRODUCT-ADR-SPEC-007-use-work-item-source-refs-as-canonical-workflow-provenance.md",
+    "product/records/adr/spec/PRODUCT-ADR-SPEC-009-define-end-to-end-design-convergence-workflow-boundary.md",
+    "product/records/adr/spec/PRODUCT-ADR-SPEC-014-preserve-completed-workflow-records-through-append-only-reconvergence.md",
+    "product/records/investigations/spec/PRODUCT-INV-SPEC-006-design-convergence-impact-and-conflict-inventory.md",
+    "product/records/investigations/spec/PRODUCT-INV-SPEC-007-temporary-standalone-task-validator-impact-and-conflicts.md",
+    "product/records/requirements/PRODUCT-REQ-SPEC-003-portable-design-records-standards-distribution.md",
+    "product/records/requirements/spec/PRODUCT-REQ-SPEC-006-generic-workflow-source-relations.md",
+    "product/records/requirements/spec/PRODUCT-REQ-SPEC-009-cancelled-work-item-and-task-lifecycle.md",
+    "product/records/requirements/spec/PRODUCT-REQ-SPEC-011-populate-task-boundary-vocabulary-from-real-corpus-evidence.md",
+    "product/records/spec/bpdsl/artifact-responsibilities.md",
+    "product/records/spec/bpdsl/design-flow.md",
+    "product/records/spec/brewprint/compatibility/legacy-id-compatibility.md",
+    "product/records/spec/design-records/artifact-model/artifact-responsibility-matrix.md",
+    "product/records/spec/design-records/authoring-standards/agent-authoring-policy.md",
+    "product/records/spec/design-records/authoring-standards/artifact-boundary.md",
+    "product/records/spec/design-records/authoring-standards/index.md",
+    "product/records/spec/design-records/authoring-standards/requirement-authoring.md",
+    "product/records/spec/design-records/authoring-standards/spec-authoring.md",
+    "product/records/spec/design-records/authoring-standards/writing-standard.md",
+    "product/records/spec/design-records/namespace-model/existing-artifacts.md",
+    "product/records/spec/design-records/repository-layout/index.md",
+    "product/records/spec/design-records/spec-format/topics-table.md",
+    "product/records/spec/responsibility-boundary-validator/index.md",
+    "product/records/work-items/spec/PRODUCT-WORK-SPEC-001-spec-format-contract-and-follow-up-split.md",
+    "product/records/work-items/spec/PRODUCT-WORK-SPEC-005-existing-spec-format-migration-and-restructuring.md",
+    "product/records/work-items/spec/PRODUCT-WORK-SPEC-011-per-artifact-authoring-guide-migration.md",
+    "product/records/work-items/spec/PRODUCT-WORK-SPEC-018-design-convergence-workflow-successor.md",
+    "product/records/work-items/spec/PRODUCT-WORK-SPEC-024-establish-work-item-framing-workflow.md",
+    "product/records/work-items/spec/PRODUCT-WORK-SPEC-026-frame-brewprint-design-governance-term-inventory.md"
+  ]
+}

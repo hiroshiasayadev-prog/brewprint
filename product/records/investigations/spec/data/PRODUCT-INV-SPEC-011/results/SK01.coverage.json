@@ -1,0 +1,296 @@
+{
+  "batch_id": "SK01",
+  "files_discovered": 40,
+  "files_failed": 0,
+  "files_scanned": 40,
+  "observation_count": 401,
+  "output_paths": {
+    "coverage": "results/SK01.coverage.json",
+    "observations": "results/SK01.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/SKILL.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/common.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/evaluator-instructions.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/authoring.md"
+    },
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/coordination.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/correction.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/decision.md"
+    },
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/implementation.md"
+    },
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/investigation.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/review.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/synchronization.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/verification.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/work_item_decomposition.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/work_item_execution.md"
+    },
+    {
+      "observation_count": 14,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/claude-code-token-budget/SKILL.md"
+    },
+    {
+      "observation_count": 16,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/claude-code-token-budget/execution-hub-task-pattern.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/claude-code-token-budget/executor-ready-task-design.md"
+    },
+    {
+      "observation_count": 14,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/design-convergence-workflow/SKILL.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/design-convergence-workflow/adr-routing.md"
+    },
+    {
+      "observation_count": 14,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/design-convergence-workflow/closure-synchronization.md"
+    },
+    {
+      "observation_count": 13,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/design-convergence-workflow/convergence-routing.md"
+    },
+    {
+      "observation_count": 23,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/design-convergence-workflow/decision-ledger.md"
+    },
+    {
+      "observation_count": 13,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/design-convergence-workflow/design-authoring.md"
+    },
+    {
+      "observation_count": 17,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/design-convergence-workflow/design-review-gate.md"
+    },
+    {
+      "observation_count": 14,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/design-convergence-workflow/graph-coordination.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/design-convergence-workflow/impact-investigation.md"
+    },
+    {
+      "observation_count": 14,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/design-convergence-workflow/interactive-decision-loop.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/design-convergence-workflow/work-item-decomposition.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/design-convergence-workflow/work-item-execution.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/task-boundary-vocabulary/SKILL.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/task-boundary-vocabulary/correction.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/task-boundary-vocabulary/decision.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/task-vocabulary-reference/SKILL.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/task-vocabulary-reference/decision-authoring-coordination.md"
+    },
+    {
+      "observation_count": 15,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/task-vocabulary-reference/graph-lifecycle-execution.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/task-vocabulary-reference/investigation-decision-design.md"
+    },
+    {
+      "observation_count": 16,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/task-vocabulary-reference/review-verification-correction.md"
+    },
+    {
+      "observation_count": 14,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/work-item-framing/SKILL.md"
+    },
+    {
+      "observation_count": 16,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/work-item-framing/framing-routing.md"
+    },
+    {
+      "observation_count": 15,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "skills/work-item-framing/interactive-framing-loop.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "skills/DEPRECATED-task-responsibility-boundary-validator/SKILL.md",
+    "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/common.md",
+    "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/evaluator-instructions.md",
+    "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/authoring.md",
+    "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/coordination.md",
+    "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/correction.md",
+    "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/decision.md",
+    "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/implementation.md",
+    "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/investigation.md",
+    "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/review.md",
+    "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/synchronization.md",
+    "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/verification.md",
+    "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/work_item_decomposition.md",
+    "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/work_item_execution.md",
+    "skills/claude-code-token-budget/SKILL.md",
+    "skills/claude-code-token-budget/execution-hub-task-pattern.md",
+    "skills/claude-code-token-budget/executor-ready-task-design.md",
+    "skills/design-convergence-workflow/SKILL.md",
+    "skills/design-convergence-workflow/adr-routing.md",
+    "skills/design-convergence-workflow/closure-synchronization.md",
+    "skills/design-convergence-workflow/convergence-routing.md",
+    "skills/design-convergence-workflow/decision-ledger.md",
+    "skills/design-convergence-workflow/design-authoring.md",
+    "skills/design-convergence-workflow/design-review-gate.md",
+    "skills/design-convergence-workflow/graph-coordination.md",
+    "skills/design-convergence-workflow/impact-investigation.md",
+    "skills/design-convergence-workflow/interactive-decision-loop.md",
+    "skills/design-convergence-workflow/work-item-decomposition.md",
+    "skills/design-convergence-workflow/work-item-execution.md",
+    "skills/task-boundary-vocabulary/SKILL.md",
+    "skills/task-boundary-vocabulary/correction.md",
+    "skills/task-boundary-vocabulary/decision.md",
+    "skills/task-vocabulary-reference/SKILL.md",
+    "skills/task-vocabulary-reference/decision-authoring-coordination.md",
+    "skills/task-vocabulary-reference/graph-lifecycle-execution.md",
+    "skills/task-vocabulary-reference/investigation-decision-design.md",
+    "skills/task-vocabulary-reference/review-verification-correction.md",
+    "skills/work-item-framing/SKILL.md",
+    "skills/work-item-framing/framing-routing.md",
+    "skills/work-item-framing/interactive-framing-loop.md"
+  ]
+}

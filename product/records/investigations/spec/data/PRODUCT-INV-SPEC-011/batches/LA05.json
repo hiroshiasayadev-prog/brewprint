@@ -1,0 +1,197 @@
+{
+  "batch_id": "LA05",
+  "bucket": "legacy_adrs",
+  "estimated_input_tokens": 50493,
+  "file_count": 20,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-34-O",
+  "output_paths": {
+    "coverage": "results/LA05.coverage.json",
+    "observations": "results/LA05.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1780911672026976400,
+      "read_error": null,
+      "sha256": "de5616351daba861f5005bcd665320fcc46078b7b49edccec38b8d95d63d11d1",
+      "size_bytes": 1510,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-003-name-resolution-rules.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672049978500,
+      "read_error": null,
+      "sha256": "76882a5cf9c6e3733487a1d481a8519e931212a291f4c0b4f426fdc460f543b7",
+      "size_bytes": 7499,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-021-model-field-structure.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672051976500,
+      "read_error": null,
+      "sha256": "544f9209658a4fd4a64e4b66e2ea479e969d65dcc62cbd6acf56d68d45ebac39",
+      "size_bytes": 4815,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-022-dag-node-shapes-and-edge-types.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672055973000,
+      "read_error": null,
+      "sha256": "36a5670b5fb9bf070c5bab35a1ab25848f78de82205c613cb627af9f07cfe619",
+      "size_bytes": 2807,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-026-fk-cardinality-and-nm-relation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672056974400,
+      "read_error": null,
+      "sha256": "6d1eb8fa308cea39f7e7cba3d462c3b80ad7f556480b31186ef78f58f54deedf",
+      "size_bytes": 4334,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-027-module-nesting-and-name-resolution.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672057975800,
+      "read_error": null,
+      "sha256": "b54f3ec18df64d9f7ba98e82615b75d5eac4c752b8d7e2aa26b5847076ee4b7d",
+      "size_bytes": 5620,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-028-api-table-route-composition.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672060972900,
+      "read_error": null,
+      "sha256": "24d0b8f2bd2a0be2d3a3fd1c16dba2707431ad7a67790b696a86757ba3bb9e0d",
+      "size_bytes": 3417,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-030-yaml-file-type-declaration.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672069974900,
+      "read_error": null,
+      "sha256": "7c7a85395720c58a039b0e880b637df8390f5b727e83c4827f1a78542dfbaec1",
+      "size_bytes": 3944,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-037-sequence-diagram-action-less-transition.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672074972800,
+      "read_error": null,
+      "sha256": "e57f11aecca14357280845cf8d592df8f2fdfac45b77b912435aee6f465cb1e9",
+      "size_bytes": 6157,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-041-sequence-diagram-message-rendering.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672077441300,
+      "read_error": null,
+      "sha256": "1ec08a44bbdaa9d08dcad6cef81ffd1f417f9e02f95f92dbd8a337a4eaf7a1c2",
+      "size_bytes": 5955,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-043-project-root-layout-and-render-output.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672078462800,
+      "read_error": null,
+      "sha256": "65a2ddd2b0ac14de03dbfefeedcc11ba1015672ceb2d6d2ae6ef22ffa793ef53",
+      "size_bytes": 4178,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-044-store-access-edge-labels.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672094464700,
+      "read_error": null,
+      "sha256": "950b8b4787cff3b54df8c53fa2dd9dd0287282f4786056de657214459e89cfa6",
+      "size_bytes": 17012,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-056-mcp-analyze-impact-tool-design.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672097465500,
+      "read_error": null,
+      "sha256": "417e2d8f7e2a557fd5227a287290fa5a9969270817da683849fc502e2ea169cf",
+      "size_bytes": 10434,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-058-subnode-file-private-scope-enforcement.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672102473200,
+      "read_error": null,
+      "sha256": "655dc958713031172bec4c89dc278bc7098273fa38126dab5f5d5b128b95bcd5",
+      "size_bytes": 19060,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-061-foreach-returns-collected-asset.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672104469000,
+      "read_error": null,
+      "sha256": "b8bebaa89801b8dbc74d5607f15a03961b70911b672cd4f8894fb4c202ab13d4",
+      "size_bytes": 15646,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-062-task-return-source.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672116990400,
+      "read_error": null,
+      "sha256": "e0a2feb1fe039fd9c72fbcb9bcc032a55797f1e4a83b6d0ca229ab45c1c1e116",
+      "size_bytes": 23334,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-070-model-visibility-file-private-helper-model.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672122082800,
+      "read_error": null,
+      "sha256": "f65039b6a68b205ab0b300aaffd0de875ecc623b709e680c543a4cf6146602f8",
+      "size_bytes": 27773,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-073-tagged-union-model.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672123084400,
+      "read_error": null,
+      "sha256": "73da47d50a309517f747ac5b2b70c3fb2adbe85752dd114fd12f99fb2d50430d",
+      "size_bytes": 14677,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-074-dag-asset-node-type-hint.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672128085800,
+      "read_error": null,
+      "sha256": "f0eb7535e809f336a07525d37ebaae507d3f706b606466e85272a4db602bb56e",
+      "size_bytes": 13817,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-077-design-records-mcp-mvp-boundary-and-tool-prioritization.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672134855300,
+      "read_error": null,
+      "sha256": "0b26efa948b38019c22a52351e0df23df6a9ea7fd4bcad91c74ef5be2f993f26",
+      "size_bytes": 9983,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-085-investigation-artifact-boundary.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 201972
+}

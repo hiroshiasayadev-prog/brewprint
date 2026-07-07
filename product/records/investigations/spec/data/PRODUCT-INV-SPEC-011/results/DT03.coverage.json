@@ -1,0 +1,128 @@
+{
+  "batch_id": "DT03",
+  "files_discovered": 16,
+  "files_failed": 0,
+  "files_scanned": 16,
+  "observation_count": 180,
+  "output_paths": {
+    "coverage": "results/DT03.coverage.json",
+    "observations": "results/DT03.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-01-define-child-work-item-split-and-ownership-gates.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-08-track-current-and-legacy-fixture-baseline.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-14-independently-review-rebuild-read-baseline-graph-amendment.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-003-04-define-shared-record-model-and-invalid-source-integration-contract.md"
+    },
+    {
+      "observation_count": 16,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-005-01-establish-resolver-and-configured-legacy-fallback-correction-baseline.md"
+    },
+    {
+      "observation_count": 13,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-005-05-validate-review-and-close-resolver-and-legacy-fallback-contract.md"
+    },
+    {
+      "observation_count": 19,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-006-04-define-source-location-and-exceptional-path-exposure-contract.md"
+    },
+    {
+      "observation_count": 13,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-007-02-decide-validation-work-item-dispositions.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-007-04-record-product-handoff-and-close-validation-disposition.md"
+    },
+    {
+      "observation_count": 13,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-008-02-create-current-root-read-fixture-baseline.md"
+    },
+    {
+      "observation_count": 13,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-04-build-deterministic-current-active-index.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-011-02-route-rebuild-read-runtime-decisions-to-adrs.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-013-01-investigate-read-runtime-contract-work-partition.md"
+    },
+    {
+      "observation_count": 14,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-015-01-decide-drmcp-application-architecture-framing.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-015-02-create-drmcp-application-architecture-work-item.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-01-coordinate-initial-application-architecture-convergence-graph.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-01-define-child-work-item-split-and-ownership-gates.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-08-track-current-and-legacy-fixture-baseline.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-14-independently-review-rebuild-read-baseline-graph-amendment.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-003-04-define-shared-record-model-and-invalid-source-integration-contract.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-005-01-establish-resolver-and-configured-legacy-fallback-correction-baseline.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-005-05-validate-review-and-close-resolver-and-legacy-fallback-contract.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-006-04-define-source-location-and-exceptional-path-exposure-contract.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-007-02-decide-validation-work-item-dispositions.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-007-04-record-product-handoff-and-close-validation-disposition.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-008-02-create-current-root-read-fixture-baseline.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-04-build-deterministic-current-active-index.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-011-02-route-rebuild-read-runtime-decisions-to-adrs.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-013-01-investigate-read-runtime-contract-work-partition.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-015-01-decide-drmcp-application-architecture-framing.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-015-02-create-drmcp-application-architecture-work-item.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-01-coordinate-initial-application-architecture-convergence-graph.md"
+  ]
+}

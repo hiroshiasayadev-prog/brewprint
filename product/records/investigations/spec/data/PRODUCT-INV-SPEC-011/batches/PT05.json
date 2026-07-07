@@ -1,0 +1,251 @@
+{
+  "batch_id": "PT05",
+  "bucket": "product_tasks",
+  "estimated_input_tokens": 51036,
+  "file_count": 26,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-09-O",
+  "output_paths": {
+    "coverage": "results/PT05.coverage.json",
+    "observations": "results/PT05.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1781098279770150800,
+      "read_error": null,
+      "sha256": "3986b43c42132aac7de59b81962c51343e8e0c3187e515993ceab4840768a9f6",
+      "size_bytes": 3816,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-001-02-review-spec-format-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781627668098750400,
+      "read_error": null,
+      "sha256": "c1072541f242e9295086d86180869b7b44b030af7c29c399728699f5a14586e9",
+      "size_bytes": 5254,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-10-bpdsl-views-spec-authoring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782100490670718600,
+      "read_error": null,
+      "sha256": "f74056765bde89712443c619d0d6340b070b00ff858e5a4eb64ce9fabc87500f",
+      "size_bytes": 2398,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-21-drmcp-phase2-finalize.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781104504161781300,
+      "read_error": null,
+      "sha256": "b4508d6a37050c1edbe4d3dd68d455543d302af8dae0b7bed3a6a78fedb528a1",
+      "size_bytes": 2125,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-007-02-create-split-spec-format-topic-files.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782061202682058600,
+      "read_error": null,
+      "sha256": "1b8479db921348e7b91da041fe910c40ee55ba659325579c2445e1116f137ff1",
+      "size_bytes": 9622,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-009-02-format-migration.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782222009443781000,
+      "read_error": null,
+      "sha256": "bda12ac575b55f91fc2dca727d0551559c66c7aeab72863b7bff8dd1ac67e914",
+      "size_bytes": 3291,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-009-04-opus-review.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782183718248264000,
+      "read_error": null,
+      "sha256": "de88fd10ac6be52590cb3ed273fc4f80bc725d2ff7de3a1f77556f0f626b7f39",
+      "size_bytes": 3325,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-011-03-revise-adr-authoring-guide.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782192030798446900,
+      "read_error": null,
+      "sha256": "9857bccb0b0a77063053b00485ea84c8bf33bc7c6cc806566d726be0d901bd19",
+      "size_bytes": 4788,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-011-06-create-task-authoring-guide.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782463409846181900,
+      "read_error": null,
+      "sha256": "48b33fdc377257a04fe60cf809996d2963ea6e11c9a4d167758ac9a4057d2057",
+      "size_bytes": 4413,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-013-04-select-generation-model-and-tooling-placement.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782641656727802500,
+      "read_error": null,
+      "sha256": "ac120bd86eef3c36336e19cd9856b60af5555bfc0b26fed4f53d2bea075ded71",
+      "size_bytes": 20116,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-015-03-validate-review-and-close-owner-pointer-synchronization.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782827748542107700,
+      "read_error": null,
+      "sha256": "7b9ccf73b6352468c68684b348ed41dd2acab7d4ee797d4ec0cc30d9739615ee",
+      "size_bytes": 8441,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-016-01-inventory-req-005-task-contract-decisions.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782833020370655000,
+      "read_error": null,
+      "sha256": "395ea2759ea85118fbe357d64fb632fe2bf5af7c07e91294999517795c93f590",
+      "size_bytes": 15455,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-016-04-run-specification-conflict-decision-loop.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782833597596861600,
+      "read_error": null,
+      "sha256": "6a0906dadce83fd8310780b9ead27437313e31494b6241b16751a14718a7e17b",
+      "size_bytes": 13456,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-016-05-classify-adr-routing.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782837602986786700,
+      "read_error": null,
+      "sha256": "4f6a97b4b4ccdf42b45cff27b4b6bdc931574240a85ce4f06362e95a1811162e",
+      "size_bytes": 14445,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-017-05-classify-adr-routing.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782838305308112700,
+      "read_error": null,
+      "sha256": "38657c578a0478849ee7e0958dddb3e18a5c28ed0385216f36d9a7d0dfe5ad53",
+      "size_bytes": 3896,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-017-06-author-required-adrs.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782903976663741000,
+      "read_error": null,
+      "sha256": "67e98bd93f01b1f3c784d4f3debfe73f236d7403e94846ca5d77699eb7ce6c4b",
+      "size_bytes": 11865,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-11-decide-post-investigation-reconciliation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782910005060776800,
+      "read_error": null,
+      "sha256": "454379a3d5c14387c3147ecacb6c40006df147e7916aba6751bc03a9badbe469",
+      "size_bytes": 2973,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-16-decide-adr-amendment-materiality-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782910549122518200,
+      "read_error": null,
+      "sha256": "9ccc1990f618b306b4bf9e48f02d84e2cbd10895027d6fe167f05ad9d15513ec",
+      "size_bytes": 6686,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-19-independently-review-t07-finding-closure.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782910921719680200,
+      "read_error": null,
+      "sha256": "c31d66c70ae64d332bb1e32c7a40176be3c44bc13cfa98d3d49e74487d553d67",
+      "size_bytes": 1824,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-20-coordinate-closure-synchronization-route.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782913003159979900,
+      "read_error": null,
+      "sha256": "0749ea4baa06e08e8e55442247514ca20a15e5ab6aeeea6813b361059927a491",
+      "size_bytes": 1829,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-22-coordinate-early-checklist-release-graph.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782927289280481800,
+      "read_error": null,
+      "sha256": "7c4c6cb0f1840c58039c4415caadb180af2db1f960ae3f8b9cf19b00c2023ae8",
+      "size_bytes": 27577,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-02-decide-standalone-validator-implementation-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782932228229240100,
+      "read_error": null,
+      "sha256": "49138a7e5251d6da46bb404002f46b730430c01fb87d937c983b2e87c18a1b3b",
+      "size_bytes": 5703,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-14-synchronize-w021-conceptual-design-closure.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782930614970950900,
+      "read_error": null,
+      "sha256": "8fe2706b5b4322904bac8d05ea48699483a42178f65d6eed5e205147f8108158",
+      "size_bytes": 3504,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-16-amend-standalone-validator-ownership-adr.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008861082834900,
+      "read_error": null,
+      "sha256": "f97d80b207ab1c2a78ba68e40a469bcffbfa43ee3c9030c6b00721dec09204a9",
+      "size_bytes": 2710,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-023-05-coordinate-post-reconciliation-route.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783074202635621700,
+      "read_error": null,
+      "sha256": "6bf2b9aa953d63e00f18b401dd701c2429ca756d431373b98295905afa596d9b",
+      "size_bytes": 17624,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-025-09-extract-boundary-vocabulary-w018-w019.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783097642361580300,
+      "read_error": null,
+      "sha256": "8b55875b535f1db478daf063298c98cdc05038bc03e1d225212a8fa1f1b04470",
+      "size_bytes": 7011,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-027-02-implement-term-inventory-mcp.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 204147
+}

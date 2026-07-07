@@ -1,0 +1,156 @@
+{
+  "batch_id": "LA03",
+  "files_discovered": 20,
+  "files_failed": 0,
+  "files_scanned": 20,
+  "observation_count": 151,
+  "output_paths": {
+    "coverage": "results/LA03.coverage.json",
+    "observations": "results/LA03.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-002-folder-as-namespace.md"
+    },
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-006-node-type-renaming.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-008-dag-dataflow-and-field-validation.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-009-task-io-design.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-016-foreach-as-flow-construct.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-018-event-node.md"
+    },
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-024-dag-boundary-nodes.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-032-sequence-diagram-scenario-schema.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-035-fsm-guard-branch-and-transition-identification.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-042-wireframe-main-and-layout.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-049-mcp-query-reference-vocabulary.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-055-mcp-reference-tree-traversal.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-059-task-join-return-primitive-support.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-064-returns-source-dag-render.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-066-dag-classdef-wcag-fix.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-076-design-records-mcp.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-079-mcp-transition-id-policy.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-081-requirement-artifacts-and-spec-traceability.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-082-golden-fixture-and-self-hosting-requirement-boundary.md"
+    },
+    {
+      "observation_count": 14,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/adr/V01-ADR-091-workflow-artifact-work-item-task-milestone.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "v01/records/adr/V01-ADR-002-folder-as-namespace.md",
+    "v01/records/adr/V01-ADR-006-node-type-renaming.md",
+    "v01/records/adr/V01-ADR-008-dag-dataflow-and-field-validation.md",
+    "v01/records/adr/V01-ADR-009-task-io-design.md",
+    "v01/records/adr/V01-ADR-016-foreach-as-flow-construct.md",
+    "v01/records/adr/V01-ADR-018-event-node.md",
+    "v01/records/adr/V01-ADR-024-dag-boundary-nodes.md",
+    "v01/records/adr/V01-ADR-032-sequence-diagram-scenario-schema.md",
+    "v01/records/adr/V01-ADR-035-fsm-guard-branch-and-transition-identification.md",
+    "v01/records/adr/V01-ADR-042-wireframe-main-and-layout.md",
+    "v01/records/adr/V01-ADR-049-mcp-query-reference-vocabulary.md",
+    "v01/records/adr/V01-ADR-055-mcp-reference-tree-traversal.md",
+    "v01/records/adr/V01-ADR-059-task-join-return-primitive-support.md",
+    "v01/records/adr/V01-ADR-064-returns-source-dag-render.md",
+    "v01/records/adr/V01-ADR-066-dag-classdef-wcag-fix.md",
+    "v01/records/adr/V01-ADR-076-design-records-mcp.md",
+    "v01/records/adr/V01-ADR-079-mcp-transition-id-policy.md",
+    "v01/records/adr/V01-ADR-081-requirement-artifacts-and-spec-traceability.md",
+    "v01/records/adr/V01-ADR-082-golden-fixture-and-self-hosting-requirement-boundary.md",
+    "v01/records/adr/V01-ADR-091-workflow-artifact-work-item-task-milestone.md"
+  ]
+}

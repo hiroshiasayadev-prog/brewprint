@@ -1,0 +1,161 @@
+{
+  "batch_id": "DT04",
+  "bucket": "drmcp_tasks",
+  "estimated_input_tokens": 51507,
+  "file_count": 16,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-20-O",
+  "output_paths": {
+    "coverage": "results/DT04.coverage.json",
+    "observations": "results/DT04.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1782490415192358700,
+      "read_error": null,
+      "sha256": "1b138f7f77d0b82d5e423b36c5e2a8410e61ac13888dba616489d58a84c05c56",
+      "size_bytes": 2779,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-02-track-brewprint-legacy-compatibility-correction.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782632416833350700,
+      "read_error": null,
+      "sha256": "7a2816e544aac8ec7f4ca7d9cfc33ad6f9fd93cfc7cac5169f248948b30e1672",
+      "size_bytes": 4362,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-06-track-validation-diagnostics-and-path-exposure-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782642590895893600,
+      "read_error": null,
+      "sha256": "23c3b33d3d71a2298fc7416b3d987b7ac27caa6fa9b92682f3d70fb4989ba4b5",
+      "size_bytes": 7603,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-07-track-validation-work-disposition.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783073762992628400,
+      "read_error": null,
+      "sha256": "84d2a74469f6ea97b1a06549fac6da38571c827af757cf0dd1426f26102474e9",
+      "size_bytes": 2735,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-11-run-integrated-read-baseline-validation-and-review.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783073770945128200,
+      "read_error": null,
+      "sha256": "885be47c4c5d70030279dfcb908e28ef61e7e4a081f1acd2868576183d102e9e",
+      "size_bytes": 1953,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-16-track-parser-aware-spec-validation-implementation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783073734804532400,
+      "read_error": null,
+      "sha256": "ccc5e25c6f2fe4ded4e73f9f733ecdcb9a48f1d56e02ca33d1b81a7595927b90",
+      "size_bytes": 2467,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-19-track-read-runtime-internal-specification-design.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782498534390448500,
+      "read_error": null,
+      "sha256": "19006c0cf00a33165d26864ef0bea8c6befc03c9782b7a49ea1360b6a3853589",
+      "size_bytes": 33434,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-003-03-define-current-spec-parsing-and-path-derived-identity-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782549449689125000,
+      "read_error": null,
+      "sha256": "2c10cba3b3ac46e113a7f40be83f3e5490a7cf97e592d739cc629cae951ae720",
+      "size_bytes": 9252,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-004-02-reflect-compact-active-list-records-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782551447324562800,
+      "read_error": null,
+      "sha256": "417c094be695803069da029d8f68ea22bc3e0f39a1804a894835bde3a50406e3",
+      "size_bytes": 12854,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-004-04-synchronize-query-and-exact-retrieval-cross-spec-contracts.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782632402739540600,
+      "read_error": null,
+      "sha256": "a8585d79caa8dc151f49643950577fcf093a2d1ab18c6d8bc4529a24f14b85be",
+      "size_bytes": 22034,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-006-05-synchronize-validate-review-and-close-validation-diagnostics-and-path-exposure-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782644644811843000,
+      "read_error": null,
+      "sha256": "4e7dc1e7fcbbcd64c81ffc12d0ece2b826ef8fda772fbf65907f08d4348b48d1",
+      "size_bytes": 46298,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-008-01-build-current-and-legacy-fixture-coverage-matrix.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782665943008148800,
+      "read_error": null,
+      "sha256": "0db6bbc60c130c079288f3417b88638bb556718304df63476cb2aeb1a3989f8d",
+      "size_bytes": 5791,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-03-implement-current-record-model-and-parsers.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782817001499059800,
+      "read_error": null,
+      "sha256": "0305d7a9213b4fc8555a8567eff4ed1ecbfed7a7b844e9e7d12fc8c176386cd7",
+      "size_bytes": 25795,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-011-01-run-rebuild-read-runtime-architecture-decision-loop.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782816141900512800,
+      "read_error": null,
+      "sha256": "6e400d92253a3aa7720ce6f7303865c76fcd8f46e2d0924ed75f5ee5593ded7d",
+      "size_bytes": 8239,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-011-05-correct-rebuild-read-runtime-architecture-review-findings.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782817011992254100,
+      "read_error": null,
+      "sha256": "e258b8937a2116460cd1764ae17cb8e9935320aa8badc4128d9d1459321daa52",
+      "size_bytes": 15347,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-011-06-independently-rereview-rebuild-read-runtime-architecture-findings.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783101214780378500,
+      "read_error": null,
+      "sha256": "cafd0f11788d3406aeeed79d3790149b57ec4a331e879a9b0925df3e4d0db349",
+      "size_bytes": 5086,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-06-author-required-drmcp-application-architecture-adrs.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 206029
+}

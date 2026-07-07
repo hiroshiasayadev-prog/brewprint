@@ -1,0 +1,188 @@
+{
+  "batch_id": "BP02",
+  "bucket": "bpdsl_all",
+  "estimated_input_tokens": 39179,
+  "file_count": 19,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-28-O",
+  "output_paths": {
+    "coverage": "results/BP02.coverage.json",
+    "observations": "results/BP02.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1781582685035627000,
+      "read_error": null,
+      "sha256": "3882a70afa382b34d2f030d04e4e1d359a8fce143647476662af689170dbb79e",
+      "size_bytes": 2900,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/design-philosophy.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781583844627025700,
+      "read_error": null,
+      "sha256": "5cbb32bd9e4d78d329ddd16c4f317c6d2e88f94c732ddf5bdef31b4fc818deef",
+      "size_bytes": 15308,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/diagnostics.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781583074818112000,
+      "read_error": null,
+      "sha256": "2152e503336fc1c4423ba23f39d2437ad94c4970bae6d9873be03ed386ca0cb0",
+      "size_bytes": 1336,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/edges/cross-file-refs.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781583035689190900,
+      "read_error": null,
+      "sha256": "e57044e8ced35dec48d05f7086e24c36456429db36739b3bad456c658d24dbd3",
+      "size_bytes": 1945,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/edges/overview.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781583654809551500,
+      "read_error": null,
+      "sha256": "71d66e510ef5af79c3388785cb36b13f0b6dc55e0a839c97063143347a5a803d",
+      "size_bytes": 3018,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/file-types.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781582798522923200,
+      "read_error": null,
+      "sha256": "8bf920780812b30599a97e035c483d22f6f5f943ae3c2c8953cdf89211ac836a",
+      "size_bytes": 3227,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/overview.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781583799415232100,
+      "read_error": null,
+      "sha256": "f6a5d7c9948a8e643ae300b9d851921a95d583877b1e2a7bcfd86537f6c88672",
+      "size_bytes": 9305,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/project-layout.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781625495060391600,
+      "read_error": null,
+      "sha256": "1220a1658a721ce98a2ff647c728ec3b7fc486f3e583e15b44445a99a061eaee",
+      "size_bytes": 20199,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/mcp/tools/analyze-impact.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781625254853380200,
+      "read_error": null,
+      "sha256": "3d8947f324c7c07d7bc61976bc5603dd049fce8b7e3646762e513b9e010f091c",
+      "size_bytes": 4486,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/mcp/tools/get-references.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781625224423450100,
+      "read_error": null,
+      "sha256": "353d47e0d063209537717ec5fb7ade555cba6b36b832241e08070cc20a333227",
+      "size_bytes": 7866,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/mcp/tools/get-signature.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781625239019662000,
+      "read_error": null,
+      "sha256": "1f73edd7b262c3a43fc9939d316ec102b37fb7eb3c3b13d040038fb4fb803e8d",
+      "size_bytes": 4077,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/mcp/tools/get-source.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781625907585013500,
+      "read_error": null,
+      "sha256": "7bb122a4601546f75322a19a838a12fb6ea97512d51315709a7dddc47e5bd8ea",
+      "size_bytes": 26152,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/mcp/tools/inspect.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781625199430392500,
+      "read_error": null,
+      "sha256": "82d13cfd28a15fe7708561040e8e061b32bd8980bd493957f47513d1f4c0eb8a",
+      "size_bytes": 2449,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/mcp/tools/list-objects.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781582697666740300,
+      "read_error": null,
+      "sha256": "de803d495e837dade3c8b8ca279e00d0106473a80f3be61bfc0c684309df92e9",
+      "size_bytes": 1207,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/overview.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781627351146085000,
+      "read_error": null,
+      "sha256": "93d52c701d0ea1b9d6f2e43629adcacd083a43c6e608ae447a14337b20cc0491",
+      "size_bytes": 8460,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/views/api-table.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781644007913261500,
+      "read_error": null,
+      "sha256": "d05dc46b07c60e634f4672bdd100ce2a5a7faaadba1b427cba4ab8e706294916",
+      "size_bytes": 7000,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/views/er.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781627461153129600,
+      "read_error": null,
+      "sha256": "89b91964df17a7c0ef4bdab523e29344fc021f1dc613db9dede07be6a7a34db2",
+      "size_bytes": 12611,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/views/sequence-diagram.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781627378480236100,
+      "read_error": null,
+      "sha256": "2b596aad03aaaec36f6c3440b50299dadeaea990772680b815ab248316b69532",
+      "size_bytes": 8104,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/views/state-diagram.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781627520805593500,
+      "read_error": null,
+      "sha256": "1d9d16e9e060addc5e38b9eb7805bd0a15cd333ed3bc724a7859077d77e9715c",
+      "size_bytes": 17068,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/views/wireframe.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 156718
+}

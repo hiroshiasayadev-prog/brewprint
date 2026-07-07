@@ -1,0 +1,205 @@
+{
+  "batch_id": "PT03",
+  "files_discovered": 27,
+  "files_failed": 0,
+  "files_scanned": 27,
+  "observation_count": 145,
+  "output_paths": {
+    "coverage": "results/PT03.coverage.json",
+    "observations": "results/PT03.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-01-classify-namespace-model-topics-ownership-map.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-001-01-draft-spec-format-contract.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-001-03-create-follow-up-split.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-004-02-review-ownership-boundary-decision.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-11-bpdsl-views-opus-review.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-12-bpdsl-views-finalize.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-15-drmcp-opus-review.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-16-drmcp-finalize.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-19-drmcp-phase2-trim-resolver-and-drift-guards.md"
+    },
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-010-01-rule-selection.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-011-05-create-work-item-authoring-guide.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-011-08-verify-spec-authoring-and-cross-guide-consistency.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-03-split-namespace-profile-and-compatibility.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-04-split-artifact-model-and-repository-layout.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-12-independent-restructuring-review.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-013-05-define-package-generation-checks-and-warning-emission-contract.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-014-01-correct-legacy-compatibility-authority-and-pointers.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-02-route-decisions-to-adr-boundaries.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-05-author-and-activate-design-convergence-workflow.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-18-correct-decomposition-companion-activation.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-03-decide-temporary-standalone-validator-boundary.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-08-coordinate-checklist-and-implementation-split-route.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-020-05-independently-review-task-responsibility-checklists.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-08-route-bootstrap-decisions-to-adr-boundaries.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-025-02-author-investigation-lightweight-evidence-exception.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-025-04-review-cluster-and-author-vocabulary-entries.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-025-08-extract-boundary-vocabulary-w013-w017.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-01-classify-namespace-model-topics-ownership-map.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-001-01-draft-spec-format-contract.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-001-03-create-follow-up-split.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-004-02-review-ownership-boundary-decision.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-11-bpdsl-views-opus-review.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-12-bpdsl-views-finalize.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-15-drmcp-opus-review.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-16-drmcp-finalize.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-19-drmcp-phase2-trim-resolver-and-drift-guards.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-010-01-rule-selection.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-011-05-create-work-item-authoring-guide.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-011-08-verify-spec-authoring-and-cross-guide-consistency.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-03-split-namespace-profile-and-compatibility.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-04-split-artifact-model-and-repository-layout.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-12-independent-restructuring-review.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-013-05-define-package-generation-checks-and-warning-emission-contract.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-014-01-correct-legacy-compatibility-authority-and-pointers.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-02-route-decisions-to-adr-boundaries.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-05-author-and-activate-design-convergence-workflow.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-18-correct-decomposition-companion-activation.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-03-decide-temporary-standalone-validator-boundary.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-08-coordinate-checklist-and-implementation-split-route.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-020-05-independently-review-task-responsibility-checklists.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-08-route-bootstrap-decisions-to-adr-boundaries.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-025-02-author-investigation-lightweight-evidence-exception.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-025-04-review-cluster-and-author-vocabulary-entries.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-025-08-extract-boundary-vocabulary-w013-w017.md"
+  ]
+}

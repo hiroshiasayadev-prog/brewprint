@@ -1,0 +1,233 @@
+{
+  "batch_id": "DN03",
+  "bucket": "drmcp_non_tasks",
+  "estimated_input_tokens": 57340,
+  "file_count": 24,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-24-O",
+  "output_paths": {
+    "coverage": "results/DN03.coverage.json",
+    "observations": "results/DN03.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1782393090592682400,
+      "read_error": null,
+      "sha256": "8b7e290b18465700755ae54982dfa2dd679df953c761048c942127029a9d624d",
+      "size_bytes": 16162,
+      "source_group": "drmcp/records/adr",
+      "source_path": "drmcp/records/adr/mcp/DRMCP-ADR-MCP-001-design-records-mcp-contract-baseline-and-realignment.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782815904460095100,
+      "read_error": null,
+      "sha256": "1b4121914e65f3836baff6546f91c2148388c2fa9846237d8046604acd72962c",
+      "size_bytes": 5398,
+      "source_group": "drmcp/records/adr",
+      "source_path": "drmcp/records/adr/mcp/DRMCP-ADR-MCP-003-layered-read-runtime-application-and-adapter-boundaries.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782815916099651700,
+      "read_error": null,
+      "sha256": "f89d60474351a7d3e3ffa48b82c9eea8d2da7534eaf8812c6c443e98d256ad72",
+      "size_bytes": 5564,
+      "source_group": "drmcp/records/adr",
+      "source_path": "drmcp/records/adr/mcp/DRMCP-ADR-MCP-005-validation-orchestration-over-fresh-snapshots.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782397490922990800,
+      "read_error": null,
+      "sha256": "ec9b187fa20741299bd7faeb325a5627071e8eeee8742571a8ddbf27952265ff",
+      "size_bytes": 11808,
+      "source_group": "drmcp/records/requirements",
+      "source_path": "drmcp/records/requirements/mcp/DRMCP-REQ-MCP-002-namespace-aware-authoring-transaction-conformance.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783073550302087700,
+      "read_error": null,
+      "sha256": "1f8078e733c15528736d0f4ec6585422b3ce474b0a764d5021aa0d38e8334efd",
+      "size_bytes": 1935,
+      "source_group": "drmcp/records/requirements",
+      "source_path": "drmcp/records/requirements/mcp/DRMCP-REQ-MCP-005-establish-drmcp-application-architecture.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783101567579631100,
+      "read_error": null,
+      "sha256": "689e10241b02c765154d1be116c246404f874ed55587468c012fe0a43a9a0145",
+      "size_bytes": 4630,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/application-architecture/failure-and-evolution.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782815948787404900,
+      "read_error": null,
+      "sha256": "73c7c57ea7d9c9e25c40c282e673eff592c9ff94735acfce0f3148d3a036ec1d",
+      "size_bytes": 6324,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/overview.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782815969328850900,
+      "read_error": null,
+      "sha256": "5bf5dcd57ab146803cc7d1d82f7c404090708afbb386d7a6dd4b5cdd461011a0",
+      "size_bytes": 4876,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/responsibility-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781703869295684000,
+      "read_error": null,
+      "sha256": "63023dfdda7c942f3f968cfc739453a19f05aa2d63158a0f23d8ac9f578cc6f0",
+      "size_bytes": 1376,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/authoring-guidance-source.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782628589461574200,
+      "read_error": null,
+      "sha256": "04cab50d9da6cff0667e11d58cf91eb19bc69d169d2ff7be9b3ee8192d87aae2",
+      "size_bytes": 8513,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/authoring-transaction-schema.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782810228156893600,
+      "read_error": null,
+      "sha256": "0892379f9410c6e86549971d4dfdac9b2de7e8bc01d62a91e437476999a4f57c",
+      "size_bytes": 30696,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/diagnostics.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782543669502258000,
+      "read_error": null,
+      "sha256": "7c185ff35d2d31d86b81c2a228012ba626ac0a468f235371793fc38dcdfeac91",
+      "size_bytes": 8912,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/discovery.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782541377153950500,
+      "read_error": null,
+      "sha256": "9ed1b1b53c72c54f9e3487bb9d04408959ba0a4d484ccb24f55523a308619402",
+      "size_bytes": 7873,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/fields.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782541415855099100,
+      "read_error": null,
+      "sha256": "5bff72a0450632f567655d6d6cb0c83cc28d882e913b172ff45b90a35f565d5e",
+      "size_bytes": 10258,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/metadata-grammar.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782810200480811800,
+      "read_error": null,
+      "sha256": "dce200870bd6c1f813d52fd2bfc858d5b1afd957debecbaf093ed36956ff2c95",
+      "size_bytes": 2848,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/overview.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782810219465558100,
+      "read_error": null,
+      "sha256": "119f2d13b3a359fa0242bc4dee03d15a14faab924541587e70f613ee4012340f",
+      "size_bytes": 4375,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/schema/record-model.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782815988276248500,
+      "read_error": null,
+      "sha256": "c85234540538d85f76601ac1746426a08c577e95d99f4c4e6fa04b511071a0e5",
+      "size_bytes": 12391,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/tools/authoring-transaction-model.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781703511531540100,
+      "read_error": null,
+      "sha256": "ec10e500f7450e8be479bca47a167ebb2f19c6e908dba667e121fbe269724ec3",
+      "size_bytes": 1565,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/tools/list-authoring-guides.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782628680260022900,
+      "read_error": null,
+      "sha256": "306f6556bebec42a1bcf6b7baa36f62115736c0aac4af714bf2afc89d1476b53",
+      "size_bytes": 15013,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/tools/resolve-reference.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782810242715762000,
+      "read_error": null,
+      "sha256": "29920c299694eb6be417da794cce7ae69f42cc5fc0451443f1b67c8d809aff86",
+      "size_bytes": 14165,
+      "source_group": "drmcp/records/spec",
+      "source_path": "drmcp/records/spec/design-records-mcp/tools/validate-records.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782547250829801900,
+      "read_error": null,
+      "sha256": "d5d4409f8b2292505edd32b74354c245576aabfe18f2558dfe87f97ab60b54f4",
+      "size_bytes": 18015,
+      "source_group": "drmcp/records/work-items",
+      "source_path": "drmcp/records/work-items/mcp/DRMCP-WORK-MCP-003-current-discovery-and-active-index-contract-realignment.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782558056159368000,
+      "read_error": null,
+      "sha256": "e32095f629f89dc1cf363f9502805dc35b9d1e45cccce1b07ea191951e614dba",
+      "size_bytes": 23531,
+      "source_group": "drmcp/records/work-items",
+      "source_path": "drmcp/records/work-items/mcp/DRMCP-WORK-MCP-004-query-and-exact-retrieval-contract-realignment.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783073636829692200,
+      "read_error": null,
+      "sha256": "cd8cb718512ec80c9159c7992f6cf5ef455a5ffd7c2a919aedba85dc7d4f71d0",
+      "size_bytes": 5429,
+      "source_group": "drmcp/records/work-items",
+      "source_path": "drmcp/records/work-items/mcp/DRMCP-WORK-MCP-013-read-runtime-responsibility-contract-design.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782818496087015200,
+      "read_error": null,
+      "sha256": "62ec41c983efd8f1f8cc29b9baf7e1f3af19032f7b98db822fc7f7f745194734",
+      "size_bytes": 7705,
+      "source_group": "drmcp/records/work-items",
+      "source_path": "drmcp/records/work-items/spec/DRMCP-WORK-SPEC-001-parser-aware-spec-format-validation.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 229362
+}

@@ -1,0 +1,142 @@
+{
+  "batch_id": "BP01",
+  "files_discovered": 18,
+  "files_failed": 0,
+  "files_scanned": 18,
+  "observation_count": 147,
+  "output_paths": {
+    "coverage": "results/BP01.coverage.json",
+    "observations": "results/BP01.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/dsl/edges/cross-edges.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/dsl/edges/data-flow.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/dsl/edges/state-transitions.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/dsl/naming.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/dsl/nodes/application.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/dsl/nodes/data.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/dsl/nodes/overview.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/dsl/nodes/processing.md"
+    },
+    {
+      "observation_count": 15,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/dsl/type-ref.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/mcp/errors.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/mcp/overview.md"
+    },
+    {
+      "observation_count": 15,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/mcp/schema.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/mcp/tools/get-reference-tree.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/mcp/tools/list-endpoints.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/mcp/versioning.md"
+    },
+    {
+      "observation_count": 17,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/views/dag.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/views/model-file.md"
+    },
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "bpdsl/records/spec/views/overview.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "bpdsl/records/spec/dsl/edges/cross-edges.md",
+    "bpdsl/records/spec/dsl/edges/data-flow.md",
+    "bpdsl/records/spec/dsl/edges/state-transitions.md",
+    "bpdsl/records/spec/dsl/naming.md",
+    "bpdsl/records/spec/dsl/nodes/application.md",
+    "bpdsl/records/spec/dsl/nodes/data.md",
+    "bpdsl/records/spec/dsl/nodes/overview.md",
+    "bpdsl/records/spec/dsl/nodes/processing.md",
+    "bpdsl/records/spec/dsl/type-ref.md",
+    "bpdsl/records/spec/mcp/errors.md",
+    "bpdsl/records/spec/mcp/overview.md",
+    "bpdsl/records/spec/mcp/schema.md",
+    "bpdsl/records/spec/mcp/tools/get-reference-tree.md",
+    "bpdsl/records/spec/mcp/tools/list-endpoints.md",
+    "bpdsl/records/spec/mcp/versioning.md",
+    "bpdsl/records/spec/views/dag.md",
+    "bpdsl/records/spec/views/model-file.md",
+    "bpdsl/records/spec/views/overview.md"
+  ]
+}

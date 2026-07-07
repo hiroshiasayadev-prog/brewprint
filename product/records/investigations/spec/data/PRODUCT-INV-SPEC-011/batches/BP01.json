@@ -1,0 +1,179 @@
+{
+  "batch_id": "BP01",
+  "bucket": "bpdsl_all",
+  "estimated_input_tokens": 38899,
+  "file_count": 18,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-27-O",
+  "output_paths": {
+    "coverage": "results/BP01.coverage.json",
+    "observations": "results/BP01.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1781583064452775800,
+      "read_error": null,
+      "sha256": "b8c0603de2e09b60bb0bf9c92cfb1d7f11425d176bc6363bc74f2a8170b139d2",
+      "size_bytes": 1741,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/edges/cross-edges.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781583168019414900,
+      "read_error": null,
+      "sha256": "f7097beca813535723adb1a8d1f16dc3d3ff90ef9638646448b826667756dc0d",
+      "size_bytes": 17052,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/edges/data-flow.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781583053766395100,
+      "read_error": null,
+      "sha256": "d435519a4c8ce073c45ca891d34434260a92c451c93db57999e428113ab20b64",
+      "size_bytes": 3014,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/edges/state-transitions.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781622186897743900,
+      "read_error": null,
+      "sha256": "d910c51815ad577de742c5a835c238088c25ad65e8483b4a7c5f07302ff9eab7",
+      "size_bytes": 8509,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/naming.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781582956661654300,
+      "read_error": null,
+      "sha256": "6ee8cf26edb2a951df307e71f943ef9c6975ca2c3b9d72ec57650f95e4fc6fd9",
+      "size_bytes": 5148,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/nodes/application.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781622174618495300,
+      "read_error": null,
+      "sha256": "3f4b1f235cea9886e69101a174f6047419954015e6aede2d123f9ef37fb646fc",
+      "size_bytes": 10544,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/nodes/data.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781582821489383700,
+      "read_error": null,
+      "sha256": "71ecbac3aac9274ceb2c20dabea004afa6563601e342b87e9985fcaca07b7d98",
+      "size_bytes": 3098,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/nodes/overview.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781622094340150800,
+      "read_error": null,
+      "sha256": "0b4011e20f30e05ff7f809dd8a6fac27994bec6ae7abc8efe8d615fa050df122",
+      "size_bytes": 7926,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/nodes/processing.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781583769822472900,
+      "read_error": null,
+      "sha256": "78ce718c26e15cfe7b6a14e49bcbda9223cfb85c06e0b1b025dbc3bccea58586",
+      "size_bytes": 12935,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/dsl/type-ref.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781625107922748600,
+      "read_error": null,
+      "sha256": "c9c504b1efa371e5d43531844001845af37078ed6319058478d98673953b4fef",
+      "size_bytes": 4256,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/mcp/errors.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781625092877351100,
+      "read_error": null,
+      "sha256": "033102e4413c5d13c3796164460a18abd8092bd3df5b745b0938bc4880309d39",
+      "size_bytes": 8772,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/mcp/overview.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781625163722360300,
+      "read_error": null,
+      "sha256": "c849f770a8e9a815083eeea0783475c60d045e60f9222cd5ab5a083d00e56e9e",
+      "size_bytes": 19109,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/mcp/schema.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781625878002734800,
+      "read_error": null,
+      "sha256": "72495d642ab0d48a549f6a4e54bd195dafe1a82432ac24bc9cf4d470eb74c181",
+      "size_bytes": 8151,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/mcp/tools/get-reference-tree.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781625616419878800,
+      "read_error": null,
+      "sha256": "00d0d07251f678203e0cd28d5faca4c7aeb4d3d63e1deab52bd3ba65c8738048",
+      "size_bytes": 3287,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/mcp/tools/list-endpoints.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781625176861367700,
+      "read_error": null,
+      "sha256": "7b39ef284b5f0baa57e4848594db8ac0a77f616317a0bdca944c041521ec0c62",
+      "size_bytes": 2006,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/mcp/versioning.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781627625812229500,
+      "read_error": null,
+      "sha256": "d090cae565de62d62fd33b14b2a60f0259f59aba1c4bc95fdee1bb9006ae4e5d",
+      "size_bytes": 32116,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/views/dag.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781627315910418300,
+      "read_error": null,
+      "sha256": "d44d87818b9b226be56b9e0d5ec377c0b0ce179a384bf54905678587702a643f",
+      "size_bytes": 5132,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/views/model-file.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781627295673992600,
+      "read_error": null,
+      "sha256": "06ff34de584becc0f5bd207e6a9edaefc410bb584a2593ce2dba65d3938c7898",
+      "size_bytes": 2803,
+      "source_group": "bpdsl/records/spec",
+      "source_path": "bpdsl/records/spec/views/overview.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 155599
+}

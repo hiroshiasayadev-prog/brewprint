@@ -1,0 +1,278 @@
+{
+  "batch_id": "PN02",
+  "bucket": "product_non_tasks",
+  "estimated_input_tokens": 60744,
+  "file_count": 29,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-14-O",
+  "output_paths": {
+    "coverage": "results/PN02.coverage.json",
+    "observations": "results/PN02.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1782913979262067000,
+      "read_error": null,
+      "sha256": "7fb1c55cea94f2913e48a1339aaa2ebeaccffe5600da510db65f07fb70431f3f",
+      "size_bytes": 10747,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-001-product-spec-semantic-ownership-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782920982205501200,
+      "read_error": null,
+      "sha256": "3e7221aec0b6a9e6d583f0cd49fca7262030da5634f968ffe05ddffb8eda177d",
+      "size_bytes": 6853,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-004-define-closed-typed-task-responsibility-taxonomy.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783009032299377500,
+      "read_error": null,
+      "sha256": "9b24a97128db648df53b38d48f99140fde120dd7a32208358b8217c3b895e40a",
+      "size_bytes": 9171,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-005-enforce-single-responsibility-and-independent-task-completion-boundaries.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782910022149185800,
+      "read_error": null,
+      "sha256": "736b1fa51128dc10beffb7a6371cc81fc5efed2f6b2198d8d562fcb191a63e3d",
+      "size_bytes": 7817,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-006-separate-decision-workflow-checkpoints-from-canonical-design-state.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782838294290572800,
+      "read_error": null,
+      "sha256": "753899e2909510118792e7111027c165201614634a7bae3d62116c263bf8dce7",
+      "size_bytes": 5606,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-008-migrate-legacy-workflow-source-relations-through-atomic-record-transitions.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783009038591964800,
+      "read_error": null,
+      "sha256": "3a44aeb5545cc12bc110ae85c17e48d4a5c2132bf8500a265f6c750d64c14791",
+      "size_bytes": 5569,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-010-route-design-convergence-through-typed-responsibility-phases.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783009045957809000,
+      "read_error": null,
+      "sha256": "5506eab001ac088fc85ca5bf41bf67a8020736619b7f65fd4f21fac3ba3639ae",
+      "size_bytes": 4094,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-011-preserve-requirement-and-work-item-identity-through-completion-boundary-continuity.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782893386471879000,
+      "read_error": null,
+      "sha256": "47d2bb95e793806f4e433d5acea52630a03962508a255d9dd154067371288b6e",
+      "size_bytes": 2842,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-013-materialize-finding-repair-tasks-only-after-named-findings.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782930606617594900,
+      "read_error": null,
+      "sha256": "70f616cd5a4053e79322d5cf359847808cc3281d19242e8a383c6506739a4ba5",
+      "size_bytes": 4927,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-016-separate-temporary-semantic-task-validation-from-current-drmcp.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781025483321068600,
+      "read_error": null,
+      "sha256": "1f8f075674b49e2b6c210f3efb9d3e2660ec1338bcb015348411a4bad9dea8f8",
+      "size_bytes": 23573,
+      "source_group": "product/records/investigations",
+      "source_path": "product/records/investigations/spec/PRODUCT-INV-SPEC-001-spec-format-topic-tree-design-and-migration-feasibility.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782927904133818800,
+      "read_error": null,
+      "sha256": "bfa7c535e45118d264129fabfe4a09c8b314ae7504d6d5e0e990ade356f6d0ac",
+      "size_bytes": 39939,
+      "source_group": "product/records/investigations",
+      "source_path": "product/records/investigations/spec/PRODUCT-INV-SPEC-009-standalone-validator-implementation-impact.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782484909336241800,
+      "read_error": null,
+      "sha256": "6e3b1f6ecca96e5906bc38618a3b2779bb1da076428d58a1f09ff55f905e7799",
+      "size_bytes": 12189,
+      "source_group": "product/records/requirements",
+      "source_path": "product/records/requirements/PRODUCT-REQ-SPEC-001-mcp-readable-spec-format-and-topic-tree.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782489100598020100,
+      "read_error": null,
+      "sha256": "2f77cb125d6ee850158e211aa85a349733af8b002135aed61f1063f6ed1cc431",
+      "size_bytes": 2146,
+      "source_group": "product/records/requirements",
+      "source_path": "product/records/requirements/spec/PRODUCT-REQ-SPEC-004-brewprint-legacy-spec-compatibility-correction.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782825910595827600,
+      "read_error": null,
+      "sha256": "76835c4cde523d2b45e3f205be47ddeef4461d10662639b8910cf8e4678a4892",
+      "size_bytes": 3379,
+      "source_group": "product/records/requirements",
+      "source_path": "product/records/requirements/spec/PRODUCT-REQ-SPEC-005-typed-single-responsibility-task-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783094095662694300,
+      "read_error": null,
+      "sha256": "e1e07127ead3619d6da90bf2d5b122cbbd85670d7329ec685d942293ce6024a7",
+      "size_bytes": 6505,
+      "source_group": "product/records/requirements",
+      "source_path": "product/records/requirements/spec/PRODUCT-REQ-SPEC-013-inventory-brewprint-design-governance-terms.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782296580382575000,
+      "read_error": null,
+      "sha256": "e5e5c628d9b8f28e6fa85ee234187a9b1ac3684f0784a6149970d8d17c2399ea",
+      "size_bytes": 2866,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/brewprint/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782321252810535700,
+      "read_error": null,
+      "sha256": "434a1e0fe9ec39bfcd2eb7b894aedc47246401c83a6bdb95d49d8f0a1468eac8",
+      "size_bytes": 3735,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/artifact-model/change-and-investigation-flow.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782321230785915300,
+      "read_error": null,
+      "sha256": "219c8800d757aa9fa68aebae20969679011f0262727e165af0d7128f964fb49b",
+      "size_bytes": 3457,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/artifact-model/traceability-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782910030720680900,
+      "read_error": null,
+      "sha256": "d151989d6349c708efb33724e04e31a7ab43b13fd676416ee755eb34a06e8ed4",
+      "size_bytes": 7422,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/authoring-standards/adr-authoring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783009132608386700,
+      "read_error": null,
+      "sha256": "fb8e1dfef42c852bd4d4a3b533d228a48d0e16ceae44a6103ebe75176d0b01d0",
+      "size_bytes": 17042,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/authoring-standards/work-item-authoring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782301497256459800,
+      "read_error": null,
+      "sha256": "6fdcb51b52845e9c124a5de63a939707d94f53cde7f124e59d2d95b461c8db73",
+      "size_bytes": 3795,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782310911893045000,
+      "read_error": null,
+      "sha256": "f324bc80a5f81ec77cb7dfb935f4551a378d70540adfa08a982535415b17aa90",
+      "size_bytes": 2713,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/namespace-model/artifact-id-grammar.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782313025038689900,
+      "read_error": null,
+      "sha256": "275f9c721343608bf7e3b059ced55bc7ddd7be66f9cc4e3a1e6cbe7012a22e42",
+      "size_bytes": 5336,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/namespace-model/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782310992977576000,
+      "read_error": null,
+      "sha256": "5ddd66db84d6c8958a27c195ac4ccb9fbe797a2809ed7cd68d43ed9f5eddd706",
+      "size_bytes": 2320,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/spec-format/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782310999495714000,
+      "read_error": null,
+      "sha256": "ddd71855ca0f1cf0a1937fe225f44f6ca73a544735a17dbeb178f4df7ad5dbd8",
+      "size_bytes": 4455,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/spec-format/overview.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782311223331852300,
+      "read_error": null,
+      "sha256": "12497f5dce7b3ec67e5812cfaf8d19dfd001d0061fe04e7632c4c68c9626fcd3",
+      "size_bytes": 2040,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-010-cognitive-load-writing-standard-for-design-records.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782321668376378500,
+      "read_error": null,
+      "sha256": "03d1d82911fb1bdfa6e19fd08d338dc0eeb58025ab4e390b82440d23f2908274",
+      "size_bytes": 22059,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-012-product-spec-semantic-layer-restructuring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782890116668867000,
+      "read_error": null,
+      "sha256": "916aef8a75f4976a62b06154d45620590323f59b6632829a63678a6fdba9fcc6",
+      "size_bytes": 11830,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-016-define-typed-single-responsibility-task-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783012833817646300,
+      "read_error": null,
+      "sha256": "c9a7daa962a59248db6856e35eba900928292b3c3a2fcc740fbc351f37e4fec7",
+      "size_bytes": 8549,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-023-define-cancelled-work-item-and-task-lifecycle.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 242976
+}

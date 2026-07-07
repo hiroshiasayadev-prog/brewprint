@@ -1,0 +1,161 @@
+{
+  "batch_id": "DT01",
+  "bucket": "drmcp_tasks",
+  "estimated_input_tokens": 51534,
+  "file_count": 16,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-17-O",
+  "output_paths": {
+    "coverage": "results/DT01.coverage.json",
+    "observations": "results/DT01.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1783073746786041600,
+      "read_error": null,
+      "sha256": "113b5152f6b50fab11976a26a3f907d3e2734261d5f408358ba24fdd1861e688",
+      "size_bytes": 3039,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-09-track-current-read-implementation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783073789031411200,
+      "read_error": null,
+      "sha256": "b05d4624dda307e45ad93f141d146054353fa5fd7712ffdf074bcce76f33b589",
+      "size_bytes": 2684,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-10-track-configured-legacy-fallback-implementation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782472657286527500,
+      "read_error": null,
+      "sha256": "e5fb90dcd92ca645acf4bed1b6bd3064d0e1a32240ec498534a9c0908ae8ee20",
+      "size_bytes": 1889,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-12-record-downstream-readiness-handoff.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782825207059275900,
+      "read_error": null,
+      "sha256": "37637784f4b0e87991cef6e12fe632f876b734654a570a10dba3e25eb3ea0c62",
+      "size_bytes": 18039,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-13-amend-read-baseline-execution-graph-for-rebuild.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782495813100480500,
+      "read_error": null,
+      "sha256": "e0f5931bacd6dc445d52d6579d140aee17f860885bba58034cb573d20e4b5ede",
+      "size_bytes": 7941,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-003-02-define-configured-current-root-and-index-separation-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782550366006642800,
+      "read_error": null,
+      "sha256": "aa192e3d81067f3e14468834d3ebcde9216f5e9f84f360a6219495fb2926baaf",
+      "size_bytes": 10836,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-004-03-retire-single-record-tool-and-reflect-exact-batch-retrieval-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782573692019570600,
+      "read_error": null,
+      "sha256": "5bffa94a2c4a8c3c703a53c94c38178c93890a81a55f27b7e37a62599e7d0096",
+      "size_bytes": 14414,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-005-04-synchronize-rejection-behavior-and-cross-spec-pointers.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782635947183669100,
+      "read_error": null,
+      "sha256": "3c6e4bf1e1fbab13684fb38f3750a7956d0474e56530fdec502162e2d2b28e62",
+      "size_bytes": 23376,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-007-03-rebaseline-retained-validation-work-items.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782651516789336100,
+      "read_error": null,
+      "sha256": "46b390a238189bca3d8b6f2169fba7e6a6dafe57085827892b984582491ab034",
+      "size_bytes": 30874,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-008-05-verify-and-close-current-and-legacy-read-fixture-baseline.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782656713799552900,
+      "read_error": null,
+      "sha256": "330183ddefeb54db54df16524423c4c8d1ded8d87c59fb6e493b938b4a35164c",
+      "size_bytes": 6006,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-08-add-current-fixture-integration-verification.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783073681083766600,
+      "read_error": null,
+      "sha256": "84548012878832f826eb4924e66e2e22eb23168c5364b5a592ee45e3fb653fca",
+      "size_bytes": 4417,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-012-01-author-rebuild-current-read-runtime-execution-graph.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783092286892135900,
+      "read_error": null,
+      "sha256": "c71290023d79775be268afdb2ee707f35326e0b48f31fa4827e7d7c8763fdc29",
+      "size_bytes": 57900,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-02-inventory-drmcp-use-cases-and-architecture-inputs.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783099279192740100,
+      "read_error": null,
+      "sha256": "52819c08c6fb188087b7aec1941f72945bf53e03ef17bfa0e25881afc5198f88",
+      "size_bytes": 4988,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-04-coordinate-post-decision-application-architecture-route.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783099986240633000,
+      "read_error": null,
+      "sha256": "f8e907644753ec924d6b3d2363caf655312fc7eab6a6c02be51fd1faba9638be",
+      "size_bytes": 10524,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-05-route-drmcp-application-architecture-decisions-to-adrs.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783101608434437400,
+      "read_error": null,
+      "sha256": "1f72b33bdb0a9c4363b827212da6a882ee3ea46c7c516abc100cabe46cfe2ee1",
+      "size_bytes": 6780,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-07-author-canonical-drmcp-application-architecture-specifications.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783099190136357500,
+      "read_error": null,
+      "sha256": "3a157c247ef7975896e730aa3a765a11822f6213ec34549e846ebdaeb14d55f4",
+      "size_bytes": 2429,
+      "source_group": "drmcp/records/tasks",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-10-synchronize-drmcp-application-architecture-design-closure.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 206136
+}

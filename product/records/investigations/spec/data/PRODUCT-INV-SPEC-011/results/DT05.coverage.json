@@ -1,0 +1,128 @@
+{
+  "batch_id": "DT05",
+  "files_discovered": 16,
+  "files_failed": 0,
+  "files_scanned": 16,
+  "observation_count": 159,
+  "output_paths": {
+    "coverage": "results/DT05.coverage.json",
+    "observations": "results/DT05.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-04-track-query-and-exact-retrieval-contract.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-17-track-topics-graph-validation-implementation.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-18-track-read-runtime-responsibility-contract-design.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-003-05-synchronize-review-and-close-discovery-and-active-index-contract.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-004-01-establish-query-and-exact-retrieval-correction-baseline.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-004-05-validate-and-close-query-and-exact-retrieval-contract-realignment.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-006-01-establish-validation-diagnostics-and-path-exposure-correction-baseline.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-007-01-establish-validation-work-item-audit-baseline.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-008-03-create-configured-legacy-root-read-fixture-baseline.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-008-04-create-rejected-and-isolation-read-fixture-baseline.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-07-implement-current-validation-and-diagnostics.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-09-review-and-close-current-read-implementation.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-011-03-synchronize-rebuild-read-runtime-architecture-specifications.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-011-07-synchronize-rebuild-read-runtime-architecture-design-closure.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-014-01-investigate-read-runtime-internal-specification-work-partition.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-09-independently-review-drmcp-application-architecture.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-04-track-query-and-exact-retrieval-contract.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-17-track-topics-graph-validation-implementation.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-001-18-track-read-runtime-responsibility-contract-design.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-003-05-synchronize-review-and-close-discovery-and-active-index-contract.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-004-01-establish-query-and-exact-retrieval-correction-baseline.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-004-05-validate-and-close-query-and-exact-retrieval-contract-realignment.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-006-01-establish-validation-diagnostics-and-path-exposure-correction-baseline.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-007-01-establish-validation-work-item-audit-baseline.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-008-03-create-configured-legacy-root-read-fixture-baseline.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-008-04-create-rejected-and-isolation-read-fixture-baseline.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-07-implement-current-validation-and-diagnostics.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-009-09-review-and-close-current-read-implementation.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-011-03-synchronize-rebuild-read-runtime-architecture-specifications.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-011-07-synchronize-rebuild-read-runtime-architecture-design-closure.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-014-01-investigate-read-runtime-internal-specification-work-partition.md",
+    "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-016-09-independently-review-drmcp-application-architecture.md"
+  ]
+}

@@ -1,0 +1,233 @@
+{
+  "batch_id": "PT02",
+  "bucket": "product_tasks",
+  "estimated_input_tokens": 51373,
+  "file_count": 24,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-06-O",
+  "output_paths": {
+    "coverage": "results/PT02.coverage.json",
+    "observations": "results/PT02.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1782232690066472600,
+      "read_error": null,
+      "sha256": "4ec7c209b870aaa3b8b81dd70e9d9c9969f25f7bbb17d5c86d7dfc32b544743b",
+      "size_bytes": 6170,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-02-canonical-artifact-id-grammar-and-issued-id-compatibility-policy.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782232697011400100,
+      "read_error": null,
+      "sha256": "068ba73167761a242d471c077be6fbad593b2b3b543c51798daddd273b5344c2",
+      "size_bytes": 4634,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-03-separate-existing-artifact-ownership-and-attribution.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781702613129318700,
+      "read_error": null,
+      "sha256": "57a167d0ea09c106591b54f99000b234231d561563428ce1b9417c2b48c4e806",
+      "size_bytes": 2947,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-004-03-accept-and-handoff.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781583876460626400,
+      "read_error": null,
+      "sha256": "e61b467e874e55574911ccc5ad768f41cb1eea46402c6186111558969f668359",
+      "size_bytes": 5025,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-02-bpdsl-dsl-spec-authoring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781624979539328700,
+      "read_error": null,
+      "sha256": "7b627e9f3188aee7f6aae34f600a32c22d4e90e0ae6301ccb24ceaa4f22f8700",
+      "size_bytes": 1979,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-05-bpdsl-mcp-directory-setup.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782098313977586300,
+      "read_error": null,
+      "sha256": "593a6a7ac6de2147c48c6328da47203f83cae9b636f01b5b930d33ea841b70b6",
+      "size_bytes": 2138,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-009-05-finalize.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782185969096566300,
+      "read_error": null,
+      "sha256": "c3f1840aa15eb979f319ade93d93c9e63071b793ef1c7ca7c8126e86b57fdb0e",
+      "size_bytes": 3405,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-011-02-create-artifact-boundary-and-common-shape.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782293636985218500,
+      "read_error": null,
+      "sha256": "50afe393b65221542db6e33aee28bf7bd5c7310a52b52e92dda3a3a8da251fec",
+      "size_bytes": 78242,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-01-confirm-migration-manifest-and-validation-baseline.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782301888000981200,
+      "read_error": null,
+      "sha256": "97c18645b08b71946b17fd8afac61b5f7487d03a8d6b51294612d5661d95dd74",
+      "size_bytes": 9191,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-07-relocate-cleaned-semantic-areas.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782458654569972400,
+      "read_error": null,
+      "sha256": "78518daae7f769100cdf764234f94d2da3a6e5738c421e1897e0aff30b7ae53f",
+      "size_bytes": 14760,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-013-02-define-portable-package-interface-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782648997414415100,
+      "read_error": null,
+      "sha256": "863d360a1730cc0f375f7e26e4de646249f7c3d69d8ac78404ebf62a3729ceba",
+      "size_bytes": 10098,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-013-07-add-release-and-portability-fixtures.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782834841125288200,
+      "read_error": null,
+      "sha256": "8d96f1af2d2bba7d7c6ac8c1409861ee0e0b77c971bfec5f0c47be86112a5cb4",
+      "size_bytes": 7973,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-016-07-synchronize-req-005-specifications.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782840396708820100,
+      "read_error": null,
+      "sha256": "e7027699cc8ad3105c1d567b2b4277170489983e23d61ecf0bc62bfad50bd415",
+      "size_bytes": 1523,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-016-09-correct-review-findings.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782840520027066400,
+      "read_error": null,
+      "sha256": "fb39c710e9997d6dc0586d372ad90ccc19d8f08afd56460fad31d4e70c664aa6",
+      "size_bytes": 1563,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-016-10-rereview-finding-closure.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782839545790798900,
+      "read_error": null,
+      "sha256": "b0557b8175dda9cf8f33c060be7aa75e7538ac6677cfe6fb202af874232a3de5",
+      "size_bytes": 13480,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-017-08-review-integrated-req-005-and-req-006-design.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782899280450987400,
+      "read_error": null,
+      "sha256": "51aef5030c4aee0411cdaed8aecb934a527e9487d284bd1bfe4b2bee53f58ec0",
+      "size_bytes": 3587,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-04-coordinate-mandatory-impact-investigation-route.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782910113690779700,
+      "read_error": null,
+      "sha256": "02d20431e63e9977fe6201a7adde879222e672f9d5f8c22da9af7681a7634516",
+      "size_bytes": 2760,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-11-coordinate-post-decomposition-adr-routing-route.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782911975590341700,
+      "read_error": null,
+      "sha256": "e20bc2aa811f1e0de84baf7f579f8df458519aa9a17eecb8df633d46e20956a4",
+      "size_bytes": 4064,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-14-author-validator-architecture-decisions.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782914245778739500,
+      "read_error": null,
+      "sha256": "d611b096d54343cefbfc034db63d5354e01da06f9d404ceface32f7a9a1605a5",
+      "size_bytes": 4431,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-17-author-task-validator-usage-rule.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782913016134451900,
+      "read_error": null,
+      "sha256": "97337e8c4ed217cdddddf0c237298cd4d06e9e0a7474c2cca61e72a786319cdb",
+      "size_bytes": 2291,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-020-01-coordinate-checklist-authoring-graph.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782929245122356000,
+      "read_error": null,
+      "sha256": "b4d4a08513681ce25b5a2ca7b23d58a9ee83b102504124b087a7b367ea455e91",
+      "size_bytes": 11989,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-06-decide-product-to-app-bootstrap-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782930457403133000,
+      "read_error": null,
+      "sha256": "a513e066a26e9a447bbc5a5395d628222b47a29672bd6fac77382f03b629acd2",
+      "size_bytes": 3541,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-09-coordinate-routed-bootstrap-authoring-graph.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008188803193900,
+      "read_error": null,
+      "sha256": "51e2bf30619055affec827247c49f069de7a4fd9a414c233d4950ece55b6bf9a",
+      "size_bytes": 3274,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-023-02-investigate-cancelled-lifecycle-impact-and-conflicts.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783072793293242200,
+      "read_error": null,
+      "sha256": "e20700f0bb8aa26c1259dc841c74b365f8e19e89e85739218f9c75259736ac70",
+      "size_bytes": 6427,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-025-01-decide-vocabulary-collection-and-lightweight-exception.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 205492
+}

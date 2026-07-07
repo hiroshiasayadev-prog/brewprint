@@ -1,0 +1,80 @@
+{
+  "batch_id": "LI01",
+  "bucket": "legacy_investigations",
+  "estimated_input_tokens": 40819,
+  "file_count": 7,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-35-O",
+  "output_paths": {
+    "coverage": "results/LI01.coverage.json",
+    "observations": "results/LI01.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1780331341178569900,
+      "read_error": null,
+      "sha256": "95a8f111bfbb35dde63b1f0ab6b1aa399095c9435b22a8fedd4dfe87b974a0ce",
+      "size_bytes": 1545,
+      "source_group": "v01/records/investigations",
+      "source_path": "v01/records/investigations/README.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672558641100,
+      "read_error": null,
+      "sha256": "6fec4814cdd6b3d16ad8bad70cda22d25c4824ebcc97ee1d03d8078828d4bc01",
+      "size_bytes": 25038,
+      "source_group": "v01/records/investigations",
+      "source_path": "v01/records/investigations/data/V01-INV-DATA-001-m15-data-layer-expressiveness-derivation-and-completion-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672560639900,
+      "read_error": null,
+      "sha256": "b03358fa24c28f33d827d8334351178a4208992ebce9ef52b2fdd6a09d4e7f97",
+      "size_bytes": 34443,
+      "source_group": "v01/records/investigations",
+      "source_path": "v01/records/investigations/data/V01-INV-DATA-002-uc002-notes-retreat-inventory-and-m15-release-boundary-input.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672562612700,
+      "read_error": null,
+      "sha256": "2520595e3033ede95081a3814a8ef25bcbfb35d4d9c429a6835e20156160f360",
+      "size_bytes": 18196,
+      "source_group": "v01/records/investigations",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-001-investigation-artifact-format-and-lifecycle.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672567611600,
+      "read_error": null,
+      "sha256": "c5f7f8d33c9f312fef59078bf8140200e00e4e6fdc2b1bb0d195c20d66cfa6a0",
+      "size_bytes": 20776,
+      "source_group": "v01/records/investigations",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-004-openfasttrace-adoption-feasibility-and-canonical-identity-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672574610800,
+      "read_error": null,
+      "sha256": "d73f7c81c2b47b5f8b39caa5276bc9c0769b73c92be5b9d475599c06fcb80d12",
+      "size_bytes": 55085,
+      "source_group": "v01/records/investigations",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-007-kiro-specs-and-spec-kit-positioning-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672575640500,
+      "read_error": null,
+      "sha256": "2e3367719a8cbb18dbbc770ee4c439acba3d3f4eef111a2299bbc04c2cf4e110",
+      "size_bytes": 8193,
+      "source_group": "v01/records/investigations",
+      "source_path": "v01/records/investigations/product/V01-INV-PRODUCT-001-migration-impact-inventory-for-app-namespace-first-repository-layout.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 163276
+}

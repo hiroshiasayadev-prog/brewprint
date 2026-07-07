@@ -1,0 +1,377 @@
+{
+  "batch_id": "SK01",
+  "bucket": "skills_all",
+  "estimated_input_tokens": 48802,
+  "file_count": 40,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-29-O",
+  "output_paths": {
+    "coverage": "results/SK01.coverage.json",
+    "observations": "results/SK01.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1783071459931000200,
+      "read_error": null,
+      "sha256": "a231781a4a44b3ca0e101bd49342bc792a910c0adecab03036ca58f96c5ce60e",
+      "size_bytes": 1746,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/SKILL.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782917660051850900,
+      "read_error": null,
+      "sha256": "e44f84085275a039cdf72fa8b43b6da03ec7e41ab42a34cb35fe68f53c59c0be",
+      "size_bytes": 1070,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/common.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782921119831947900,
+      "read_error": null,
+      "sha256": "7321cf02e0680c1daefbb8d3c309d41041d18c461b8251efec6ed26d0e41bf63",
+      "size_bytes": 378,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/evaluator-instructions.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782918206664383600,
+      "read_error": null,
+      "sha256": "5036b1cf347d006b651c6aa74bea32d1c36c1d669530b02b9654187271c571f7",
+      "size_bytes": 527,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/authoring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782918856938741000,
+      "read_error": null,
+      "sha256": "fcd057cffc6a844a477d581e0a0593d109798015706fd6a767b3b3cb4bf56dd5",
+      "size_bytes": 434,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/coordination.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782918555702201300,
+      "read_error": null,
+      "sha256": "089ab7db8eeda8a6705074dc358a12aaf298661af24153d6eb40a04c44e194cc",
+      "size_bytes": 406,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/correction.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782918097937132100,
+      "read_error": null,
+      "sha256": "c040d1bd24010273e01da99972d25829517cde7978929baf9f28461366b580e7",
+      "size_bytes": 555,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/decision.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782918321654709900,
+      "read_error": null,
+      "sha256": "9febb16298721558c1624407f45072b6361623177fa9c51108117ff221327e64",
+      "size_bytes": 480,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/implementation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782917894001202400,
+      "read_error": null,
+      "sha256": "d58989638ecce3ee4889a834364237c123a051ed3649e95926162d36cb786ffd",
+      "size_bytes": 552,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/investigation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782918481640326500,
+      "read_error": null,
+      "sha256": "43b055fd62835e51f5eec3515040b3e2085e99a08b950c788a13f79afa966420",
+      "size_bytes": 545,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/review.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782921253864658400,
+      "read_error": null,
+      "sha256": "285bfd3bd83ee178c90dbb4370f011e93bbc1ee7c58d7184fe2687586eec2030",
+      "size_bytes": 648,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/synchronization.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782918669492942500,
+      "read_error": null,
+      "sha256": "b561e6f579b309753c05d0e72751366e8b2254b214cf93dfbb270d341ce96b04",
+      "size_bytes": 535,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/verification.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782922478156930100,
+      "read_error": null,
+      "sha256": "5a0aed905d8855846c8b35c1d4ba09db222ebfd989144e8a84e9e88aa503fe70",
+      "size_bytes": 703,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/work_item_decomposition.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782922584337698100,
+      "read_error": null,
+      "sha256": "344994204b3f594dfc63982fd0b16d9344c87af85a4b6c1b7cc15d7939f8ad64",
+      "size_bytes": 775,
+      "source_group": "skills/DEPRECATED-task-responsibility-boundary-validator",
+      "source_path": "skills/DEPRECATED-task-responsibility-boundary-validator/prompts/task-types/work_item_execution.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782729805513001300,
+      "read_error": null,
+      "sha256": "f1f522f5df7753086a56f729ea99e17821fc56d3bc9a045af9deacfd184a7101",
+      "size_bytes": 14610,
+      "source_group": "skills/claude-code-token-budget",
+      "source_path": "skills/claude-code-token-budget/SKILL.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782729763150983500,
+      "read_error": null,
+      "sha256": "6cfc76d32d2b0f1bb6aed2c417cf1f95612362e975f3c53d61574340b0691b24",
+      "size_bytes": 14937,
+      "source_group": "skills/claude-code-token-budget",
+      "source_path": "skills/claude-code-token-budget/execution-hub-task-pattern.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782729816972874300,
+      "read_error": null,
+      "sha256": "9b2f1e612f2fbaee78877f74875e9844228149357a874508e6afd601e402e68e",
+      "size_bytes": 7300,
+      "source_group": "skills/claude-code-token-budget",
+      "source_path": "skills/claude-code-token-budget/executor-ready-task-design.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008604899779200,
+      "read_error": null,
+      "sha256": "04d359efe125184172e5f2b5dee16e986367b6069d1eff0777eb09eda5de5e76",
+      "size_bytes": 11487,
+      "source_group": "skills/design-convergence-workflow",
+      "source_path": "skills/design-convergence-workflow/SKILL.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008631443014500,
+      "read_error": null,
+      "sha256": "7e548ac443849cccb4af7dabb11a187c2bea5268afda2064155af6798cba21e7",
+      "size_bytes": 7527,
+      "source_group": "skills/design-convergence-workflow",
+      "source_path": "skills/design-convergence-workflow/adr-routing.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783009158773580100,
+      "read_error": null,
+      "sha256": "a3946eb1489a5fee1f339c35f971b314317a5353164b606f3640c391950bdc0a",
+      "size_bytes": 7698,
+      "source_group": "skills/design-convergence-workflow",
+      "source_path": "skills/design-convergence-workflow/closure-synchronization.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008619528963600,
+      "read_error": null,
+      "sha256": "22a347bfb6e222dd31a660ba7d210115a02340460feb9721c8e056b8e50fd8db",
+      "size_bytes": 7261,
+      "source_group": "skills/design-convergence-workflow",
+      "source_path": "skills/design-convergence-workflow/convergence-routing.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008656439315000,
+      "read_error": null,
+      "sha256": "4bc67b13e4fdaa5198799475c0ae04f51fc000cf08dfd27f1057eddb9b6ae029",
+      "size_bytes": 16962,
+      "source_group": "skills/design-convergence-workflow",
+      "source_path": "skills/design-convergence-workflow/decision-ledger.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008635561312200,
+      "read_error": null,
+      "sha256": "bf077e9340892f182cfd8d77be3df92ecadb85546eabb4df80873f51e1abed7d",
+      "size_bytes": 7302,
+      "source_group": "skills/design-convergence-workflow",
+      "source_path": "skills/design-convergence-workflow/design-authoring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008640637062100,
+      "read_error": null,
+      "sha256": "2a285cd411384c6e11ae630246645e8f99701f5512bb98b68f835384022397c9",
+      "size_bytes": 10820,
+      "source_group": "skills/design-convergence-workflow",
+      "source_path": "skills/design-convergence-workflow/design-review-gate.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783009152906006000,
+      "read_error": null,
+      "sha256": "a97661a8da15f2bd898b533710df4061180e2c721b12f39e95c7fc8a0b572131",
+      "size_bytes": 8091,
+      "source_group": "skills/design-convergence-workflow",
+      "source_path": "skills/design-convergence-workflow/graph-coordination.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008613565907900,
+      "read_error": null,
+      "sha256": "6d0682560aeca731457a44c9b7a42ba74e2aa8cfe003eebeee7fed72d2244432",
+      "size_bytes": 5308,
+      "source_group": "skills/design-convergence-workflow",
+      "source_path": "skills/design-convergence-workflow/impact-investigation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782893793022997500,
+      "read_error": null,
+      "sha256": "23a6c04e3e1f5baef4d5520640bf0cb9a9b3ca1fc3c9bf093714cb6ed4ec344d",
+      "size_bytes": 7707,
+      "source_group": "skills/design-convergence-workflow",
+      "source_path": "skills/design-convergence-workflow/interactive-decision-loop.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782921067697417200,
+      "read_error": null,
+      "sha256": "616ca55df39b2eb3038e2e7fc906a50647127ef3e6b3fa9f91beceda2d050933",
+      "size_bytes": 2873,
+      "source_group": "skills/design-convergence-workflow",
+      "source_path": "skills/design-convergence-workflow/work-item-decomposition.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783009147567100200,
+      "read_error": null,
+      "sha256": "6be694d93e93e30a305c5aa64d09b4070cb1f03c17d060be8851d40f6dced72f",
+      "size_bytes": 4590,
+      "source_group": "skills/design-convergence-workflow",
+      "source_path": "skills/design-convergence-workflow/work-item-execution.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783078685035199700,
+      "read_error": null,
+      "sha256": "7c65598aab877362ae814e8dbe1a3abe700943367d53c7c873e432da73f21e31",
+      "size_bytes": 4366,
+      "source_group": "skills/task-boundary-vocabulary",
+      "source_path": "skills/task-boundary-vocabulary/SKILL.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783078631945457200,
+      "read_error": null,
+      "sha256": "9e945cf21bbbf17136dfe8643495c8b12179ad20ebb4a233a009be174a6ddbe3",
+      "size_bytes": 2855,
+      "source_group": "skills/task-boundary-vocabulary",
+      "source_path": "skills/task-boundary-vocabulary/correction.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783078676300807500,
+      "read_error": null,
+      "sha256": "872200700f1a99f0b0173331f7e2c285d3b24bd2afc6e25d0a913ef6785ebeae",
+      "size_bytes": 6420,
+      "source_group": "skills/task-boundary-vocabulary",
+      "source_path": "skills/task-boundary-vocabulary/decision.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783085061737464900,
+      "read_error": null,
+      "sha256": "fc4d1cc8b20dd977edcc84adb28e22976445e28a04496b41180e731d24fb8c9c",
+      "size_bytes": 1565,
+      "source_group": "skills/task-vocabulary-reference",
+      "source_path": "skills/task-vocabulary-reference/SKILL.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783084990027580800,
+      "read_error": null,
+      "sha256": "bf933dbd95aca22558e0d15fdcfad7568b8ff260f7af136062d18bf9c2ac539e",
+      "size_bytes": 6968,
+      "source_group": "skills/task-vocabulary-reference",
+      "source_path": "skills/task-vocabulary-reference/decision-authoring-coordination.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783085049305674900,
+      "read_error": null,
+      "sha256": "57cbab43b570e39391a0b3d80fa9044630a969fc105765001f3c783f90bdd21c",
+      "size_bytes": 4380,
+      "source_group": "skills/task-vocabulary-reference",
+      "source_path": "skills/task-vocabulary-reference/graph-lifecycle-execution.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783085027653406200,
+      "read_error": null,
+      "sha256": "36250a865a0374f9b1f301dd8b515d0627685a0c3c3bb78c873ab658bcd8cd43",
+      "size_bytes": 2199,
+      "source_group": "skills/task-vocabulary-reference",
+      "source_path": "skills/task-vocabulary-reference/investigation-decision-design.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783085013461954400,
+      "read_error": null,
+      "sha256": "6787bfb30deb1071f99831f48e6941dbe1d9ee5f89019c41127f874f6054c4b7",
+      "size_bytes": 5024,
+      "source_group": "skills/task-vocabulary-reference",
+      "source_path": "skills/task-vocabulary-reference/review-verification-correction.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008531241595100,
+      "read_error": null,
+      "sha256": "aaac191f97ec9e0450d33768872e1fd2d3aa62e870cd36cb02f78efa34c1008d",
+      "size_bytes": 6205,
+      "source_group": "skills/work-item-framing",
+      "source_path": "skills/work-item-framing/SKILL.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008573233480600,
+      "read_error": null,
+      "sha256": "f17df417ce00c77ed0866747ef02630110805afcf17a94639a7254cec5bfac4b",
+      "size_bytes": 6250,
+      "source_group": "skills/work-item-framing",
+      "source_path": "skills/work-item-framing/framing-routing.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008549712235900,
+      "read_error": null,
+      "sha256": "29cd87405857eecdb5c7fbbb69ea673ff5510b362ae97650447dfe1c6818618c",
+      "size_bytes": 5151,
+      "source_group": "skills/work-item-framing",
+      "source_path": "skills/work-item-framing/interactive-framing-loop.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 195210
+}

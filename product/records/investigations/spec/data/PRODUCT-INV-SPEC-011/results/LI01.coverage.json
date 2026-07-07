@@ -1,0 +1,65 @@
+{
+  "batch_id": "LI01",
+  "files_discovered": 7,
+  "files_failed": 0,
+  "files_scanned": 7,
+  "observation_count": 69,
+  "output_paths": {
+    "coverage": "results/LI01.coverage.json",
+    "observations": "results/LI01.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/investigations/README.md"
+    },
+    {
+      "observation_count": 14,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/investigations/data/V01-INV-DATA-001-m15-data-layer-expressiveness-derivation-and-completion-boundary.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/investigations/data/V01-INV-DATA-002-uc002-notes-retreat-inventory-and-m15-release-boundary-input.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-001-investigation-artifact-format-and-lifecycle.md"
+    },
+    {
+      "observation_count": 11,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-004-openfasttrace-adoption-feasibility-and-canonical-identity-boundary.md"
+    },
+    {
+      "observation_count": 14,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/investigations/docs/V01-INV-DOCS-007-kiro-specs-and-spec-kit-positioning-boundary.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "v01/records/investigations/product/V01-INV-PRODUCT-001-migration-impact-inventory-for-app-namespace-first-repository-layout.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "v01/records/investigations/README.md",
+    "v01/records/investigations/data/V01-INV-DATA-001-m15-data-layer-expressiveness-derivation-and-completion-boundary.md",
+    "v01/records/investigations/data/V01-INV-DATA-002-uc002-notes-retreat-inventory-and-m15-release-boundary-input.md",
+    "v01/records/investigations/docs/V01-INV-DOCS-001-investigation-artifact-format-and-lifecycle.md",
+    "v01/records/investigations/docs/V01-INV-DOCS-004-openfasttrace-adoption-feasibility-and-canonical-identity-boundary.md",
+    "v01/records/investigations/docs/V01-INV-DOCS-007-kiro-specs-and-spec-kit-positioning-boundary.md",
+    "v01/records/investigations/product/V01-INV-PRODUCT-001-migration-impact-inventory-for-app-namespace-first-repository-layout.md"
+  ]
+}

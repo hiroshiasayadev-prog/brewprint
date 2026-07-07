@@ -1,0 +1,188 @@
+{
+  "batch_id": "LA02",
+  "bucket": "legacy_adrs",
+  "estimated_input_tokens": 50173,
+  "file_count": 19,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-31-O",
+  "output_paths": {
+    "coverage": "results/LA02.coverage.json",
+    "observations": "results/LA02.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1780911672039976400,
+      "read_error": null,
+      "sha256": "2b941856499f7e87abc9b8d644f4230f1eb6b1cad9d7094690d5ac0c2b6d44e6",
+      "size_bytes": 4107,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-013-foreach-node.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672041975600,
+      "read_error": null,
+      "sha256": "a37fa04cf82fb25c10434d7794b04885c0336c71c91cfec5dc7af9d2bfd2f44f",
+      "size_bytes": 3532,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-014-initializes-field.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672044976200,
+      "read_error": null,
+      "sha256": "344580e3f8988d947aa2714235b69a62f8b15ffbabc0cfc50ee513abff1effad",
+      "size_bytes": 5132,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-017-diagram-layers-and-scope.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672047976200,
+      "read_error": null,
+      "sha256": "2bed7b0f65b13a7727f243e2f9ee68bbd6e6c1d70a22496c58cf01f5427b40e5",
+      "size_bytes": 7090,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-019-state-node.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672052975200,
+      "read_error": null,
+      "sha256": "6118f12bb9bf099c1a0ddcc187e9335a6bcbb24ba40e69955f69ff6934ae41b8",
+      "size_bytes": 5872,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-023-control-flow-scope-and-branch-entry.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672067973100,
+      "read_error": null,
+      "sha256": "af4054e6a8660d56f857f1c2889a5cabfbb138841443ae313d9020c4e5b2453f",
+      "size_bytes": 7713,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-036-sequence-diagram-arrow-rules-per-source.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672082464700,
+      "read_error": null,
+      "sha256": "72c4e31b47945e9c530d17d8874dd36fec1923611a2e062f5bee7e1a8f0e846c",
+      "size_bytes": 10305,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-047-go-semantic-model-query-layer-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672084463500,
+      "read_error": null,
+      "sha256": "195d3cdf91782882a3c937443853868c3dccc4ff5199177d94269f3806ffb398",
+      "size_bytes": 13979,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-048-resolved-project-index-strategy.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672088465600,
+      "read_error": null,
+      "sha256": "7a7846562c547d759064ccdfb04020185c8be67518004a9ee72e6b52a3c25837",
+      "size_bytes": 3644,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-051-unsupported-yaml-file-warning.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672089465600,
+      "read_error": null,
+      "sha256": "e77100fea7ed6195b3252eb7200eedc3b0f6d0de09ef808175d5b9a2f979cc03",
+      "size_bytes": 4259,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-052-source-file-path-normalization.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672090463400,
+      "read_error": null,
+      "sha256": "ac672f5afedced0dcd1971184508999b6c29f52db1a0a708d9b2967bb6cd6074",
+      "size_bytes": 5347,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-053-render-output-filename-policy-for-nested-modules.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672091463600,
+      "read_error": null,
+      "sha256": "f9b4c0a77e8e4e183d317164e09ce5d5fc39a8febe966ac68508024d7735e128",
+      "size_bytes": 9184,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-054-mcp-query-coverage-for-design-conversation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672113990200,
+      "read_error": null,
+      "sha256": "b5ceb224efc12687871e509b76b573b87229dae59b180484f4725134011efd96",
+      "size_bytes": 17794,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-069-type-ref-container-complexity-lint.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672125085800,
+      "read_error": null,
+      "sha256": "5ac6a5dafd9d20d814ca55986ad37022c83e30bc1176f25fe2d8cfe578d93fe9",
+      "size_bytes": 19109,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-075-model-file-render.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672130086400,
+      "read_error": null,
+      "sha256": "fe9a456cc89f6eef77a7f34ebf190759fc818c546582910b2135f525580f4ec3",
+      "size_bytes": 31149,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-078-mcp-semantic-anchor-synthetic-id-policy.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672148903600,
+      "read_error": null,
+      "sha256": "79b91bd667c9ded841d37c565d118ca9e8e53ceb820f84f4d08c014f6bb61f95",
+      "size_bytes": 15428,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-089-llm-first-design-principle.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672153911600,
+      "read_error": null,
+      "sha256": "822dc3fd2fc3c273c68f3dff90e67d2a2a6bdac96aec2996d4f0081e50e0bd64",
+      "size_bytes": 19614,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-092-design-records-mcp-workflow-artifact-record-and-relation-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672155910400,
+      "read_error": null,
+      "sha256": "5a4a41e2d907364268d870de286edaa3809b497720c045fcf3c8f3c2dd20c3da",
+      "size_bytes": 14377,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-093-design-records-mcp-authoring-transaction-model.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1780911672158911800,
+      "read_error": null,
+      "sha256": "33b794dca8518dd8c84a2b9160041b02821b903312f70fa08e4eba22d6c6539f",
+      "size_bytes": 3059,
+      "source_group": "v01/records/adr",
+      "source_path": "v01/records/adr/V01-ADR-096-artifact-product-namespace-per-app-migration.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 200694
+}

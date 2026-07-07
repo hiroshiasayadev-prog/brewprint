@@ -1,0 +1,287 @@
+{
+  "batch_id": "PN03",
+  "bucket": "product_non_tasks",
+  "estimated_input_tokens": 61136,
+  "file_count": 30,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-15-O",
+  "output_paths": {
+    "coverage": "results/PN03.coverage.json",
+    "observations": "results/PN03.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1782463385471179800,
+      "read_error": null,
+      "sha256": "10fb266042e0194d8cddf47cfacb6e36c3a4c2e020110a99a0c2dad3c4a1e1ab",
+      "size_bytes": 5020,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-002-generate-portable-design-records-package-through-a-product-owned-rebuild-command.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782838277633243200,
+      "read_error": null,
+      "sha256": "b968742e13fad68f7bf302eb2c723b612e0e6c72e48604283133f9a6769f22cb",
+      "size_bytes": 7288,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-007-use-work-item-source-refs-as-canonical-workflow-provenance.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782893341656605500,
+      "read_error": null,
+      "sha256": "613cf34f424312e2941c5f57771f8f730f409f9598af3f037aa71a639cf3492b",
+      "size_bytes": 3067,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-009-define-end-to-end-design-convergence-workflow-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783009054063131000,
+      "read_error": null,
+      "sha256": "3dea360980ba6cde77c8811816d7efcd2b8fdcfbd17332bf6069dbe457394c85",
+      "size_bytes": 5015,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-014-preserve-completed-workflow-records-through-append-only-reconvergence.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782898147080715200,
+      "read_error": null,
+      "sha256": "746acc81f27946ee6b8872137b9b0e8eaa247ac662afc21351378255278dd0bb",
+      "size_bytes": 34440,
+      "source_group": "product/records/investigations",
+      "source_path": "product/records/investigations/spec/PRODUCT-INV-SPEC-006-design-convergence-impact-and-conflict-inventory.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782901707508287300,
+      "read_error": null,
+      "sha256": "a5330661914b8c075430b83b78ee041d049608c9739213924d2ad0461044fcfc",
+      "size_bytes": 24749,
+      "source_group": "product/records/investigations",
+      "source_path": "product/records/investigations/spec/PRODUCT-INV-SPEC-007-temporary-standalone-task-validator-impact-and-conflicts.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782458358746482000,
+      "read_error": null,
+      "sha256": "cbf23b6d5c661473d9072c415bed9e7543701b39494be1b0717b8e4d1dfc1199",
+      "size_bytes": 8407,
+      "source_group": "product/records/requirements",
+      "source_path": "product/records/requirements/PRODUCT-REQ-SPEC-003-portable-design-records-standards-distribution.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782838119163601300,
+      "read_error": null,
+      "sha256": "66b7f7e9a92e49f6c0c1555dc6d561e4f2737ca3ef636b5a4ce63dd2bd2ef70d",
+      "size_bytes": 4119,
+      "source_group": "product/records/requirements",
+      "source_path": "product/records/requirements/spec/PRODUCT-REQ-SPEC-006-generic-workflow-source-relations.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783006787864018000,
+      "read_error": null,
+      "sha256": "2cf380b076b009fb84c427142facc820032a4f0398a0bc34078758a35aedd95c",
+      "size_bytes": 1932,
+      "source_group": "product/records/requirements",
+      "source_path": "product/records/requirements/spec/PRODUCT-REQ-SPEC-009-cancelled-work-item-and-task-lifecycle.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783084788558987700,
+      "read_error": null,
+      "sha256": "e37acdcad7ff6ca47c2d4689ec74af71958abbd24181b498de6869454e4ffb4d",
+      "size_bytes": 2773,
+      "source_group": "product/records/requirements",
+      "source_path": "product/records/requirements/spec/PRODUCT-REQ-SPEC-011-populate-task-boundary-vocabulary-from-real-corpus-evidence.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782310599636728800,
+      "read_error": null,
+      "sha256": "cd91b893402871df59de16cb223058444a0447946a5f2762258bf7c356f42ac4",
+      "size_bytes": 3612,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/bpdsl/artifact-responsibilities.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782307922309753500,
+      "read_error": null,
+      "sha256": "144a889bac7437ea3ecfdebbf4e2fcc1a8df42723f34d6b9b8910ae2f973461e",
+      "size_bytes": 6730,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/bpdsl/design-flow.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782489076881123600,
+      "read_error": null,
+      "sha256": "fdd07e56f639e7eaa367b3e367bc8586e97c73039bd429416f3d4e11611a0633",
+      "size_bytes": 1657,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/brewprint/compatibility/legacy-id-compatibility.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782894384761762900,
+      "read_error": null,
+      "sha256": "3fed015194fc59ed18ac94cb405322442600052a953d8fc79c31c9010b0c7a52",
+      "size_bytes": 6574,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/artifact-model/artifact-responsibility-matrix.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782321219163403700,
+      "read_error": null,
+      "sha256": "7738b17f523fcf3ee2176c8b30b6ceca8ce1595993ef9c0a0cd5dd0f1abfdbab",
+      "size_bytes": 2214,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/authoring-standards/agent-authoring-policy.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782894377536667300,
+      "read_error": null,
+      "sha256": "10d690575eefa9d175658b4c380f1dfca75890c5856c900fd50109673579a421",
+      "size_bytes": 5696,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/authoring-standards/artifact-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782300152239216500,
+      "read_error": null,
+      "sha256": "870acde292bfae525f5e69c30c171f6169b247bead50acfeea958716197167f6",
+      "size_bytes": 2579,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/authoring-standards/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782894342514489600,
+      "read_error": null,
+      "sha256": "59fab4a8c87be35800c1533f3004798846177d96a5ce71c886f4d41200c5fb96",
+      "size_bytes": 9646,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/authoring-standards/requirement-authoring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782310836795837500,
+      "read_error": null,
+      "sha256": "cdc49a1a663dbcb1b59271e0ba915e13b8883fb2dc47b0061fb64bf08aa3b3ca",
+      "size_bytes": 11139,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/authoring-standards/spec-authoring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782310876867845300,
+      "read_error": null,
+      "sha256": "58d09caccbb7252a8f941a0a28dbdf47835b495d8e2cddee320894c89cfd7659",
+      "size_bytes": 3277,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/authoring-standards/writing-standard.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782310918006429000,
+      "read_error": null,
+      "sha256": "2548b85f2b3cf916a8c7d53da0f19264c5365ff5c44ef89b903c9bc65c849f12",
+      "size_bytes": 2337,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/namespace-model/existing-artifacts.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782310957342319200,
+      "read_error": null,
+      "sha256": "083cfbe5fa1e6c1ede2c6b0b18f9393734f0c2bb56c8ea430c2b606eabb5a509",
+      "size_bytes": 4564,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/repository-layout/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782311046591130400,
+      "read_error": null,
+      "sha256": "e3788ddac3fd2336bdb08e9468adc5ee2d359e27309aabc11bfa5cefc855503d",
+      "size_bytes": 3951,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/spec-format/topics-table.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783009139499688500,
+      "read_error": null,
+      "sha256": "08f18d1f163075801058bfa6eb598f923c6f53ddbf678c2a6c7c77dd973ff28b",
+      "size_bytes": 8080,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/responsibility-boundary-validator/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781103208235605000,
+      "read_error": null,
+      "sha256": "2b5295d0be8519bcaa2b2e7ac5f6327cf24c10b15a0e7773592d08ded99d1c70",
+      "size_bytes": 22381,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-001-spec-format-contract-and-follow-up-split.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782206582888079500,
+      "read_error": null,
+      "sha256": "15ed18aadd4ccea3d974c0583f4815e30d776888fe421074ef9782c366b593e5",
+      "size_bytes": 14649,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-005-existing-spec-format-migration-and-restructuring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782311264089246100,
+      "read_error": null,
+      "sha256": "bb3f3c75cca807e7f5c2e3d753e2cc02e2fc38f6c6e00076cec24dae276ba931",
+      "size_bytes": 17452,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-011-per-artifact-authoring-guide-migration.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782910951702232000,
+      "read_error": null,
+      "sha256": "550dd254032757ba14f397bfcf53351ec253dd9247c5a4996e967a955cd54d2c",
+      "size_bytes": 12135,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-018-design-convergence-workflow-successor.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008880267686500,
+      "read_error": null,
+      "sha256": "1bd7afa6518fcffe42952c9b631889260ebe21b5e8ded89501e9a60195f439bb",
+      "size_bytes": 5517,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-024-establish-work-item-framing-workflow.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783092462933510900,
+      "read_error": null,
+      "sha256": "774b601f4c2b41f4e9ec3be54e3cb619b6c6ccda41b6cd939e43697155d4edc7",
+      "size_bytes": 3546,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-026-frame-brewprint-design-governance-term-inventory.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 244546
+}

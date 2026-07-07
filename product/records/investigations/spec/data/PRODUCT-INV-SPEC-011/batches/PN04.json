@@ -1,0 +1,287 @@
+{
+  "batch_id": "PN04",
+  "bucket": "product_non_tasks",
+  "estimated_input_tokens": 61167,
+  "file_count": 30,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-16-O",
+  "output_paths": {
+    "coverage": "results/PN04.coverage.json",
+    "observations": "results/PN04.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1782466886527073800,
+      "read_error": null,
+      "sha256": "5bbc33512dc8e032e7d228b4f48d6074b503f42428ccf0e68e9e75db5dc7806e",
+      "size_bytes": 9453,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-003-define-operational-checks-and-warning-behavior-for-portable-package-generation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782913138033207200,
+      "read_error": null,
+      "sha256": "8f8d5f748e57af0a5ee9bfb7f3571701627a86bbc4b93361af85d20f3a4adb78",
+      "size_bytes": 4603,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-015-define-task-local-semantic-responsibility-validation-semantics.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783009023726492100,
+      "read_error": null,
+      "sha256": "6861b5eb1493a2ce61de62bd880c36b1fdca7ae45c166785bf922695e3d1152c",
+      "size_bytes": 7111,
+      "source_group": "product/records/adr",
+      "source_path": "product/records/adr/spec/PRODUCT-ADR-SPEC-018-define-terminal-cancellation-lifecycle-and-atomic-propagation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781627793971842500,
+      "read_error": null,
+      "sha256": "77325a2698579f22866021978d1eff26a82908c94c807f9c34ee7b9fe1a94f6b",
+      "size_bytes": 13383,
+      "source_group": "product/records/investigations",
+      "source_path": "product/records/investigations/spec/PRODUCT-INV-SPEC-004-namespace-model-and-drmcp-implementation-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782914438480755100,
+      "read_error": null,
+      "sha256": "30c6f0a8186586abd31fb1471cd02568274b68cc98ad02f7863ab68791ed0cf3",
+      "size_bytes": 33020,
+      "source_group": "product/records/investigations",
+      "source_path": "product/records/investigations/spec/PRODUCT-INV-SPEC-008-task-responsibility-checklist-coverage-and-placement.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783008176256236600,
+      "read_error": null,
+      "sha256": "579ae0c43d63b67080eacb83132bf3c27e1853b5c348624804db9a1562a80b07",
+      "size_bytes": 18433,
+      "source_group": "product/records/investigations",
+      "source_path": "product/records/investigations/spec/PRODUCT-INV-SPEC-010-cancelled-lifecycle-impact-and-conflicts.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782896417224056100,
+      "read_error": null,
+      "sha256": "ac0b70c5f890cd5027e385ecae0e1e4004a1d6d9786ee8383fca8c9389c36b1d",
+      "size_bytes": 2834,
+      "source_group": "product/records/requirements",
+      "source_path": "product/records/requirements/spec/PRODUCT-REQ-SPEC-007-semantic-task-responsibility-boundary-validation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783007967086369800,
+      "read_error": null,
+      "sha256": "002c0c0f115b71d370b358ab6bee7520962ad0fa7a2c876bec3ddfe941f3399a",
+      "size_bytes": 4126,
+      "source_group": "product/records/requirements",
+      "source_path": "product/records/requirements/spec/PRODUCT-REQ-SPEC-010-work-item-framing-workflow.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782307297984094800,
+      "read_error": null,
+      "sha256": "d95f4c8977b67dc109072d27c8246e9488b7eb7cc8645e946e11f0f238578ee7",
+      "size_bytes": 3522,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/bpdsl/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782489083395919800,
+      "read_error": null,
+      "sha256": "76a30d6e26e7f970213ea43825a72ce203fd3f85a00d8dd4505e0ac923b2f9c8",
+      "size_bytes": 1834,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/brewprint/compatibility/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782930813814736300,
+      "read_error": null,
+      "sha256": "b7dd59ed7d309b6e73c2825b61eabcd3f6faef3de8e7d2c6b9b8009bea072080",
+      "size_bytes": 2507,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/brewprint/layout/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782930809358432700,
+      "read_error": null,
+      "sha256": "11e835a5434575730d662ab6d48afd7ea55863c24440bc81b9e17f95f99579cd",
+      "size_bytes": 3320,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/brewprint/namespaces/domain-catalog.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782310732657889900,
+      "read_error": null,
+      "sha256": "6cace2c6063ac57f51ea4b08751c2355aa1bb29ab3eba1a80ea9d3aba2864ea7",
+      "size_bytes": 2196,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/brewprint/namespaces/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782310816199618000,
+      "read_error": null,
+      "sha256": "46b8976f734de088e8a025371f94b91fecbc6d91516fadfc883b480bfb802f92",
+      "size_bytes": 12024,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/authoring-standards/investigation-authoring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783072735613102400,
+      "read_error": null,
+      "sha256": "af5829c6a27e39153500ec6269d388bca440a54a982b58dab709abe6c3f4e194",
+      "size_bytes": 31938,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/authoring-standards/task-authoring.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782321297842028200,
+      "read_error": null,
+      "sha256": "f6000da02135937fc319f9dc7db5068e8de87a934bea2412e95e57e55705f5a6",
+      "size_bytes": 1876,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/namespace-model/app-namespaces.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782321238261370600,
+      "read_error": null,
+      "sha256": "930cf8d4669fe319c75bc28021ef0a032bc60415224346d35540ee5937296144",
+      "size_bytes": 2375,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/repository-layout/record-discovery-paths.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782313034589061600,
+      "read_error": null,
+      "sha256": "d3da1f714e6681033d7f7a00181828105da70b029c13d12190bfb707924ff7a5",
+      "size_bytes": 4000,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/spec-format/follow-up-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782838651005659000,
+      "read_error": null,
+      "sha256": "7f9c0074c3e71197c11ce85dfb77ae59fe5941b278b5fa7e10fa1d42707a034c",
+      "size_bytes": 5942,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/traceability/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782838666879879400,
+      "read_error": null,
+      "sha256": "d49a869746dd0d650a133dd2c88f59985c60825b717280f17767a63bbfbbf248",
+      "size_bytes": 7151,
+      "source_group": "product/records/spec",
+      "source_path": "product/records/spec/design-records/traceability/metadata-schema.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782311213966490400,
+      "read_error": null,
+      "sha256": "62460a5d5831258736e9728d61bca4291897bf999a76696fe07f325f847a90ca",
+      "size_bytes": 4930,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-002-path-derived-canonical-spec-refs-and-ref-first-topic-index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781541686645529800,
+      "read_error": null,
+      "sha256": "34677e963e934252451c0b89cd25c573b1a45289d3a50e1e96013253db474a61",
+      "size_bytes": 3024,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-003-spec-authoring-guide-format-update.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781540671532810600,
+      "read_error": null,
+      "sha256": "eef84f5d3f91aed0d0da406b7c4e475c2d9c7518fe4499d893f275b12e6833df",
+      "size_bytes": 3600,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-006-temporary-spec-format-validator-tooling.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782222019150872100,
+      "read_error": null,
+      "sha256": "359c871a90b27e6134099961d54f1aba35a960bfae0e48c5f541cd72340e7dc0",
+      "size_bytes": 5048,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-009-format-only-migration-traceability-and-artifact-model-specs.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782490407889100700,
+      "read_error": null,
+      "sha256": "28838778af7f822c2dc0ef13b273e34cb8d7bc33f0585cc4953b19146a383409",
+      "size_bytes": 5405,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-014-remove-v01-spec-compatibility-authority.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782916751725978300,
+      "read_error": null,
+      "sha256": "2477cc42a835c6999630c828da4164910d231a2a0706f0f02c999a51a9aad98b",
+      "size_bytes": 17101,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-019-design-semantic-task-responsibility-boundary-validation.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782924095141330600,
+      "read_error": null,
+      "sha256": "52561179356c847fdb9785007debec9aa9d1c32efe71f0be5b0467014a8db2bd",
+      "size_bytes": 6143,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-020-author-task-responsibility-boundary-checklists.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782932237451352600,
+      "read_error": null,
+      "sha256": "94790ebae29df710b648645cf523d20102be60021feba2558ae5ae05ef9e5f5d",
+      "size_bytes": 11101,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-021-implement-temporary-standalone-task-responsibility-validator.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782922155903872400,
+      "read_error": null,
+      "sha256": "a358ea072437ad755f8b95de7e3556a80d5a44ef5e085bc9bb38971185e0c15f",
+      "size_bytes": 7641,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-022-add-work-item-execution-task-type.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783085088928047600,
+      "read_error": null,
+      "sha256": "5f5fb91fc7229100becc2646cdd46f792b892935d2040a9ab55cb3a3ea5845db",
+      "size_bytes": 9030,
+      "source_group": "product/records/work-items",
+      "source_path": "product/records/work-items/spec/PRODUCT-WORK-SPEC-025-populate-task-boundary-vocabulary-from-real-corpus.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 244671
+}

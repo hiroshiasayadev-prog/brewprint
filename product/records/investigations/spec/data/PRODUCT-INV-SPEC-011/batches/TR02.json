@@ -1,0 +1,323 @@
+{
+  "batch_id": "TR02",
+  "bucket": "trv_all",
+  "estimated_input_tokens": 57349,
+  "file_count": 34,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-26-O",
+  "output_paths": {
+    "coverage": "results/TR02.coverage.json",
+    "observations": "results/TR02.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1783002967141742200,
+      "read_error": null,
+      "sha256": "c8b5651b0db76b95a7d82ce51e1c9c2fc02136f95fc82fc0f1188e8518337760",
+      "size_bytes": 7351,
+      "source_group": "trv/records/adr",
+      "source_path": "trv/records/adr/spec/TRV-ADR-SPEC-001-use-ports-and-adapters-for-trv-application-architecture.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783002980704688600,
+      "read_error": null,
+      "sha256": "add6b5f5fb14b53e6cc602cfdf0b8d27c76e1f91fa2446e63e2bfe5d7eba74c2",
+      "size_bytes": 5793,
+      "source_group": "trv/records/adr",
+      "source_path": "trv/records/adr/spec/TRV-ADR-SPEC-002-use-external-ollama-through-provider-neutral-port.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783003433637060500,
+      "read_error": null,
+      "sha256": "92d9f4aeb77deda9056f99c03e2bd509e0cb5b51c0852c2f7da36847e1d87682",
+      "size_bytes": 4397,
+      "source_group": "trv/records/adr",
+      "source_path": "trv/records/adr/spec/TRV-ADR-SPEC-003-use-standalone-stdio-mcp-interface-and-tagged-outcomes.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783003445909138200,
+      "read_error": null,
+      "sha256": "be25cb74a69fae2e35e2694059bd8ce2a9e6c4b02d758444f3f23ebf59896c77",
+      "size_bytes": 3471,
+      "source_group": "trv/records/adr",
+      "source_path": "trv/records/adr/spec/TRV-ADR-SPEC-004-use-repository-root-relative-task-path-input.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783003461668465900,
+      "read_error": null,
+      "sha256": "e28fbae52ae909c97017b424c21c6c7b7d0f388640228c3ab611bfe26e252b21",
+      "size_bytes": 4227,
+      "source_group": "trv/records/adr",
+      "source_path": "trv/records/adr/spec/TRV-ADR-SPEC-005-preserve-semantic-compatibility-across-future-drmcp-integration.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783016431065514100,
+      "read_error": null,
+      "sha256": "882d624a14e90c33f90f61911a75c17fc46f03dd63bf37ce3b535983235c4864",
+      "size_bytes": 28514,
+      "source_group": "trv/records/investigations",
+      "source_path": "trv/records/investigations/spec/TRV-INV-SPEC-002-evaluate-rule-guided-real-world-task-mutations.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783056775622288300,
+      "read_error": null,
+      "sha256": "3f002e21531b0993eff2bbc03862b141b572ac1be3a68bd88f7743032ac4507a",
+      "size_bytes": 22180,
+      "source_group": "trv/records/investigations",
+      "source_path": "trv/records/investigations/spec/TRV-INV-SPEC-005-gpt-oss-20b-decision-task-boundary-detection-baseline.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783001958578875800,
+      "read_error": null,
+      "sha256": "e17045b171ae982c1d7171a7fc8eba207d55d164d82037ab2576fd34c5c16b1f",
+      "size_bytes": 5094,
+      "source_group": "trv/records/spec",
+      "source_path": "trv/records/spec/application-architecture/component-model.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783002106983380100,
+      "read_error": null,
+      "sha256": "1f8559cc009738e7f6b2b302cfa6a9998d90ab8da328fa82c4d353aaab8c800c",
+      "size_bytes": 7303,
+      "source_group": "trv/records/spec",
+      "source_path": "trv/records/spec/application-architecture/validation-flow.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783000715533359800,
+      "read_error": null,
+      "sha256": "1d271d1942662afa7518f6384cfb4e84d5edb22c32759184c751641af8218eb4",
+      "size_bytes": 4779,
+      "source_group": "trv/records/spec",
+      "source_path": "trv/records/spec/model-runtime/index.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782991126917945900,
+      "read_error": null,
+      "sha256": "4d07880eff58f594933e3bd86f97fa920fca5e51983296215a9393248f2eff99",
+      "size_bytes": 35017,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-02-decide-trv-app-local-design-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782991629947961800,
+      "read_error": null,
+      "sha256": "57eaf60e3c9ac050cb1f62216bdbf70f8670c8b9ec74aa7b3dd1d729e675025c",
+      "size_bytes": 2881,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-05-author-trv-application-requirement.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782991697704546200,
+      "read_error": null,
+      "sha256": "a5c1dcc8f768928869e128b3be1b8cd95bca87ec113d719f6c634dcfba7fae77",
+      "size_bytes": 3549,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-06-decompose-trv-design-work-items.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782994553376747000,
+      "read_error": null,
+      "sha256": "5165cf0b35c83f7effa06b996f9e832cbfabb278043399c720ce8b35b040a482",
+      "size_bytes": 1759,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-08-execute-trv-application-architecture-work-item.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783005115807286100,
+      "read_error": null,
+      "sha256": "8f0086ac7ce2dec8a983e293fe2c1a08aada0886947087e26e453c3ff0c806ae",
+      "size_bytes": 1883,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-09-execute-trv-application-contract-work-item.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782991846728720100,
+      "read_error": null,
+      "sha256": "2eba058c8857602f49b3c3daafffaea362143574cf7037ecfafabfc3cd50ac13",
+      "size_bytes": 2218,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-12-synchronize-trv-design-closure.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783005216101049100,
+      "read_error": null,
+      "sha256": "63a654f522f8731c1d4c09b2b3e23df1ec8b4794bcc2ec606dce7ecc6a81e87f",
+      "size_bytes": 3040,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-001-14-coordinate-architecture-derived-contract-execution-route.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782992030501313100,
+      "read_error": null,
+      "sha256": "7fe84515e802e138a9f66dc1503e7186c355dfc621a972425ed87d458c60ba64",
+      "size_bytes": 2417,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-01-coordinate-trv-architecture-design-graph.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782992464988051600,
+      "read_error": null,
+      "sha256": "fe59394271fa2768148d566405f627dfaf371721fc90a659b01eec0fe2c5f09d",
+      "size_bytes": 2829,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-04-author-trv-architecture-adrs.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782993024632304100,
+      "read_error": null,
+      "sha256": "0dc7b6852bc02ad33dc6dd9b8e72623d73ab5ea1185b768a8b18746b3823ea15",
+      "size_bytes": 9854,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-06-independently-review-trv-architecture.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782999553559015100,
+      "read_error": null,
+      "sha256": "c07c81a56ee8cfeeafd182506fa15ade3f50423ede3c343fae8fe70fef89d344",
+      "size_bytes": 20070,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-09-decide-trv-module-dependency-architecture.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783000046352798300,
+      "read_error": null,
+      "sha256": "7bf30e08918f141fb5a36b245cc04919225fca38a78fdccebc1ab5c9744303af",
+      "size_bytes": 3102,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-11-coordinate-revised-trv-architecture-authoring-route.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783000447920212100,
+      "read_error": null,
+      "sha256": "56b46ffceedd424f383d9d7d2f94d8b0371d93c2259187358d88df40ea84fc52",
+      "size_bytes": 3941,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-12-amend-trv-architecture-adrs.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783001002656440400,
+      "read_error": null,
+      "sha256": "6f048f07931b711368cf7bb5fe63b5d2584de6072b729f1fd0d5fe4bd45343d7",
+      "size_bytes": 5639,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-13-author-revised-trv-architecture-specifications.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783002165781655000,
+      "read_error": null,
+      "sha256": "2b4ba8239e2250764a36bd2a21f57a2ea07774b52c01dd4bde21d67e2951a943",
+      "size_bytes": 6263,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-002-17-correct-revised-architecture-review-findings.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782994645772369000,
+      "read_error": null,
+      "sha256": "e32aafd7efd7eb14e9c452e75a009be4df289a683cba84d87d382893750f6c74",
+      "size_bytes": 2573,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-003-01-coordinate-trv-contract-design-graph.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782994680878810000,
+      "read_error": null,
+      "sha256": "d1a5635758e844df8068cbbd9220060d1c9571bfb44dcd62cfbd6c439ac4be92",
+      "size_bytes": 2852,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-003-02-route-trv-contract-adrs.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782994759613535400,
+      "read_error": null,
+      "sha256": "cd01d51af206ced0fd0a46cfbcf7bff6fa4f05e28fa60b3517d2004a931a08d9",
+      "size_bytes": 2034,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-003-03-coordinate-trv-contract-authoring-route.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783005025993884600,
+      "read_error": null,
+      "sha256": "113b04aa1ec0fe8597a50a13e0b14f0b7a568827de34f2dd58b9e95a44de7a38",
+      "size_bytes": 3777,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-003-04-author-trv-contract-adrs.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783005090318978600,
+      "read_error": null,
+      "sha256": "38b9476766943185472221d8caa76a0ab49550c433df31d6b8b577e69b928ae8",
+      "size_bytes": 1711,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-003-06-independently-review-trv-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783005096958253800,
+      "read_error": null,
+      "sha256": "70ba93947a4adb74d7b6edc7507943bb2f5fc042dd5fcf3e0b121ac836aa9de9",
+      "size_bytes": 1519,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-003-07-synchronize-trv-contract-closure.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783005196826757500,
+      "read_error": null,
+      "sha256": "796a7b72c29e93caf60c0b5cf1c1205968513dc2ecb6f38c4f157570f304ffeb",
+      "size_bytes": 2654,
+      "source_group": "trv/records/tasks",
+      "source_path": "trv/records/tasks/spec/TRV-TASK-SPEC-004-01-coordinate-trv-detailed-specification-graph.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783071412819321400,
+      "read_error": null,
+      "sha256": "e9961a6c3313cbafec43fb4113e9369253d5a176ad6973bad30051fa3b2bc300",
+      "size_bytes": 10590,
+      "source_group": "trv/records/work-items",
+      "source_path": "trv/records/work-items/spec/TRV-WORK-SPEC-001-define-task-responsibility-validator-app-local-design.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783071429835371600,
+      "read_error": null,
+      "sha256": "f36155d06b6806d8d3048c31a87a494ff03839edd3ba1a0fac7716e9de2e05e5",
+      "size_bytes": 4116,
+      "source_group": "trv/records/work-items",
+      "source_path": "trv/records/work-items/spec/TRV-WORK-SPEC-004-define-trv-implementation-ready-detailed-specifications.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 229397
+}

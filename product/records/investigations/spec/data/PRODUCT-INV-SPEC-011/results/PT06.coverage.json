@@ -1,0 +1,205 @@
+{
+  "batch_id": "PT06",
+  "files_discovered": 27,
+  "files_failed": 0,
+  "files_scanned": 27,
+  "observation_count": 167,
+  "output_paths": {
+    "coverage": "results/PT06.coverage.json",
+    "observations": "results/PT06.observations.jsonl"
+  },
+  "results": [
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-09-apply-findings-validate-and-close.md"
+    },
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-04-bpdsl-dsl-finalize.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-06-bpdsl-mcp-spec-authoring.md"
+    },
+    {
+      "observation_count": 3,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-08-bpdsl-mcp-finalize.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-13-drmcp-directory-setup.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-17-drmcp-phase2-relocate-to-namespace-model.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-20-drmcp-phase2-opus-review.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-007-04-review-split-content-against-index-old.md"
+    },
+    {
+      "observation_count": 2,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-010-04-accept-and-close.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-05-reconcile-traceability-and-extract-future-material.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-013-06-implement-portable-package-generator-and-produce-initial-package.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-015-01-inventory-validation-owner-pointers.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-016-06-author-required-adrs.md"
+    },
+    {
+      "observation_count": 4,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-016-08-review-final-req-005-design.md"
+    },
+    {
+      "observation_count": 12,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-017-01-inventory-req-006-source-relation-decisions.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-017-07-synchronize-req-006-specifications.md"
+    },
+    {
+      "observation_count": 6,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-08-synchronize-design-convergence-workflow-closure.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-10-investigate-design-convergence-impact-and-conflicts.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-13-coordinate-bounded-t14-authoring-route.md"
+    },
+    {
+      "observation_count": 10,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-12-route-validator-decisions-to-adr-boundaries.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-18-independently-review-semantic-validator-design.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-21-decide-early-checklist-release-boundary.md"
+    },
+    {
+      "observation_count": 7,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-020-02-decide-checklist-artifact-contract.md"
+    },
+    {
+      "observation_count": 5,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-022-05-synchronize-work-item-execution-design-closure.md"
+    },
+    {
+      "observation_count": 9,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-023-10-independently-review-cancelled-lifecycle-design.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-025-06-extract-boundary-vocabulary-w001-w007.md"
+    },
+    {
+      "observation_count": 8,
+      "result": "observations",
+      "snapshot_status": "unchanged",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-026-01-decide-brewprint-term-inventory-framing.md"
+    }
+  ],
+  "schema": "bp-wide-term-batch-v1",
+  "scope": [
+    "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-09-apply-findings-validate-and-close.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-04-bpdsl-dsl-finalize.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-06-bpdsl-mcp-spec-authoring.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-08-bpdsl-mcp-finalize.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-13-drmcp-directory-setup.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-17-drmcp-phase2-relocate-to-namespace-model.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-005-20-drmcp-phase2-opus-review.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-007-04-review-split-content-against-index-old.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-010-04-accept-and-close.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-05-reconcile-traceability-and-extract-future-material.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-013-06-implement-portable-package-generator-and-produce-initial-package.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-015-01-inventory-validation-owner-pointers.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-016-06-author-required-adrs.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-016-08-review-final-req-005-design.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-017-01-inventory-req-006-source-relation-decisions.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-017-07-synchronize-req-006-specifications.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-08-synchronize-design-convergence-workflow-closure.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-10-investigate-design-convergence-impact-and-conflicts.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-13-coordinate-bounded-t14-authoring-route.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-12-route-validator-decisions-to-adr-boundaries.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-18-independently-review-semantic-validator-design.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-21-decide-early-checklist-release-boundary.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-020-02-decide-checklist-artifact-contract.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-022-05-synchronize-work-item-execution-design-closure.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-023-10-independently-review-cancelled-lifecycle-design.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-025-06-extract-boundary-vocabulary-w001-w007.md",
+    "product/records/tasks/spec/PRODUCT-TASK-SPEC-026-01-decide-brewprint-term-inventory-framing.md"
+  ]
+}

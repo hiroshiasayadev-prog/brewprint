@@ -1,0 +1,260 @@
+{
+  "batch_id": "PT04",
+  "bucket": "product_tasks",
+  "estimated_input_tokens": 51359,
+  "file_count": 27,
+  "manifest_path": "manifest.json",
+  "observation_id_prefix": "PRODUCT-TASK-SPEC-027-08-O",
+  "output_paths": {
+    "coverage": "results/PT04.coverage.json",
+    "observations": "results/PT04.observations.jsonl"
+  },
+  "profile": "coherent-32",
+  "schema_version": "bp-wide-term-batch-assignment-v1",
+  "sources": [
+    {
+      "modified_ns": 1782278722749196100,
+      "read_error": null,
+      "sha256": "69ccd236edf8a80a8d489b6fc9afa7bc5d0515d128f215493e177263c2aace32",
+      "size_bytes": 8794,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/namespace/PRODUCT-TASK-NAMESPACE-001-06-synchronize-product-downstream-consumers.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781103195401376300,
+      "read_error": null,
+      "sha256": "e2e920dd3fdf0e48211a2372052b586bea726a62a706415b435718fd1519ff23",
+      "size_bytes": 3760,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-001-04-close-work-spec-001.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781104041881889100,
+      "read_error": null,
+      "sha256": "10229807dbdeb3a20e84eb17d2529fa93aa50b0046743f44576672933b74ef01",
+      "size_bytes": 1737,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-007-01-preserve-current-spec-format-index-as-temporary-review-source.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782058777647061900,
+      "read_error": null,
+      "sha256": "6301da02907d9137774f8d32dd2aaa5575442c061c50b8086e9ca8dfa4d6fd21",
+      "size_bytes": 2803,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-009-01-inventory-and-staging.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1781532808147516800,
+      "read_error": null,
+      "sha256": "3db045ad6e207fd5abba33d9b0bc3dc8ba4e67ec03033b26031a8c9679bb8c2e",
+      "size_bytes": 1309,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-010-03-spec-review.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782308043357096900,
+      "read_error": null,
+      "sha256": "251c0dd1ebdac7c3199a43734ca6b0e93d48b17627d8bedcd7b27107206baa22",
+      "size_bytes": 27889,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-09-finalize-temporary-bpdsl-staging.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782323505801073200,
+      "read_error": null,
+      "sha256": "1da80babddd5758e1eb5254db4055b1e438ed14dd61279fc69ac9b4788d89d1a",
+      "size_bytes": 14398,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-012-11-validate-and-clean-migration-diagnostics.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782461514759294600,
+      "read_error": null,
+      "sha256": "edca2031d409f0bb853f4b4afcf318b18506087f8086b8b4841e6b0d9f1019dc",
+      "size_bytes": 5305,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-013-03-define-source-authoring-warning-handling-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782650502523676600,
+      "read_error": null,
+      "sha256": "5234f0186ada193d9e16b183c0cfc2974fd6a7b634ed5638b9184756cb491e5a",
+      "size_bytes": 11381,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-013-08-run-final-review-and-handoff-portable-design-records-package.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782830728778866200,
+      "read_error": null,
+      "sha256": "bf9245f825e79db549dc32946a9ade9b218d9bdcf09cff57051dcf9e7bce567d",
+      "size_bytes": 19506,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-016-02-run-req-005-interactive-decision-loop.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782890105683103600,
+      "read_error": null,
+      "sha256": "b6810d0d55153d58fb57de360f8a541352e3d26b6a5261d0b7445a12a6c91a30",
+      "size_bytes": 5742,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-016-11-synchronize-lifecycle-and-evidence-closure.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782835521517851500,
+      "read_error": null,
+      "sha256": "a31b33e3ed81744350e6e2f49e180c3e145d04af87b1a91b28addcb286684752",
+      "size_bytes": 15446,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-017-02-run-req-006-interactive-decision-loop.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782892265435763100,
+      "read_error": null,
+      "sha256": "923c42e94d7680ae64f65d26c7327577bf912b72099af088dae62fe0f96fa8ba",
+      "size_bytes": 18259,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-01-decide-design-convergence-workflow.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782893330895804800,
+      "read_error": null,
+      "sha256": "570e61e959b378df0c3ad2a2aaaee71b74aaed03828c124cb9dce5ed4e1aee49",
+      "size_bytes": 1928,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-03-amend-decision-checkpoint-adr.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782897332866284000,
+      "read_error": null,
+      "sha256": "1d02c8d3d738a93fe88ec1eb3c56feb11fbc9bda5d4359c092803b859540a964",
+      "size_bytes": 4645,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-09-coordinate-mandatory-investigation-route.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782903555434249700,
+      "read_error": null,
+      "sha256": "179c88d2a9fe6aff14e0230d44aa9cbe830cd2b16a444a3844504c1b939f19ab",
+      "size_bytes": 3314,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-14-author-work-item-decomposition-task-type.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782910050610364300,
+      "read_error": null,
+      "sha256": "eb89eca2f6c5c54b49da44c7854a6925b1c2bd75185d8dd15508f78f4ebc58eb",
+      "size_bytes": 2342,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-018-17-author-authority-consistent-adr-amendment-boundary.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782897890617852500,
+      "read_error": null,
+      "sha256": "fcf514ceee1fbed930ffbe62da071ee464561bdf59040accc9103fb067c036b8",
+      "size_bytes": 9764,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-01-decide-semantic-task-responsibility-boundary-validation-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782898286184434000,
+      "read_error": null,
+      "sha256": "b4117b62f96b13d5525017a43d353e3da91af30bfee7f5d9e0ad3ab5f37b13f2",
+      "size_bytes": 2133,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-02-coordinate-temporary-validator-scope-correction.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782913413215213200,
+      "read_error": null,
+      "sha256": "86ae31c8c485d94dca7e7e93f4dfcd3f53982b702b41fa9a820e7f9abbc2c17d",
+      "size_bytes": 3524,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-13-coordinate-post-routing-authoring-and-review-route.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782912357370866800,
+      "read_error": null,
+      "sha256": "59ef63febb9500e9f792c9707ac363e6e9385bab6769f804ea729eeaab0494c1",
+      "size_bytes": 3326,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-15-amend-semantic-validator-requirement.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782914061135525700,
+      "read_error": null,
+      "sha256": "0e382f0378d10e9ac8274b5e52e3a72fc1c83d47e5e5937c194ae5a674023590",
+      "size_bytes": 6351,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-019-16-author-responsibility-boundary-validator-specification.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782928491247934800,
+      "read_error": null,
+      "sha256": "8bb85ef8a5a8dfacfd3d80aae0bc1b190aa730f0e1006c0ebec23160310dbe28",
+      "size_bytes": 4535,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-04-coordinate-executor-ready-implementation-graph.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782928436136586200,
+      "read_error": null,
+      "sha256": "4cb9f25a7875306a0b87166611a58558a13efdff06730d216b72ab9bb4562114",
+      "size_bytes": 2877,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-05-repair-product-to-app-design-route.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782930824929691900,
+      "read_error": null,
+      "sha256": "d92169e788daf8268a7357b72b2ceb1024d762863d0deba9b4cfe85f9e21eb3d",
+      "size_bytes": 3947,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-021-10-author-trv-namespace-profile.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1782920969075590000,
+      "read_error": null,
+      "sha256": "3fe3fe58e9c741abf2d71da25501cb64091ff82147136c8ef03dd5dc98fb0f2a",
+      "size_bytes": 6969,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-022-01-decide-work-item-execution-task-contract.md",
+      "utf8_readable": true
+    },
+    {
+      "modified_ns": 1783074303713554000,
+      "read_error": null,
+      "sha256": "4947a2d199f7b5650601072584eac3bf1b8c7d2ec81ce90872d4a6b923bb979c",
+      "size_bytes": 13453,
+      "source_group": "product/records/tasks",
+      "source_path": "product/records/tasks/spec/PRODUCT-TASK-SPEC-025-07-extract-boundary-vocabulary-w009-w012.md",
+      "utf8_readable": true
+    }
+  ],
+  "total_bytes": 205437
+}
