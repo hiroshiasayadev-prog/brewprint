@@ -1,0 +1,66 @@
+{
+  "schema_version": "bp-term-inventory-cross-trigger-review-evidence-v1",
+  "investigation_id": "PRODUCT-INV-SPEC-011",
+  "review_id": "PRODUCT-INV-SPEC-011-cross-trigger-review",
+  "recorded_date": "2026-07-07",
+  "scope": {
+    "stage": "tier-a",
+    "review_type": "cross-trigger semantic identity review",
+    "job_count": 54,
+    "candidate_appearance_count": 150
+  },
+  "routing_summary": {
+    "qwen_safe": {
+      "job_count": 3,
+      "completed_job_count": 3
+    },
+    "qwen_assisted": {
+      "job_count": 30,
+      "completed_job_count": 30
+    },
+    "manual_review": {
+      "job_count": 21,
+      "completed_job_count": 21
+    }
+  },
+  "validation_summary": {
+    "selected_job_count": 54,
+    "completed_job_count": 54,
+    "missing_job_count": 0,
+    "invalid_job_count": 0,
+    "error_count": 0,
+    "warning_count": 0,
+    "valid": true,
+    "complete": true
+  },
+  "spot_audit_summary": {
+    "overall_verdict": "PASS",
+    "audited_job_ids": [
+      "XTR-IDENTITY-A-007",
+      "XTR-IDENTITY-A-008",
+      "XTR-IDENTITY-A-031",
+      "XTR-IDENTITY-A-033",
+      "XTR-IDENTITY-A-034",
+      "XTR-IDENTITY-A-035",
+      "XTR-IDENTITY-A-041"
+    ],
+    "finding_count": 0,
+    "follow_up_correction_required": false,
+    "selected_validation": {
+      "selected_job_count": 7,
+      "completed_job_count": 7,
+      "missing_job_count": 0,
+      "invalid_job_count": 0,
+      "error_count": 0,
+      "warning_count": 0,
+      "valid": true,
+      "complete": true
+    }
+  },
+  "storage_policy": {
+    "tools_are_git_ignored": true,
+    "ignored_tools_output_dir": "tools/term-inventory-analysis/output/PRODUCT-INV-SPEC-011-cross-trigger-review",
+    "product_evidence_dir": "product/records/investigations/spec/data/PRODUCT-INV-SPEC-011/cross-trigger-review",
+    "raw_result_policy": "Raw per-job prompts and result JSON files remain in ignored tools output. This product data directory stores commit-safe review evidence only."
+  }
+}
