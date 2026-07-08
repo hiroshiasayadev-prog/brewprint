@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-001-19: Track read-runtime internal specification design
 
 - **id**: DRMCP-TASK-MCP-001-19
-- **status**: blocked
+- **status**: cancelled
 - **date**: 2026-06-30
 - **work_item**: DRMCP-WORK-MCP-001
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -55,3 +55,11 @@ Blocker:
 Awaiting DRMCP-TASK-MCP-001-18 and reviewed closure of
 DRMCP-WORK-MCP-013.
 ```
+
+### Cancellation disposition
+
+- Cancellation date: 2026-07-03.
+- Intentional-stop reason: The tracked child `DRMCP-WORK-MCP-014` and prerequisite route are cancelled.
+- Replacement route: Frame `DRMCP-REQ-MCP-007` after the architecture and module-contract routes complete.
+- The Done condition was not satisfied.
+- Direct dependents `DRMCP-TASK-MCP-001-09` and `DRMCP-TASK-MCP-012-01` are cancelled as part of the retired route.

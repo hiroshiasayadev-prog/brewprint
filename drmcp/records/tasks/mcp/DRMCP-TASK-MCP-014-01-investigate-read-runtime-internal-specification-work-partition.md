@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-014-01: Investigate read-runtime internal-specification work partition
 
 - **id**: DRMCP-TASK-MCP-014-01
-- **status**: blocked
+- **status**: cancelled
 - **date**: 2026-06-30
 - **work_item**: DRMCP-WORK-MCP-014
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -97,3 +97,11 @@ Blocker:
 Awaiting DRMCP-WORK-MCP-013 reviewed closure through
 DRMCP-TASK-MCP-001-18.
 ```
+
+### Cancellation disposition
+
+- Cancellation date: 2026-07-03.
+- Intentional-stop reason: `DRMCP-WORK-MCP-014` was cancelled before internal-specification partition investigation.
+- Replacement route starts from `DRMCP-REQ-MCP-007` after the architecture and contract routes complete.
+- The Done condition was not satisfied.
+- No child Work Item, Task graph, internal specification, stage, or commit was created by this Task.

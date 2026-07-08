@@ -1,7 +1,7 @@
 # DRMCP-WORK-MCP-014: Read-runtime function-level internal specification design
 
 - **id**: DRMCP-WORK-MCP-014
-- **status**: blocked
+- **status**: cancelled
 - **date**: 2026-06-30
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **impact_refs**:
@@ -96,3 +96,13 @@ Awaiting reviewed closure of DRMCP-WORK-MCP-013.
 - `spec:drmcp.implementation`: target implementation-design Specification.
 - Child partition and internal decisions: not started.
 - Production implementation remains blocked.
+
+### Cancellation disposition
+
+- Cancellation date: 2026-07-03.
+- Intentional-stop reason: Detailed implementation design must follow reviewed application architecture and architecture-derived module contracts.
+- Unfinished Goal disposition: The detailed-specification need continues under `DRMCP-REQ-MCP-007` after `DRMCP-REQ-MCP-005` and `DRMCP-REQ-MCP-006` complete their accepted routes.
+- Owned Task `DRMCP-TASK-MCP-014-01` changed from `blocked` to `cancelled`.
+- External tracking Task `DRMCP-TASK-MCP-001-19` changed from `blocked` to `cancelled`.
+- The former W012 execution-graph route is cancelled and must not be resumed.
+- No internal specification, execution graph, production source, test, fixture, stage, or commit changed under this Work Item.

@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-012-01: Author rebuild current read runtime execution graph
 
 - **id**: DRMCP-TASK-MCP-012-01
-- **status**: blocked
+- **status**: cancelled
 - **date**: 2026-06-30
 - **work_item**: DRMCP-WORK-MCP-012
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -112,3 +112,11 @@ DRMCP-WORK-MCP-013 and DRMCP-WORK-MCP-014.
 
 The earlier T15 release path is not executable.
 Production implementation remains blocked.
+
+### Cancellation disposition
+
+- Cancellation date: 2026-07-03.
+- Intentional-stop reason: `DRMCP-WORK-MCP-012` was cancelled before execution-graph authoring.
+- Replacement route uses `DRMCP-REQ-MCP-005`, `DRMCP-REQ-MCP-006`, and `DRMCP-REQ-MCP-007` before separate implementation planning.
+- The Done condition was not satisfied.
+- No execution Task, production source, test, fixture, stage, or commit was created by this Task.

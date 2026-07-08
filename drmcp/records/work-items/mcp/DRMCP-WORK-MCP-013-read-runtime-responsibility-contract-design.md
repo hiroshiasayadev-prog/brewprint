@@ -1,7 +1,7 @@
 # DRMCP-WORK-MCP-013: Read-runtime responsibility contract design
 
 - **id**: DRMCP-WORK-MCP-013
-- **status**: not_started
+- **status**: cancelled
 - **date**: 2026-06-30
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **impact_refs**:
@@ -96,3 +96,13 @@ T01 must not decide a responsibility contract.
 - `spec:drmcp.implementation`: current implementation-architecture Specification.
 - Child partition and contract decisions: pending T01 and downstream child Work Items.
 - Production implementation remains blocked.
+
+### Cancellation disposition
+
+- Cancellation date: 2026-07-03.
+- Intentional-stop reason: Contract design must follow a newly framed DRMCP application architecture rather than the completed read-runtime-only W011 baseline.
+- Unfinished Goal disposition: The contract need continues under `DRMCP-REQ-MCP-006` after `DRMCP-REQ-MCP-005` reaches an accepted architecture baseline.
+- Owned Task `DRMCP-TASK-MCP-013-01` changed from `not_started` to `cancelled`.
+- External tracking Task `DRMCP-TASK-MCP-001-18` changed from `not_started` to `cancelled`.
+- The former downstream W014 route is cancelled and replaced by separate framing from `DRMCP-REQ-MCP-007`.
+- No child Work Item, contract decision, Specification update, stage, or commit occurred under this Work Item.

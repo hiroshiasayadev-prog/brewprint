@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-001-18: Track read-runtime responsibility contract design
 
 - **id**: DRMCP-TASK-MCP-001-18
-- **status**: not_started
+- **status**: cancelled
 - **date**: 2026-06-30
 - **work_item**: DRMCP-WORK-MCP-001
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -47,3 +47,11 @@ This Task does not decide contracts or update Specifications.
 Selected child Work Item: `DRMCP-WORK-MCP-013`.
 
 Execution has not started.
+
+### Cancellation disposition
+
+- Cancellation date: 2026-07-03.
+- Intentional-stop reason: The tracked child `DRMCP-WORK-MCP-013` is cancelled.
+- Replacement route: Frame `DRMCP-REQ-MCP-006` only after the architecture route from `DRMCP-REQ-MCP-005` establishes its accepted boundary.
+- The Done condition was not satisfied.
+- Direct dependent `DRMCP-TASK-MCP-001-19` is cancelled as part of the retired route.

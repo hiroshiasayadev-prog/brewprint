@@ -1,7 +1,7 @@
 # DRMCP-WORK-MCP-012: Rebuild current read runtime implementation
 
 - **id**: DRMCP-WORK-MCP-012
-- **status**: blocked
+- **status**: cancelled
 - **date**: 2026-06-30
 - **source_requirement**: DRMCP-REQ-MCP-001
 - **impact_refs**:
@@ -139,3 +139,13 @@ DRMCP-WORK-MCP-014 before execution-graph authoring.
 
 - Production implementation: not released.
 - Execution graph: blocked before T01 authoring.
+
+### Cancellation disposition
+
+- Cancellation date: 2026-07-03.
+- Intentional-stop reason: The implementation route began from a read-runtime architecture that mixed application architecture, module contracts, and detailed design.
+- Unfinished Goal disposition: Future implementation work must start from `DRMCP-REQ-MCP-005`, then consume the contracts from `DRMCP-REQ-MCP-006` and detailed specifications from `DRMCP-REQ-MCP-007`.
+- Owned Task `DRMCP-TASK-MCP-012-01` changed from `blocked` to `cancelled`.
+- External tracking Task `DRMCP-TASK-MCP-001-09` changed from `blocked` to `cancelled`.
+- Direct dependents `DRMCP-TASK-MCP-001-10`, `DRMCP-TASK-MCP-001-11`, and `DRMCP-TASK-MCP-001-16` remain blocked on the cancelled prerequisite.
+- No production implementation, test implementation, fixture change, stage, or commit occurred under this Work Item.

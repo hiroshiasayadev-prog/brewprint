@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-013-01: Investigate read-runtime contract work partition
 
 - **id**: DRMCP-TASK-MCP-013-01
-- **status**: not_started
+- **status**: cancelled
 - **date**: 2026-06-30
 - **work_item**: DRMCP-WORK-MCP-013
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -86,3 +86,11 @@ Do not:
 ## Evidence
 
 Pending execution after W013 authoring acceptance.
+
+### Cancellation disposition
+
+- Cancellation date: 2026-07-03.
+- Intentional-stop reason: `DRMCP-WORK-MCP-013` was cancelled before contract-partition investigation.
+- Replacement route starts from `DRMCP-REQ-MCP-006` after the architecture route from `DRMCP-REQ-MCP-005` completes.
+- The Done condition was not satisfied.
+- No child Work Item, Task graph, contract decision, Specification update, stage, or commit was created by this Task.

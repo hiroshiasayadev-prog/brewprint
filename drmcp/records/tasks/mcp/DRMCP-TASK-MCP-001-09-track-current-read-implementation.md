@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-001-09: Track current read implementation
 
 - **id**: DRMCP-TASK-MCP-001-09
-- **status**: blocked
+- **status**: cancelled
 - **date**: 2026-06-30
 - **work_item**: DRMCP-WORK-MCP-001
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -66,3 +66,11 @@ The stale T15 release path cannot start W012 T01.
 - T09 changes to `in_progress` only after T19 completes and W012 T01 begins from reviewed detailed specifications.
 - T09 reaches `done` only when W012 is reviewed and `done`.
 - Production implementation remains unreleased.
+
+### Cancellation disposition
+
+- Cancellation date: 2026-07-03.
+- Intentional-stop reason: The tracked child `DRMCP-WORK-MCP-012` is cancelled.
+- Replacement route uses the separately framed architecture, module-contract, and detailed-specification Requirements.
+- The Done condition was not satisfied.
+- Direct dependents `DRMCP-TASK-MCP-001-10`, `DRMCP-TASK-MCP-001-11`, and `DRMCP-TASK-MCP-001-16` remain blocked because this cancelled prerequisite cannot satisfy `depends_on`.
