@@ -1,9 +1,9 @@
 # Concept: Dependency and responsibility
 
-- **id**: `spec:drmcp.application_architecture.dependency_and_responsibility`
+- **id**: `spec:drmcp.implementation.application_architecture.dependency_and_responsibility`
 - **status**: draft
 - **date**: 2026-07-04
-- **parent**: `spec:drmcp.application_architecture`
+- **parent**: `spec:drmcp.implementation.application_architecture`
 
 ## What this is
 
@@ -45,7 +45,7 @@ flowchart LR
 | Infrastructure I/O Adapters | Application-owned source-port contracts | Implement concrete source access without owning operation policy. |
 | Composition / Lifecycle | Every concrete component | Construct and wire the application only. |
 
-The detailed component responsibilities and exclusions are owned by `spec:drmcp.application_architecture.application_boundary_and_components`.
+The detailed component responsibilities and exclusions are owned by `spec:drmcp.implementation.application_architecture.application_boundary_and_components`.
 
 ## Rules
 
@@ -56,7 +56,7 @@ The detailed component responsibilities and exclusions are owned by `spec:drmcp.
 - Record Domain / Logical Tree does not depend on Application, MCP, filesystem, or runtime configuration.
 - Infrastructure I/O Adapters may depend inward on source-port contracts.
 - Composition / Lifecycle is the only owner that wires concrete components.
-- Runtime collaboration between operation-specific use cases and shared orchestration is defined by `spec:drmcp.application_architecture.runtime_and_state`.
+- Runtime collaboration between operation-specific use cases and shared orchestration is defined by `spec:drmcp.implementation.application_architecture.runtime_and_state`.
 
 ### PRODUCT standards
 
@@ -105,14 +105,14 @@ Concrete source access uses the normal Current Records source contracts.
 | Infrastructure adapters orchestrate laterally | Prohibited. |
 | MCP Inbound Adapter reclassifies semantic outcomes or execution failures | Prohibited. |
 | Application Use Cases interpret PRODUCT standards independently | Prohibited. |
-| One public use case calls another public use case | Prohibited. See the collaboration contract in `spec:drmcp.application_architecture.runtime_and_state`. |
+| One public use case calls another public use case | Prohibited. See the collaboration contract in `spec:drmcp.implementation.application_architecture.runtime_and_state`. |
 | A component bypasses an application-owned source port for concrete I/O | Prohibited. |
 
 ## Boundary
 
 This view defines application-level dependency ownership. It does not select package imports, interface signatures, constructor shapes, adapter APIs, or rule encodings.
 
-The accepted responsibility table remains in `spec:drmcp.application_architecture.application_boundary_and_components`. This view does not redefine those component boundaries.
+The accepted responsibility table remains in `spec:drmcp.implementation.application_architecture.application_boundary_and_components`. This view does not redefine those component boundaries.
 
 ## Non-goals
 
@@ -126,7 +126,7 @@ The accepted responsibility table remains in `spec:drmcp.application_architectur
 
 | ref | relation |
 |---|---|
-| `spec:drmcp.application_architecture` | Parent Overview and authoritative four-view map. |
-| `spec:drmcp.application_architecture.application_boundary_and_components` | Owns the five components and their broad responsibilities. |
-| `spec:drmcp.application_architecture.runtime_and_state` | Owns shared orchestration and request-state collaboration. |
-| `spec:drmcp.application_architecture.failure_and_evolution` | Owns failure projection and dependency-change return triggers. |
+| `spec:drmcp.implementation.application_architecture` | Parent Overview and authoritative four-view map. |
+| `spec:drmcp.implementation.application_architecture.application_boundary_and_components` | Owns the five components and their broad responsibilities. |
+| `spec:drmcp.implementation.application_architecture.runtime_and_state` | Owns shared orchestration and request-state collaboration. |
+| `spec:drmcp.implementation.application_architecture.failure_and_evolution` | Owns failure projection and dependency-change return triggers. |

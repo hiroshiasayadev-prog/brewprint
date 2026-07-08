@@ -20,4 +20,4 @@ Navigation entry for Record Domain / Logical Tree module contracts.
 | ref | relation |
 |---|---|
 | `spec:drmcp.implementation.contracts` | Parent module-contract index. |
-| `spec:drmcp.application_architecture.application_boundary_and_components` | Architecture component authority. |
+| `spec:drmcp.implementation.application_architecture.application_boundary_and_components` | Architecture component authority. |

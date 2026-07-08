@@ -1,6 +1,6 @@
 # Overview: DRMCP application architecture
 
-- **id**: `spec:drmcp.application_architecture`
+- **id**: `spec:drmcp.implementation.application_architecture`
 - **status**: draft
 - **date**: 2026-07-04
 - **parent**: root
@@ -63,22 +63,22 @@ flowchart TD
 
 | title | kind | ref | summary |
 |---|---|---|---|
-| Application boundary and components | Concept | `spec:drmcp.application_architecture.application_boundary_and_components` | Defines scope, actors, operation families, and the five application-level components. |
-| Dependency and responsibility | Concept | `spec:drmcp.application_architecture.dependency_and_responsibility` | Defines inward dependencies, responsibility placement, source ports, and forbidden edges. |
-| Runtime and state | Concept | `spec:drmcp.application_architecture.runtime_and_state` | Defines request collaboration, record-state lifetimes, source separation, configuration, and deferred authoring state. |
-| Failure and evolution | Concept | `spec:drmcp.application_architecture.failure_and_evolution` | Defines failure ownership, trustworthy-result semantics, local refinement, and architecture-return triggers. |
+| Application boundary and components | Concept | `spec:drmcp.implementation.application_architecture.application_boundary_and_components` | Defines scope, actors, operation families, and the five application-level components. |
+| Dependency and responsibility | Concept | `spec:drmcp.implementation.application_architecture.dependency_and_responsibility` | Defines inward dependencies, responsibility placement, source ports, and forbidden edges. |
+| Runtime and state | Concept | `spec:drmcp.implementation.application_architecture.runtime_and_state` | Defines request collaboration, record-state lifetimes, source separation, configuration, and deferred authoring state. |
+| Failure and evolution | Concept | `spec:drmcp.implementation.application_architecture.failure_and_evolution` | Defines failure ownership, trustworthy-result semantics, local refinement, and architecture-return triggers. |
 
 ## Boundary
 
 Downstream module contracts may refine the accepted components and ports. Detailed specifications may define concrete operation contracts inside this architecture.
 
-Downstream work must return to application-architecture decision work when a proposed change crosses an architecture-return trigger in `spec:drmcp.application_architecture.failure_and_evolution`.
+Downstream work must return to application-architecture decision work when a proposed change crosses an architecture-return trigger in `spec:drmcp.implementation.application_architecture.failure_and_evolution`.
 
 ## Related specs
 
 | ref | relation |
 |---|---|
-| `spec:drmcp.application_architecture.application_boundary_and_components` | Authoritative boundary and component view. |
-| `spec:drmcp.application_architecture.dependency_and_responsibility` | Authoritative dependency and responsibility view. |
-| `spec:drmcp.application_architecture.runtime_and_state` | Authoritative runtime and state view. |
-| `spec:drmcp.application_architecture.failure_and_evolution` | Authoritative failure and evolution view. |
+| `spec:drmcp.implementation.application_architecture.application_boundary_and_components` | Authoritative boundary and component view. |
+| `spec:drmcp.implementation.application_architecture.dependency_and_responsibility` | Authoritative dependency and responsibility view. |
+| `spec:drmcp.implementation.application_architecture.runtime_and_state` | Authoritative runtime and state view. |
+| `spec:drmcp.implementation.application_architecture.failure_and_evolution` | Authoritative failure and evolution view. |

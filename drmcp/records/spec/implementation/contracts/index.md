@@ -49,5 +49,5 @@ flowchart TB
 | ref | relation |
 |---|---|
 | `spec:drmcp.implementation` | Parent implementation architecture area. |
-| `spec:drmcp.application_architecture` | Accepted whole-application architecture authority. |
+| `spec:drmcp.implementation.application_architecture` | Accepted whole-application architecture authority. |
 | `DRMCP-ADR-MCP-013` | Module-contract ADR. |

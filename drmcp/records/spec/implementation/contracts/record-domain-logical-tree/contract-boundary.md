@@ -122,5 +122,5 @@ This module-contract baseline is not implementation-ready.
 | ref | relation |
 |---|---|
 | `spec:drmcp.implementation.contracts` | Module-contract root. |
-| `spec:drmcp.application_architecture.application_boundary_and_components` | Accepted component authority. |
+| `spec:drmcp.implementation.application_architecture.application_boundary_and_components` | Accepted component authority. |
 | `DRMCP-ADR-MCP-013` | Source ADR. |

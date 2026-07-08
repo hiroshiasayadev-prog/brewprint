@@ -1,9 +1,9 @@
 # Concept: Runtime and state
 
-- **id**: `spec:drmcp.application_architecture.runtime_and_state`
+- **id**: `spec:drmcp.implementation.application_architecture.runtime_and_state`
 - **status**: draft
 - **date**: 2026-07-04
-- **parent**: `spec:drmcp.application_architecture`
+- **parent**: `spec:drmcp.implementation.application_architecture`
 
 ## What this is
 
@@ -24,7 +24,7 @@ Public use cases do not call one another. They use shared application orchestrat
 
 Shared application orchestration is not a public use case. It is not a seventh top-level component.
 
-The five top-level components remain authoritative in `spec:drmcp.application_architecture.application_boundary_and_components`.
+The five top-level components remain authoritative in `spec:drmcp.implementation.application_architecture.application_boundary_and_components`.
 
 ```mermaid
 sequenceDiagram
@@ -113,7 +113,7 @@ DRMCP does not keep these record-state mechanisms in the active architecture:
 
 Filesystem changes become visible to the next request that builds the affected state.
 A request does not continue with incomplete or untrustworthy mandatory state.
-Failure projection is owned by `spec:drmcp.application_architecture.failure_and_evolution`.
+Failure projection is owned by `spec:drmcp.implementation.application_architecture.failure_and_evolution`.
 
 ### Deferred authoring state
 
@@ -159,7 +159,7 @@ This view defines lifetimes and responsibility placement. It does not define sna
 
 | ref | relation |
 |---|---|
-| `spec:drmcp.application_architecture` | Parent Overview and authoritative four-view map. |
-| `spec:drmcp.application_architecture.application_boundary_and_components` | Owns the five-component graph. |
-| `spec:drmcp.application_architecture.dependency_and_responsibility` | Owns source-contract direction and Guidance alias ownership. |
-| `spec:drmcp.application_architecture.failure_and_evolution` | Owns trustworthy-result failure and architecture-return triggers. |
+| `spec:drmcp.implementation.application_architecture` | Parent Overview and authoritative four-view map. |
+| `spec:drmcp.implementation.application_architecture.application_boundary_and_components` | Owns the five-component graph. |
+| `spec:drmcp.implementation.application_architecture.dependency_and_responsibility` | Owns source-contract direction and Guidance alias ownership. |
+| `spec:drmcp.implementation.application_architecture.failure_and_evolution` | Owns trustworthy-result failure and architecture-return triggers. |

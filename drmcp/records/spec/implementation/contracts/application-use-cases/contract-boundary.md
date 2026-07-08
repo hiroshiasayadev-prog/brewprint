@@ -156,5 +156,5 @@ This module-contract baseline is not implementation-ready.
 | ref | relation |
 |---|---|
 | `spec:drmcp.implementation.contracts` | Module-contract root. |
-| `spec:drmcp.application_architecture.runtime_and_state` | Accepted runtime and state authority. |
+| `spec:drmcp.implementation.application_architecture.runtime_and_state` | Accepted runtime and state authority. |
 | `DRMCP-ADR-MCP-013` | Source ADR. |

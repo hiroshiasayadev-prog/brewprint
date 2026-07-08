@@ -20,4 +20,4 @@ Navigation entry for MCP Inbound Adapter module contracts.
 | ref | relation |
 |---|---|
 | `spec:drmcp.implementation.contracts` | Parent module-contract index. |
-| `spec:drmcp.application_architecture.dependency_and_responsibility` | Architecture dependency authority. |
+| `spec:drmcp.implementation.application_architecture.dependency_and_responsibility` | Architecture dependency authority. |

@@ -20,4 +20,4 @@ Navigation entry for Application Use Case module contracts.
 | ref | relation |
 |---|---|
 | `spec:drmcp.implementation.contracts` | Parent module-contract index. |
-| `spec:drmcp.application_architecture.runtime_and_state` | Architecture runtime authority. |
+| `spec:drmcp.implementation.application_architecture.runtime_and_state` | Architecture runtime authority. |

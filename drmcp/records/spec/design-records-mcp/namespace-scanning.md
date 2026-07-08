@@ -225,8 +225,8 @@ Guidance operations do not require Legacy state.
 Application Use Cases access configuration and source data through inward-owned source contracts.
 Concrete filesystem enumeration, source reading, and configuration loading belong to Infrastructure I/O Adapters.
 
-`spec:drmcp.application_architecture.runtime_and_state` owns request-scoped state lifetime and operation collaboration.
-`spec:drmcp.application_architecture.dependency_and_responsibility` owns source-contract direction and Guidance alias ownership.
+`spec:drmcp.implementation.application_architecture.runtime_and_state` owns request-scoped state lifetime and operation collaboration.
+`spec:drmcp.implementation.application_architecture.dependency_and_responsibility` owns source-contract direction and Guidance alias ownership.
 This Specification remains the authority for configured current-source and active-index semantics.
 Authoring-transaction runtime architecture remains outside this boundary.
 
@@ -261,8 +261,8 @@ This specification does not define:
 | `spec:drmcp.design_records_mcp.schema.record_source` | DRMCP source representation for discovered records. |
 | `spec:drmcp.design_records_mcp.schema.record_model` | DRMCP indexed record representation and canonical identity handling. |
 | `spec:drmcp.design_records_mcp.schema.diagnostics` | Diagnostic identifiers and representations for configuration and indexing failures. |
-| `spec:drmcp.application_architecture.runtime_and_state` | Request-scoped Current Records and Legacy state lifecycle. |
-| `spec:drmcp.application_architecture.dependency_and_responsibility` | Source-contract direction and Guidance alias ownership. |
+| `spec:drmcp.implementation.application_architecture.runtime_and_state` | Request-scoped Current Records and Legacy state lifecycle. |
+| `spec:drmcp.implementation.application_architecture.dependency_and_responsibility` | Source-contract direction and Guidance alias ownership. |
 
 ## Sources
 

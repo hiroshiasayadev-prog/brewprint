@@ -1,9 +1,9 @@
 # Concept: Failure and evolution
 
-- **id**: `spec:drmcp.application_architecture.failure_and_evolution`
+- **id**: `spec:drmcp.implementation.application_architecture.failure_and_evolution`
 - **status**: draft
 - **date**: 2026-07-04
-- **parent**: `spec:drmcp.application_architecture`
+- **parent**: `spec:drmcp.implementation.application_architecture`
 
 ## What this is
 
@@ -60,7 +60,7 @@ Work must return to application-architecture decision when a change would:
 - change trustworthy-result or failure semantics;
 - make an external provider or process part of runtime behavior.
 
-The deferred proposal/body-cache boundary in `spec:drmcp.application_architecture.runtime_and_state` is an architecture-return trigger.
+The deferred proposal/body-cache boundary in `spec:drmcp.implementation.application_architecture.runtime_and_state` is an architecture-return trigger.
 The deferred write-transaction and post-write validation boundary in that view is also an architecture-return trigger.
 
 Deferred authoring internals are not active failure contracts. This view does not define proposal errors, transaction failures, rollback behavior, or retained-state recovery.
@@ -83,7 +83,7 @@ A local refinement remains local only when it preserves the five-component graph
 
 | ref | relation |
 |---|---|
-| `spec:drmcp.application_architecture` | Parent Overview and authoritative four-view map. |
-| `spec:drmcp.application_architecture.application_boundary_and_components` | Owns the five-component graph and application boundary. |
-| `spec:drmcp.application_architecture.dependency_and_responsibility` | Owns dependency direction and policy placement. |
-| `spec:drmcp.application_architecture.runtime_and_state` | Owns request-state lifetime and deferred authoring boundaries. |
+| `spec:drmcp.implementation.application_architecture` | Parent Overview and authoritative four-view map. |
+| `spec:drmcp.implementation.application_architecture.application_boundary_and_components` | Owns the five-component graph and application boundary. |
+| `spec:drmcp.implementation.application_architecture.dependency_and_responsibility` | Owns dependency direction and policy placement. |
+| `spec:drmcp.implementation.application_architecture.runtime_and_state` | Owns request-state lifetime and deferred authoring boundaries. |

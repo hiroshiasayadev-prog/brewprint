@@ -1,9 +1,9 @@
 # Concept: Application boundary and components
 
-- **id**: `spec:drmcp.application_architecture.application_boundary_and_components`
+- **id**: `spec:drmcp.implementation.application_architecture.application_boundary_and_components`
 - **status**: draft
 - **date**: 2026-07-04
-- **parent**: `spec:drmcp.application_architecture`
+- **parent**: `spec:drmcp.implementation.application_architecture`
 
 ## What this is
 
@@ -75,7 +75,7 @@ flowchart LR
 - Deferred Authoring preserves the same MCP Inbound Adapter to Application Use Case seam.
 - Authoring internals must not be inferred from current stale or incomplete operation specifications.
 
-Detailed dependency direction is owned by `spec:drmcp.application_architecture.dependency_and_responsibility`.
+Detailed dependency direction is owned by `spec:drmcp.implementation.application_architecture.dependency_and_responsibility`.
 
 ## Boundary
 
@@ -114,7 +114,7 @@ The MCP client or host is the inbound actor. MCP transport is the external proto
 
 | ref | relation |
 |---|---|
-| `spec:drmcp.application_architecture` | Parent Overview and authoritative four-view map. |
-| `spec:drmcp.application_architecture.dependency_and_responsibility` | Defines component dependencies and responsibility placement. |
-| `spec:drmcp.application_architecture.runtime_and_state` | Defines use-case collaboration and state lifetime. |
-| `spec:drmcp.application_architecture.failure_and_evolution` | Defines architecture-return triggers for boundary changes. |
+| `spec:drmcp.implementation.application_architecture` | Parent Overview and authoritative four-view map. |
+| `spec:drmcp.implementation.application_architecture.dependency_and_responsibility` | Defines component dependencies and responsibility placement. |
+| `spec:drmcp.implementation.application_architecture.runtime_and_state` | Defines use-case collaboration and state lifetime. |
+| `spec:drmcp.implementation.application_architecture.failure_and_evolution` | Defines architecture-return triggers for boundary changes. |
