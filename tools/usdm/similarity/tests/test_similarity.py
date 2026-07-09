@@ -139,6 +139,8 @@ class SimilarityToolTests(unittest.TestCase):
                 candidates[0]["requirement_id"],
                 "usdm:sample.requirements.example#R002",
             )
+            self.assertNotIn("usdm_id", response["items"][0]["source"])
+            self.assertNotIn("usdm_id", candidates[0])
             self.assertNotIn("classification", candidates[0])
 
     def test_collector_omits_empty_items_by_default(self) -> None:

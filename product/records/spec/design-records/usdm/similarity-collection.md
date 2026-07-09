@@ -92,7 +92,6 @@ When `candidate_scope_ids` is omitted, the candidate set is the expanded `source
 |---|---|
 | `requirement_id` | Full USDM requirement ID. |
 | `detail` | Requirement detail text used for embedding and review output. Omitted when `include_details` is false. |
-| `usdm_id` | USDM record ID that owns the requirement. |
 | `path` | Repository-relative source path when available. |
 
 ### Candidate object fields
@@ -100,8 +99,7 @@ When `candidate_scope_ids` is omitted, the candidate set is the expanded `source
 | field | meaning |
 |---|---|
 | `requirement_id` | Full USDM requirement ID for the candidate. |
-| `detail` | Candidate requirement detail text. |
-| `usdm_id` | USDM record ID that owns the candidate. |
+| `detail` | Candidate requirement detail text. Omitted when `include_details` is false. |
 | `path` | Repository-relative source path when available. |
 | `score` | Cosine similarity score returned by the vector search. |
 

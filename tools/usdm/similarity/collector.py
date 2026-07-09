@@ -210,6 +210,7 @@ def _requirement_as_dict(
     include_details: bool,
 ) -> dict[str, str]:
     result = row.as_dict()
+    result.pop("usdm_id", None)
     if not include_details:
         result.pop("detail", None)
     return result
@@ -220,6 +221,7 @@ def _hit_as_dict(
     include_details: bool,
 ) -> dict[str, str | float]:
     result = hit.as_dict()
+    result.pop("usdm_id", None)
     if not include_details:
         result.pop("detail", None)
     return result
