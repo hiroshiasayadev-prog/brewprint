@@ -52,7 +52,7 @@ The Requirement Vector Index does not resolve USDM scopes. It receives already-e
 | field | required | default | meaning |
 |---|---:|---|---|
 | `repo_root` | yes | - | Repository root to inspect. |
-| `source_scope_ids` | yes | - | USDM record IDs, USDM requirement IDs, or supported USDM topic IDs to use as source requirements. |
+| `source_scope_ids` | yes | - | USDM app IDs, USDM record IDs, USDM requirement IDs, or supported USDM topic IDs to use as source requirements. |
 | `candidate_scope_ids` | no | `source_scope_ids` | Scope used to collect candidate requirements. |
 | `threshold` | no | `0.86` | Minimum cosine similarity score for returned candidates. |
 | `max_candidates_per_requirement` | no | `10` | Maximum number of candidates considered for one source requirement before response-wide limiting. |
@@ -65,13 +65,15 @@ The operation always excludes the source requirement itself from its candidate l
 
 When `candidate_scope_ids` is omitted, the candidate set is the expanded `source_scope_ids` set.
 
+A USDM app ID such as `usdm:product` expands to all USDM requirement records under that app namespace.
+
 ### `search_requirements` request fields
 
 | field | required | default | meaning |
 |---|---:|---|---|
 | `repo_root` | yes | - | Repository root to inspect. |
 | `query` | yes | - | Free-text search query embedded and compared against requirement details. |
-| `candidate_scope_ids` | yes | - | USDM record IDs, USDM requirement IDs, or supported USDM topic IDs to search. |
+| `candidate_scope_ids` | yes | - | USDM app IDs, USDM record IDs, USDM requirement IDs, or supported USDM topic IDs to search. |
 | `threshold` | no | `0.30` | Minimum cosine similarity score for returned results. |
 | `max_results` | no | `20` | Maximum number of results returned for the query. |
 | `include_details` | no | `true` | When true, include requirement detail text in result objects. |

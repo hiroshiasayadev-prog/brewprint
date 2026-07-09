@@ -11,6 +11,7 @@ from .models import RequirementRow
 from .text_normalizer import normalize_requirement_detail
 
 
+USDM_APP_SCOPE_ID_RE = re.compile(r"^usdm:(?P<app>[a-z0-9_]+)$")
 USDM_RECORD_ID_RE = re.compile(
     r"^usdm:(?P<app>[a-z0-9_]+)\.[a-z0-9_]+(?:\.[a-z0-9_]+)*$"
 )
@@ -51,19 +52,21 @@ def expand_scopes(
     scope_ids: list[str],
     scope_role: str,
 ) -> ScopeExpansion:
-    """Resolve record IDs and full requirement IDs into unique requirement rows."""
+    """Resolve app, record, topic, and requirement IDs into rows."""
     requested_by_app: dict[str, list[str]] = {}
     diagnostics: list[dict[str, Any]] = []
 
     for scope_id in scope_ids:
-        match = FULL_REQUIREMENT_ID_RE.match(scope_id) or USDM_RECORD_ID_RE.match(
-            scope_id
+        match = (
+            FULL_REQUIREMENT_ID_RE.match(scope_id)
+            or USDM_RECORD_ID_RE.match(scope_id)
+            or USDM_APP_SCOPE_ID_RE.match(scope_id)
         )
         if match is None:
             diagnostics.append(
                 diagnostic(
                     "scope_id",
-                    f"{scope_role} scope ID is not a USDM record or requirement ID.",
+                    f"{scope_role} scope ID is not a USDM app, record, topic, or requirement ID.",
                     scope_id,
                 )
             )
@@ -94,7 +97,10 @@ def expand_scopes(
                     selected[row.requirement_id] = row
                 continue
 
-            matching_rows = rows_by_record.get(scope_id)
+            if USDM_APP_SCOPE_ID_RE.match(scope_id):
+                matching_rows = rows
+            else:
+                matching_rows = rows_by_record.get(scope_id)
             if matching_rows is None:
                 topic_prefix = f"{scope_id}."
                 matching_rows = [
@@ -104,7 +110,7 @@ def expand_scopes(
                 diagnostics.append(
                     diagnostic(
                         "scope_resolution",
-                        f"{scope_role} USDM record or topic scope could not be "
+                        f"{scope_role} USDM app, record, or topic scope could not be "
                         "resolved to requirement rows.",
                         scope_id,
                     )

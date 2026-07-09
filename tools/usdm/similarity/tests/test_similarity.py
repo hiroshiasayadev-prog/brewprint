@@ -164,6 +164,30 @@ class SimilarityToolTests(unittest.TestCase):
             self.assertEqual(topic.diagnostics, [])
             self.assertEqual(len(topic.requirements), 2)
 
+    def test_expand_app_scope_to_all_app_requirement_records(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            first = root / "sample" / "records" / "usdm" / "example.md"
+            second = root / "sample" / "records" / "usdm" / "other.md"
+            first.parent.mkdir(parents=True)
+            first.write_text(RECORD, encoding="utf-8")
+            second.write_text(
+                RECORD.replace(
+                    "usdm:sample.requirements.example",
+                    "usdm:sample.other.example",
+                ),
+                encoding="utf-8",
+            )
+
+            app = expand_scopes(root, ["usdm:sample"], "candidate")
+
+            self.assertEqual(app.diagnostics, [])
+            self.assertEqual(len(app.requirements), 4)
+            self.assertEqual(
+                app.requirements[0].requirement_id,
+                "usdm:sample.other.example#R001",
+            )
+
     def test_collector_returns_source_centric_candidates(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
