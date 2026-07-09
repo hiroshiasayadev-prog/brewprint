@@ -134,11 +134,117 @@ class SimilarityToolTests(unittest.TestCase):
             self.assertEqual(response["candidate_requirements"], 2)
             candidates = response["items"][0]["candidates"]
             self.assertEqual(len(candidates), 1)
+            self.assertEqual(response["returned_hits"], 1)
             self.assertEqual(
                 candidates[0]["requirement_id"],
                 "usdm:sample.requirements.example#R002",
             )
             self.assertNotIn("classification", candidates[0])
+
+    def test_collector_omits_empty_items_by_default(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "sample" / "records" / "usdm" / "example.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(RECORD, encoding="utf-8")
+
+            response = collect_similar_requirements(
+                repo_root=root,
+                source_scope_ids=[
+                    "usdm:sample.requirements.example#R001"
+                ],
+                candidate_scope_ids=[
+                    "usdm:sample.requirements.example#R001"
+                ],
+                threshold=0.86,
+                max_candidates_per_requirement=10,
+                exclude_same_document=False,
+                vector_index=FakeVectorIndex(),
+            )
+
+            self.assertTrue(response["ok"])
+            self.assertEqual(response["returned_hits"], 0)
+            self.assertEqual(response["items"], [])
+
+    def test_collector_can_include_empty_items(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "sample" / "records" / "usdm" / "example.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(RECORD, encoding="utf-8")
+
+            response = collect_similar_requirements(
+                repo_root=root,
+                source_scope_ids=[
+                    "usdm:sample.requirements.example#R001"
+                ],
+                candidate_scope_ids=[
+                    "usdm:sample.requirements.example#R001"
+                ],
+                threshold=0.86,
+                max_candidates_per_requirement=10,
+                exclude_same_document=False,
+                vector_index=FakeVectorIndex(),
+                include_empty_items=True,
+            )
+
+            self.assertTrue(response["ok"])
+            self.assertEqual(response["returned_hits"], 0)
+            self.assertEqual(len(response["items"]), 1)
+            self.assertEqual(response["items"][0]["candidates"], [])
+
+    def test_collector_can_omit_details(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "sample" / "records" / "usdm" / "example.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(RECORD, encoding="utf-8")
+
+            response = collect_similar_requirements(
+                repo_root=root,
+                source_scope_ids=[
+                    "usdm:sample.requirements.example#R001"
+                ],
+                candidate_scope_ids=[
+                    "usdm:sample.requirements.example"
+                ],
+                threshold=0.86,
+                max_candidates_per_requirement=10,
+                exclude_same_document=False,
+                vector_index=FakeVectorIndex(),
+                include_details=False,
+            )
+
+            self.assertTrue(response["ok"])
+            source = response["items"][0]["source"]
+            candidate = response["items"][0]["candidates"][0]
+            self.assertNotIn("detail", source)
+            self.assertNotIn("detail", candidate)
+
+    def test_collector_limits_total_hits_by_score(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "sample" / "records" / "usdm" / "example.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(RECORD, encoding="utf-8")
+
+            response = collect_similar_requirements(
+                repo_root=root,
+                source_scope_ids=["usdm:sample.requirements.example"],
+                candidate_scope_ids=["usdm:sample.requirements.example"],
+                threshold=0.86,
+                max_candidates_per_requirement=10,
+                exclude_same_document=False,
+                vector_index=FakeVectorIndex(),
+                max_total_hits=1,
+            )
+
+            self.assertTrue(response["ok"])
+            self.assertEqual(response["returned_hits"], 1)
+            total_candidates = sum(
+                len(item["candidates"]) for item in response["items"]
+            )
+            self.assertEqual(total_candidates, 1)
 
     def test_freshness_checks_hash_model_and_dimensions(self) -> None:
         index = object.__new__(RequirementVectorIndex)

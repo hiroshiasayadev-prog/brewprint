@@ -47,12 +47,16 @@ Example MCP `tools/call` payload:
     ],
     "threshold": 0.86,
     "max_candidates_per_requirement": 10,
+    "max_total_hits": 100,
+    "include_empty_items": false,
+    "include_details": true,
     "exclude_same_document": false
   }
 }
 ```
 
 The tool uses the standalone implementation in `tools/usdm/similarity` and
-returns its response without classifying or rewriting requirements. Qdrant is
-used only as a similarity index; repository USDM records remain the source of
-truth.
+returns its response without classifying or rewriting requirements. By default,
+it omits source items with no returned candidates, includes requirement detail
+text, and caps the response to 100 total candidate hits. Qdrant is used only as
+a similarity index; repository USDM records remain the source of truth.

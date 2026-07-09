@@ -53,8 +53,11 @@ The Requirement Vector Index does not resolve USDM scopes. It receives already-e
 | `source_scope_ids` | yes | - | USDM record IDs, USDM requirement IDs, or supported USDM topic IDs to use as source requirements. |
 | `candidate_scope_ids` | no | `source_scope_ids` | Scope used to collect candidate requirements. |
 | `threshold` | no | `0.86` | Minimum cosine similarity score for returned candidates. |
-| `max_candidates_per_requirement` | no | `10` | Maximum number of candidates returned for one source requirement. |
+| `max_candidates_per_requirement` | no | `10` | Maximum number of candidates considered for one source requirement before response-wide limiting. |
 | `exclude_same_document` | no | `false` | When true, candidates from the same USDM record are omitted. |
+| `include_empty_items` | no | `false` | When true, include source items with no returned candidates. |
+| `include_details` | no | `true` | When true, include requirement detail text in source and candidate objects. |
+| `max_total_hits` | no | `100` | Maximum candidate hits returned across all source items. |
 
 The operation always excludes the source requirement itself from its candidate list.
 
@@ -72,6 +75,7 @@ When `candidate_scope_ids` is omitted, the candidate set is the expanded `source
 | `threshold` | Effective cosine similarity threshold. |
 | `model` | Effective embedding model identity. |
 | `dimensions` | Effective embedding vector dimensions. |
+| `returned_hits` | Number of candidate hits returned after response-wide limiting. |
 | `items` | Source-centric similarity candidate groups. |
 | `diagnostics` | Errors or warnings produced during scope expansion, embedding synchronization, or search. |
 
@@ -79,15 +83,15 @@ When `candidate_scope_ids` is omitted, the candidate set is the expanded `source
 
 | field | meaning |
 |---|---|
-| `source` | Source requirement identity and detail text. |
-| `candidates` | Candidate requirements whose score meets or exceeds the effective threshold. |
+| `source` | Source requirement identity and optional detail text. |
+| `candidates` | Candidate requirements whose score meets or exceeds the effective threshold and response-wide hit limit. |
 
 ### Requirement object fields
 
 | field | meaning |
 |---|---|
 | `requirement_id` | Full USDM requirement ID. |
-| `detail` | Requirement detail text used for embedding and review output. |
+| `detail` | Requirement detail text used for embedding and review output. Omitted when `include_details` is false. |
 | `usdm_id` | USDM record ID that owns the requirement. |
 | `path` | Repository-relative source path when available. |
 
@@ -102,6 +106,10 @@ When `candidate_scope_ids` is omitted, the candidate set is the expanded `source
 | `score` | Cosine similarity score returned by the vector search. |
 
 The response is source-centric. A pair may appear twice when both requirements are in the source set.
+
+When `include_empty_items` is false, the response omits source items that have no returned candidates.
+
+When `max_total_hits` is provided, the response keeps the highest-scoring candidate hits across all source items until the limit is reached.
 
 The operation returns only candidates whose score meets or exceeds `threshold`.
 

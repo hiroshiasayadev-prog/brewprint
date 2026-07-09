@@ -135,6 +135,9 @@ def collect_similar_requirements(
     threshold: float = 0.86,
     max_candidates_per_requirement: int = 10,
     exclude_same_document: bool = False,
+    include_empty_items: bool = False,
+    include_details: bool = True,
+    max_total_hits: int = 100,
     qdrant_url: str | None = None,
     ollama_url: str | None = None,
     embedding_model: str | None = None,
@@ -152,6 +155,9 @@ def collect_similar_requirements(
         threshold: Minimum cosine similarity score.
         max_candidates_per_requirement: Maximum candidates per source.
         exclude_same_document: Omit candidates from the source USDM record.
+        include_empty_items: Include source items with no returned candidates.
+        include_details: Include requirement detail text in source and candidate objects.
+        max_total_hits: Maximum total candidate hits returned across all sources.
         qdrant_url: Qdrant base URL. Defaults to USDM_SIMILARITY_QDRANT_URL or
             http://localhost:6333.
         ollama_url: Ollama base URL. Defaults to USDM_SIMILARITY_OLLAMA_URL or
@@ -183,6 +189,9 @@ def collect_similar_requirements(
         max_candidates_per_requirement=max_candidates_per_requirement,
         exclude_same_document=exclude_same_document,
         vector_index=vector_index,
+        include_empty_items=include_empty_items,
+        include_details=include_details,
+        max_total_hits=max_total_hits,
     )
 
 

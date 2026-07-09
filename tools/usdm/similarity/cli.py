@@ -50,6 +50,17 @@ def build_parser() -> argparse.ArgumentParser:
     collect_parser.add_argument("--threshold", type=float, default=0.86)
     collect_parser.add_argument("--max-candidates", type=int, default=10)
     collect_parser.add_argument(
+        "--include-empty-items",
+        action="store_true",
+        default=False,
+    )
+    collect_parser.add_argument(
+        "--include-details",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    collect_parser.add_argument("--max-total-hits", type=int, default=100)
+    collect_parser.add_argument(
         "--exclude-same-document",
         action="store_true",
         default=False,
@@ -95,6 +106,9 @@ def main(argv: list[str] | None = None) -> int:
         max_candidates_per_requirement=args.max_candidates,
         exclude_same_document=args.exclude_same_document,
         vector_index=vector_index,
+        include_empty_items=args.include_empty_items,
+        include_details=args.include_details,
+        max_total_hits=args.max_total_hits,
     )
     print(json.dumps(response, indent=2, sort_keys=True))
     return 0 if response["ok"] else 1
