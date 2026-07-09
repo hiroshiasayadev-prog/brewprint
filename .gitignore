@@ -2,7 +2,13 @@
 bin/
 memory/
 __pycache__
-tools/
+tools/*
+!tools/usdm/
+!tools/usdm/**
+!tools/usdm-mcp/
+!tools/usdm-mcp/**
+tools/usdm/**/__pycache__/
+tools/usdm-mcp/**/__pycache__/
 !product/tests/tools/
 product/tests/tools/*
 !product/tests/tools/*.py
