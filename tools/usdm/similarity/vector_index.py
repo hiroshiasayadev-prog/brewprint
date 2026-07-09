@@ -141,6 +141,42 @@ class RequirementVectorIndex:
             results[source.requirement_id] = source_hits
         return results
 
+    def search_requirements(
+        self,
+        query: str,
+        candidates: list[RequirementRow],
+        threshold: float,
+        max_results: int,
+    ) -> list[SimilarityHit]:
+        self._ensure_collection()
+        self._synchronize(candidates)
+        query_vector = self.embedding_generator.embed([query])[0]
+
+        candidate_by_point_id = {
+            point_id(row.requirement_id): row for row in candidates
+        }
+        if not candidate_by_point_id:
+            return []
+
+        hits = self._search(
+            vector=query_vector,
+            allowed_point_ids=list(candidate_by_point_id),
+            threshold=threshold,
+            limit=max_results,
+        )
+        results: list[SimilarityHit] = []
+        for hit in hits:
+            candidate = candidate_by_point_id.get(str(hit.get("id", "")))
+            score = hit.get("score")
+            if candidate is None or not isinstance(score, (int, float)):
+                continue
+            if float(score) >= threshold:
+                results.append(
+                    SimilarityHit(requirement=candidate, score=float(score))
+                )
+        results.sort(key=lambda hit: -hit.score)
+        return results[:max_results]
+
     def _ensure_collection(self) -> None:
         name = quote(self.collection, safe="")
         response = self.qdrant.request(

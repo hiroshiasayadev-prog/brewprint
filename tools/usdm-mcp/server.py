@@ -30,10 +30,14 @@ from similarity.collector import (  # noqa: E402
     collect_similar_requirements as collect_similar_requirements_standalone,
 )
 from similarity.config import (  # noqa: E402
+    DEFAULT_COLLECTION as STANDALONE_DEFAULT_COLLECTION,
     DEFAULT_EMBEDDING_MODEL,
     DEFAULT_VECTOR_DIMENSIONS,
 )
 from similarity.embedding_generator import OllamaEmbeddingGenerator  # noqa: E402
+from similarity.search import (  # noqa: E402
+    search_requirements as search_requirements_standalone,
+)
 from similarity.vector_index import RequirementVectorIndex  # noqa: E402
 
 
@@ -49,7 +53,7 @@ DEFAULT_OLLAMA_URL = os.environ.get(
 )
 DEFAULT_COLLECTION = os.environ.get(
     "USDM_SIMILARITY_COLLECTION",
-    "usdm_requirement_embeddings",
+    STANDALONE_DEFAULT_COLLECTION,
 )
 DEFAULT_MODEL = os.environ.get(
     "USDM_SIMILARITY_EMBEDDING_MODEL",
@@ -192,6 +196,64 @@ def collect_similar_requirements(
         include_empty_items=include_empty_items,
         include_details=include_details,
         max_total_hits=max_total_hits,
+    )
+
+
+@mcp.tool()
+def search_requirements(
+    query: str,
+    candidate_scope_ids: list[str],
+    repo_root: str | None = None,
+    threshold: float = 0.30,
+    max_results: int = 20,
+    include_details: bool = True,
+    qdrant_url: str | None = None,
+    ollama_url: str | None = None,
+    embedding_model: str | None = None,
+    collection: str = DEFAULT_COLLECTION,
+) -> dict[str, Any]:
+    """Search normalized USDM requirement detail text with a free-text query.
+
+    Args:
+        query: Free-text query to embed and compare against requirement details.
+        candidate_scope_ids: USDM record, requirement, or supported topic IDs to
+            search.
+        repo_root: Repository root relative to or inside USDM_MCP_ROOT. Defaults
+            to USDM_MCP_ROOT.
+        threshold: Minimum cosine similarity score.
+        max_results: Maximum returned matches.
+        include_details: Include requirement detail text in result objects.
+        qdrant_url: Qdrant base URL. Defaults to USDM_SIMILARITY_QDRANT_URL or
+            http://localhost:6333.
+        ollama_url: Ollama base URL. Defaults to USDM_SIMILARITY_OLLAMA_URL or
+            http://localhost:11434.
+        embedding_model: Ollama model. Defaults to
+            USDM_SIMILARITY_EMBEDDING_MODEL or the standalone model default.
+        collection: Qdrant collection. Defaults to
+            USDM_SIMILARITY_COLLECTION or usdm_requirement_embeddings.
+    """
+    root = _resolve_repo_root(repo_root)
+    effective_model = embedding_model or DEFAULT_MODEL
+    embedding_generator = OllamaEmbeddingGenerator(
+        base_url=ollama_url or DEFAULT_OLLAMA_URL,
+        model=effective_model,
+        dimensions=DEFAULT_VECTOR_DIMENSIONS,
+    )
+    vector_index = RequirementVectorIndex(
+        qdrant_url=qdrant_url or DEFAULT_QDRANT_URL,
+        collection=collection,
+        embedding_generator=embedding_generator,
+        model=effective_model,
+        dimensions=DEFAULT_VECTOR_DIMENSIONS,
+    )
+    return search_requirements_standalone(
+        repo_root=root,
+        query=query,
+        candidate_scope_ids=candidate_scope_ids,
+        threshold=threshold,
+        max_results=max_results,
+        vector_index=vector_index,
+        include_details=include_details,
     )
 
 

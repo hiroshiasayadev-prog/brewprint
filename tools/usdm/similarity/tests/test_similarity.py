@@ -7,6 +7,7 @@ from pathlib import Path
 from tools.usdm.similarity.collector import collect_similar_requirements
 from tools.usdm.similarity.config import DEFAULT_VECTOR_DIMENSIONS
 from tools.usdm.similarity.models import RequirementRow, SimilarityHit
+from tools.usdm.similarity.search import search_requirements
 from tools.usdm.similarity.text_normalizer import (
     normalize_requirement_detail,
     requirement_detail_hash,
@@ -57,6 +58,61 @@ class FakeVectorIndex:
                 if candidate.requirement_id != source.requirement_id
             ][:max_candidates]
         return result
+
+
+class FakeSearchVectorIndex:
+    model = "test-model"
+    dimensions = DEFAULT_VECTOR_DIMENSIONS
+
+    def search_requirements(
+        self,
+        query: str,
+        candidates: list[RequirementRow],
+        threshold: float,
+        max_results: int,
+    ) -> list[SimilarityHit]:
+        scores = [0.72, 0.91, 0.12]
+        hits = [
+            SimilarityHit(candidate, score)
+            for candidate, score in zip(candidates, scores, strict=False)
+            if score >= threshold
+        ]
+        hits.sort(key=lambda hit: -hit.score)
+        return hits[:max_results]
+
+
+class RecordingEmbeddingGenerator:
+    def __init__(self, events: list[str]) -> None:
+        self.events = events
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        self.events.append("embed_query")
+        return [[0.1] * DEFAULT_VECTOR_DIMENSIONS for _ in texts]
+
+
+class RecordingRequirementVectorIndex(RequirementVectorIndex):
+    def __init__(self) -> None:
+        self.events: list[str] = []
+        self.collection = "test"
+        self.embedding_generator = RecordingEmbeddingGenerator(self.events)
+        self.model = "test-model"
+        self.dimensions = DEFAULT_VECTOR_DIMENSIONS
+
+    def _ensure_collection(self) -> None:
+        self.events.append("ensure_collection")
+
+    def _synchronize(self, rows: list[RequirementRow]) -> None:
+        self.events.append("synchronize_candidates")
+
+    def _search(
+        self,
+        vector: list[float],
+        allowed_point_ids: list[str],
+        threshold: float,
+        limit: int,
+    ) -> list[dict[str, object]]:
+        self.events.append("search")
+        return [{"id": allowed_point_ids[0], "score": 0.88}]
 
 
 class SimilarityToolTests(unittest.TestCase):
@@ -273,6 +329,172 @@ class SimilarityToolTests(unittest.TestCase):
         ):
             stale = {**fresh, field: value}
             self.assertFalse(index._payload_is_fresh(stale, row))
+
+    def test_search_returns_query_centric_results(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "sample" / "records" / "usdm" / "example.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(RECORD, encoding="utf-8")
+
+            response = search_requirements(
+                repo_root=root,
+                query="  compare   requirement details  ",
+                candidate_scope_ids=["usdm:sample.requirements.example"],
+                threshold=0.30,
+                max_results=20,
+                vector_index=FakeSearchVectorIndex(),
+            )
+
+            self.assertTrue(response["ok"])
+            self.assertEqual(response["candidate_requirements"], 2)
+            self.assertEqual(response["query"], "compare requirement details")
+            self.assertEqual(len(response["results"]), 2)
+            self.assertEqual(response["results"][0]["score"], 0.91)
+            self.assertEqual(response["results"][1]["score"], 0.72)
+
+    def test_search_rejects_empty_query(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            response = search_requirements(
+                repo_root=Path(directory),
+                query="   ",
+                candidate_scope_ids=["usdm:sample.requirements.example"],
+                threshold=0.30,
+                max_results=20,
+                vector_index=FakeSearchVectorIndex(),
+            )
+
+            self.assertFalse(response["ok"])
+            self.assertEqual(response["results"], [])
+            self.assertEqual(response["diagnostics"][0]["category"], "query")
+
+    def test_search_rejects_empty_candidate_scope(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            response = search_requirements(
+                repo_root=Path(directory),
+                query="requirement detail",
+                candidate_scope_ids=[],
+                threshold=0.30,
+                max_results=20,
+                vector_index=FakeSearchVectorIndex(),
+            )
+
+            self.assertFalse(response["ok"])
+            self.assertEqual(
+                response["diagnostics"][0]["category"],
+                "candidate_scope_ids",
+            )
+
+    def test_search_rejects_invalid_threshold(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            response = search_requirements(
+                repo_root=Path(directory),
+                query="requirement detail",
+                candidate_scope_ids=["usdm:sample.requirements.example"],
+                threshold=1.1,
+                max_results=20,
+                vector_index=FakeSearchVectorIndex(),
+            )
+
+            self.assertFalse(response["ok"])
+            self.assertEqual(response["diagnostics"][0]["category"], "threshold")
+
+    def test_search_rejects_invalid_max_results(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            response = search_requirements(
+                repo_root=Path(directory),
+                query="requirement detail",
+                candidate_scope_ids=["usdm:sample.requirements.example"],
+                threshold=0.30,
+                max_results=0,
+                vector_index=FakeSearchVectorIndex(),
+            )
+
+            self.assertFalse(response["ok"])
+            self.assertEqual(response["diagnostics"][0]["category"], "max_results")
+
+    def test_search_can_omit_details(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "sample" / "records" / "usdm" / "example.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(RECORD, encoding="utf-8")
+
+            response = search_requirements(
+                repo_root=root,
+                query="requirement detail",
+                candidate_scope_ids=["usdm:sample.requirements.example"],
+                threshold=0.30,
+                max_results=20,
+                vector_index=FakeSearchVectorIndex(),
+                include_details=False,
+            )
+
+            self.assertTrue(response["ok"])
+            self.assertNotIn("detail", response["results"][0])
+
+    def test_search_limits_result_count(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "sample" / "records" / "usdm" / "example.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(RECORD, encoding="utf-8")
+
+            response = search_requirements(
+                repo_root=root,
+                query="requirement detail",
+                candidate_scope_ids=["usdm:sample.requirements.example"],
+                threshold=0.30,
+                max_results=1,
+                vector_index=FakeSearchVectorIndex(),
+            )
+
+            self.assertTrue(response["ok"])
+            self.assertEqual(len(response["results"]), 1)
+            self.assertEqual(response["results"][0]["score"], 0.91)
+
+    def test_search_public_results_do_not_include_usdm_id(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "sample" / "records" / "usdm" / "example.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(RECORD, encoding="utf-8")
+
+            response = search_requirements(
+                repo_root=root,
+                query="requirement detail",
+                candidate_scope_ids=["usdm:sample.requirements.example"],
+                threshold=0.30,
+                max_results=20,
+                vector_index=FakeSearchVectorIndex(),
+            )
+
+            self.assertTrue(response["ok"])
+            self.assertNotIn("usdm_id", response["results"][0])
+
+    def test_vector_index_synchronizes_candidates_before_query_embedding(
+        self,
+    ) -> None:
+        index = RecordingRequirementVectorIndex()
+        row = RequirementRow(
+            requirement_id="usdm:sample.requirements.example#R001",
+            detail="Requirement detail.",
+            usdm_id="usdm:sample.requirements.example",
+            path="sample/records/usdm/example.md",
+        )
+
+        hits = index.search_requirements(
+            query="requirement detail",
+            candidates=[row],
+            threshold=0.30,
+            max_results=20,
+        )
+
+        self.assertEqual(len(hits), 1)
+        self.assertEqual(
+            index.events,
+            ["ensure_collection", "synchronize_candidates", "embed_query", "search"],
+        )
 
 
 if __name__ == "__main__":

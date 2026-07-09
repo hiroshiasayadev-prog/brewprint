@@ -8,6 +8,7 @@ MCP wrapper for the standalone MVP USDM tools in `tools/usdm/usdm_tools.py`.
 - `check_usdm_coverage`
 - `usdm_covered_by`
 - `collect_similar_requirements`
+- `search_requirements`
 
 ## Start
 
@@ -60,3 +61,27 @@ returns its response without classifying or rewriting requirements. By default,
 it omits source items with no returned candidates, includes requirement detail
 text, and caps the response to 100 total candidate hits. Qdrant is used only as
 a similarity index; repository USDM records remain the source of truth.
+
+## Search request
+
+Example MCP `tools/call` payload:
+
+```json
+{
+  "name": "search_requirements",
+  "arguments": {
+    "query": "path derived canonical spec ref",
+    "candidate_scope_ids": [
+      "usdm:product.design_records"
+    ],
+    "threshold": 0.30,
+    "max_results": 20,
+    "include_details": true
+  }
+}
+```
+
+The tool searches normalized USDM requirement detail text only. It synchronizes
+candidate embeddings before embedding the query, then searches Qdrant within
+the expanded candidate set. It does not classify, merge, rewrite, suppress, or
+delete requirements, and public result objects omit internal `usdm_id` values.

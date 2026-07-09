@@ -8,9 +8,9 @@
 
 ## What this is
 
-This contract defines a USDM-facing operation that collects semantically similar requirement candidates.
+This contract defines USDM-facing operations that use requirement-detail embeddings for review support.
 
-The operation supports human review by grouping similar requirement details. The operation does not judge whether candidates are duplicates.
+The similarity operation supports human review by grouping similar requirement details. The search operation supports human lookup by searching requirement detail text with a free-text query. Neither operation judges whether candidates are duplicates.
 
 ## Non-goals
 
@@ -22,13 +22,14 @@ The operation supports human review by grouping similar requirement details. The
 
 ## Boundary
 
-The public boundary is a USDM similarity collection operation.
+The public boundary is a USDM requirement embedding operation set.
 
 The internal embedding and vector search implementation is independent auxiliary tooling. USDM supplies the requirement IDs and requirement details at the operation boundary.
 
 | component | responsibility |
 |---|---|
 | Similarity Request Orchestrator | Accept the USDM-facing request, expand source and candidate scopes, collect requirement details, and format the response. |
+| Requirement Search Orchestrator | Accept a free-text query, expand candidate scopes, synchronize candidate embeddings, execute query search, and format the response. |
 | Requirement Vector Index | Maintain requirement embedding freshness, call the embedding generator for missing or stale vectors, upsert vectors, and run similarity search. |
 | Embedding Generator | Accept text batches and return embedding vectors from the configured Ollama embedding backend. |
 | Qdrant vector store | Store requirement embeddings and payloads, and execute cosine similarity search. |
@@ -44,8 +45,9 @@ The Requirement Vector Index does not resolve USDM scopes. It receives already-e
 | operation | purpose |
 |---|---|
 | `collect_similar_requirements` | Return semantic similarity candidates for USDM requirements. |
+| `search_requirements` | Return requirement detail matches for a free-text query. |
 
-### Request fields
+### `collect_similar_requirements` request fields
 
 | field | required | default | meaning |
 |---|---:|---|---|
@@ -63,9 +65,24 @@ The operation always excludes the source requirement itself from its candidate l
 
 When `candidate_scope_ids` is omitted, the candidate set is the expanded `source_scope_ids` set.
 
+### `search_requirements` request fields
+
+| field | required | default | meaning |
+|---|---:|---|---|
+| `repo_root` | yes | - | Repository root to inspect. |
+| `query` | yes | - | Free-text search query embedded and compared against requirement details. |
+| `candidate_scope_ids` | yes | - | USDM record IDs, USDM requirement IDs, or supported USDM topic IDs to search. |
+| `threshold` | no | `0.30` | Minimum cosine similarity score for returned results. |
+| `max_results` | no | `20` | Maximum number of results returned for the query. |
+| `include_details` | no | `true` | When true, include requirement detail text in result objects. |
+
+The search operation searches only normalized requirement detail text. It does not search notes, prose sections, headings, front matter, file names, or paths.
+
+The search operation MUST synchronize candidate requirement embeddings before embedding and searching the query.
+
 ## Response
 
-### Response fields
+### `collect_similar_requirements` response fields
 
 | field | meaning |
 |---|---|
@@ -111,6 +128,30 @@ When `max_total_hits` is provided, the response keeps the highest-scoring candid
 
 The operation returns only candidates whose score meets or exceeds `threshold`.
 
+### `search_requirements` response fields
+
+| field | meaning |
+|---|---|
+| `ok` | False when the operation cannot complete. |
+| `candidate_requirements` | Number of expanded candidate requirements. |
+| `query` | Effective free-text query. |
+| `threshold` | Effective cosine similarity threshold. |
+| `model` | Effective embedding model identity. |
+| `dimensions` | Effective embedding vector dimensions. |
+| `results` | Requirement matches whose score meets or exceeds the threshold. |
+| `diagnostics` | Errors or warnings produced during scope expansion, embedding synchronization, query embedding, or search. |
+
+### Search result object fields
+
+| field | meaning |
+|---|---|
+| `requirement_id` | Full USDM requirement ID for the result. |
+| `detail` | Requirement detail text. Omitted when `include_details` is false. |
+| `path` | Repository-relative source path when available. |
+| `score` | Cosine similarity score returned by vector search. |
+
+The search response is query-centric and sorted by descending score.
+
 ## Embedding and vector index contract
 
 | field | value |
@@ -131,7 +172,7 @@ A stored vector is stale when any stored value differs from the configured value
 | embedding model identity | configured embedding model identity |
 | vector dimensions | configured vector dimensions |
 
-The Requirement Vector Index regenerates missing or stale embeddings before running similarity search.
+The Requirement Vector Index regenerates missing or stale embeddings before running similarity or free-text requirement search.
 
 The vector store is a search index. The vector store is not the source of truth for requirement content.
 
@@ -153,7 +194,8 @@ The normalized requirement detail text is used only for freshness detection and 
 | condition | handling |
 |---|---|
 | `repo_root` is missing or unreadable | Return `ok: false` and an error diagnostic. |
-| `source_scope_ids` is empty | Return `ok: false` and an error diagnostic. |
+| `source_scope_ids` is empty for similarity collection | Return `ok: false` and an error diagnostic. |
+| `query` is empty for requirement search | Return `ok: false` and an error diagnostic. |
 | A source scope ID cannot be resolved | Return `ok: false` and an error diagnostic. |
 | A candidate scope ID cannot be resolved | Return `ok: false` and an error diagnostic. |
 | Ollama embedding generation fails | Return `ok: false` and an error diagnostic. |

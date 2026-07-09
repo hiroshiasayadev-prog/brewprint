@@ -12,6 +12,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
     from tools.usdm.similarity.collector import collect_similar_requirements
     from tools.usdm.similarity.config import (
+        DEFAULT_COLLECTION,
         DEFAULT_EMBEDDING_MODEL,
         DEFAULT_VECTOR_DIMENSIONS,
     )
@@ -19,10 +20,18 @@ if __package__ in (None, ""):
         OllamaEmbeddingGenerator,
     )
     from tools.usdm.similarity.vector_index import RequirementVectorIndex
+    from tools.usdm.similarity.search import (
+        search_requirements as search_requirements_standalone,
+    )
 else:
     from .collector import collect_similar_requirements
-    from .config import DEFAULT_EMBEDDING_MODEL, DEFAULT_VECTOR_DIMENSIONS
+    from .config import (
+        DEFAULT_COLLECTION,
+        DEFAULT_EMBEDDING_MODEL,
+        DEFAULT_VECTOR_DIMENSIONS,
+    )
     from .embedding_generator import OllamaEmbeddingGenerator
+    from .search import search_requirements as search_requirements_standalone
     from .vector_index import RequirementVectorIndex
 
 
@@ -79,7 +88,42 @@ def build_parser() -> argparse.ArgumentParser:
     )
     collect_parser.add_argument(
         "--collection",
-        default="usdm_requirement_embeddings",
+        default=DEFAULT_COLLECTION,
+    )
+    search_parser = subparsers.add_parser(
+        "search",
+        help="Search USDM requirement details with a free-text query.",
+    )
+    search_parser.add_argument("--repo-root", type=Path, required=True)
+    search_parser.add_argument("--query", required=True)
+    search_parser.add_argument(
+        "--candidate-scope-id",
+        action="append",
+        required=True,
+        dest="candidate_scope_ids",
+    )
+    search_parser.add_argument("--threshold", type=float, default=0.30)
+    search_parser.add_argument("--max-results", type=int, default=20)
+    search_parser.add_argument(
+        "--include-details",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    search_parser.add_argument(
+        "--qdrant-url",
+        default="http://localhost:6333",
+    )
+    search_parser.add_argument(
+        "--ollama-url",
+        default="http://localhost:11434",
+    )
+    search_parser.add_argument(
+        "--embedding-model",
+        default=DEFAULT_EMBEDDING_MODEL,
+    )
+    search_parser.add_argument(
+        "--collection",
+        default=DEFAULT_COLLECTION,
     )
     return parser
 
@@ -98,18 +142,29 @@ def main(argv: list[str] | None = None) -> int:
         model=args.embedding_model,
         dimensions=DEFAULT_VECTOR_DIMENSIONS,
     )
-    response = collect_similar_requirements(
-        repo_root=args.repo_root.resolve(),
-        source_scope_ids=args.source_scope_ids,
-        candidate_scope_ids=args.candidate_scope_ids,
-        threshold=args.threshold,
-        max_candidates_per_requirement=args.max_candidates,
-        exclude_same_document=args.exclude_same_document,
-        vector_index=vector_index,
-        include_empty_items=args.include_empty_items,
-        include_details=args.include_details,
-        max_total_hits=args.max_total_hits,
-    )
+    if args.command == "collect":
+        response = collect_similar_requirements(
+            repo_root=args.repo_root.resolve(),
+            source_scope_ids=args.source_scope_ids,
+            candidate_scope_ids=args.candidate_scope_ids,
+            threshold=args.threshold,
+            max_candidates_per_requirement=args.max_candidates,
+            exclude_same_document=args.exclude_same_document,
+            vector_index=vector_index,
+            include_empty_items=args.include_empty_items,
+            include_details=args.include_details,
+            max_total_hits=args.max_total_hits,
+        )
+    else:
+        response = search_requirements_standalone(
+            repo_root=args.repo_root.resolve(),
+            query=args.query,
+            candidate_scope_ids=args.candidate_scope_ids,
+            threshold=args.threshold,
+            max_results=args.max_results,
+            vector_index=vector_index,
+            include_details=args.include_details,
+        )
     print(json.dumps(response, indent=2, sort_keys=True))
     return 0 if response["ok"] else 1
 
