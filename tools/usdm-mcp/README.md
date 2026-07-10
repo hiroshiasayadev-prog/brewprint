@@ -6,6 +6,7 @@ MCP wrapper for the standalone MVP USDM tools in `tools/usdm/usdm_tools.py`.
 
 - `validate_usdm`
 - `check_usdm_coverage`
+- `check_usdm_scope_coverage`
 - `usdm_covered_by`
 - `collect_similar_requirements`
 - `search_requirements`
@@ -34,6 +35,30 @@ start "usdm-mcp" cmd /k "mcp-proxy --host=127.0.0.1 --port=8184 --cwd=C:\Users\i
 ```
 
 The server restricts `repo_root` arguments to paths inside `USDM_MCP_ROOT`.
+
+## Scoped coverage request
+
+Example MCP `tools/call` payload:
+
+```json
+{
+  "name": "check_usdm_scope_coverage",
+  "arguments": {
+    "scope_ids": [
+      "usdm:product.design_records.namespace_and_identity"
+    ],
+    "include_covered": true,
+    "include_not_covered": true,
+    "include_empty_records": false
+  }
+}
+```
+
+The tool expands USDM app, topic, record, or full requirement IDs and returns a
+compact record-grouped coverage report. Covered rows map compact row IDs such
+as `#R001` to covering Specification refs. Uncovered rows are listed as compact
+row IDs only. Requirement text, full requirement detail objects, paths, and
+internal `usdm_id` fields are omitted from normal items.
 
 ## Similarity request
 

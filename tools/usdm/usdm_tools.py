@@ -11,6 +11,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+try:
+    from tools.usdm.similarity.usdm_loader import expand_scopes
+except ModuleNotFoundError:  # pragma: no cover - CLI/server import shape
+    from similarity.usdm_loader import expand_scopes
+
 
 IGNORED_APP_DIRS = {
     ".git",
@@ -27,6 +32,7 @@ USDM_RECORD_ID_RE = re.compile(r"^usdm:([a-z0-9_]+)\.[a-z0-9_]+(?:\.[a-z0-9_]+)*
 FULL_REQUIREMENT_ID_RE = re.compile(
     r"^usdm:([a-z0-9_]+)\.[a-z0-9_]+(?:\.[a-z0-9_]+)*#R\d{3}$"
 )
+USDM_APP_SCOPE_ID_RE = re.compile(r"^usdm:([a-z0-9_]+)$")
 USDM_H1_RE = re.compile(r"^# USDM (?P<kind>index|requirement): (?P<title>.+?)\s*$")
 ATX_H1_RE = re.compile(r"^#(?!#)\s+(.+?)\s*$")
 ATX_H2_RE = re.compile(r"^##(?!#)\s+(.+?)\s*$")
@@ -620,6 +626,162 @@ def usdm_covered_by(repo_root: Path, requirement_id: str) -> dict[str, Any]:
     }
 
 
+def row_id_from_requirement(requirement_id: str) -> str:
+    return f"#{requirement_id.rsplit('#', 1)[1]}"
+
+
+def row_sort_key(row_id: str) -> tuple[int, str]:
+    match = re.match(r"^#R(?P<number>\d+)$", row_id)
+    if match:
+        return (int(match.group("number")), row_id)
+    return (sys.maxsize, row_id)
+
+
+def requirement_matches_scope(requirement_id: str, scope_id: str) -> bool:
+    if FULL_REQUIREMENT_ID_RE.match(scope_id):
+        return requirement_id == scope_id
+    if USDM_APP_SCOPE_ID_RE.match(scope_id):
+        return requirement_id.startswith(f"{scope_id}.")
+    if USDM_RECORD_ID_RE.match(scope_id):
+        record_id = requirement_id.split("#", 1)[0]
+        return record_id == scope_id or record_id.startswith(f"{scope_id}.")
+    return False
+
+
+def check_usdm_scope_coverage(
+    scope_ids: list[str],
+    repo_root: Path | str | None = None,
+    include_covered: bool = True,
+    include_not_covered: bool = True,
+    include_empty_records: bool = False,
+) -> dict[str, Any]:
+    if not repo_root:
+        return {
+            "ok": False,
+            "scope_ids": scope_ids,
+            "records": 0,
+            "requirements": 0,
+            "covered_requirements": 0,
+            "not_covered_requirements": 0,
+            "items": [],
+            "diagnostics": [
+                diagnostic("repo_root", "", "repo_root is missing or unreadable.")
+            ],
+        }
+
+    root = Path(repo_root).resolve()
+    root_error = repo_root_error(root)
+    if root_error:
+        return {
+            "ok": False,
+            "scope_ids": scope_ids,
+            "records": 0,
+            "requirements": 0,
+            "covered_requirements": 0,
+            "not_covered_requirements": 0,
+            "items": [],
+            "diagnostics": root_error["diagnostics"],
+        }
+
+    if not scope_ids:
+        return {
+            "ok": False,
+            "scope_ids": scope_ids,
+            "records": 0,
+            "requirements": 0,
+            "covered_requirements": 0,
+            "not_covered_requirements": 0,
+            "items": [],
+            "diagnostics": [
+                diagnostic(
+                    "scope_ids",
+                    "",
+                    "scope_ids must include at least one USDM app, topic, record, or requirement ID.",
+                )
+            ],
+        }
+
+    expansion = expand_scopes(root, scope_ids, "coverage")
+    selected_requirements = expansion.requirements
+    selected_ids = {row.requirement_id for row in selected_requirements}
+    selected_records = sorted({row.usdm_id for row in selected_requirements})
+
+    coverage_scan = scan_coverage(root, None)
+    coverage_by_requirement: dict[str, set[str]] = {
+        requirement_id: set() for requirement_id in selected_ids
+    }
+    for entry in coverage_scan.entries:
+        if entry.requirement_id in coverage_by_requirement:
+            coverage_by_requirement[entry.requirement_id].add(entry.spec_ref)
+
+    covered_ids = {
+        requirement_id
+        for requirement_id, covering_refs in coverage_by_requirement.items()
+        if covering_refs
+    }
+    not_covered_ids = selected_ids - covered_ids
+
+    all_requirements = scan_usdm(root, None).requirement_ids
+    diagnostics = list(expansion.diagnostics)
+    for entry in coverage_scan.entries:
+        if entry.requirement_id in all_requirements:
+            continue
+        if not any(
+            requirement_matches_scope(entry.requirement_id, scope_id)
+            for scope_id in scope_ids
+        ):
+            continue
+        diagnostics.append(
+            diagnostic(
+                "dangling",
+                entry.path,
+                "usdm_covers item points to a missing USDM requirement ID.",
+                entry.requirement_id,
+            )
+        )
+
+    items: list[dict[str, Any]] = []
+    for record_id in selected_records:
+        record_rows = [
+            row
+            for row in selected_requirements
+            if row.usdm_id == record_id
+        ]
+        item: dict[str, Any] = {"record_id": record_id}
+        covered: dict[str, list[str]] = {}
+        not_covered: list[str] = []
+
+        for row in sorted(
+            record_rows,
+            key=lambda row: row_sort_key(row_id_from_requirement(row.requirement_id)),
+        ):
+            row_id = row_id_from_requirement(row.requirement_id)
+            covering_refs = sorted(coverage_by_requirement[row.requirement_id])
+            if covering_refs:
+                covered[row_id] = covering_refs
+            else:
+                not_covered.append(row_id)
+
+        if include_covered and covered:
+            item["covered"] = covered
+        if include_not_covered and not_covered:
+            item["not_covered"] = sorted(not_covered, key=row_sort_key)
+        visible_fields = set(item) - {"record_id"}
+        if visible_fields or include_empty_records:
+            items.append(item)
+
+    return {
+        "ok": not has_errors(diagnostics),
+        "scope_ids": scope_ids,
+        "records": len(selected_records),
+        "requirements": len(selected_ids),
+        "covered_requirements": len(covered_ids),
+        "not_covered_requirements": len(not_covered_ids),
+        "items": sorted(items, key=lambda item: item["record_id"]),
+        "diagnostics": diagnostics,
+    }
+
+
 def existing_repo_root(value: str) -> Path:
     return Path(value).resolve()
 
@@ -658,6 +820,38 @@ def build_parser() -> argparse.ArgumentParser:
     covered_by_parser.add_argument("--repo-root", type=existing_repo_root)
     covered_by_parser.add_argument("--requirement-id", required=True)
 
+    scope_coverage_parser = subparsers.add_parser("check_usdm_scope_coverage")
+    scope_coverage_parser.add_argument("--repo-root", type=existing_repo_root)
+    scope_coverage_parser.add_argument(
+        "--scope-id",
+        dest="scope_ids",
+        action="append",
+        required=True,
+    )
+    scope_coverage_parser.add_argument(
+        "--include-covered",
+        dest="include_covered",
+        action="store_true",
+        default=True,
+    )
+    scope_coverage_parser.add_argument(
+        "--no-include-covered",
+        dest="include_covered",
+        action="store_false",
+    )
+    scope_coverage_parser.add_argument(
+        "--include-not-covered",
+        dest="include_not_covered",
+        action="store_true",
+        default=True,
+    )
+    scope_coverage_parser.add_argument(
+        "--no-include-not-covered",
+        dest="include_not_covered",
+        action="store_false",
+    )
+    scope_coverage_parser.add_argument("--include-empty-records", action="store_true", default=False)
+
     return parser
 
 
@@ -676,6 +870,14 @@ def main(argv: list[str] | None = None) -> int:
             response = check_usdm_coverage(args.repo_root, args.app_namespace, args.include_dangling)
         elif args.command == "usdm_covered_by":
             response = usdm_covered_by(args.repo_root, args.requirement_id)
+        elif args.command == "check_usdm_scope_coverage":
+            response = check_usdm_scope_coverage(
+                scope_ids=args.scope_ids,
+                repo_root=args.repo_root,
+                include_covered=args.include_covered,
+                include_not_covered=args.include_not_covered,
+                include_empty_records=args.include_empty_records,
+            )
         else:
             parser.error(f"unknown command: {args.command}")
     except Exception as exc:  # pragma: no cover - last-resort CLI failure envelope

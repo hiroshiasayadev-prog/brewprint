@@ -132,6 +132,34 @@ def usdm_covered_by(
 
 
 @mcp.tool()
+def check_usdm_scope_coverage(
+    scope_ids: list[str],
+    repo_root: str | None = None,
+    include_covered: bool = True,
+    include_not_covered: bool = True,
+    include_empty_records: bool = False,
+) -> dict[str, Any]:
+    """Check compact coverage for USDM app, topic, record, or requirement scopes.
+
+    Args:
+        scope_ids: USDM app, topic, record, or full requirement IDs to report.
+        repo_root: Repository root relative to or inside USDM_MCP_ROOT. Defaults
+            to USDM_MCP_ROOT.
+        include_covered: Include covered row IDs and their covering Specification refs.
+        include_not_covered: Include uncovered row IDs.
+        include_empty_records: Include records with no visible covered/not_covered fields.
+    """
+    root = _resolve_repo_root(repo_root)
+    return usdm_tools.check_usdm_scope_coverage(
+        scope_ids=scope_ids,
+        repo_root=root,
+        include_covered=include_covered,
+        include_not_covered=include_not_covered,
+        include_empty_records=include_empty_records,
+    )
+
+
+@mcp.tool()
 def collect_similar_requirements(
     source_scope_ids: list[str],
     repo_root: str | None = None,
