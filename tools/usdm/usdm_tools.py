@@ -429,17 +429,6 @@ def scan_usdm(repo_root: Path, app_namespace: str | None) -> UsdmScan:
                     row_ids.extend(section_row_ids)
                     diagnostics.extend(section_diagnostics)
 
-                expected = [f"R{index:03d}" for index in range(1, len(row_ids) + 1)]
-                if row_ids != expected:
-                    diagnostics.append(
-                        diagnostic(
-                            "row_id_sequence",
-                            path_display,
-                            "Row-local IDs must be R001, R002, ... with no gaps within one USDM requirement record.",
-                            row_ids,
-                        )
-                    )
-
                 if record_id:
                     for row_id in row_ids:
                         full_id = f"{record_id}#{row_id}"
@@ -552,8 +541,10 @@ def validate_usdm(repo_root: Path, app_namespace: str | None) -> dict[str, Any]:
 
 def check_usdm_coverage(repo_root: Path, app_namespace: str | None, include_dangling: bool) -> dict[str, Any]:
     usdm_scan = scan_usdm(repo_root, app_namespace)
-    coverage_scan = scan_coverage(repo_root, app_namespace)
+    all_usdm_scan = scan_usdm(repo_root, None)
+    coverage_scan = scan_coverage(repo_root, None)
     requirement_ids = usdm_scan.requirement_ids
+    all_requirement_ids = all_usdm_scan.requirement_ids
     covered_ids = {entry.requirement_id for entry in coverage_scan.entries if entry.requirement_id in requirement_ids}
     uncovered = sorted(requirement_ids - covered_ids)
     dangling_entries = [
@@ -563,7 +554,11 @@ def check_usdm_coverage(repo_root: Path, app_namespace: str | None, include_dang
             "path": entry.path,
         }
         for entry in coverage_scan.entries
-        if entry.requirement_id not in requirement_ids
+        if entry.requirement_id not in all_requirement_ids
+        and (
+            app_namespace is None
+            or entry.requirement_id.startswith(f"usdm:{app_namespace}.")
+        )
     ]
 
     diagnostics = [*usdm_scan.diagnostics, *coverage_scan.diagnostics]

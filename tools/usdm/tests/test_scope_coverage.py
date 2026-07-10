@@ -4,7 +4,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.usdm.usdm_tools import check_usdm_scope_coverage
+from tools.usdm.usdm_tools import (
+    check_usdm_coverage,
+    check_usdm_scope_coverage,
+    validate_usdm,
+)
 
 
 RECORD_ONE = """\
@@ -40,6 +44,23 @@ RECORD_TWO = """\
 | R001 | Covered second requirement. |
 """
 
+RECORD_GAPPED = """\
+# USDM requirement: Gapped
+
+- **id**: `usdm:sample.requirements.gapped`
+- **status**: draft
+- **date**: 2026-07-10
+- **kind**: requirement
+- **parent**: root
+
+## Requirements: spec:sample.gapped
+
+| id | requirement |
+|---|---|
+| R001 | First retained requirement. |
+| R003 | Third retained requirement after deleting R002. |
+"""
+
 SPEC = """\
 # Contract: Coverage spec
 
@@ -70,6 +91,42 @@ def write_fixture(root: Path) -> None:
 
 
 class ScopedCoverageTests(unittest.TestCase):
+    def test_validate_usdm_allows_row_id_gaps(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            usdm_root = root / "sample" / "records" / "usdm"
+            usdm_root.mkdir(parents=True)
+            (usdm_root / "gapped.md").write_text(
+                RECORD_GAPPED,
+                encoding="utf-8",
+            )
+
+            response = validate_usdm(root, "sample")
+
+            self.assertTrue(response["ok"])
+            self.assertEqual(response["requirements"], 2)
+            self.assertEqual(response["diagnostics"], [])
+
+    def test_app_filtered_coverage_counts_cross_app_specs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write_fixture(root)
+
+            response = check_usdm_coverage(
+                repo_root=root,
+                app_namespace="sample",
+                include_dangling=True,
+            )
+
+            self.assertFalse(response["ok"])
+            self.assertEqual(response["requirements"], 3)
+            self.assertEqual(response["covered"], 2)
+            self.assertEqual(
+                response["uncovered"],
+                ["usdm:sample.requirements.one#R002"],
+            )
+            self.assertEqual(response["dangling"], [])
+
     def test_record_scope_coverage_grouping(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
