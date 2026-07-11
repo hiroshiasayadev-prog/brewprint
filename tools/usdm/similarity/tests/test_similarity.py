@@ -1,19 +1,25 @@
 from __future__ import annotations
 
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from tools.usdm.similarity.collector import collect_similar_requirements
-from tools.usdm.similarity.config import DEFAULT_VECTOR_DIMENSIONS
-from tools.usdm.similarity.models import RequirementRow, SimilarityHit
-from tools.usdm.similarity.search import search_requirements
-from tools.usdm.similarity.text_normalizer import (
+
+TOOLS_USDM_DIR = Path(__file__).resolve().parents[2]
+if str(TOOLS_USDM_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_USDM_DIR))
+
+from similarity.collector import collect_similar_requirements  # noqa: E402
+from similarity.config import DEFAULT_VECTOR_DIMENSIONS  # noqa: E402
+from similarity.models import RequirementRow, SimilarityHit  # noqa: E402
+from similarity.search import search_requirements  # noqa: E402
+from similarity.text_normalizer import (  # noqa: E402
     normalize_requirement_detail,
     requirement_detail_hash,
 )
-from tools.usdm.similarity.usdm_loader import expand_scopes
-from tools.usdm.similarity.vector_index import RequirementVectorIndex
+from similarity.usdm_loader import expand_scopes  # noqa: E402
+from similarity.vector_index import RequirementVectorIndex  # noqa: E402
 
 
 RECORD = """\
@@ -29,7 +35,8 @@ RECORD = """\
 
 Fixture.
 
-## Requirements: spec:sample.example
+## Requirements: Example requirements
+> source: spec:sample.example
 
 | id | requirement | notes |
 |---|---|---|
@@ -147,6 +154,47 @@ class SimilarityToolTests(unittest.TestCase):
                 full.requirements[0].detail,
                 "Compare requirement details.",
             )
+
+    def test_expand_scopes_loads_literal_requirement_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "sample" / "records" / "usdm" / "example.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                RECORD.replace(
+                    "> source: spec:sample.example",
+                    "> source: literal",
+                ),
+                encoding="utf-8",
+            )
+
+            result = expand_scopes(
+                root,
+                ["usdm:sample.requirements.example"],
+                "source",
+            )
+
+            self.assertEqual(result.diagnostics, [])
+            self.assertEqual(len(result.requirements), 2)
+
+    def test_expand_scopes_does_not_load_missing_source_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "sample" / "records" / "usdm" / "example.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                RECORD.replace("> source: spec:sample.example\n", ""),
+                encoding="utf-8",
+            )
+
+            result = expand_scopes(
+                root,
+                ["usdm:sample.requirements.example"],
+                "source",
+            )
+
+            self.assertEqual(result.requirements, [])
+            self.assertEqual(result.diagnostics[0]["category"], "scope_resolution")
 
     def test_expand_topic_scope_to_descendant_requirement_records(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

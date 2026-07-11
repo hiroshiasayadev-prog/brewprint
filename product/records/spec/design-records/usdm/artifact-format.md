@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.usdm.artifact_format`
 - **status**: draft
-- **date**: 2026-07-08
+- **date**: 2026-07-11
 - **parent**: `spec:product.design_records.usdm`
 - **contract_class**: `format`
 
@@ -73,18 +73,54 @@ The topic path should describe the requirement topic, not the physical filename.
 
 ### Required section matrix
 
-| section | `index` | `requirement` |
+| section or field | `index` | `requirement` |
 |---|---:|---:|
 | `## What this is` | required | required |
-| `## Requirements: <spec ref>` | prohibited | one or more required |
+| `## Requirements: <title>` | prohibited | one or more required |
+| Immediate `> source: <source>` field | prohibited | required once per Requirements section |
 
 USDM `index` records intentionally remain thin in the MVP. Related requirement discovery belongs to tools, not duplicated index prose.
 
+### Requirement section shape
+
+Each requirement section uses this shape:
+
+```markdown
+## Requirements: <title>
+> source: <source>
+
+| id | requirement |
+|---|---|
+| R001 | ... |
+```
+
+The source field must immediately follow the H2 without an intervening blank line.
+
+The source value uses one of these forms:
+
+| source form | meaning |
+|---|---|
+| `literal` | The rows are direct upstream requirements and no corresponding Specification is the source. |
+| canonical `spec:` ref | The referenced Specification directly provides the requirements represented by the rows. |
+
+The title identifies the coherent requirement group for human readers. The title is not a source identity or row identity.
+
+Title rules:
+
+| rule | level |
+|---|---|
+| The title must be non-empty and unique within one USDM record. | MUST |
+| The title must identify the requirement content, concern, or boundary. | MUST |
+| The title must not equal `literal` or a canonical `spec:` ref. | MUST |
+| The title must not be a physical file name, conversation name, or session name. | MUST |
+| The title must not claim normative authority through names such as `Canonical requirements`, `Official contract`, or equivalent authority-bearing labels. | MUST |
+| A title change must not change existing row IDs. | MUST |
+
+MVP static validation enforces title presence, uniqueness, and separation from source values. The other content-based naming restrictions remain authoring and review rules.
+
 ### Requirement table shape
 
-Each `## Requirements: <spec ref>` section in a USDM `requirement` record must contain one Markdown table.
-
-The `<spec ref>` value must be a canonical `spec:` ref.
+Each `## Requirements: <title>` section must contain one Markdown table after its source field.
 
 The table columns are:
 
@@ -94,18 +130,18 @@ The table columns are:
 | `requirement` | yes | Requirement statement. |
 | `notes` | no | Clarification, source nuance, or temporary limitation. |
 
-A USDM `requirement` record may contain multiple `## Requirements: <spec ref>` sections.
+A USDM `requirement` record may contain multiple `## Requirements: <title>` sections.
 
-Multiple requirement sections allow one USDM topic to derive rows from multiple source specs. They also allow one source spec to feed separate parse, validation, resolution, or projection topics.
+Multiple requirement sections allow one USDM topic to derive rows from multiple sources. They also allow one source to feed separate parse, validation, resolution, or projection topics.
 
 ### Requirement row ID grammar
 
 | item | grammar |
 |---|---|
 | row-local requirement ID | `RNNN` |
-| first row ID | `R001` |
+| first row ID | `R001` for newly authored records. |
 | numbering scope | One USDM `requirement` record. |
-| numbering rule | Strictly increasing without gaps. |
+| numbering rule | Strictly increasing when initially authored; gaps are allowed after reviewed row removal. |
 | full requirement ID | `<usdm record id>#<row-local requirement ID>` |
 
 Example:
@@ -118,11 +154,15 @@ Example:
 
 ### Requirement row semantics
 
-Each row states one implementation requirement derived from the source spec named by the containing H2 section.
+Each row states one implementation requirement provided by the containing section's source.
+
+For `source: literal`, the row itself records the direct upstream requirement. For a canonical `spec:` source, the row normalizes a requirement directly provided by that Specification.
 
 Rows should be small enough to map to implementation Specification coverage.
 
-Rows must not contain component design, implementation package names, public diagnostic wording, or task instructions unless the source spec itself requires those details.
+Rows must not contain component design, implementation package names, public diagnostic wording, or task instructions unless the source requires those details.
+
+When a corresponding Specification later becomes the direct source for a literal section, the source field may be replaced with its canonical `spec:` ref. Source replacement, title changes, section moves, section splits, and section merges must preserve existing row IDs.
 
 ## Validation rules
 
@@ -133,12 +173,16 @@ Rows must not contain component design, implementation package names, public dia
 | Missing required metadata | Error. |
 | Metadata `kind` not equal to the H1 USDM kind | Error. |
 | Metadata `id` not matching `usdm:<app_namespace>.<path.to.topic>` grammar | Error. |
-| Requirement record without a `## Requirements: <spec ref>` section | Error. |
-| Requirement section with a non-`spec:` source ref | Error. |
+| Requirement record without a `## Requirements: <title>` section | Error. |
+| Requirements title is empty, duplicated within one record, or equal to a source value | Error. |
+| Requirement section source field is missing or does not immediately follow the H2 | Error. |
+| Requirement section source is neither `literal` nor a canonical `spec:` ref | Error. |
+| Requirement section contains more than one source field | Error. |
 | Requirement table missing `id` or `requirement` column | Error. |
 | Duplicate full requirement ID | Error. |
-| Row-local IDs not sequential from `R001` | Error. |
-| `index` record containing `## Requirements: <spec ref>` | Error. |
+| Malformed row-local requirement ID | Error. |
+| Row-local ID gaps after reviewed row removal | Allowed. |
+| `index` record containing `## Requirements: <title>` | Error. |
 
 ## Errors
 

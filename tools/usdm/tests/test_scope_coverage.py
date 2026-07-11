@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from tools.usdm.usdm_tools import (
+
+TOOLS_USDM_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_USDM_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_USDM_DIR))
+
+from usdm_tools import (  # noqa: E402
     check_usdm_coverage,
     check_usdm_scope_coverage,
     validate_usdm,
@@ -20,7 +26,8 @@ RECORD_ONE = """\
 - **kind**: requirement
 - **parent**: root
 
-## Requirements: spec:sample.one
+## Requirements: Sample one
+> source: spec:sample.one
 
 | id | requirement |
 |---|---|
@@ -37,7 +44,8 @@ RECORD_TWO = """\
 - **kind**: requirement
 - **parent**: root
 
-## Requirements: spec:sample.two
+## Requirements: Sample two
+> source: spec:sample.two
 
 | id | requirement |
 |---|---|
@@ -53,7 +61,8 @@ RECORD_GAPPED = """\
 - **kind**: requirement
 - **parent**: root
 
-## Requirements: spec:sample.gapped
+## Requirements: Sample gapped
+> source: literal
 
 | id | requirement |
 |---|---|
@@ -78,8 +87,42 @@ SPEC = """\
 Fixture.
 """
 
+SPEC_COMPACT_LIST = """\
+# Contract: Compact coverage list spec
 
-def write_fixture(root: Path) -> None:
+- **id**: `spec:impl.coverage.compact_list`
+- **status**: draft
+- **date**: 2026-07-10
+- **parent**: `spec:impl`
+- **contract_class**: `interface`
+- **usdm_covers**:
+  - `usdm:sample.requirements.one#R001,#R002`
+  - `usdm:sample.requirements.two#R001`
+
+## What this is
+
+Fixture.
+"""
+
+SPEC_COMPACT_RANGE = """\
+# Contract: Compact coverage range spec
+
+- **id**: `spec:impl.coverage.compact_range`
+- **status**: draft
+- **date**: 2026-07-10
+- **parent**: `spec:impl`
+- **contract_class**: `interface`
+- **usdm_covers**:
+  - `usdm:sample.requirements.one#R001-R002`
+  - `usdm:sample.requirements.two#R001`
+
+## What this is
+
+Fixture.
+"""
+
+
+def write_fixture(root: Path, spec_text: str = SPEC) -> None:
     usdm_root = root / "sample" / "records" / "usdm"
     usdm_root.mkdir(parents=True)
     (usdm_root / "one.md").write_text(RECORD_ONE, encoding="utf-8")
@@ -87,11 +130,11 @@ def write_fixture(root: Path) -> None:
 
     spec_root = root / "impl" / "records" / "spec"
     spec_root.mkdir(parents=True)
-    (spec_root / "coverage.md").write_text(SPEC, encoding="utf-8")
+    (spec_root / "coverage.md").write_text(spec_text, encoding="utf-8")
 
 
 class ScopedCoverageTests(unittest.TestCase):
-    def test_validate_usdm_allows_row_id_gaps(self) -> None:
+    def test_validate_usdm_allows_literal_source_and_row_id_gaps(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             usdm_root = root / "sample" / "records" / "usdm"
@@ -106,6 +149,81 @@ class ScopedCoverageTests(unittest.TestCase):
             self.assertTrue(response["ok"])
             self.assertEqual(response["requirements"], 2)
             self.assertEqual(response["diagnostics"], [])
+
+    def test_validate_usdm_rejects_missing_immediate_source(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            usdm_root = root / "sample" / "records" / "usdm"
+            usdm_root.mkdir(parents=True)
+            invalid = RECORD_ONE.replace(
+                "> source: spec:sample.one\n",
+                "",
+            )
+            (usdm_root / "one.md").write_text(invalid, encoding="utf-8")
+
+            response = validate_usdm(root, "sample")
+
+            self.assertFalse(response["ok"])
+            self.assertIn("source", {item["category"] for item in response["diagnostics"]})
+
+    def test_validate_usdm_rejects_invalid_source(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            usdm_root = root / "sample" / "records" / "usdm"
+            usdm_root.mkdir(parents=True)
+            invalid = RECORD_ONE.replace(
+                "> source: spec:sample.one",
+                "> source: conversation:sample.one",
+            )
+            (usdm_root / "one.md").write_text(invalid, encoding="utf-8")
+
+            response = validate_usdm(root, "sample")
+
+            self.assertFalse(response["ok"])
+            self.assertIn("source", {item["category"] for item in response["diagnostics"]})
+
+    def test_validate_usdm_rejects_source_value_as_section_title(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            usdm_root = root / "sample" / "records" / "usdm"
+            usdm_root.mkdir(parents=True)
+            invalid = RECORD_ONE.replace(
+                "## Requirements: Sample one",
+                "## Requirements: spec:sample.one",
+            )
+            (usdm_root / "one.md").write_text(invalid, encoding="utf-8")
+
+            response = validate_usdm(root, "sample")
+
+            self.assertFalse(response["ok"])
+            self.assertIn(
+                "requirements_title",
+                {item["category"] for item in response["diagnostics"]},
+            )
+
+    def test_validate_usdm_rejects_duplicate_section_titles(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            usdm_root = root / "sample" / "records" / "usdm"
+            usdm_root.mkdir(parents=True)
+            duplicate = RECORD_ONE + """\
+
+## Requirements: Sample one
+> source: literal
+
+| id | requirement |
+|---|---|
+| R003 | Another requirement. |
+"""
+            (usdm_root / "one.md").write_text(duplicate, encoding="utf-8")
+
+            response = validate_usdm(root, "sample")
+
+            self.assertFalse(response["ok"])
+            self.assertIn(
+                "requirements_title",
+                {item["category"] for item in response["diagnostics"]},
+            )
 
     def test_app_filtered_coverage_counts_cross_app_specs(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -126,6 +244,38 @@ class ScopedCoverageTests(unittest.TestCase):
                 ["usdm:sample.requirements.one#R002"],
             )
             self.assertEqual(response["dangling"], [])
+
+    def test_check_coverage_expands_compact_row_list(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write_fixture(root, SPEC_COMPACT_LIST)
+
+            response = check_usdm_coverage(
+                repo_root=root,
+                app_namespace="sample",
+                include_dangling=True,
+            )
+
+            self.assertTrue(response["ok"])
+            self.assertEqual(response["requirements"], 3)
+            self.assertEqual(response["covered"], 3)
+            self.assertEqual(response["uncovered"], [])
+
+    def test_check_coverage_expands_compact_row_range(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write_fixture(root, SPEC_COMPACT_RANGE)
+
+            response = check_usdm_coverage(
+                repo_root=root,
+                app_namespace="sample",
+                include_dangling=True,
+            )
+
+            self.assertTrue(response["ok"])
+            self.assertEqual(response["requirements"], 3)
+            self.assertEqual(response["covered"], 3)
+            self.assertEqual(response["uncovered"], [])
 
     def test_record_scope_coverage_grouping(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

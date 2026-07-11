@@ -20,7 +20,14 @@ FULL_REQUIREMENT_ID_RE = re.compile(
     r"(?:\.[a-z0-9_]+)*)#(?P<row>R\d{3})$"
 )
 USDM_REQUIREMENT_H1_RE = re.compile(r"^# USDM requirement: .+?\s*$")
-REQ_H2_RE = re.compile(r"^## Requirements: spec:.+?\s*$")
+SPEC_REF_RE = re.compile(
+    r"^spec:[a-z0-9][a-z0-9_]*(?:\.[a-z0-9][a-z0-9_]*)*$"
+)
+REQ_H2_RE = re.compile(r"^## Requirements: (?P<title>\S(?:.*?\S)?)\s*$")
+SOURCE_FIELD_RE = re.compile(
+    r"^> source: (?:literal|spec:[a-z0-9][a-z0-9_]*"
+    r"(?:\.[a-z0-9][a-z0-9_]*)*)\s*$"
+)
 METADATA_ID_RE = re.compile(r"^- \*\*id\*\*:\s*(?P<value>.*?)\s*$")
 TABLE_SEPARATOR_RE = re.compile(r"^\s*:?-{3,}:?\s*$")
 
@@ -183,15 +190,25 @@ def _parse_requirement_record(
         for index, line in enumerate(lines)
         if visible[index] and line.startswith("## ")
     ]
+    section_titles: set[str] = set()
     for position, h2_index in enumerate(h2_indexes):
-        if not REQ_H2_RE.match(lines[h2_index]):
+        heading_match = REQ_H2_RE.match(lines[h2_index])
+        if heading_match is None:
             continue
         section_end = (
             h2_indexes[position + 1] if position + 1 < len(h2_indexes) else len(lines)
         )
+        section_title = heading_match.group("title").strip()
+        if section_title in section_titles:
+            return []
+        if section_title == "literal" or SPEC_REF_RE.fullmatch(section_title):
+            return []
+        section_titles.add(section_title)
+        if h2_index + 1 >= section_end or SOURCE_FIELD_RE.fullmatch(lines[h2_index + 1]) is None:
+            return []
         rows.extend(
             _parse_requirement_table(
-                lines[h2_index + 1 : section_end],
+                lines[h2_index + 2 : section_end],
                 record_id,
                 relative_path,
             )

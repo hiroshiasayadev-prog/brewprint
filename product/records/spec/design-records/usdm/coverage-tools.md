@@ -45,6 +45,16 @@ When `app_namespace` is omitted, the tool may scan every discovered app namespac
 | `repo_root` | yes | Repository root. |
 | `requirement_id` | yes | Full USDM requirement ID. |
 
+### `check_usdm_scope_coverage`
+
+| field | required | meaning |
+|---|---:|---|
+| `repo_root` | yes | Repository root. |
+| `scope_ids` | yes | USDM app, topic, record, or full requirement IDs to report. |
+| `include_covered` | no | When true, include covered row IDs and covering Specification refs. Default is true. |
+| `include_not_covered` | no | When true, include uncovered row IDs. Default is true. |
+| `include_empty_records` | no | When true, include record items with no visible covered or not_covered fields. Default is false. |
+
 ## Response
 
 ### Operation set
@@ -54,6 +64,7 @@ When `app_namespace` is omitted, the tool may scan every discovered app namespac
 | `validate_usdm` | Validate USDM record format, USDM IDs, row IDs, duplicate full requirement IDs, and malformed coverage entries. |
 | `check_usdm_coverage` | List USDM requirement IDs not covered by any discovered implementation Specification. |
 | `usdm_covered_by` | List implementation Specification refs that cover one full USDM requirement ID. |
+| `check_usdm_scope_coverage` | Return compact record-grouped coverage for USDM app, topic, record, or requirement scopes. |
 
 The tools are repository-static. They do not execute implementation code.
 
@@ -94,8 +105,23 @@ The tools are repository-static. They do not execute implementation code.
 | `ok` | False when the requested requirement ID is malformed or missing. |
 | `requirement_id` | Requested full USDM requirement ID. |
 | `exists` | Whether the requirement exists in discovered USDM records. |
-| `covered_by` | Specification refs that declare the requirement ID in `usdm_covers`. |
+| `covered_by` | Specification refs that declare or compactly expand to the requirement ID in `usdm_covers`. |
 | `diagnostics` | Tool diagnostics for malformed, missing, or scan-failure states. |
+
+### `check_usdm_scope_coverage` response
+
+| field | meaning |
+|---|---|
+| `ok` | False when scope resolution or scan diagnostics contain errors. |
+| `scope_ids` | Requested USDM scope IDs. |
+| `records` | Number of expanded USDM requirement records. |
+| `requirements` | Number of expanded full USDM requirement IDs. |
+| `covered_requirements` | Number of expanded requirement IDs covered by at least one Specification. |
+| `not_covered_requirements` | Number of expanded requirement IDs with no covering Specification. |
+| `items` | Record-grouped compact coverage report. |
+| `diagnostics` | Tool diagnostics for malformed inputs or scan failures. |
+
+Each item uses `record_id` as the grouping key. Covered rows are reported as compact row IDs mapped to covering Specification refs. Uncovered rows are reported as compact row IDs only.
 
 ## Errors
 
@@ -103,6 +129,7 @@ The tools are repository-static. They do not execute implementation code.
 |---|---|
 | `repo_root` is missing or unreadable | Return `ok: false` and an error diagnostic. |
 | `requirement_id` is malformed | Return `ok: false` and an error diagnostic. |
+| `scope_ids` is empty or contains an invalid scope ID | Return `ok: false` and an error diagnostic. |
 | USDM record cannot be parsed enough to determine metadata | Return an error diagnostic from `validate_usdm`. |
 | Specification metadata cannot be parsed enough to inspect `usdm_covers` | Return an error diagnostic for coverage operations. |
 | No USDM records are discovered | Return `ok: true` for `validate_usdm` with zero counts; coverage tools return zero counts unless a specific missing requirement was requested. |

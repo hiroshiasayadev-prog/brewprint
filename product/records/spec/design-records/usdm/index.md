@@ -2,14 +2,14 @@
 
 - **id**: `spec:product.design_records.usdm`
 - **status**: draft
-- **date**: 2026-07-09
+- **date**: 2026-07-11
 - **parent**: `spec:product.design_records`
 
 ## What this is
 
 This spec area defines MVP USDM requirement artifacts for Brewprint Design Records.
 
-USDM records normalize specification requirements into topic-scoped rows. Implementation Specifications use coverage metadata to declare which USDM requirement rows they cover.
+USDM records normalize Specification requirements or direct upstream requirements into topic-scoped rows. Implementation Specifications use coverage metadata to declare which USDM requirement rows they cover.
 
 The MVP treats USDM as an independent auxiliary artifact. Full artifact-model integration, repository-layout integration, migration, and DRMCP integrated read support are deferred.
 
@@ -21,7 +21,7 @@ USDM record IDs use `usdm:<app_namespace>.<path.to.topic>`.
 
 USDM requirement row IDs use `RNNN` within one USDM requirement record. The full USDM requirement ID is `usdm:<app_namespace>.<path.to.topic>#RNNN`.
 
-Implementation Specifications may declare H1-adjacent `usdm_covers` metadata to list covered USDM requirement IDs.
+Implementation Specifications may declare H1-adjacent `usdm_covers` metadata to list covered USDM requirement IDs or compact same-record row lists.
 
 Standalone repository tools validate USDM records and coverage state under `tools/usdm/`. These tools may later move behind DRMCP or another MCP surface.
 
@@ -37,13 +37,13 @@ Standalone repository tools validate USDM records and coverage state under `tool
 | title | kind | ref | summary |
 |---|---|---|---|
 | USDM artifact format | Contract | `spec:product.design_records.usdm.artifact_format` | MVP USDM placement, record kinds, ID grammar, metadata, section shape, requirement row IDs, and validation rules. |
-| USDM coverage format | Contract | `spec:product.design_records.usdm.coverage_format` | `usdm_covers` metadata, coverage relation semantics, uncovered requirement detection, and dangling cover detection. |
-| USDM coverage tools | Contract | `spec:product.design_records.usdm.coverage_tools` | Standalone MVP tool contracts for `validate_usdm`, `check_usdm_coverage`, and `usdm_covered_by`. |
+| USDM coverage format | Contract | `spec:product.design_records.usdm.coverage_format` | `usdm_covers` metadata, compact coverage row-list syntax, coverage relation semantics, uncovered requirement detection, and dangling cover detection. |
+| USDM coverage tools | Contract | `spec:product.design_records.usdm.coverage_tools` | Standalone MVP tool contracts for `validate_usdm`, `check_usdm_coverage`, `usdm_covered_by`, and scoped coverage reporting. |
 | USDM requirement similarity collection | Contract | `spec:product.design_records.usdm.similarity_collection` | USDM-facing candidate collection operation for semantically similar requirement details. |
 
 ## Boundary
 
-USDM owns normalized implementation requirements derived from specification authorities.
+USDM owns normalized implementation requirements derived from Specification authorities or recorded directly as literal upstream requirements when no corresponding Specification exists.
 
 USDM does not own design decisions, component architecture, implementation contracts, or public operation responses.
 

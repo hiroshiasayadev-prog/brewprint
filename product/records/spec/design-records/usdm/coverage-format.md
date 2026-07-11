@@ -16,7 +16,7 @@ The contract lets static tools find USDM requirements that no implementation Spe
 
 Implementation Specifications may declare H1-adjacent `usdm_covers` metadata.
 
-Each `usdm_covers` item is a full USDM requirement ID.
+Each `usdm_covers` item is either a full USDM requirement ID or a compact row-list expression anchored to one USDM requirement record.
 
 Coverage is file-level in the MVP. A covering Specification claims that the Specification covers the listed requirement somewhere in the file.
 
@@ -29,13 +29,16 @@ The coverage marker is optional H1-adjacent metadata on Specification records.
 ```markdown
 - **usdm_covers**:
   - usdm:<app_namespace>.<path.to.topic>#R001
+  - usdm:<app_namespace>.<path.to.topic>#R001,#R002
+  - usdm:<app_namespace>.<path.to.topic>#R001-R005
 ```
 
 | rule | level |
 |---|---|
-| `usdm_covers` values must be full USDM requirement IDs. | MUST |
+| `usdm_covers` values must be full USDM requirement IDs or compact row-list expressions anchored to one USDM record ID. | MUST |
+| Compact `usdm_covers` row-list expressions must use `#RNNN`, `RNNN`, or ascending `RNNN-RNNN` row tokens after the record ID. | MUST |
 | `usdm_covers` must not contain USDM record IDs without row fragments. | MUST |
-| Duplicate entries inside one Specification are invalid. | MUST |
+| Duplicate expanded requirement IDs inside one Specification are invalid. | MUST |
 | Coverage order has no semantic meaning. | MUST |
 | Coverage is file-level during the MVP. | MUST |
 | Section-level coverage is deferred. | MUST |
@@ -60,7 +63,7 @@ Static coverage checks must report uncovered requirement IDs.
 
 ### Dangling coverage
 
-A coverage entry is dangling when a Specification lists a full USDM requirement ID that does not exist in discovered USDM requirement rows.
+A coverage entry is dangling when a Specification lists or expands to a full USDM requirement ID that does not exist in discovered USDM requirement rows.
 
 Static coverage checks must report dangling coverage entries.
 
@@ -79,10 +82,10 @@ The MVP tools may start with explicit paths or repository root discovery. The to
 
 | condition | severity |
 |---|---|
-| `usdm_covers` item is not a full USDM requirement ID | Error. |
-| `usdm_covers` item points to a missing USDM requirement row | Error for dangling coverage checks. |
+| `usdm_covers` item is not a full USDM requirement ID or valid compact row-list expression | Error. |
+| `usdm_covers` item points to or expands to a missing USDM requirement row | Error for dangling coverage checks. |
 | USDM requirement row is not covered by any Specification | Report as uncovered requirement, not as malformed USDM. |
-| Duplicate `usdm_covers` item in one Specification | Error. |
+| Duplicate expanded `usdm_covers` requirement ID in one Specification | Error. |
 | `usdm_covers` appears outside H1-adjacent metadata | Error for MVP tools. |
 
 ## Errors
@@ -91,7 +94,7 @@ The MVP tools may start with explicit paths or repository root discovery. The to
 |---|---|
 | Covering Specification cannot be parsed enough to inspect H1-adjacent metadata. | Report a coverage scan error. |
 | USDM requirement discovery fails for a configured app namespace. | Report a coverage scan error. |
-| `usdm_covers` contains both valid and invalid entries. | Preserve valid entries and report invalid entries. |
+| `usdm_covers` contains both valid and invalid entries. | Preserve valid expanded entries and report invalid entries. |
 
 ## Related specs
 

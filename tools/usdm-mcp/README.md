@@ -11,6 +11,23 @@ MCP wrapper for the standalone MVP USDM tools in `tools/usdm/usdm_tools.py`.
 - `collect_similar_requirements`
 - `search_requirements`
 
+## Requirement section format
+
+USDM requirement sections use a human-readable title and an immediate source field:
+
+```markdown
+## Requirements: Application discovery behavior
+> source: spec:product.design_records.repository_layout.record_discovery_paths
+
+| id | requirement |
+|---|---|
+| R001 | ... |
+```
+
+Use `> source: literal` when the rows are direct upstream requirements and no corresponding Specification is their source. Titles must be non-empty, unique within one USDM record, and must not be `literal` or a canonical `spec:` ref.
+
+`validate_usdm`, scoped coverage, similarity collection, and search use this section shape.
+
 ## Start
 
 ```powershell

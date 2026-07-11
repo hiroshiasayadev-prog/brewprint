@@ -32,11 +32,21 @@ USDM_RECORD_ID_RE = re.compile(r"^usdm:([a-z0-9_]+)\.[a-z0-9_]+(?:\.[a-z0-9_]+)*
 FULL_REQUIREMENT_ID_RE = re.compile(
     r"^usdm:([a-z0-9_]+)\.[a-z0-9_]+(?:\.[a-z0-9_]+)*#R\d{3}$"
 )
+COMPACT_COVERAGE_ID_RE = re.compile(
+    r"^(?P<record>usdm:[a-z0-9_]+\.[a-z0-9_]+(?:\.[a-z0-9_]+)*)#(?P<rows>.+)$"
+)
+ROW_REF_RE = re.compile(r"^#?R(?P<number>\d{3})$")
+ROW_RANGE_RE = re.compile(r"^(?P<start>#?R\d{3})-(?P<end>#?R\d{3})$")
 USDM_APP_SCOPE_ID_RE = re.compile(r"^usdm:([a-z0-9_]+)$")
 USDM_H1_RE = re.compile(r"^# USDM (?P<kind>index|requirement): (?P<title>.+?)\s*$")
 ATX_H1_RE = re.compile(r"^#(?!#)\s+(.+?)\s*$")
 ATX_H2_RE = re.compile(r"^##(?!#)\s+(.+?)\s*$")
-REQ_H2_RE = re.compile(r"^## Requirements: (?P<ref>.+?)\s*$")
+SPEC_REF_RE = re.compile(
+    r"^spec:[a-z0-9][a-z0-9_]*(?:\.[a-z0-9][a-z0-9_]*)*$"
+)
+REQ_H2_RE = re.compile(r"^## Requirements: (?P<title>\S(?:.*?\S)?)\s*$")
+SOURCE_FIELD_RE = re.compile(r"^> source: (?P<source>.+?)\s*$")
+SOURCE_FIELD_PREFIX_RE = re.compile(r"^> source:")
 METADATA_SCALAR_RE = re.compile(r"^- \*\*(?P<key>[^*]+)\*\*:\s*(?P<value>.*?)\s*$")
 METADATA_LIST_ITEM_RE = re.compile(r"^\s{2,}-\s+(?P<value>.*?)\s*$")
 TABLE_SEPARATOR_RE = re.compile(r"^\s*:?-{3,}:?\s*$")
@@ -381,10 +391,27 @@ def scan_usdm(repo_root: Path, app_namespace: str | None) -> UsdmScan:
                 )
                 record_id = ""
 
-            requirement_headings = [
-                heading for heading in headings if heading.level == 2 and REQ_H2_RE.match(heading.raw)
+            requirement_candidates = [
+                heading
+                for heading in headings
+                if heading.level == 2
+                and (heading.title == "Requirements:" or heading.title.startswith("Requirements: "))
             ]
-            if h1_kind == "index" and requirement_headings:
+            requirement_headings: list[Heading] = []
+            for heading in requirement_candidates:
+                if REQ_H2_RE.match(heading.raw):
+                    requirement_headings.append(heading)
+                else:
+                    diagnostics.append(
+                        diagnostic(
+                            "requirements_title",
+                            path_display,
+                            "Requirements section title must be non-empty.",
+                            heading.raw,
+                        )
+                    )
+
+            if h1_kind == "index" and requirement_candidates:
                 diagnostics.append(
                     diagnostic(
                         "requirements_section",
@@ -397,25 +424,37 @@ def scan_usdm(repo_root: Path, app_namespace: str | None) -> UsdmScan:
                     diagnostic(
                         "requirements_section",
                         path_display,
-                        "USDM requirement records must contain one or more Requirements sections.",
+                        "USDM requirement records must contain one or more titled Requirements sections.",
                     )
                 )
 
             row_ids: list[str] = []
             if h1_kind == "requirement":
+                section_titles: set[str] = set()
                 for heading in requirement_headings:
                     req_match = REQ_H2_RE.match(heading.raw)
                     assert req_match is not None
-                    source_ref = req_match.group("ref").strip()
-                    if not source_ref.startswith("spec:"):
+                    section_title = req_match.group("title").strip()
+                    if section_title in section_titles:
                         diagnostics.append(
                             diagnostic(
-                                "source_ref",
+                                "requirements_title",
                                 path_display,
-                                "Requirement section source ref must start with 'spec:'.",
-                                source_ref,
+                                "Requirements section titles must be unique within one USDM record.",
+                                section_title,
                             )
                         )
+                    if section_title == "literal" or SPEC_REF_RE.fullmatch(section_title):
+                        diagnostics.append(
+                            diagnostic(
+                                "requirements_title",
+                                path_display,
+                                "Requirements section title must identify content and must not be a source value.",
+                                section_title,
+                            )
+                        )
+                    section_titles.add(section_title)
+
                     next_h2 = next(
                         (
                             later.line_index
@@ -425,6 +464,54 @@ def scan_usdm(repo_root: Path, app_namespace: str | None) -> UsdmScan:
                         len(lines),
                     )
                     section_lines = lines[heading.line_index + 1 : next_h2]
+                    source = ""
+                    if not section_lines:
+                        diagnostics.append(
+                            diagnostic(
+                                "source",
+                                path_display,
+                                "Requirement section must have an immediate '> source: <source>' field.",
+                                section_title,
+                            )
+                        )
+                    else:
+                        source_match = SOURCE_FIELD_RE.fullmatch(section_lines[0])
+                        if source_match is None:
+                            diagnostics.append(
+                                diagnostic(
+                                    "source",
+                                    path_display,
+                                    "Requirement section must have an immediate '> source: <source>' field.",
+                                    section_title,
+                                )
+                            )
+                        else:
+                            source = source_match.group("source").strip()
+                            if source != "literal" and SPEC_REF_RE.fullmatch(source) is None:
+                                diagnostics.append(
+                                    diagnostic(
+                                        "source",
+                                        path_display,
+                                        "Requirement section source must be 'literal' or a canonical 'spec:' ref.",
+                                        source,
+                                    )
+                                )
+
+                    additional_source_fields = [
+                        line
+                        for line in section_lines[1:]
+                        if SOURCE_FIELD_PREFIX_RE.match(line)
+                    ]
+                    if additional_source_fields:
+                        diagnostics.append(
+                            diagnostic(
+                                "source",
+                                path_display,
+                                "Requirement section must contain exactly one source field.",
+                                section_title,
+                            )
+                        )
+
                     section_row_ids, section_diagnostics = validate_markdown_table(section_lines, path_display)
                     row_ids.extend(section_row_ids)
                     diagnostics.extend(section_diagnostics)
@@ -444,6 +531,83 @@ def scan_usdm(repo_root: Path, app_namespace: str | None) -> UsdmScan:
                         requirement_ids.add(full_id)
 
     return UsdmScan(diagnostics=diagnostics, requirement_ids=requirement_ids, usdm_records=usdm_records)
+
+
+def expand_coverage_value(value: str, path: str) -> tuple[list[str], list[dict[str, Any]]]:
+    if FULL_REQUIREMENT_ID_RE.match(value):
+        return [value], []
+
+    match = COMPACT_COVERAGE_ID_RE.match(value)
+    if match is None:
+        return [], [
+            diagnostic(
+                "usdm_covers",
+                path,
+                "usdm_covers item must be a full USDM requirement ID or compact row list.",
+                value,
+            )
+        ]
+
+    record_id = match.group("record")
+    if not USDM_RECORD_ID_RE.match(record_id):
+        return [], [
+            diagnostic(
+                "usdm_covers",
+                path,
+                "Compact usdm_covers item must start with a USDM record ID.",
+                value,
+            )
+        ]
+
+    requirement_ids: list[str] = []
+    diagnostics: list[dict[str, Any]] = []
+    for token in (part.strip() for part in match.group("rows").split(",")):
+        if not token:
+            diagnostics.append(
+                diagnostic(
+                    "usdm_covers",
+                    path,
+                    "Compact usdm_covers row list contains an empty row token.",
+                    value,
+                )
+            )
+            continue
+
+        range_match = ROW_RANGE_RE.match(token)
+        if range_match:
+            start_number = int(ROW_REF_RE.match(range_match.group("start")).group("number"))
+            end_number = int(ROW_REF_RE.match(range_match.group("end")).group("number"))
+            if start_number > end_number:
+                diagnostics.append(
+                    diagnostic(
+                        "usdm_covers",
+                        path,
+                        "Compact usdm_covers row range must be ascending.",
+                        token,
+                    )
+                )
+                continue
+            requirement_ids.extend(
+                f"{record_id}#R{number:03d}"
+                for number in range(start_number, end_number + 1)
+            )
+            continue
+
+        row_match = ROW_REF_RE.match(token)
+        if row_match:
+            requirement_ids.append(f"{record_id}#R{int(row_match.group('number')):03d}")
+            continue
+
+        diagnostics.append(
+            diagnostic(
+                "usdm_covers",
+                path,
+                "Compact usdm_covers row token must be #RNNN, RNNN, or RNNN-RNNN.",
+                token,
+            )
+        )
+
+    return requirement_ids, diagnostics
 
 
 def scan_coverage(repo_root: Path, app_namespace: str | None) -> CoverageScan:
@@ -499,28 +663,27 @@ def scan_coverage(repo_root: Path, app_namespace: str | None) -> CoverageScan:
 
             seen: set[str] = set()
             for value in values:
-                if not FULL_REQUIREMENT_ID_RE.match(value):
-                    diagnostics.append(
-                        diagnostic(
-                            "usdm_covers",
-                            path_display,
-                            "usdm_covers item must be a full USDM requirement ID.",
-                            value,
+                requirement_ids, value_diagnostics = expand_coverage_value(value, path_display)
+                diagnostics.extend(value_diagnostics)
+                for requirement_id in requirement_ids:
+                    if requirement_id in seen:
+                        diagnostics.append(
+                            diagnostic(
+                                "duplicate_coverage",
+                                path_display,
+                                "Duplicate usdm_covers item inside one Specification.",
+                                requirement_id,
+                            )
+                        )
+                        continue
+                    seen.add(requirement_id)
+                    entries.append(
+                        CoverageEntry(
+                            requirement_id=requirement_id,
+                            spec_ref=spec_ref,
+                            path=path_display,
                         )
                     )
-                    continue
-                if value in seen:
-                    diagnostics.append(
-                        diagnostic(
-                            "duplicate_coverage",
-                            path_display,
-                            "Duplicate usdm_covers item inside one Specification.",
-                            value,
-                        )
-                    )
-                    continue
-                seen.add(value)
-                entries.append(CoverageEntry(requirement_id=value, spec_ref=spec_ref, path=path_display))
 
     return CoverageScan(diagnostics=diagnostics, entries=entries)
 
