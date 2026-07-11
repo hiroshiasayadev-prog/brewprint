@@ -10,7 +10,8 @@
 
 This record defines requirements for canonical Specification refs in Design Records traceability.
 
-## Requirements: spec:product.design_records.spec_format.spec_id_as_ref
+## Requirements: Spec ID-as-ref
+> source: spec:product.design_records.spec_format.spec_id_as_ref
 
 | id | requirement | notes |
 |---|---|---|

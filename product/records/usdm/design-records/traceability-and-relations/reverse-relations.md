@@ -10,7 +10,8 @@
 
 This record defines requirements for deriving Requirement-to-Work Item relations from Work Item metadata.
 
-## Requirements: spec:product.design_records.traceability.metadata_schema
+## Requirements: Trace metadata schema
+> source: spec:product.design_records.traceability.metadata_schema
 
 | id | requirement | notes |
 |---|---|---|

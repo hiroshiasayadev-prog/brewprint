@@ -10,14 +10,16 @@
 
 Requirements for the app-local Design Records placement root and record discovery base path.
 
-## Requirements: spec:product.design_records.repository_layout
+## Requirements: Repository layout model
+> source: spec:product.design_records.repository_layout
 
 | id | requirement | notes |
 |---|---|---|
 | R001 | The implementation must treat `records/` under an app namespace directory as the Design Records placement root for an active app namespace that participates in design governance. | This requirement does not define the full structure of the app namespace directory. |
 | R002 | The implementation must not require `src/`, `dsl/`, or any other non-Design Records directory under an app namespace directory before treating the namespace as a Design Records namespace. | This requirement does not prohibit `src/` or `dsl/`. It means that `records/` alone can be sufficient for a Design Records namespace. |
 
-## Requirements: spec:product.design_records.repository_layout.record_discovery_paths
+## Requirements: Record discovery paths
+> source: spec:product.design_records.repository_layout.record_discovery_paths
 
 | id | requirement | notes |
 |---|---|---|

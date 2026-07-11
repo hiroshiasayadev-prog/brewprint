@@ -10,7 +10,8 @@
 
 This record defines DRMCP static-validation requirements for ADR, Requirement, Work Item, Task, and Investigation record shape.
 
-## Requirements: spec:product.design_records.authoring_standards
+## Requirements: Authoring standards
+> source: spec:product.design_records.authoring_standards
 
 | id | requirement | notes |
 |---|---|---|
@@ -21,7 +22,8 @@ This record defines DRMCP static-validation requirements for ADR, Requirement, W
 | R005 | ADR and Investigation metadata must not contain a persisted `id` field. | Current source specs intentionally differ from Requirement, Work Item, and Task. |
 | R006 | ADR, Requirement, Work Item, Task, and Investigation records must contain the required canonical H2 sections defined for their artifact kind. | Section presence is structural; substantive content rules are separate. |
 
-## Requirements: spec:product.design_records.authoring_standards.task_authoring
+## Requirements: Task authoring
+> source: spec:product.design_records.authoring_standards.task_authoring
 
 | id | requirement | notes |
 |---|---|---|
@@ -29,7 +31,8 @@ This record defines DRMCP static-validation requirements for ADR, Requirement, W
 | R008 | An implementation Task record must contain a `## Implementation contract` section with the expected Markdown table shape. | Static validation is limited to section and table shape. |
 | R009 | Task metadata must not contain `source_requirement` or `source_refs`. | Task provenance is reached through `work_item`. |
 
-## Requirements: spec:product.design_records.authoring_standards.work_item_authoring
+## Requirements: Work-item authoring
+> source: spec:product.design_records.authoring_standards.work_item_authoring
 
 | id | requirement | notes |
 |---|---|---|

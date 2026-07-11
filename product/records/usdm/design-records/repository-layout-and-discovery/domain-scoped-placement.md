@@ -10,7 +10,8 @@
 
 Requirements for domain subdirectory placement of sequential Design Records artifacts.
 
-## Requirements: spec:product.design_records.repository_layout
+## Requirements: Repository layout model
+> source: spec:product.design_records.repository_layout
 
 | id | requirement | notes |
 |---|---|---|

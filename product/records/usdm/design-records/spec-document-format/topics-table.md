@@ -10,7 +10,8 @@
 
 This record defines implementation requirements for `## Topics` tables in Index Specifications and Overview Specifications that declare child topics.
 
-## Requirements: spec:product.design_records.spec_format.topics_table
+## Requirements: Topics table
+> source: spec:product.design_records.spec_format.topics_table
 
 | id | requirement | notes |
 |---|---|---|

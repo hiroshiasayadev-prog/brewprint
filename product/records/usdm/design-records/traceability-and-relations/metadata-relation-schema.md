@@ -10,7 +10,8 @@
 
 This record defines requirements for metadata and table fields that supply Design Records traceability relations.
 
-## Requirements: spec:product.design_records.traceability.metadata_schema
+## Requirements: Trace metadata schema
+> source: spec:product.design_records.traceability.metadata_schema
 
 | id | requirement | notes |
 |---|---|---|

@@ -10,13 +10,15 @@
 
 Requirements for the boundary between physical paths and canonical artifact identity.
 
-## Requirements: spec:product.design_records.repository_layout
+## Requirements: Repository layout model
+> source: spec:product.design_records.repository_layout
 
 | id | requirement | notes |
 |---|---|---|
 | R001 | The implementation must treat a physical path as a repository location, not as canonical artifact identity. | A path says where an artifact is located. Identity comes from a public record ID or a path-derived `spec:` ref. |
 
-## Requirements: spec:product.design_records.spec_format.spec_id_as_ref
+## Requirements: Spec ID-as-ref
+> source: spec:product.design_records.spec_format.spec_id_as_ref
 
 | id | requirement | notes |
 |---|---|---|

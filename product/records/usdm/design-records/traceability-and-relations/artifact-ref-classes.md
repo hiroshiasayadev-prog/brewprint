@@ -12,7 +12,8 @@ This record defines requirements for Product-defined current record kinds, canon
 
 This record does not define field-specific allowed target sets or Brewprint legacy compatibility mappings.
 
-## Requirements: spec:product.design_records.traceability.artifact_refs
+## Requirements: Canonical record kinds and references
+> source: spec:product.design_records.traceability.artifact_refs
 
 | id | requirement | notes |
 |---|---|---|
@@ -23,7 +24,8 @@ This record does not define field-specific allowed target sets or Brewprint lega
 | R005 | Persisted metadata fields must permit a canonical reference form before that form may appear in the field. | This separates the global reference-form set from field-specific allowed target sets. |
 | R006 | A traceability relation or reference value must be treated as invalid when the value uses an unrecognized reference form or a canonical reference form not permitted by the field contract. |  |
 
-## Requirements: spec:product.design_records.namespace_model.artifact_id_grammar
+## Requirements: Artifact ID grammar
+> source: spec:product.design_records.namespace_model.artifact_id_grammar
 
 | id | requirement | notes |
 |---|---|---|

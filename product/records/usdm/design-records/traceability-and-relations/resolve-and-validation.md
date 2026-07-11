@@ -10,7 +10,8 @@
 
 This record defines requirements for traceability lookup sources and invalid traceability states.
 
-## Requirements: spec:product.design_records.traceability.resolve_and_validation
+## Requirements: Resolve and validation
+> source: spec:product.design_records.traceability.resolve_and_validation
 
 | id | requirement | notes |
 |---|---|---|

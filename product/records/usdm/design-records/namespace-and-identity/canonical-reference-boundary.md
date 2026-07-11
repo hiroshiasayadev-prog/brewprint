@@ -13,7 +13,8 @@ Defines the current canonical reference boundary for Design Records.
 This record includes current record kinds, canonical reference forms, physical path prohibition, and inactive semantic endpoint boundaries.
 This record does not include parser/resolver implementation, diagnostic names, reverse relation derivation, provenance-cycle validation, or field-specific allowed target sets.
 
-## Requirements: spec:product.design_records.traceability
+## Requirements: Traceability
+> source: spec:product.design_records.traceability
 
 | id | requirement | notes |
 |---|---|---|
@@ -24,7 +25,8 @@ This record does not include parser/resolver implementation, diagnostic names, r
 | R005 | Implementations MUST NOT define `maps_to`, `covers`, or `validates` as active trace relations. |  |
 | R006 | Implementations MUST NOT define canonical section refs before a visible-table contract exists. |  |
 
-## Requirements: spec:product.design_records.traceability.artifact_refs
+## Requirements: Canonical record kinds and references
+> source: spec:product.design_records.traceability.artifact_refs
 
 | id | requirement | notes |
 |---|---|---|

@@ -10,7 +10,8 @@
 
 This record defines implementation requirements for reporting Specification format validation diagnostics.
 
-## Requirements: spec:product.design_records.spec_format.validation_policy
+## Requirements: Validation policy
+> source: spec:product.design_records.spec_format.validation_policy
 
 | id | requirement | notes |
 |---|---|---|

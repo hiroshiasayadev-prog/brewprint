@@ -10,7 +10,8 @@
 
 Requirements for kind-specific discovery path patterns for Design Records.
 
-## Requirements: spec:product.design_records.repository_layout.record_discovery_paths
+## Requirements: Record discovery paths
+> source: spec:product.design_records.repository_layout.record_discovery_paths
 
 | id | requirement | notes |
 |---|---|---|

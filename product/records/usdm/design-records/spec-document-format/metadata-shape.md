@@ -10,7 +10,8 @@
 
 This record defines implementation requirements for visible H1-adjacent metadata in Specification records.
 
-## Requirements: spec:product.design_records.spec_format.document_shape
+## Requirements: Spec document shape
+> source: spec:product.design_records.spec_format.document_shape
 
 | id | requirement | notes |
 |---|---|---|

@@ -13,13 +13,15 @@ Defines Product namespace ownership rules that affect current Design Record iden
 This record includes owner-segment semantics and the Product/implementation ownership boundary.
 This record does not include authoring-time namespace selection policy, legacy attribution migration, or concrete app/domain lists.
 
-## Requirements: spec:product.design_records.namespace_model.app_namespaces
+## Requirements: App namespaces
+> source: spec:product.design_records.namespace_model.app_namespaces
 
 | id | requirement | notes |
 |---|---|---|
 | R004 | Implementations MUST NOT treat a tool implementation as the owner of the generic namespace concept. | Generic namespace concepts belong to Product semantics, not an app-local implementation. |
 
-## Requirements: spec:product.design_records.namespace_model.existing_artifacts
+## Requirements: New artifact namespace ownership
+> source: spec:product.design_records.namespace_model.existing_artifacts
 
 | id | requirement | notes |
 |---|---|---|

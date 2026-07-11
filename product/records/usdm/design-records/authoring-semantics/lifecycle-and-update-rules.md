@@ -10,7 +10,8 @@
 
 This record defines lifecycle requirements from Product Design Records authoring rules that DRMCP can check with static cross-record validation.
 
-## Requirements: spec:product.design_records.authoring_standards.task_authoring
+## Requirements: Task authoring
+> source: spec:product.design_records.authoring_standards.task_authoring
 
 | id | requirement | notes |
 |---|---|---|

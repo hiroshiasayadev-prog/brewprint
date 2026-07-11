@@ -10,7 +10,8 @@
 
 Requirements for canonical topic tree placement of Specification records.
 
-## Requirements: spec:product.design_records.repository_layout
+## Requirements: Repository layout model
+> source: spec:product.design_records.repository_layout
 
 | id | requirement | notes |
 |---|---|---|

@@ -10,7 +10,8 @@
 
 This record defines DRMCP read and static-validation requirements derived from the Product Design Records writing standard.
 
-## Requirements: spec:product.design_records.authoring_standards.writing_standard
+## Requirements: Design record writing standard
+> source: spec:product.design_records.authoring_standards.writing_standard
 
 | id | requirement | notes |
 |---|---|---|

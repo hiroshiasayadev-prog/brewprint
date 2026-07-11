@@ -13,7 +13,8 @@ Defines public ID requirements for REQ, WORK, INV, ADR, and TASK records.
 This record includes ID grammar, sequence scope, and complete public IDs as canonical reference forms.
 This record does not include spec IDs, legacy ID compatibility, physical paths, or field-specific allowed target sets.
 
-## Requirements: spec:product.design_records.namespace_model.artifact_id_grammar
+## Requirements: Artifact ID grammar
+> source: spec:product.design_records.namespace_model.artifact_id_grammar
 
 | id | requirement | notes |
 |---|---|---|
@@ -28,7 +29,8 @@ This record does not include spec IDs, legacy ID compatibility, physical paths, 
 | R009 | Implementations MUST NOT treat bare forms such as `REQ-*`, `WORK-*`, or `TASK-*` as canonical external references. |  |
 | R010 | Implementations MUST NOT include subdomain segments in artifact IDs. |  |
 
-## Requirements: spec:product.design_records.traceability.artifact_refs
+## Requirements: Canonical record kinds and references
+> source: spec:product.design_records.traceability.artifact_refs
 
 | id | requirement | notes |
 |---|---|---|

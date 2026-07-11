@@ -13,7 +13,8 @@ Defines app/domain namespace boundaries for sequential workflow artifact IDs.
 This record includes app/domain ID-space boundaries and subdomain as non-ID metadata.
 This record does not include current Brewprint registry facts, V01 compatibility, repository placement, or authoring-tool advisory behavior.
 
-## Requirements: spec:product.design_records.namespace_model
+## Requirements: Namespace model
+> source: spec:product.design_records.namespace_model
 
 | id | requirement | notes |
 |---|---|---|
@@ -24,7 +25,8 @@ This record does not include current Brewprint registry facts, V01 compatibility
 | R005 | The app namespace segment MUST identify the app, subsystem, or product-level scope that owns the workflow artifact. |  |
 | R006 | The domain namespace segment MUST identify the owner-local ID bucket for related workflow artifacts. |  |
 
-## Requirements: spec:product.design_records.namespace_model.subdomain_model
+## Requirements: Subdomain model
+> source: spec:product.design_records.namespace_model.subdomain_model
 
 | id | requirement | notes |
 |---|---|---|

@@ -10,7 +10,8 @@
 
 Requirements for the kind-first directory layout directly under `records/` for Design Records.
 
-## Requirements: spec:product.design_records.repository_layout
+## Requirements: Repository layout model
+> source: spec:product.design_records.repository_layout
 
 | id | requirement | notes |
 |---|---|---|
