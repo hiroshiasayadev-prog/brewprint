@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.work_item.identity_and_structure`
 - **status**: draft
-- **date**: 2026-07-11
+- **date**: 2026-07-12
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.work_item`
 - **contract_class**: `format`
 - **usdm_covers**:
@@ -10,12 +10,16 @@
 
 ## What this is
 
-Defines the identity and record structure for Work Item records.
+Defines the identity, record structure, and source placement for Work Item records.
 
 ## Record structure
 
 - **structure**: `sequential`
 - **artifact kind**: `WORK`
+
+## Source placement
+
+- **artifact directory**: `work-items`
 
 ## Identity form
 

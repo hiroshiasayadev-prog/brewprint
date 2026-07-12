@@ -2,14 +2,15 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.base.templates.identity_and_structure.sequential`
 - **status**: draft
-- **date**: 2026-07-11
+- **date**: 2026-07-12
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.base.templates.identity_and_structure`
 - **contract_class**: `format`
 
 ## What this is
 
-Provides the template for an artifact-specific `identity-and-structure.md` Specification that uses the `sequential` record structure.
+Provides the identity, record-structure, and source-placement template for an artifact that uses the `sequential` record structure.
 The app namespace and domain namespace are supplied by the record location and are not listed in the artifact-specific segment table or replaced with artifact-specific literals.
+The artifact directory is one literal directory name relative to `<APP_NAMESPACE>/records/`.
 
 `allocation scope` states the boundary within which a sequence value is allocated.
 Use `domain` when the sequence is allocated within the current app namespace, artifact kind, and domain namespace.
@@ -35,6 +36,10 @@ Defines the identity and record structure for `<ARTIFACT_NAME>` records.
 
 - **structure**: `sequential`
 - **artifact kind**: `<ARTIFACT_KIND_LITERAL>`
+
+## Source placement
+
+- **artifact directory**: `<ARTIFACT_DIRECTORY_LITERAL>`
 
 ## Identity form
 

@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.task.identity_and_structure`
 - **status**: draft
-- **date**: 2026-07-11
+- **date**: 2026-07-12
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.task`
 - **contract_class**: `format`
 - **usdm_covers**:
@@ -10,12 +10,16 @@
 
 ## What this is
 
-Defines the identity and record structure for Task records.
+Defines the identity, record structure, and source placement for Task records.
 
 ## Record structure
 
 - **structure**: `sequential`
 - **artifact kind**: `TASK`
+
+## Source placement
+
+- **artifact directory**: `tasks`
 
 ## Identity form
 
@@ -38,3 +42,4 @@ Defines the identity and record structure for Task records.
 | `spec:drmcp.design_records_mcp.artifacts.base.definitions.identity_declaration` | Shared sequential identity form. |
 | `spec:product.design_records.authoring_standards.task_authoring` | Product authority for Task identity. |
 | `spec:product.design_records.namespace_model.artifact_id_grammar` | Product authority for Task ID grammar, segment formats, and Task sequence allocation scope. |
+| `spec:product.design_records.repository_layout.record_discovery_paths` | Product authority for Task domain-scoped placement. |

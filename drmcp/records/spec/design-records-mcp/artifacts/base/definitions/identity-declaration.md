@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.base.definitions.identity_declaration`
 - **status**: draft
-- **date**: 2026-07-10
+- **date**: 2026-07-12
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.base`
 
 ## What this is
@@ -66,11 +66,11 @@ The shared form requires:
 - No additional path segment for an `index.md` file that represents its containing directory node.
 - The non-index file stem as the final path segment for a leaf record.
 
-Each tree artifact Specification must declare only the literal value used for `<RECORD_KIND>`.
+For its identity declaration, each tree artifact Specification must declare only the literal value used for `<RECORD_KIND>`.
 
 The identity root is derived as `<RECORD_KIND>:<APP_NAMESPACE>`.
-The source root is the artifact-kind directory under `<APP_NAMESPACE>/records/`.
-Directory names and non-index Markdown file stems map to `<PATH_SEGMENT>` values under the shared tree rules above.
+The source root is derived from the artifact-directory declaration defined by `spec:drmcp.design_records_mcp.artifacts.base.definitions.record_structure`.
+Directory names and non-index Markdown file stems below that source root map to `<PATH_SEGMENT>` values under the shared tree rules above.
 These fixed tree mappings are not redeclared by each artifact Specification.
 
 ## Boundary
@@ -79,7 +79,8 @@ These fixed tree mappings are not redeclared by each artifact Specification.
 |---|---|
 | Shared sequential and tree identity declaration forms | This Specification. |
 | Artifact-specific kind values and sequential segments | The artifact-specific identity Specification. |
-| Fixed tree identity root, source root, and path mapping | This Specification. |
+| Fixed tree identity root and path mapping | This Specification. |
+| Artifact source-root derivation | `spec:drmcp.design_records_mcp.artifacts.base.definitions.record_structure`. |
 | Sequence allocation scope | `spec:drmcp.design_records_mcp.artifacts.base.definitions.record_structure` and the artifact-specific Specification. |
 | Relation-dependent segment agreement | The artifact-specific relation or identity-validation Specification. |
 | Canonical identity and reference semantics | Product authority. |

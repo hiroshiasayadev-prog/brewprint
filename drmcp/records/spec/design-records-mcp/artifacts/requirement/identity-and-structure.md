@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.requirement.identity_and_structure`
 - **status**: draft
-- **date**: 2026-07-11
+- **date**: 2026-07-12
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.requirement`
 - **contract_class**: `format`
 - **usdm_covers**:
@@ -10,12 +10,16 @@
 
 ## What this is
 
-Defines the identity and record structure for Requirement records.
+Defines the identity, record structure, and source placement for Requirement records.
 
 ## Record structure
 
 - **structure**: `sequential`
 - **artifact kind**: `REQ`
+
+## Source placement
+
+- **artifact directory**: `requirements`
 
 ## Identity form
 

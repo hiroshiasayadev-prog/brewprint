@@ -2,13 +2,14 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.base.templates.identity_and_structure.tree`
 - **status**: draft
-- **date**: 2026-07-10
+- **date**: 2026-07-12
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.base.templates.identity_and_structure`
 - **contract_class**: `format`
 
 ## What this is
 
-Provides the template for an artifact-specific `identity-and-structure.md` Specification that uses the `tree` record structure.
+Provides the identity, record-structure, and source-placement template for an artifact that uses the `tree` record structure.
+The artifact directory is one literal directory name relative to `<APP_NAMESPACE>/records/`.
 
 ## Template
 
@@ -29,6 +30,10 @@ Defines the identity and record structure for `<ARTIFACT_NAME>` records.
 
 - **structure**: `tree`
 - **record kind**: `<RECORD_KIND_LITERAL>`
+
+## Source placement
+
+- **artifact directory**: `<ARTIFACT_DIRECTORY_LITERAL>`
 
 ## Related specs
 

@@ -2,30 +2,52 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.base.definitions.record_structure`
 - **status**: draft
-- **date**: 2026-07-10
+- **date**: 2026-07-12
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.base`
 
 ## What this is
 
-Defines the record-structure choices used by DRMCP artifact Specifications.
+Defines the record-structure and source-placement rules used by DRMCP artifact Specifications.
 
-This Specification defines shared structure vocabulary and the additional declarations required from each artifact kind.
+This Specification defines shared structure vocabulary, source-root derivation, and the declarations required from each artifact kind.
 It does not redefine Product-owned identity, relation, or canonical-reference semantics.
 
 ## Current contract
 
 Each artifact kind must select exactly one supported record structure.
+Each artifact Specification must declare exactly one artifact directory.
 
 | structure | meaning |
 |---|---|
 | `sequential` | Records are placed by domain and use one or more sequence segments in their public IDs. |
 | `tree` | The directory and file hierarchy represents the logical record tree. |
 
+## Source placement
+
+Each artifact Specification must declare its artifact directory.
+
+| declaration | requirement |
+|---|---|
+| artifact directory | Declare one literal directory name relative to `<APP_NAMESPACE>/records/`. |
+
+The artifact directory declaration represents one path segment.
+The declaration does not contain a path separator, `.` segment, or `..` segment.
+
+The artifact source root is derived as:
+
+```text
+<APP_NAMESPACE>/records/<ARTIFACT_DIRECTORY>/
+```
+
+The derived artifact source root is the standard source root for that artifact kind.
+A record outside the derived artifact source root does not conform to the artifact source placement.
+Discovery, indexing, and validation orchestration consume this declaration but remain outside this Specification.
+
 ## Sequential structure
 
 A sequential structure follows these rules:
 
-- The artifact kind directory contains one domain-directory level.
+- The artifact source root contains one domain-directory level.
 - Record files are placed directly under the domain directory.
 - Directories below the domain directory are not part of the standard sequential structure.
 - Directories below the domain directory do not add public ID segments.
@@ -51,18 +73,20 @@ The artifact-specific Specification consumes the applicable Product authority fo
 
 A tree structure follows these rules:
 
-- The directory and file hierarchy represents the logical record tree.
+- The directory and file hierarchy below the artifact source root represents the logical record tree.
 - An `index.md` file represents its containing directory node.
 - A non-index Markdown file represents a leaf node.
 
-An artifact kind that selects `tree` has no additional structure-specific declaration.
-Root identity, source root, and path-to-identity mapping follow the shared tree identity rules and are not redeclared by each artifact Specification.
+An artifact kind that selects `tree` has no additional structure-specific declaration beyond the common artifact-directory declaration.
+Root identity and path-to-identity mapping follow the shared tree identity rules and are not redeclared by each artifact Specification.
 
 ## Boundary
 
 | concern | owner |
 |---|---|
 | Record-structure vocabulary | This Specification. |
+| Artifact-directory declaration and source-root derivation | This Specification. |
+| Artifact-specific artifact-directory literal | The artifact-specific identity and structure Specification. |
 | Required heading and table shape for artifact declarations | Base template Specifications. |
 | Exact public ID grammar and canonical-reference semantics | Product authority. |
 | Artifact-specific identity mapping | The artifact-specific identity Specification. |
