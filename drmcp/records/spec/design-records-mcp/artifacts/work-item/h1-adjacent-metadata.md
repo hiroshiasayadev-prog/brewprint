@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.work_item.h1_adjacent_metadata`
 - **status**: draft
-- **date**: 2026-07-11
+- **date**: 2026-07-13
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.work_item`
 - **contract_class**: `format`
 - **usdm_covers**:
@@ -17,7 +17,6 @@ Defines the H1-adjacent metadata fields for Work Item records.
 
 | field | requirement | form | value type | value format |
 |---|---|---|---|---|
-| `id` | `mandatory` | `scalar` | `ref` | Permitted record kind: `work_item`; `<APP_NAMESPACE>-WORK-<DOMAIN_NAMESPACE>-<SEQUENCE>`; `<SEQUENCE>` is a three-digit, zero-padded decimal; the value matches the Work Item public ID in H1 and the file name. |
 | `status` | `mandatory` | `scalar` | `string` | One of `not_started`, `in_progress`, `blocked`, `done`, or `cancelled`. |
 | `date` | `mandatory` | `scalar` | `string` | Strict `YYYY-MM-DD`. |
 | `source_refs` | `mandatory` | `indented_list` | `ref` | Permitted artifact kinds: `spec`, `decision`, `investigation`, `requirement`, `work_item`, `task`; one or more items; duplicate items, empty items, and self-reference are prohibited; item order has no semantic meaning. |
@@ -25,6 +24,8 @@ Defines the H1-adjacent metadata fields for Work Item records.
 | `tasks` | `mandatory` | `indented_list` | `ref` | Permitted artifact kind: `task`; zero or more items; duplicate and empty items are prohibited. |
 
 Only the fields listed in this table may appear in Work Item metadata.
+A Work Item record does not persist an `id` field.
+If `id` appears, it is prohibited unlisted metadata and has no identity authority.
 `source_refs` is the only persisted source-provenance field for a Work Item.
 
 ## Related specs
@@ -32,7 +33,7 @@ Only the fields listed in this table may appear in Work Item metadata.
 | ref | relation |
 |---|---|
 | `spec:drmcp.design_records_mcp.artifacts.base.definitions.h1_adjacent_metadata` | Shared H1-adjacent metadata notation, requirement values, value forms, and value types. |
-| `spec:drmcp.design_records_mcp.artifacts.work_item.identity_and_structure` | Work Item public ID format used by `id`. |
+| `spec:drmcp.design_records_mcp.artifacts.work_item.identity_and_structure` | Defines the Work Item public ID grammar represented by the H1 prefix. |
 | `spec:product.design_records.authoring_standards.work_item_authoring` | Product authority for Work Item metadata fields, values, and constraints. |
 | `spec:product.design_records.traceability.metadata_schema` | Product authority for persisted Work Item relation fields. |
 | `spec:product.design_records.traceability.artifact_refs` | Product authority for permitted record kinds and reference forms. |

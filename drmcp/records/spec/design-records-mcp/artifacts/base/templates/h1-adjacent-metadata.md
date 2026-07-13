@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.base.templates.h1_adjacent_metadata`
 - **status**: draft
-- **date**: 2026-07-10
+- **date**: 2026-07-13
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.base.templates`
 - **contract_class**: `format`
 
@@ -12,6 +12,8 @@ Provides the template for an artifact-specific `h1-adjacent-metadata.md` Specifi
 A field whose presence depends on another field or artifact-specific rule uses `reference` and names a separate Specification that defines the presence conditions and field-specific constraints.
 `value format` lists permitted artifact kinds and concise implementation-checkable constraints directly.
 Use a Specification ref for value format only when one field accepts a complex format spanning multiple value types.
+For a sequential artifact, do not declare `id` in the field table and include the explicit prohibited-field boundary shown below.
+A tree artifact may declare visible `id` only when its artifact contract uses that field as a projection checked against path-derived identity.
 
 ## Template
 
@@ -35,6 +37,8 @@ A field whose presence is rule-dependent uses `reference` and names the Specific
 |---|---|---|---|---|
 | `<FIELD_NAME>` | `<mandatory-or-optional-or-reference>` | `<scalar-or-inline_list-or-indented_list>` | `<string-or-ref-or-ref_or_literal>` | `<EXPLICIT_VALUE_FORMAT_OR_COMPLEX_FORMAT_SPEC_REF>` |
 
+<FIELD_BOUNDARY_STATEMENTS>
+
 ## Related specs
 
 | ref | relation |
@@ -42,3 +46,13 @@ A field whose presence is rule-dependent uses `reference` and names the Specific
 | `spec:drmcp.design_records_mcp.artifacts.base.definitions.h1_adjacent_metadata` | Shared H1-adjacent metadata notation, value forms, and value types. |
 | `<PRODUCT_AUTHORITY_REF>` | Product authority consumed by this artifact Specification. |
 ````
+
+For a sequential artifact, replace `<FIELD_BOUNDARY_STATEMENTS>` with:
+
+```markdown
+Only the fields listed in this table may appear in `<ARTIFACT_NAME>` metadata.
+An `<ARTIFACT_NAME>` record does not persist an `id` field.
+If `id` appears, it is prohibited unlisted metadata and has no identity authority.
+```
+
+For a tree artifact, replace the placeholder with its artifact-specific field boundary.

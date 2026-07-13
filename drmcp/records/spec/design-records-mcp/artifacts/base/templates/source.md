@@ -12,6 +12,7 @@ Provides the template for an artifact-specific `source.md` Specification.
 
 The artifact-specific Specification declares its complete H1 prefix grammar or values, H2 headings, their presence conditions, and any separate body-format rules.
 The H1 prefix declaration uses exactly one of `identity`, `enum`, or `literal` and states the actual value information directly rather than replacing it with a Specification reference.
+For a sequential artifact using an `identity` H1 prefix, include the `## Identity authority` section shown below and omit it for other structures or prefix types.
 Use `always`, `optional`, `recommended`, or `prohibited` when one condition applies to the artifact kind.
 Use an artifact-specific condition expression when presence varies by category.
 Separate category clauses with `<br/>`, and write each clause as `<category>: <condition>;`.
@@ -36,6 +37,8 @@ Defines the source-document shape for `<ARTIFACT_NAME>` records.
 
 <H1_PREFIX_DECLARATION>
 
+<SEQUENTIAL_IDENTITY_AUTHORITY_SECTION_IF_APPLICABLE>
+
 ## H2 heading policy
 
 - **unlisted headings**: `<allowed-or-prohibited>`
@@ -55,6 +58,18 @@ Defines the source-document shape for `<ARTIFACT_NAME>` records.
 | `spec:drmcp.design_records_mcp.artifacts.base.definitions.source` | Shared source-document rules. |
 | `<PRODUCT_AUTHORITY_REF>` | Product authority consumed by this artifact Specification. |
 ````
+
+For a sequential artifact using an `identity` H1 prefix, replace `<SEQUENTIAL_IDENTITY_AUTHORITY_SECTION_IF_APPLICABLE>` with:
+
+```markdown
+## Identity authority
+
+The complete H1 prefix is the sole source-internal identity authority.
+<ARTIFACT_NAME> metadata and the file name do not supply, repair, complete, normalize, infer, or replace the identity.
+The file-name public-ID prefix is validated separately as a conformance projection.
+```
+
+For other structures or prefix types, remove the placeholder.
 
 Replace `<H1_PREFIX_DECLARATION>` with exactly one of the following forms.
 

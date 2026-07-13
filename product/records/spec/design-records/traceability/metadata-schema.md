@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.traceability.metadata_schema`
 - **status**: draft
-- **date**: 2026-07-01
+- **date**: 2026-07-13
 - **parent**: `spec:product.design_records.traceability`
 
 ## What this is
@@ -54,6 +54,9 @@ The full investigation metadata field set, lifecycle, and authoring form belong 
 
 ## Workflow relation metadata
 
+Requirement, Work Item, and Task metadata do not persist an `id` field.
+Their complete public IDs are carried only by the H1 prefix and remain separate from the relation fields below.
+
 Current persisted workflow relations are:
 
 | source artifact | field | target or meaning |
@@ -72,7 +75,7 @@ Work Item `source_refs` semantics:
 |---|---|
 | Cardinality | At least one ref is required. |
 | Ordering | Order has no semantic meaning. Reordering alone does not change provenance. |
-| Reference classes | Every entry uses an active canonical reference class from `spec:product.design_records.traceability.artifact_refs`. |
+| Reference form | Every entry uses a canonical reference form defined by `spec:product.design_records.traceability.artifact_refs` and permitted by this field contract. |
 | Selection | Include every direct material source. Exclude incidental context and merely transitive ancestors unless independently material. |
 | Duplicates | Duplicate canonical refs are invalid. Persistence does not silently deduplicate them. |
 | Self-reference | A Work Item must not include its own canonical identity. |
@@ -117,8 +120,9 @@ Historical disposition evidence is recorded in T05.
 | `spec:product.design_records.spec_format.spec_id_as_ref` | Canonical spec identity owner. |
 | `spec:product.design_records.spec_format.document_shape` | Visible metadata and section-shape owner. |
 | `spec:product.design_records.spec_format.topics_table` | Authoritative child-topic relationship owner. |
-| `spec:product.design_records.traceability.artifact_refs` | Supported reference classes. |
+| `spec:product.design_records.traceability.artifact_refs` | Canonical record kinds and reference forms. |
 | `spec:product.design_records.traceability.resolve_and_validation` | Lookup sources and invalid condition boundary. |
 | PRODUCT-REQ-SPEC-006 | Generic workflow source-relation requirement. |
 | PRODUCT-ADR-SPEC-007 | Canonical Work Item provenance and direct Requirement reverse relation. |
 | PRODUCT-ADR-SPEC-008 | Staged atomic migration contract. |
+| PRODUCT-ADR-SPEC-019 | Sequential metadata `id` prohibition and H1 identity boundary. |

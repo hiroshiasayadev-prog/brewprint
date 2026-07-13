@@ -2,11 +2,11 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.requirement.identity_and_structure`
 - **status**: draft
-- **date**: 2026-07-12
+- **date**: 2026-07-13
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.requirement`
 - **contract_class**: `format`
 - **usdm_covers**:
-  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R001,#R003,#R006,#R010
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R001,#R003,#R006,#R008,#R010,#R015-R017
 
 ## What this is
 
@@ -26,6 +26,13 @@ Defines the identity, record structure, and source placement for Requirement rec
 ```text
 <APP_NAMESPACE>-REQ-<DOMAIN_NAMESPACE>-<SEQUENCE>
 ```
+
+## Identity authority
+
+The complete public ID in the H1 prefix is the canonical identity authority for a Requirement source.
+It must agree with the configured app namespace, the `REQ` kind selected by this source corpus, and the physical domain directory.
+H1-adjacent metadata and the file name do not supply or repair identity.
+The file-name public-ID prefix is a nonidentity conformance projection of the H1 public ID.
 
 ## Artifact-specific segments
 

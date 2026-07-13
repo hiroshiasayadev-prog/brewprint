@@ -2,11 +2,11 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.decision.h1_adjacent_metadata`
 - **status**: draft
-- **date**: 2026-07-11
+- **date**: 2026-07-13
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.decision`
 - **contract_class**: `format`
 - **usdm_covers**:
-  - usdm:product.design_records.authoring_semantics.workflow_record_authoring#R003,#R005
+  - usdm:product.design_records.authoring_semantics.workflow_record_authoring#R003-R004
 
 ## What this is
 
@@ -24,6 +24,7 @@ Defines the H1-adjacent metadata fields for Decision records.
 
 Only the fields listed in this table may appear in Decision metadata.
 A Decision record does not persist an `id` field.
+If `id` appears, it is prohibited unlisted metadata and has no identity authority.
 
 ## Related specs
 

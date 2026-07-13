@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.base.definitions.h1_adjacent_metadata`
 - **status**: draft
-- **date**: 2026-07-10
+- **date**: 2026-07-13
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.base`
 
 ## What this is
@@ -38,6 +38,10 @@ Artifact-specific metadata Specifications may assign one of these forms to a fie
 
 An artifact-specific metadata Specification defines which form applies to each field.
 This base definition does not define value syntax or allowed values within a form.
+
+Metadata fields do not override the identity authority selected by the artifact's record structure.
+A sequential artifact-specific metadata Specification must not declare `id`; sequential identity is carried only by the H1 public ID.
+A tree artifact may declare visible `id` only when its artifact contract uses that field as a projection checked against path-derived identity.
 
 ## Requirement values
 
@@ -95,6 +99,8 @@ The `value format` cell must state the accepted value domain in a concise, imple
 | Shared value-type names and form/type behavior | This Specification. |
 | Metadata placement relative to H1 and H2 sections | The artifact source Specification. |
 | Artifact-specific field inventory | The artifact H1-adjacent metadata Specification. |
+| Sequential prohibition of metadata `id` | This Specification and the sequential artifact-specific metadata Specification. |
+| Tree visible-identity projection fields | The applicable tree artifact Specification. |
 | Field requiredness and value format | The artifact H1-adjacent metadata Specification. |
 | Field meaning and allowed values | Product authority consumed by the artifact Specification. |
 | Parsing, normalization, and validation behavior | Other DRMCP Specifications. |

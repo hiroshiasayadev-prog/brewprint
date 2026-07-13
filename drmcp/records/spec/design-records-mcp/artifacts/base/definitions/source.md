@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.base.definitions.source`
 - **status**: draft
-- **date**: 2026-07-11
+- **date**: 2026-07-13
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.base`
 
 ## What this is
@@ -74,6 +74,10 @@ A `literal` declaration uses this form:
 The artifact-specific source Specification states the actual grammar, complete allowed values, or literal directly.
 A Specification reference does not replace this declaration.
 When the type is `identity`, the declared value must match the identity form in the artifact-specific identity Specification.
+
+For an artifact that selects the `sequential` record structure, the complete `identity` H1 prefix is the sole source-internal canonical identity authority.
+H1-adjacent metadata and the file name do not supply, repair, complete, normalize, infer, or replace that identity.
+A file-name public-ID prefix is validated separately as a conformance projection.
 
 ### H1-adjacent metadata placement
 
@@ -149,6 +153,7 @@ Product authority for heading meaning may be referenced once from the artifact-s
 | H1 prefix declaration types and forms | This Specification. |
 | Artifact-specific H1 prefix grammar, allowed values, or literal | Artifact-specific source Specification. |
 | Canonical artifact identity represented by an `identity` prefix | Artifact-specific identity Specification. |
+| Sequential H1-prefix identity authority and exclusion of metadata and file-name identity sources | This Specification and the shared identity declaration Specification. |
 | Artifact-specific metadata fields and value formats | Artifact-specific H1-adjacent metadata Specification. |
 | Artifact-specific H2 inventory | Artifact-specific source Specification. |
 | Artifact-specific unlisted-heading policy | Artifact-specific source Specification. |

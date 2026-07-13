@@ -2,11 +2,11 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.investigation.h1_adjacent_metadata`
 - **status**: draft
-- **date**: 2026-07-11
+- **date**: 2026-07-13
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.investigation`
 - **contract_class**: `format`
 - **usdm_covers**:
-  - usdm:product.design_records.authoring_semantics.workflow_record_authoring#R003,#R005
+  - usdm:product.design_records.authoring_semantics.workflow_record_authoring#R003-R004
   - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R014
   - usdm:product.design_records.traceability_and_relations.metadata_relation_schema#R003-R006
 
@@ -36,6 +36,7 @@ Defines the H1-adjacent metadata fields for Investigation records.
 
 Only the fields listed in this table may appear in Investigation metadata.
 An Investigation record does not persist an `id` field.
+If `id` appears, it is prohibited unlisted metadata and has no identity authority.
 
 ## Related specs
 

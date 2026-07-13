@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.authoring_standards.adr_authoring`
 - **status**: draft
-- **date**: 2026-07-01
+- **date**: 2026-07-13
 - **parent**: `spec:product.design_records.authoring_standards`
 
 ## What this is
@@ -38,6 +38,8 @@ The canonical grammar source is `spec:product.design_records.namespace_model.art
 |---|---|
 | New ADRs use `<app>/records/adr/<domain>/<APP>-ADR-<DOMAIN>-<NNN>-<slug>.md`. | MUST |
 | The file name prefix matches the public ID through the sequence segment. | MUST |
+| The file-name public-ID prefix is a conformance projection and is not an identity authority. | MUST |
+| A file-name prefix mismatch does not replace or invalidate the H1-derived identity. | MUST |
 | Physical paths are repository locations, not canonical references. | MUST |
 
 The discovery pattern is defined by `spec:product.design_records.repository_layout.record_discovery_paths`.
@@ -48,6 +50,7 @@ The discovery pattern is defined by `spec:product.design_records.repository_layo
 |---|---|
 | Use exactly one ATX H1 outside fenced code blocks. | MUST |
 | Use `# <PUBLIC-ID>: <Title>` for H1. | MUST |
+| Treat the complete public ID in H1 as the sole source-internal canonical identity authority. | MUST |
 | Place the bullet metadata block immediately after H1. | MUST |
 | Start body content at the first H2 after metadata. | MUST |
 
@@ -84,8 +87,9 @@ Rules:
 - `depends_on` and `supersedes` normalize empty values to empty lists.
 - `migrated_to_spec` normalizes an empty value to `null`.
 - Non-empty `migrated_to_spec` uses strict `YYYY-MM-DD` format.
-- ADR bullet metadata does not contain `id`.
-- The public ID comes from H1 and the file name.
+- ADR bullet metadata must not contain `id`.
+- The public ID comes only from H1.
+- The file-name public-ID prefix is a conformance projection of the H1 public ID.
 
 The parsing grammar is defined by `spec:drmcp.design_records_mcp.schema.metadata_grammar`.
 
@@ -149,11 +153,16 @@ The author supplies:
 
 The author does not supply:
 
+- `id` as a metadata field — sequential metadata prohibits `id`;
 - the resolved sequence when using `new`;
 - a generated H1;
 - a generated file path.
 
 The body begins with `## Context`. The body excludes H1 and bullet metadata.
+
+After resolving the public ID, the writer projects the same value into the H1 prefix and the file-name prefix.
+The writer does not generate or persist metadata `id`.
+H1 is the identity authority; the file name is a conformance projection.
 
 ### Update
 
@@ -182,4 +191,5 @@ Concrete tool contracts belong to DRMCP specs.
 | `spec:drmcp.design_records_mcp.schema.authoring_transaction_schema` | Concrete authoring transaction contract. |
 | PRODUCT-REQ-SPEC-002 | Source requirement. |
 | PRODUCT-ADR-SPEC-006 | ADR routing, amendment, and supersession boundary. |
+| PRODUCT-ADR-SPEC-019 | H1-only sequential identity authority and file-name projection boundary. |
 | PRODUCT-WORK-SPEC-011 | Source work item. |

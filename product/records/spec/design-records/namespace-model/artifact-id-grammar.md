@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.namespace_model.artifact_id_grammar`
 - **status**: draft
-- **date**: 2026-06-24
+- **date**: 2026-07-13
 - **parent**: `spec:product.design_records.namespace_model`
 
 ## What this is
@@ -47,9 +47,25 @@ app namespace + artifact kind + domain namespace
 
 TASK sequence allocation is scoped by its parent Work Item. The WORK_SEQUENCE segment inherits the parent Work Item's three-digit sequence number.
 
+## Identity source and context
+
+For a sequential record source, the complete public ID in the H1 prefix of `# <PUBLIC-ID>: <Title>` is the sole source-internal canonical identity authority.
+
+The H1 public ID must:
+
+- conform to the grammar for the corpus-selected artifact kind;
+- use the configured app namespace;
+- use the artifact-kind segment selected by the physical artifact corpus;
+- use the domain namespace represented by the physical domain directory.
+
+H1-adjacent metadata and the file name do not supply, repair, complete, normalize, infer, or replace sequential identity.
+Sequential record metadata does not contain an `id` field.
+The file-name public-ID prefix remains a repository-conformance projection of the H1 public ID.
+A file-name mismatch does not change the H1-derived identity.
+
 ## Canonical reference
 
-The complete public ID — `<APP>-<KIND>-<DOMAIN>-<SEQ>` for REQ/WORK/INV/ADR, or `<APP>-TASK-<DOMAIN>-<WS>-<TS>` for TASK — is the canonical record ID-as-ref.
+The complete H1 public ID — `<APP>-<KIND>-<DOMAIN>-<SEQ>` for REQ/WORK/INV/ADR, or `<APP>-TASK-<DOMAIN>-<WS>-<TS>` for TASK — is the canonical record ID-as-ref.
 
 Bare forms (`REQ-*`, `WORK-*`, `TASK-*`, etc.) are internal grammar fragments used in spec text for brevity. They are not valid canonical external references.
 
@@ -62,3 +78,4 @@ Bare forms (`REQ-*`, `WORK-*`, `TASK-*`, etc.) are internal grammar fragments us
 | `spec:product.design_records.namespace_model.subdomain_model` | Subdomain grouping; subdomains are not ID segments. |
 | `spec:product.brewprint.compatibility.existing_artifacts` | Attribution policy for existing artifacts. |
 | `spec:product.design_records.traceability.artifact_refs` | How canonical IDs function as semantic refs. |
+| PRODUCT-ADR-SPEC-019 | H1-only sequential identity authority and nonidentity projection boundary. |

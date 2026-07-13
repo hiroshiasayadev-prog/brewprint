@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.traceability.resolve_and_validation`
 - **status**: draft
-- **date**: 2026-07-01
+- **date**: 2026-07-13
 - **parent**: `spec:product.design_records.traceability`
 
 ## What this is
@@ -11,15 +11,15 @@ Defines PRODUCT-owned canonical lookup sources and invalid conditions for Design
 
 ## Supported canonical inputs
 
-| input class | current rule |
+| input kind | current rule |
 |---|---|
 | `spec:` refs | New and migrated specs use path-derived document-level refs from H1-adjacent `id`. |
 | Legacy issued record IDs | Complete public legacy IDs may remain compatibility inputs through Brewprint compatibility records. |
-| App-aware ADR IDs | Complete public ADR IDs are supported record ID-as-refs. |
-| App-aware investigation IDs | Complete public investigation IDs are supported record ID-as-refs. |
-| App-aware requirement IDs | Complete public requirement IDs are supported record ID-as-refs. |
-| App-aware work item IDs | Complete public work item IDs are supported record ID-as-refs. |
-| App-aware task IDs | Complete public task IDs are supported record ID-as-refs and workflow relation targets. |
+| App-aware ADR IDs | Complete public ADR IDs are supported public ID refs. |
+| App-aware investigation IDs | Complete public investigation IDs are supported public ID refs. |
+| App-aware requirement IDs | Complete public requirement IDs are supported public ID refs. |
+| App-aware work item IDs | Complete public work item IDs are supported public ID refs. |
+| App-aware task IDs | Complete public Task IDs are supported public ID refs and workflow relation targets. |
 
 Physical paths are not canonical inputs for traceability relations. Parent workflow relations are not inferred from ID string structure or file layout.
 
@@ -29,7 +29,7 @@ Physical paths are not canonical inputs for traceability relations. Parent workf
 |---|---|
 | Spec H1-adjacent `id` | Registers the canonical document-level `spec:` ref for new and migrated specs. |
 | Spec path-derived mapping | Confirms the visible `id` matches the canonical ref derived from file path. |
-| Record public ID | Registers ADR, investigation, requirement, work item, and task identities. |
+| Sequential record H1 public ID | Registers ADR, investigation, requirement, work item, and task identities from the complete public ID prefix in H1. |
 | Brewprint compatibility records | Preserve legacy issued IDs and migration compatibility pointers. |
 | Investigation metadata | Supplies referring refs in `source_refs`, recorded `follow_up_results`, and artifact refs in `follow_up_candidates`. |
 | Workflow metadata | Supplies declared relation values for requirement, work item, and task integrity checks. |
@@ -37,6 +37,22 @@ Physical paths are not canonical inputs for traceability relations. Parent workf
 Investigation metadata and workflow relation fields are referring sides. They do not register new reference targets.
 
 Natural-language body text is not a lookup source.
+Sequential H1-adjacent metadata and file names are not lookup sources.
+
+## Sequential record identity boundary
+
+Sequential identity is determined only from the public ID prefix in `# <PUBLIC-ID>: <Title>`.
+
+| condition | identity result | conformance result |
+|---|---|---|
+| H1 public ID is missing or malformed for the corpus-selected artifact kind | No current identity is registered. | Identity-determination failure. |
+| H1 app namespace differs from the configured app namespace | No current identity is registered. | Identity-determination failure. |
+| H1 artifact kind differs from the corpus-selected artifact kind | No current identity is registered. | Identity-determination failure. |
+| H1 domain namespace differs from the physical domain directory | No current identity is registered. | Identity-determination failure. |
+| File-name public-ID prefix differs from the valid H1 public ID | The H1 identity remains registered. | Nonidentity repository-conformance violation. |
+| Prohibited H1-adjacent metadata `id` is present with a valid H1 public ID | The H1 identity remains registered. | Nonidentity metadata-conformance violation. |
+
+Implementations do not repair, complete, normalize, infer, or replace sequential identity from metadata or file names.
 
 ## Spec resolution boundary
 
@@ -87,7 +103,7 @@ DRMCP defines the Task-owner resolution mechanism and cycle-analysis algorithm.
 | identity class | invalid condition |
 |---|---|
 | Spec ref | More than one new or migrated spec path has the same canonical `spec:` ref. |
-| Record public ID | More than one record carries the same complete public ID. |
+| Sequential record H1 public ID | More than one record H1 claims the same complete public ID. |
 | Compatibility ID | A legacy issued ID maps ambiguously through compatibility records. |
 
 Duplicate identity conditions for `coverage:`, `COV-*`, `internal-design:`, `yaml:`, and `fixture:` are outside the current traceability contract.
@@ -119,10 +135,11 @@ Historical disposition evidence is recorded in T05.
 
 | ref | relation |
 |---|---|
-| `spec:product.design_records.traceability.artifact_refs` | Supported reference classes. |
+| `spec:product.design_records.traceability.artifact_refs` | Canonical record kinds and reference forms. |
 | `spec:product.design_records.traceability.metadata_schema` | Metadata and relation fields. |
 | `spec:product.design_records.spec_format.spec_id_as_ref` | Spec lookup source and path-derived identity. |
 | `spec:product.brewprint.compatibility` | Legacy issued-ID compatibility pointer. |
 | PRODUCT-REQ-SPEC-006 | Generic workflow source-relation requirement. |
 | PRODUCT-ADR-SPEC-007 | Source-ref validity and semantic provenance-cycle rules. |
 | PRODUCT-ADR-SPEC-008 | Atomic migration and mismatch-blocking boundary. |
+| PRODUCT-ADR-SPEC-019 | H1-only sequential identity authority and nonidentity validation boundary. |

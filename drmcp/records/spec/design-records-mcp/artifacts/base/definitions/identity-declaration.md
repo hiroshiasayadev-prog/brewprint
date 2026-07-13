@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.base.definitions.identity_declaration`
 - **status**: draft
-- **date**: 2026-07-12
+- **date**: 2026-07-13
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.base`
 
 ## What this is
@@ -49,6 +49,17 @@ Each sequential artifact Specification must declare:
 
 Sequence allocation scope is declared under the sequential rules defined by `spec:drmcp.design_records_mcp.artifacts.base.definitions.record_structure`.
 
+For a sequential source, the complete public ID in the H1 `identity` prefix is the sole source-internal canonical identity authority.
+The H1 identity must conform to the artifact-specific identity form and agree with:
+
+- the configured app namespace;
+- the artifact kind selected by the source corpus;
+- the physical domain directory.
+
+H1-adjacent metadata and the file name do not supply, repair, complete, normalize, infer, or replace sequential identity.
+A file-name public-ID prefix is a nonidentity conformance projection of the H1 identity.
+A file-name mismatch does not by itself prevent candidate formation or current-record addressability.
+
 ## Tree identity declaration
 
 The tree identity form is:
@@ -83,6 +94,8 @@ These fixed tree mappings are not redeclared by each artifact Specification.
 | Artifact source-root derivation | `spec:drmcp.design_records_mcp.artifacts.base.definitions.record_structure`. |
 | Sequence allocation scope | `spec:drmcp.design_records_mcp.artifacts.base.definitions.record_structure` and the artifact-specific Specification. |
 | Relation-dependent segment agreement | The artifact-specific relation or identity-validation Specification. |
+| Sequential H1 identity authority and physical-context agreement | This Specification and the artifact-specific identity Specification. |
+| Sequential file-name projection and metadata exclusion from identity | This Specification and artifact conformance Specifications. |
 | Canonical identity and reference semantics | Product authority. |
 | Parser behavior, invalid identity handling, duplicate handling, and diagnostics | Other DRMCP Specifications. |
 

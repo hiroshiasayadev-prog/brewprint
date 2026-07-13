@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.authoring_standards.investigation_authoring`
 - **status**: draft
-- **date**: 2026-06-23
+- **date**: 2026-07-13
 - **parent**: `spec:product.design_records.authoring_standards`
 
 ## What this is
@@ -38,6 +38,8 @@ The canonical grammar source is `spec:product.design_records.namespace_model.art
 |---|---|
 | New investigations use `<app>/records/investigations/<domain>/<APP>-INV-<DOMAIN>-<NNN>-<slug>.md`. | MUST |
 | The file name prefix matches the public ID through the sequence segment. | MUST |
+| The file-name public-ID prefix is a conformance projection and is not an identity authority. | MUST |
+| A file-name prefix mismatch does not replace or invalidate the H1-derived identity. | MUST |
 | Physical paths are repository locations, not canonical references. | MUST |
 
 The discovery pattern is defined by `spec:product.design_records.repository_layout.record_discovery_paths`.
@@ -48,6 +50,7 @@ The discovery pattern is defined by `spec:product.design_records.repository_layo
 |---|---|
 | Use exactly one ATX H1 outside fenced code blocks. | MUST |
 | Use `# <PUBLIC-ID>: <Title>` for H1. | MUST |
+| Treat the complete public ID in H1 as the sole source-internal canonical identity authority. | MUST |
 | Place the bullet metadata block immediately after H1. | MUST |
 | Start body content at the first H2 after metadata. | MUST |
 
@@ -72,7 +75,7 @@ All canonical sections must be present when creating the record, to preserve a s
 
 ### Metadata schema
 
-Investigation metadata uses H1-adjacent bullet fields. Unlike requirement, work-item, and task records, investigation records do not carry an explicit `id` field in bullet metadata; the public ID appears in H1 and the file name only.
+Investigation metadata uses H1-adjacent bullet fields. Investigation metadata must not contain an `id` field. The public ID comes only from H1; the file-name public-ID prefix is a conformance projection.
 
 Required metadata:
 
@@ -195,6 +198,10 @@ The author does not supply:
 
 The body begins with `## Investigation scope`. The body excludes H1 and bullet metadata. Include all canonical sections; use `TBD` for sections not yet written.
 
+After resolving the public ID, the writer projects the same value into the H1 prefix and the file-name prefix.
+The writer does not generate or persist metadata `id`.
+H1 is the identity authority; the file name is a conformance projection.
+
 ### Update
 
 A partial update supplies only changed metadata fields or body sections.
@@ -221,4 +228,5 @@ Concrete tool contracts belong to DRMCP specs.
 | `spec:drmcp.design_records_mcp.schema.metadata_grammar` | Investigation metadata parsing grammar. |
 | `spec:drmcp.design_records_mcp.schema.authoring_transaction_schema` | Concrete authoring transaction contract. |
 | PRODUCT-REQ-SPEC-002 | Source requirement. |
+| PRODUCT-ADR-SPEC-019 | H1-only sequential identity authority and file-name projection boundary. |
 | PRODUCT-WORK-SPEC-011 | Source work item. |
