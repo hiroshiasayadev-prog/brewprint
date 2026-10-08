@@ -7,8 +7,11 @@ tools/*
 !tools/usdm/**
 !tools/usdm-mcp/
 !tools/usdm-mcp/**
+!tools/puppydsl/
+!tools/puppydsl/**
 tools/usdm/**/__pycache__/
 tools/usdm-mcp/**/__pycache__/
+tools/puppydsl/**/__pycache__/
 !product/tests/tools/
 product/tests/tools/*
 !product/tests/tools/*.py
