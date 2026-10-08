@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.usdm.artifact_format`
 - **status**: draft
-- **date**: 2026-07-11
+- **date**: 2026-09-30
 - **parent**: `spec:product.design_records.usdm`
 - **contract_class**: `format`
 
@@ -138,19 +138,39 @@ Multiple requirement sections allow one USDM topic to derive rows from multiple 
 
 | item | grammar |
 |---|---|
-| row-local requirement ID | `RNNN` |
-| first row ID | `R001` for newly authored records. |
-| numbering scope | One USDM `requirement` record. |
-| numbering rule | Strictly increasing when initially authored; gaps are allowed after reviewed row removal. |
+| row-local requirement ID | `RNNN(-NN)*` |
+| top-level row ID | `RNNN`, starting with `R001` for a newly authored top-level sibling set. |
+| child row ID | `<parent row ID>-NN`, starting with `01` for a newly authored child sibling set. |
+| numbering scope | Each sibling set inside one USDM `requirement` record. |
+| first child ID | `01` for a newly authored child sibling set. |
+| numbering rule | Strictly increasing when initially authored; gaps are allowed after reviewed row removal; removed sibling IDs are not reused for different requirements. |
 | full requirement ID | `<usdm record id>#<row-local requirement ID>` |
 
-Example:
+Examples:
 
 | component | value |
 |---|---|
 | USDM record ID | `usdm:drmcp.design_records.identity` |
-| row-local requirement ID | `R003` |
-| full requirement ID | `usdm:drmcp.design_records.identity#R003` |
+| top-level row-local ID | `R003` |
+| child row-local ID | `R003-01` |
+| grandchild row-local ID | `R003-01-02` |
+| full child requirement ID | `usdm:drmcp.design_records.identity#R003-01` |
+
+### Requirement hierarchy
+
+| rule | level |
+|---|---|
+| A top-level `RNNN` row has no parent. | MUST |
+| A non-top-level row's immediate parent is the row ID produced by removing the final `-NN` segment. | MUST |
+| Every non-top-level row must have its immediate parent present in the same USDM `requirement` record. | MUST |
+| A direct child adds exactly one `-NN` segment to its parent row ID. | MUST |
+| A row with no direct children is a leaf. | MUST |
+| A row with one or more direct children is a non-leaf. | MUST |
+| The hierarchy represents pure requirement decomposition only. | MUST |
+| The hierarchy does not encode optional, OR, conditional, weighted, or cardinality relations. | MUST |
+
+Parent-child identity is record-local. A row cannot parent or child a row in another USDM requirement record or app namespace.
+Requirement sections and source fields do not change the row hierarchy.
 
 ### Requirement row semantics
 
@@ -181,6 +201,7 @@ When a corresponding Specification later becomes the direct source for a literal
 | Requirement table missing `id` or `requirement` column | Error. |
 | Duplicate full requirement ID | Error. |
 | Malformed row-local requirement ID | Error. |
+| Non-top-level row whose immediate parent does not exist in the same record | Error. |
 | Row-local ID gaps after reviewed row removal | Allowed. |
 | `index` record containing `## Requirements: <title>` | Error. |
 
@@ -199,4 +220,6 @@ When a corresponding Specification later becomes the direct source for a literal
 | `spec:product.design_records.usdm` | Parent overview. |
 | `spec:product.design_records.usdm.coverage_format` | Defines coverage metadata from implementation Specifications to USDM requirement IDs. |
 | `spec:product.design_records.usdm.coverage_tools` | Defines standalone tool behavior over this format. |
-| PRODUCT-REQ-SPEC-015 | Source requirement. |
+| PRODUCT-REQ-SPEC-015 | Original MVP source requirement. |
+| PRODUCT-REQ-SPEC-016 | Hierarchical decomposition and derived-coverage source requirement. |
+| PRODUCT-ADR-SPEC-020 | Hierarchical row identity and derived-coverage decision. |

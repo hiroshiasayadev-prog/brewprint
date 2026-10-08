@@ -57,12 +57,13 @@ The area remains valid when Brewprint applications and implementation tools chan
 | Repository layout | Overview | `spec:product.design_records.repository_layout` | App-independent Design Records placement and discovery paths. |
 | Traceability | Overview | `spec:product.design_records.traceability` | Canonical references, declared relations, lookup inputs, and validation semantics. |
 | Artifact model | Overview | `spec:product.design_records.artifact_model` | Design record responsibilities, workflow roles, source-of-truth boundaries, and tool boundaries. |
+| USDM requirement artifacts | Overview | `spec:product.design_records.usdm` | MVP USDM requirement artifacts, coverage metadata, and standalone coverage tools. |
 
 ## Topic map
 
 The child areas are `namespace-model/`, `authoring-standards/`, `spec-format/`,
-`repository-layout/`, `traceability/`, and `artifact-model/`.
-All six areas are declared in `## Topics`.
+`repository-layout/`, `traceability/`, `artifact-model/`, and `usdm/`.
+All seven areas are declared in `## Topics`.
 
 ## Related specs
 

@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.authoring_standards.agent_authoring_policy`
 - **status**: draft
-- **date**: 2026-06-15
+- **date**: 2026-10-07
 - **parent**: `spec:product.design_records.authoring_standards`
 
 ## What this is
@@ -28,7 +28,7 @@ Behavioral rules for AI agents working with brewprint design records. Governs re
 | Rule | Level |
 |---|---|
 | When creating records, include the namespace prefix in the ID (e.g., `PRODUCT-REQ-new`, `DRMCP-WORK-new`). Do not use prefix-less IDs. | MUST |
-| Create new REQ / WORK / TASK / ADR / SPEC under an active namespace (`product`, `drmcp`, `bpdsl`). `v01/records/` is a read-only snapshot. | MUST |
+| Create new REQ / WORK / TASK / ADR / SPEC under an active namespace (`product`, `drmcp`, `drcli`, `bpdsl`, `puppydsl`, `trv`). `v01/records/` is a read-only snapshot. | MUST |
 
 ### DRMCP retrieval (TBD)
 

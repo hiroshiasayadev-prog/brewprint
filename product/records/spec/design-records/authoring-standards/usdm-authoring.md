@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.authoring_standards.usdm_authoring`
 - **status**: draft
-- **date**: 2026-07-11
+- **date**: 2026-09-30
 - **parent**: `spec:product.design_records.authoring_standards`
 
 ## What this is
@@ -91,43 +91,72 @@ When one Specification feeds multiple implementation concerns, each USDM topic m
 
 When a corresponding Specification later becomes the direct source for a literal section, replace `literal` with the canonical `spec:` ref. Preserve every existing row ID during source replacement.
 
-### Row ID stability
+### Row hierarchy and ID stability
 
 | rule | level |
 |---|---|
-| Assign row IDs as `RNNN` values such as `R001`, `R002`, and `R003`. | MUST |
-| Append new rows after the highest existing row ID when possible. | SHOULD |
+| Use `RNNN` for top-level rows. | MUST |
+| Use `<parent row ID>-NN` for a direct child. | MUST |
+| Derive a non-top-level row's parent by removing the final `-NN` segment. | MUST |
+| Create the immediate parent row before authoring a child row. | MUST |
+| Treat the hierarchy as pure decomposition only. | MUST |
+| Do not encode optional, OR, conditional, weighted, or cardinality relations in the ID. | MUST |
+| Start a newly authored child sibling set at `01`. | MUST |
+| Append new row IDs after the highest existing ID in the same sibling set when possible. | SHOULD |
+| Do not reuse a removed sibling ID for a different requirement. | MUST |
 | Do not renumber existing rows after implementation specs have started covering them. | MUST |
 | Row ID gaps are allowed when rows are removed after review. | MUST |
 | Do not reuse a removed row ID for a different requirement. | MUST |
 
-Stable row IDs protect `usdm_covers` references.
+Examples, not exhaustive:
+
+```text
+R001
+R001-01
+R001-02
+R001-02-01
+R002
+```
+
+Stable hierarchical row IDs protect `usdm_covers` references and preserve decomposition identity.
+
+Keep one decomposition tree inside one USDM requirement record. Do not use a row in another USDM record or app namespace as a parent or child. When an implementation Specification in another app owns responsibility for a row, reference the target row by its full USDM requirement ID in `usdm_covers` instead.
 
 ### Coverage authoring
 
 | rule | level |
 |---|---|
-| Add `usdm_covers` to an implementation Specification after the spec intentionally covers the row. | MUST |
+| Add `usdm_covers` to an implementation Specification after the spec intentionally covers the exact row. | MUST |
 | List full USDM requirement IDs or compact row-list expressions anchored to one USDM record ID. | MUST |
+| Hierarchical rows may appear directly or in same-record comma lists. | MUST |
+| Existing `RNNN-RNNN` range shorthand remains top-level only. | MUST |
 | Do not list bare USDM record IDs without row fragments. | MUST |
-| Use compact row-list expressions for large same-record coverage lists. | SHOULD |
 | Keep coverage file-level during the MVP. | MUST |
-| Do not add coverage only to hide an uncovered report. | MUST |
+| Do not add direct child coverage only to hide a parent coverage failure. | MUST |
+| Do not claim direct descendant coverage merely because an ancestor is directly covered. | MUST |
 | Do not claim coverage from overview prose unless the overview owns the implementation contract. | SHOULD |
 | Remove or correct dangling coverage when the referenced row no longer exists. | MUST |
 
-Coverage means the Specification claims to cover the requirement. Coverage does not prove implementation correctness.
+Direct coverage means the Specification claims to cover that exact requirement row.
+Effective coverage may also be derived when every direct child of an uncovered non-leaf is effectively covered.
+
+A directly covered parent remains effectively covered even when descendants are uncovered.
+Those descendants remain visible as non-blocking refinement warnings.
+The warning behavior does not define an explicit optional relation.
+
+Coverage does not prove implementation correctness.
 
 Examples:
 
 ```markdown
 - **usdm_covers**:
   - `usdm:product.foo.bar#R001`
-  - `usdm:product.foo.bar#R001,#R002`
+  - `usdm:product.foo.bar#R001-01`
+  - `usdm:product.foo.bar#R001-01,R001-02`
   - `usdm:product.foo.bar#R001-R005`
 ```
 
-Use full IDs for isolated rows. Use compact row-list or range syntax when one Specification covers many rows from the same USDM record.
+Use full IDs for isolated rows. Use compact comma lists for hierarchical siblings. Use range syntax only for top-level rows.
 
 ### Review checklist
 
@@ -137,13 +166,17 @@ Before marking USDM authoring complete, check these items:
 - Every Requirements section has one immediate source field.
 - Every source is `literal` or a canonical `spec:` ref.
 - Every Requirements title is non-empty and unique within the record.
-- Every row has a unique row-local ID.
+- Every row has a unique hierarchical row-local ID.
+- Every non-top-level row has its immediate parent in the same USDM requirement record.
+- No parent-child edge crosses a USDM requirement-record or app-namespace boundary.
 - Every row is phrased as an implementation requirement.
 - Existing row IDs were not renumbered after title changes, source replacement, or section restructuring.
 - Row ID gaps are intentional deletions, not accidental renumbering.
 - Covering implementation specs use full USDM requirement IDs or compact same-record row lists.
-- Large same-record coverage lists use compact row-list or range syntax when it improves readability.
-- Uncovered rows represent real remaining coverage gaps or intentionally deferred implementation-spec work.
+- Hierarchical rows use direct IDs or comma lists; existing range shorthand remains top-level only.
+- Blocking uncovered rows have no directly covered ancestor.
+- Uncovered descendants beneath a directly covered ancestor are retained as non-blocking refinement warnings.
+- No row is treated as explicitly optional unless a later accepted contract introduces that semantic.
 
 ## Authoring interface requirements
 
@@ -192,5 +225,8 @@ Rules:
 | `spec:product.design_records.usdm.artifact_format` | USDM record format rules. |
 | `spec:product.design_records.usdm.coverage_format` | Coverage metadata rules. |
 | `spec:product.design_records.usdm.coverage_tools` | Standalone USDM tool contracts. |
-| PRODUCT-REQ-SPEC-015 | Source requirement. |
-| PRODUCT-WORK-SPEC-029 | Source Work Item. |
+| PRODUCT-REQ-SPEC-015 | Original MVP source requirement. |
+| PRODUCT-REQ-SPEC-016 | Hierarchical decomposition and derived-coverage source requirement. |
+| PRODUCT-ADR-SPEC-020 | Hierarchical row and effective-coverage decision. |
+| PRODUCT-WORK-SPEC-029 | Original MVP source Work Item. |
+| PRODUCT-WORK-SPEC-031 | Hierarchical decomposition design Work Item. |
