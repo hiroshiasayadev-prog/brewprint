@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.brewprint.namespaces.domain_catalog`
 - **status**: draft
-- **date**: 2026-07-02
+- **date**: 2026-10-07
 - **parent**: `spec:product.brewprint.namespaces`
 
 ## What this is
@@ -15,6 +15,7 @@ Records Brewprint domain namespace assignments as profile and registry content.
 |---|---|---|---|---|
 | `DRMCP` | `MCP` | Active assignment. | MCP tool contract and namespace-aware authoring work. | Current IDs include `DRMCP-REQ-MCP-001`, `DRMCP-REQ-MCP-002`, and `DRMCP-INV-MCP-001`. |
 | `DRMCP` | `SPEC` | Active assignment. | DRMCP-owned spec-format implementation work. | Current IDs include `DRMCP-WORK-SPEC-001` and `DRMCP-WORK-SPEC-002`. |
+| `DRCLI` | `CLI` | Active assignment. | Portable Design Records command-line interface. | `DRCLI-REQ-CLI-001` establishes the initial DRCLI requirement boundary. |
 | `PRODUCT` | `NAMESPACE` | Active assignment. | Namespace-model cleanup and migration work. | Current IDs include `PRODUCT-WORK-NAMESPACE-001` and `PRODUCT-TASK-NAMESPACE-001-01`. |
 | `PRODUCT` | `SPEC` | Active assignment. | PRODUCT specification format and semantic restructuring work. | Current IDs include `PRODUCT-REQ-SPEC-001`, `PRODUCT-WORK-SPEC-012`, and `PRODUCT-TASK-SPEC-012-03`. |
 | `TRV` | `SPEC` | Active assignment. | TRV app-local design and later implementation design records. | `spec:trv` exists, and `TRV-WORK-SPEC-001` is the accepted first sequential record boundary. |

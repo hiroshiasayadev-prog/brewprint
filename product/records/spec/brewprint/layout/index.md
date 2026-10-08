@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.brewprint.layout`
 - **status**: draft
-- **date**: 2026-07-02
+- **date**: 2026-10-07
 - **parent**: `spec:product.brewprint`
 
 ## What this is
@@ -21,8 +21,15 @@ drmcp/
   records/
   src/
 
+drcli/
+  records/
+
 bpdsl/
   records/
+
+puppydsl/
+  records/
+  src/
 
 trv/
   records/
@@ -32,7 +39,9 @@ trv/
 |---|---|---|
 | `product/` | `records/` | Records-only product and cross-app governance namespace. |
 | `drmcp/` | `records/`, `src/` | Design records plus handwritten implementation source. No app-local `dsl/` yet. |
+| `drcli/` | `records/` | Records-only initial DRCLI namespace for portable Design Records CLI requirements and design. |
 | `bpdsl/` | `records/` | Namespaced design records are present. App-local DSL and source placement are not established yet. |
+| `puppydsl/` | `records/`, `src/` | PuppyDSL language specifications and handwritten implementation source. |
 | `trv/` | `records/` | Records-only Task Responsibility Validator namespace. App-local design remains pending. |
 
 ## Other current repository areas

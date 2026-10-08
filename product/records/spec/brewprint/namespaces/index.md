@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.brewprint.namespaces`
 - **status**: draft
-- **date**: 2026-06-24
+- **date**: 2026-07-25
 - **parent**: `spec:product.brewprint`
 
 ## What this is
@@ -31,7 +31,7 @@ This profile instantiates the generic namespace model without redefining it.
 - Label registry facts as Brewprint profile content.
 - Distinguish active assignment, future candidate, legacy prefix, and cross-app activity.
 - Do not present future candidates as active namespaces or domains.
-- Do not copy DRMCP or BPDSL operational contracts into this profile.
+- Do not copy DRMCP, BPDSL, or PuppyDSL operational contracts into this profile.
 
 ## Boundary
 
@@ -42,6 +42,7 @@ This profile instantiates the generic namespace model without redefining it.
 | V01 compatibility, historical attribution, and issued-ID retention | `spec:product.brewprint.compatibility`. |
 | DRMCP operational behavior | DRMCP app-local specifications. |
 | BPDSL internal behavior | BPDSL app-local specifications. |
+| PuppyDSL language, validator, runtime, generator, or native integration behavior | PUPPYDSL app-local specifications. |
 
 ## Related specs
 
