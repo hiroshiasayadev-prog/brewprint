@@ -1,0 +1,13 @@
+# responsibility: Defines the single invalid fixture for generic union rejection.
+# excludes: Every unrelated declaration-envelope, type-shape, function, context, event, and module violation.
+
+types:
+  BootInvalidGenericUnionVariant:
+    detail: Provides one concrete variant type for the generic-union fixture.
+    record:
+      raw: string
+
+  BootInvalidGenericUnion<T>:
+    detail: Demonstrates that union declarations cannot declare generic parameters.
+    union:
+      - BootInvalidGenericUnionVariant

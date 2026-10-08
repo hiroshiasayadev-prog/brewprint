@@ -1,0 +1,39 @@
+# responsibility: Demonstrates shared artifact-base functions for exhaustive reference outcome handling.
+# excludes: Artifact-specific parsing, current-state resolution, runtime infrastructure, and public operation behavior.
+
+functions:
+  artifact.base.reference.parse:
+    detail: Parses one exact supplied reference string into shared routing success or expected unrouteable-input evidence without confirming artifact-specific canonical grammar.
+    signature: >-
+      (raw: string) -> SharedRoutingOutcome
+    implementation:
+      native: reference.parse_routing
+
+  artifact.base.content.is_placeholder:
+    detail: Determines whether normalized artifact content consists only of the artifact-wide placeholder value.
+    signature: >-
+      (body: string) -> boolean
+    implementation:
+      steps:
+        result: >-
+          common.text.equals(
+            left: body,
+            right: "TBD"
+          )
+      return: result
+
+  artifact.base.content.is_substantive:
+    detail: Determines whether artifact content contains substantive information rather than being empty or a placeholder.
+    signature: >-
+      (body: string) -> boolean
+    implementation:
+      steps:
+        normalized: common.text.trim(body)
+        empty: common.text.is_empty(normalized)
+        placeholder: artifact.base.content.is_placeholder(normalized)
+        result: >-
+          common.boolean.neither(
+            left: empty,
+            right: placeholder
+          )
+      return: result

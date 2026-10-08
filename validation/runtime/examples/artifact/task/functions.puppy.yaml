@@ -1,0 +1,10 @@
+# responsibility: Demonstrates Task artifact-specific canonical reference parsing functions.
+# excludes: Shared reference routing, other artifact kinds, current-state resolution, and operation projection.
+
+functions:
+  artifact.task.reference.parse:
+    detail: Confirms one routed Task reference and, on success, names its canonical work and task sequence segments in the opaque sequential ArtifactReference.
+    signature: >-
+      (reference: SequentialBaseReference) -> ArtifactReferenceParseOutcome
+    implementation:
+      native: task.reference.parse

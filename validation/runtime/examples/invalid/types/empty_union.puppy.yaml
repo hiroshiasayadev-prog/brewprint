@@ -1,0 +1,7 @@
+# responsibility: Defines the single invalid fixture for empty union rejection.
+# excludes: Every unrelated declaration-envelope, type-shape, function, context, event, and module violation.
+
+types:
+  BootInvalidEmptyUnion:
+    detail: Demonstrates that a union must declare at least one variant type.
+    union: []

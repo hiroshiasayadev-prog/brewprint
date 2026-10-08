@@ -1,0 +1,7 @@
+# responsibility: Defines the valid fixture for one string-backed named scalar declaration.
+# excludes: Other type forms, function behavior, context wiring, events, modules, and invalid fixture cases.
+
+types:
+  BootValidArtifactKind:
+    detail: Identifies one bootstrap-valid open string-backed artifact kind value.
+    scalar: string

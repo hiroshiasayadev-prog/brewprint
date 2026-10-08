@@ -1,0 +1,7 @@
+# responsibility: Demonstrates runtime infrastructure value types used by context and execution declarations.
+# excludes: Common reusable values, artifact semantics, operation results, and invalid declaration fixtures.
+
+types:
+  FunctionID:
+    detail: Identifies one callable function in the runtime function registry.
+    scalar: string

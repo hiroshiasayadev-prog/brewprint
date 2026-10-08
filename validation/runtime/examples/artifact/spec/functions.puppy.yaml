@@ -1,0 +1,10 @@
+# responsibility: Demonstrates Specification artifact-specific canonical reference parsing functions.
+# excludes: Shared reference routing, other artifact kinds, current-state resolution, and operation projection.
+
+functions:
+  artifact.spec.reference.parse:
+    detail: Confirms one routed Specification reference and, on success, retains its TreeBaseReference as the complete opaque tree ArtifactReference.
+    signature: >-
+      (reference: TreeBaseReference) -> ArtifactReferenceParseOutcome
+    implementation:
+      native: spec.reference.parse

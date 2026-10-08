@@ -1,0 +1,9 @@
+# responsibility: Defines the single invalid fixture for opaque and transparent type-body mixing rejection.
+# excludes: Every unrelated declaration-envelope, type-shape, function, context, event, and module violation.
+
+types:
+  BootInvalidOpaqueMixedBody:
+    detail: Demonstrates that an opaque declaration cannot expose a transparent record body.
+    opaque: true
+    record:
+      raw: string

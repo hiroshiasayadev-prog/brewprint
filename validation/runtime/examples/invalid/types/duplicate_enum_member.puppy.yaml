@@ -1,0 +1,9 @@
+# responsibility: Defines the single invalid fixture for duplicate enum member rejection.
+# excludes: Every unrelated declaration-envelope, type-shape, function, context, event, and module violation.
+
+types:
+  BootInvalidDuplicateEnumMember:
+    detail: Demonstrates that an enum member may appear only once.
+    enum:
+      - tree
+      - tree

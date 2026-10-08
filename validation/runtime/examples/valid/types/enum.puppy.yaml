@@ -1,0 +1,9 @@
+# responsibility: Defines the valid fixture for one non-empty duplicate-free enum declaration.
+# excludes: Other type forms, function behavior, context wiring, events, modules, and invalid fixture cases.
+
+types:
+  BootValidStructure:
+    detail: Identifies one bootstrap-valid closed structure vocabulary.
+    enum:
+      - tree
+      - sequential

@@ -1,0 +1,19 @@
+# responsibility: Defines the valid fixture for one non-empty duplicate-free union declaration.
+# excludes: Other type forms, function behavior, context wiring, events, modules, and invalid fixture cases.
+
+types:
+  BootValidTreeEvidence:
+    detail: Preserves one bootstrap-valid tree routing value.
+    record:
+      raw: string
+
+  BootValidSequentialEvidence:
+    detail: Preserves one bootstrap-valid sequential routing value.
+    record:
+      raw: string
+
+  BootValidBaseReference:
+    detail: Carries exactly one bootstrap-valid routing evidence variant.
+    union:
+      - BootValidTreeEvidence
+      - BootValidSequentialEvidence

@@ -1,0 +1,9 @@
+# responsibility: Defines the single invalid fixture for mixed type-body rejection.
+# excludes: Every unrelated declaration-envelope, type-shape, function, context, event, and module violation.
+
+types:
+  BootInvalidMixedTypeBody:
+    detail: Demonstrates that one type declaration cannot combine scalar and enum bodies.
+    scalar: string
+    enum:
+      - value

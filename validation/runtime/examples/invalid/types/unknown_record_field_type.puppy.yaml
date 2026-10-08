@@ -1,0 +1,8 @@
+# responsibility: Defines the single invalid fixture for unknown transparent-record field type rejection.
+# excludes: Every unrelated declaration-envelope, type-shape, function, context, event, and module violation.
+
+types:
+  BootInvalidUnknownRecordFieldType:
+    detail: Demonstrates that every transparent record field type must resolve.
+    record:
+      value: BootMissingFieldType

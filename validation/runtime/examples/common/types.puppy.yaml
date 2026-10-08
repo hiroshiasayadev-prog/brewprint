@@ -1,0 +1,38 @@
+# responsibility: Demonstrates artifact-independent reusable common value types used by PuppyDSL declarations.
+# excludes: Artifact identity, runtime infrastructure state, operation results, and application-specific schemas.
+
+types:
+  HeadingForm:
+    detail: Identifies the Markdown syntax form used by one heading occurrence.
+    enum:
+      - atx
+      - setext
+
+  SourceLocation:
+    detail: Identifies the physical source position of one explicitly represented occurrence.
+    record:
+      path: string
+      line: integer
+      column: integer
+
+  HeadingOccurrence:
+    detail: Preserves one parsed Markdown heading and its explicit source evidence.
+    record:
+      level: integer
+      text: string
+      form: HeadingForm
+      raw_marker: string
+      location: SourceLocation
+
+  SetComparison<T>:
+    detail: Preserves the asymmetric differences and equality result of comparing two collections as sets.
+    generic:
+      T: equatable
+    record:
+      left_only: list<T>
+      right_only: list<T>
+      equal: boolean
+
+  MarkdownDocument:
+    detail: Represents a parsed Markdown document whose internal syntax tree is unavailable to design-facing YAML.
+    opaque: true

@@ -1,0 +1,14 @@
+# responsibility: Defines the single invalid fixture for duplicate union variant rejection.
+# excludes: Every unrelated declaration-envelope, type-shape, function, context, event, and module violation.
+
+types:
+  BootInvalidUnionVariant:
+    detail: Provides one variant type for a duplicate-union-variant fixture.
+    record:
+      raw: string
+
+  BootInvalidDuplicateUnionVariant:
+    detail: Demonstrates that a union variant type may appear only once.
+    union:
+      - BootInvalidUnionVariant
+      - BootInvalidUnionVariant

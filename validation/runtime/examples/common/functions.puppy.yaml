@@ -1,0 +1,50 @@
+# responsibility: Demonstrates artifact-independent reusable common functions used by PuppyDSL declarations.
+# excludes: Artifact semantics, runtime infrastructure ownership, operation orchestration, and application-specific data access.
+
+functions:
+  common.text.trim:
+    detail: Removes leading and trailing whitespace before later semantic interpretation or validation.
+    signature: >-
+      (value: string) -> string
+    implementation:
+      native: text.trim
+
+  common.text.is_empty:
+    detail: Determines whether a string contains no characters without exposing a low-level equality expression.
+    signature: >-
+      (value: string) -> boolean
+    implementation:
+      native: text.is_empty
+
+  common.text.equals:
+    detail: Determines whether two text values are exactly equal.
+    signature: >-
+      (left: string, right: string) -> boolean
+    implementation:
+      native: text.equals
+
+  common.boolean.neither:
+    detail: Determines whether neither supplied boolean value is true.
+    signature: >-
+      (left: boolean, right: boolean) -> boolean
+    implementation:
+      native: boolean.neither
+
+  common.collection.is_empty<T>:
+    detail: Determines whether a supplied collection contains no elements.
+    signature: >-
+      (values: list<T>) -> boolean
+    implementation:
+      native: collection.is_empty
+
+  common.collection.compare_sets<T>:
+    detail: Compares two collections as sets while preserving values present only on either side.
+    generic:
+      T: equatable
+    signature: >-
+      (
+        left: list<T>,
+        right: list<T>
+      ) -> SetComparison<T>
+    implementation:
+      native: collection.compare_sets

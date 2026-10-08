@@ -1,0 +1,75 @@
+# responsibility: Demonstrates shared artifact-base reference routing and expected parse-outcome types.
+# excludes: Artifact-specific canonical reference types, current repository resolution, and operation-specific outcomes.
+
+types:
+  ArtifactKind:
+    detail: Identifies one artifact kind registered by an artifact module.
+    scalar: string
+
+  ArtifactStructure:
+    detail: Identifies the closed record-structure model used by an artifact module.
+    enum:
+      - tree
+      - sequential
+
+  TreeReferenceDiscriminator:
+    detail: Carries the routing discriminator extracted from a tree-form base reference.
+    scalar: string
+
+  SequentialReferenceDiscriminator:
+    detail: Carries the routing discriminator extracted from a sequential-form base reference.
+    scalar: string
+
+  TreeBaseReference:
+    detail: Preserves tree-reference routing evidence before artifact-specific grammar confirmation or current-tree resolution.
+    record:
+      raw: string
+      record_kind: TreeReferenceDiscriminator
+      app_namespace: string
+      path_segments: list<string>
+
+  SequentialBaseReference:
+    detail: Preserves sequential-reference routing evidence while leaving artifact-specific segment meaning to the selected artifact module.
+    record:
+      raw: string
+      app_namespace: string
+      artifact_kind: SequentialReferenceDiscriminator
+      domain_namespace: string
+      artifact_segments: list<string>
+
+  BaseReference:
+    detail: Carries one structure-specific base reference for artifact-module routing and narrowing.
+    union:
+      - TreeBaseReference
+      - SequentialBaseReference
+
+  RoutedBaseReference:
+    detail: Carries shared routing success without exposing the structure-specific BaseReference variant at the outcome boundary.
+    record:
+      reference: BaseReference
+
+  UnrouteableReference:
+    detail: Preserves an exact reference string that matches neither the sequential nor tree routing envelope.
+    record:
+      raw: string
+
+  SharedRoutingOutcome:
+    detail: Represents either successful shared BaseReference routing or one expected unrouteable-input result.
+    union:
+      - RoutedBaseReference
+      - UnrouteableReference
+
+  ArtifactReference:
+    detail: Represents one confirmed canonical reference whose structure-specific native form remains hidden from design-facing YAML.
+    opaque: true
+
+  InvalidArtifactReference:
+    detail: Preserves an exact routed reference string that does not satisfy the selected artifact module's canonical reference contract.
+    record:
+      raw: string
+
+  ArtifactReferenceParseOutcome:
+    detail: Represents either a confirmed canonical ArtifactReference or one artifact-invalid routed reference.
+    union:
+      - ArtifactReference
+      - InvalidArtifactReference

@@ -1,0 +1,41 @@
+# responsibility: Demonstrates valid PuppyDSL conditional, bounded iteration, and exhaustive switch authoring forms.
+# excludes: Domain-specific operation behavior, runtime context ownership, native binding registration, and invalid fixtures.
+
+functions:
+  example.reference.raw:
+    detail: Returns the exact supplied reference text from either declared BaseReference variant through exhaustive type switching.
+    signature: >-
+      (reference: BaseReference) -> string
+    implementation:
+      steps:
+        raw:
+          switch: reference
+          cases:
+            TreeBaseReference:
+              steps:
+                value: reference.raw
+              return: value
+            SequentialBaseReference:
+              steps:
+                value: reference.raw
+              return: value
+      return: raw
+
+  example.routing.raw:
+    detail: Returns the exact supplied reference text from either shared routing outcome variant.
+    signature: >-
+      (outcome: SharedRoutingOutcome) -> string
+    implementation:
+      steps:
+        raw:
+          switch: outcome
+          cases:
+            RoutedBaseReference:
+              steps:
+                value: example.reference.raw(outcome.reference)
+              return: value
+            UnrouteableReference:
+              steps:
+                value: outcome.raw
+              return: value
+      return: raw
