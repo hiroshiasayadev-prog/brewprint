@@ -120,10 +120,10 @@ def usdm_covered_by(
     requirement_id: str,
     repo_root: str | None = None,
 ) -> dict[str, Any]:
-    """List Specification refs that cover one full USDM requirement ID.
+    """Report effective coverage state for one full USDM requirement ID.
 
     Args:
-        requirement_id: Full USDM requirement ID such as usdm:drmcp.topic#R001.
+        requirement_id: Full USDM requirement ID such as usdm:drmcp.topic#R001-01.
         repo_root: Repository root relative to or inside USDM_MCP_ROOT. Defaults to
             USDM_MCP_ROOT.
     """
@@ -137,17 +137,19 @@ def check_usdm_scope_coverage(
     repo_root: str | None = None,
     include_covered: bool = True,
     include_not_covered: bool = True,
+    include_warnings: bool = True,
     include_empty_records: bool = False,
 ) -> dict[str, Any]:
-    """Check compact coverage for USDM app, topic, record, or requirement scopes.
+    """Check direct and effective coverage for USDM scopes.
 
     Args:
-        scope_ids: USDM app, topic, record, or full requirement IDs to report.
+        scope_ids: USDM app, topic, record, or full hierarchical requirement IDs to report.
         repo_root: Repository root relative to or inside USDM_MCP_ROOT. Defaults
             to USDM_MCP_ROOT.
-        include_covered: Include covered row IDs and their covering Specification refs.
-        include_not_covered: Include uncovered row IDs.
-        include_empty_records: Include records with no visible covered/not_covered fields.
+        include_covered: Include direct covered rows and derived-covered row IDs.
+        include_not_covered: Include blocking uncovered row IDs.
+        include_warnings: Include non-blocking refinement-warning row IDs.
+        include_empty_records: Include records with no visible enabled coverage fields.
     """
     root = _resolve_repo_root(repo_root)
     return usdm_tools.check_usdm_scope_coverage(
@@ -155,6 +157,7 @@ def check_usdm_scope_coverage(
         repo_root=root,
         include_covered=include_covered,
         include_not_covered=include_not_covered,
+        include_warnings=include_warnings,
         include_empty_records=include_empty_records,
     )
 

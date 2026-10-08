@@ -17,7 +17,7 @@ USDM_RECORD_ID_RE = re.compile(
 )
 FULL_REQUIREMENT_ID_RE = re.compile(
     r"^(?P<record>usdm:(?P<app>[a-z0-9_]+)\.[a-z0-9_]+"
-    r"(?:\.[a-z0-9_]+)*)#(?P<row>R\d{3})$"
+    r"(?:\.[a-z0-9_]+)*)#(?P<row>R\d{3}(?:-\d{2})*)$"
 )
 USDM_REQUIREMENT_H1_RE = re.compile(r"^# USDM requirement: .+?\s*$")
 SPEC_REF_RE = re.compile(

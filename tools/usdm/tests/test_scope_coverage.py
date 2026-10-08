@@ -287,7 +287,7 @@ class ScopedCoverageTests(unittest.TestCase):
                 repo_root=root,
             )
 
-            self.assertTrue(response["ok"])
+            self.assertFalse(response["ok"])
             self.assertEqual(response["records"], 1)
             self.assertEqual(response["requirements"], 2)
             self.assertEqual(response["covered_requirements"], 1)
@@ -313,7 +313,7 @@ class ScopedCoverageTests(unittest.TestCase):
                 repo_root=root,
             )
 
-            self.assertTrue(response["ok"])
+            self.assertFalse(response["ok"])
             self.assertEqual(response["records"], 2)
             self.assertEqual(response["requirements"], 3)
             self.assertEqual(
@@ -328,7 +328,7 @@ class ScopedCoverageTests(unittest.TestCase):
 
             response = check_usdm_scope_coverage(["usdm:sample"], repo_root=root)
 
-            self.assertTrue(response["ok"])
+            self.assertFalse(response["ok"])
             self.assertEqual(response["records"], 2)
             self.assertEqual(response["requirements"], 3)
             self.assertEqual(response["covered_requirements"], 2)
@@ -364,7 +364,7 @@ class ScopedCoverageTests(unittest.TestCase):
                 repo_root=root,
             )
 
-            self.assertTrue(response["ok"])
+            self.assertFalse(response["ok"])
             self.assertEqual(response["items"][0]["not_covered"], ["#R002"])
             self.assertNotIn("covered", response["items"][0])
 
@@ -379,7 +379,7 @@ class ScopedCoverageTests(unittest.TestCase):
                 include_covered=False,
             )
 
-            self.assertTrue(response["ok"])
+            self.assertFalse(response["ok"])
             self.assertEqual(response["covered_requirements"], 1)
             self.assertNotIn("covered", response["items"][0])
             self.assertEqual(response["items"][0]["not_covered"], ["#R002"])
@@ -395,7 +395,7 @@ class ScopedCoverageTests(unittest.TestCase):
                 include_not_covered=False,
             )
 
-            self.assertTrue(response["ok"])
+            self.assertFalse(response["ok"])
             self.assertEqual(response["not_covered_requirements"], 1)
             self.assertEqual(
                 response["items"][0]["covered"],
@@ -417,7 +417,7 @@ class ScopedCoverageTests(unittest.TestCase):
                 repo_root=root,
             )
 
-            self.assertTrue(response["ok"])
+            self.assertFalse(response["ok"])
             self.assertEqual(response["records"], 1)
             self.assertEqual(response["requirements"], 2)
 
@@ -441,7 +441,7 @@ class ScopedCoverageTests(unittest.TestCase):
 
             response = check_usdm_scope_coverage(["usdm:sample"], repo_root=root)
 
-            self.assertTrue(response["ok"])
+            self.assertFalse(response["ok"])
             serialized_items = repr(response["items"])
             self.assertNotIn("detail", serialized_items)
             self.assertNotIn("path", serialized_items)

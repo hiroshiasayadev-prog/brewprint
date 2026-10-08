@@ -29,13 +29,14 @@ IGNORED_APP_DIRS = {
 }
 
 USDM_RECORD_ID_RE = re.compile(r"^usdm:([a-z0-9_]+)\.[a-z0-9_]+(?:\.[a-z0-9_]+)*$")
+ROW_ID_RE = re.compile(r"^R\d{3}(?:-\d{2})*$")
 FULL_REQUIREMENT_ID_RE = re.compile(
-    r"^usdm:([a-z0-9_]+)\.[a-z0-9_]+(?:\.[a-z0-9_]+)*#R\d{3}$"
+    r"^usdm:([a-z0-9_]+)\.[a-z0-9_]+(?:\.[a-z0-9_]+)*#R\d{3}(?:-\d{2})*$"
 )
 COMPACT_COVERAGE_ID_RE = re.compile(
     r"^(?P<record>usdm:[a-z0-9_]+\.[a-z0-9_]+(?:\.[a-z0-9_]+)*)#(?P<rows>.+)$"
 )
-ROW_REF_RE = re.compile(r"^#?R(?P<number>\d{3})$")
+ROW_REF_RE = re.compile(r"^#?(?P<row>R\d{3}(?:-\d{2})*)$")
 ROW_RANGE_RE = re.compile(r"^(?P<start>#?R\d{3})-(?P<end>#?R\d{3})$")
 USDM_APP_SCOPE_ID_RE = re.compile(r"^usdm:([a-z0-9_]+)$")
 USDM_H1_RE = re.compile(r"^# USDM (?P<kind>index|requirement): (?P<title>.+?)\s*$")
@@ -78,6 +79,16 @@ class CoverageEntry:
 class CoverageScan:
     diagnostics: list[dict[str, Any]]
     entries: list[CoverageEntry]
+
+
+@dataclass(frozen=True)
+class CoverageEvaluation:
+    direct_covered: set[str]
+    derived_covered: set[str]
+    blocking_uncovered: set[str]
+    refinement_warnings: set[str]
+    direct_covered_ancestor: dict[str, str]
+    coverage_by_requirement: dict[str, set[str]]
 
 
 def diagnostic(
@@ -517,13 +528,31 @@ def scan_usdm(repo_root: Path, app_namespace: str | None) -> UsdmScan:
                     diagnostics.extend(section_diagnostics)
 
                 if record_id:
+                    valid_row_ids = [row_id for row_id in row_ids if ROW_ID_RE.fullmatch(row_id)]
+                    valid_row_id_set = set(valid_row_ids)
                     for row_id in row_ids:
                         full_id = f"{record_id}#{row_id}"
-                        if not FULL_REQUIREMENT_ID_RE.match(full_id):
+                        if not ROW_ID_RE.fullmatch(row_id):
                             diagnostics.append(
-                                diagnostic("requirement_id", path_display, "Full requirement ID is malformed.", full_id)
+                                diagnostic(
+                                    "row_id",
+                                    path_display,
+                                    "Requirement row ID must match RNNN(-NN)*.",
+                                    row_id,
+                                )
                             )
                             continue
+                        if "-" in row_id:
+                            parent_row_id = row_id.rsplit("-", 1)[0]
+                            if parent_row_id not in valid_row_id_set:
+                                diagnostics.append(
+                                    diagnostic(
+                                        "row_parent",
+                                        path_display,
+                                        "Non-top-level requirement row must have its immediate parent in the same USDM requirement record.",
+                                        full_id,
+                                    )
+                                )
                         if full_id in requirement_ids:
                             diagnostics.append(
                                 diagnostic("duplicate_requirement_id", path_display, "Full requirement ID is duplicated.", full_id)
@@ -575,8 +604,8 @@ def expand_coverage_value(value: str, path: str) -> tuple[list[str], list[dict[s
 
         range_match = ROW_RANGE_RE.match(token)
         if range_match:
-            start_number = int(ROW_REF_RE.match(range_match.group("start")).group("number"))
-            end_number = int(ROW_REF_RE.match(range_match.group("end")).group("number"))
+            start_number = int(range_match.group("start").lstrip("#")[1:])
+            end_number = int(range_match.group("end").lstrip("#")[1:])
             if start_number > end_number:
                 diagnostics.append(
                     diagnostic(
@@ -595,14 +624,14 @@ def expand_coverage_value(value: str, path: str) -> tuple[list[str], list[dict[s
 
         row_match = ROW_REF_RE.match(token)
         if row_match:
-            requirement_ids.append(f"{record_id}#R{int(row_match.group('number')):03d}")
+            requirement_ids.append(f"{record_id}#{row_match.group('row')}")
             continue
 
         diagnostics.append(
             diagnostic(
                 "usdm_covers",
                 path,
-                "Compact usdm_covers row token must be #RNNN, RNNN, or RNNN-RNNN.",
+                "Compact usdm_covers row token must be a hierarchical row ID or a top-level RNNN-RNNN range.",
                 token,
             )
         )
@@ -692,6 +721,90 @@ def has_errors(diagnostics: list[dict[str, Any]]) -> bool:
     return any(item.get("severity") == "error" for item in diagnostics)
 
 
+def requirement_parent_id(requirement_id: str) -> str | None:
+    record_id, row_id = requirement_id.rsplit("#", 1)
+    if "-" not in row_id:
+        return None
+    return f"{record_id}#{row_id.rsplit('-', 1)[0]}"
+
+
+def evaluate_coverage(
+    requirement_ids: set[str],
+    coverage_entries: list[CoverageEntry],
+) -> CoverageEvaluation:
+    coverage_by_requirement: dict[str, set[str]] = {
+        requirement_id: set() for requirement_id in requirement_ids
+    }
+    for entry in coverage_entries:
+        if entry.requirement_id in coverage_by_requirement:
+            coverage_by_requirement[entry.requirement_id].add(entry.spec_ref)
+
+    direct_covered = {
+        requirement_id
+        for requirement_id, covering_refs in coverage_by_requirement.items()
+        if covering_refs
+    }
+    children: dict[str, list[str]] = {requirement_id: [] for requirement_id in requirement_ids}
+    for requirement_id in requirement_ids:
+        parent_id = requirement_parent_id(requirement_id)
+        if parent_id in children:
+            children[parent_id].append(requirement_id)
+    for child_ids in children.values():
+        child_ids.sort()
+
+    derived_covered: set[str] = set()
+    effective_cache: dict[str, bool] = {}
+
+    def effective_covered(requirement_id: str) -> bool:
+        if requirement_id in effective_cache:
+            return effective_cache[requirement_id]
+        if requirement_id in direct_covered:
+            effective_cache[requirement_id] = True
+            return True
+
+        direct_children = children[requirement_id]
+        if direct_children and all(effective_covered(child_id) for child_id in direct_children):
+            derived_covered.add(requirement_id)
+            effective_cache[requirement_id] = True
+            return True
+
+        effective_cache[requirement_id] = False
+        return False
+
+    for requirement_id in sorted(requirement_ids):
+        effective_covered(requirement_id)
+
+    blocking_uncovered: set[str] = set()
+    refinement_warnings: set[str] = set()
+    direct_covered_ancestor: dict[str, str] = {}
+    for requirement_id in sorted(requirement_ids):
+        if effective_cache[requirement_id]:
+            continue
+
+        ancestor_id = requirement_parent_id(requirement_id)
+        nearest_direct_ancestor: str | None = None
+        while ancestor_id is not None:
+            if ancestor_id in direct_covered:
+                nearest_direct_ancestor = ancestor_id
+                break
+            ancestor_id = requirement_parent_id(ancestor_id)
+
+        if nearest_direct_ancestor is None:
+            blocking_uncovered.add(requirement_id)
+        else:
+            refinement_warnings.add(requirement_id)
+            direct_covered_ancestor[requirement_id] = nearest_direct_ancestor
+
+    return CoverageEvaluation(
+        direct_covered=direct_covered,
+        derived_covered=derived_covered,
+        blocking_uncovered=blocking_uncovered,
+        refinement_warnings=refinement_warnings,
+        direct_covered_ancestor=direct_covered_ancestor,
+        coverage_by_requirement=coverage_by_requirement,
+    )
+
+
 def validate_usdm(repo_root: Path, app_namespace: str | None) -> dict[str, Any]:
     scan = scan_usdm(repo_root, app_namespace)
     return {
@@ -708,8 +821,13 @@ def check_usdm_coverage(repo_root: Path, app_namespace: str | None, include_dang
     coverage_scan = scan_coverage(repo_root, None)
     requirement_ids = usdm_scan.requirement_ids
     all_requirement_ids = all_usdm_scan.requirement_ids
-    covered_ids = {entry.requirement_id for entry in coverage_scan.entries if entry.requirement_id in requirement_ids}
-    uncovered = sorted(requirement_ids - covered_ids)
+    evaluation = evaluate_coverage(all_requirement_ids, coverage_scan.entries)
+
+    direct_covered_ids = evaluation.direct_covered & requirement_ids
+    derived_covered_ids = evaluation.derived_covered & requirement_ids
+    covered_ids = direct_covered_ids | derived_covered_ids
+    uncovered = sorted(evaluation.blocking_uncovered & requirement_ids)
+    refinement_warnings = sorted(evaluation.refinement_warnings & requirement_ids)
     dangling_entries = [
         {
             "requirement_id": entry.requirement_id,
@@ -739,7 +857,10 @@ def check_usdm_coverage(repo_root: Path, app_namespace: str | None, include_dang
         "ok": not has_errors(diagnostics) and not uncovered and not dangling_entries,
         "requirements": len(requirement_ids),
         "covered": len(covered_ids),
+        "direct_covered": len(direct_covered_ids),
+        "derived_covered": len(derived_covered_ids),
         "uncovered": uncovered,
+        "refinement_warnings": refinement_warnings,
         "dangling": dangling_entries if include_dangling else [],
         "diagnostics": diagnostics,
     }
@@ -751,7 +872,9 @@ def usdm_covered_by(repo_root: Path, requirement_id: str) -> dict[str, Any]:
             "ok": False,
             "requirement_id": requirement_id,
             "exists": False,
+            "coverage_state": None,
             "covered_by": [],
+            "direct_covered_ancestor": None,
             "diagnostics": [
                 diagnostic(
                     "requirement_id",
@@ -766,20 +889,57 @@ def usdm_covered_by(repo_root: Path, requirement_id: str) -> dict[str, Any]:
     usdm_scan = scan_usdm(repo_root, app_namespace)
     coverage_scan = scan_coverage(repo_root, None)
     exists = requirement_id in usdm_scan.requirement_ids
-    covered_by = sorted(
-        {entry.spec_ref for entry in coverage_scan.entries if entry.requirement_id == requirement_id}
-    )
     diagnostics = [*usdm_scan.diagnostics, *coverage_scan.diagnostics]
     if not exists:
         diagnostics.append(
             diagnostic("missing_requirement", "", "Requested requirement ID was not found.", requirement_id)
         )
+        return {
+            "ok": False,
+            "requirement_id": requirement_id,
+            "exists": False,
+            "coverage_state": None,
+            "covered_by": [],
+            "direct_covered_ancestor": None,
+            "diagnostics": diagnostics,
+        }
+
+    if has_errors(diagnostics):
+        return {
+            "ok": False,
+            "requirement_id": requirement_id,
+            "exists": True,
+            "coverage_state": None,
+            "covered_by": [],
+            "direct_covered_ancestor": None,
+            "diagnostics": diagnostics,
+        }
+
+    evaluation = evaluate_coverage(usdm_scan.requirement_ids, coverage_scan.entries)
+    if requirement_id in evaluation.direct_covered:
+        coverage_state = "direct"
+        covered_by = sorted(evaluation.coverage_by_requirement[requirement_id])
+        direct_covered_ancestor = None
+    elif requirement_id in evaluation.derived_covered:
+        coverage_state = "derived"
+        covered_by = []
+        direct_covered_ancestor = None
+    elif requirement_id in evaluation.refinement_warnings:
+        coverage_state = "warning"
+        covered_by = []
+        direct_covered_ancestor = evaluation.direct_covered_ancestor[requirement_id]
+    else:
+        coverage_state = "uncovered"
+        covered_by = []
+        direct_covered_ancestor = None
 
     return {
-        "ok": exists and not has_errors(diagnostics),
+        "ok": True,
         "requirement_id": requirement_id,
-        "exists": exists,
+        "exists": True,
+        "coverage_state": coverage_state,
         "covered_by": covered_by,
+        "direct_covered_ancestor": direct_covered_ancestor,
         "diagnostics": diagnostics,
     }
 
@@ -788,11 +948,12 @@ def row_id_from_requirement(requirement_id: str) -> str:
     return f"#{requirement_id.rsplit('#', 1)[1]}"
 
 
-def row_sort_key(row_id: str) -> tuple[int, str]:
-    match = re.match(r"^#R(?P<number>\d+)$", row_id)
-    if match:
-        return (int(match.group("number")), row_id)
-    return (sys.maxsize, row_id)
+def row_sort_key(row_id: str) -> tuple[int, ...]:
+    normalized = row_id.removeprefix("#")
+    if not ROW_ID_RE.fullmatch(normalized):
+        return (sys.maxsize,)
+    top_level, *child_segments = normalized.removeprefix("R").split("-")
+    return tuple(int(segment) for segment in (top_level, *child_segments))
 
 
 def requirement_matches_scope(requirement_id: str, scope_id: str) -> bool:
@@ -811,16 +972,23 @@ def check_usdm_scope_coverage(
     repo_root: Path | str | None = None,
     include_covered: bool = True,
     include_not_covered: bool = True,
+    include_warnings: bool = True,
     include_empty_records: bool = False,
 ) -> dict[str, Any]:
+    empty_counts = {
+        "records": 0,
+        "requirements": 0,
+        "covered_requirements": 0,
+        "direct_covered_requirements": 0,
+        "derived_covered_requirements": 0,
+        "not_covered_requirements": 0,
+        "refinement_warning_requirements": 0,
+    }
     if not repo_root:
         return {
             "ok": False,
             "scope_ids": scope_ids,
-            "records": 0,
-            "requirements": 0,
-            "covered_requirements": 0,
-            "not_covered_requirements": 0,
+            **empty_counts,
             "items": [],
             "diagnostics": [
                 diagnostic("repo_root", "", "repo_root is missing or unreadable.")
@@ -833,10 +1001,7 @@ def check_usdm_scope_coverage(
         return {
             "ok": False,
             "scope_ids": scope_ids,
-            "records": 0,
-            "requirements": 0,
-            "covered_requirements": 0,
-            "not_covered_requirements": 0,
+            **empty_counts,
             "items": [],
             "diagnostics": root_error["diagnostics"],
         }
@@ -845,10 +1010,7 @@ def check_usdm_scope_coverage(
         return {
             "ok": False,
             "scope_ids": scope_ids,
-            "records": 0,
-            "requirements": 0,
-            "covered_requirements": 0,
-            "not_covered_requirements": 0,
+            **empty_counts,
             "items": [],
             "diagnostics": [
                 diagnostic(
@@ -865,22 +1027,33 @@ def check_usdm_scope_coverage(
     selected_records = sorted({row.usdm_id for row in selected_requirements})
 
     coverage_scan = scan_coverage(root, None)
-    coverage_by_requirement: dict[str, set[str]] = {
-        requirement_id: set() for requirement_id in selected_ids
-    }
-    for entry in coverage_scan.entries:
-        if entry.requirement_id in coverage_by_requirement:
-            coverage_by_requirement[entry.requirement_id].add(entry.spec_ref)
+    all_usdm_scan = scan_usdm(root, None)
+    all_requirements = all_usdm_scan.requirement_ids
+    evaluation = evaluate_coverage(all_requirements, coverage_scan.entries)
 
-    covered_ids = {
-        requirement_id
-        for requirement_id, covering_refs in coverage_by_requirement.items()
-        if covering_refs
-    }
-    not_covered_ids = selected_ids - covered_ids
+    direct_covered_ids = evaluation.direct_covered & selected_ids
+    derived_covered_ids = evaluation.derived_covered & selected_ids
+    covered_ids = direct_covered_ids | derived_covered_ids
+    not_covered_ids = evaluation.blocking_uncovered & selected_ids
+    warning_ids = evaluation.refinement_warnings & selected_ids
 
-    all_requirements = scan_usdm(root, None).requirement_ids
+    selected_paths = {row.path for row in selected_requirements}
+    selected_app_scopes = {
+        match.group(1)
+        for scope_id in scope_ids
+        if (match := USDM_APP_SCOPE_ID_RE.match(scope_id)) is not None
+    }
     diagnostics = list(expansion.diagnostics)
+    diagnostics.extend(
+        item
+        for item in all_usdm_scan.diagnostics
+        if item.get("path") in selected_paths
+        or any(
+            item.get("path", "").startswith(f"{app}/records/usdm/")
+            for app in selected_app_scopes
+        )
+    )
+    diagnostics.extend(coverage_scan.diagnostics)
     for entry in coverage_scan.entries:
         if entry.requirement_id in all_requirements:
             continue
@@ -907,34 +1080,57 @@ def check_usdm_scope_coverage(
         ]
         item: dict[str, Any] = {"record_id": record_id}
         covered: dict[str, list[str]] = {}
+        derived_covered: list[str] = []
         not_covered: list[str] = []
+        refinement_warnings: list[str] = []
 
         for row in sorted(
             record_rows,
             key=lambda row: row_sort_key(row_id_from_requirement(row.requirement_id)),
         ):
-            row_id = row_id_from_requirement(row.requirement_id)
-            covering_refs = sorted(coverage_by_requirement[row.requirement_id])
-            if covering_refs:
-                covered[row_id] = covering_refs
-            else:
+            requirement_id = row.requirement_id
+            row_id = row_id_from_requirement(requirement_id)
+            if requirement_id in direct_covered_ids:
+                covered[row_id] = sorted(evaluation.coverage_by_requirement[requirement_id])
+            elif requirement_id in derived_covered_ids:
+                derived_covered.append(row_id)
+            elif requirement_id in warning_ids:
+                refinement_warnings.append(row_id)
+            elif requirement_id in not_covered_ids:
                 not_covered.append(row_id)
 
         if include_covered and covered:
             item["covered"] = covered
+        if include_covered and derived_covered:
+            item["derived_covered"] = derived_covered
         if include_not_covered and not_covered:
-            item["not_covered"] = sorted(not_covered, key=row_sort_key)
+            item["not_covered"] = not_covered
+        if include_warnings and refinement_warnings:
+            item["refinement_warnings"] = refinement_warnings
+
         visible_fields = set(item) - {"record_id"}
+        if not visible_fields and include_empty_records:
+            if include_covered:
+                item["covered"] = {}
+                item["derived_covered"] = []
+            if include_not_covered:
+                item["not_covered"] = []
+            if include_warnings:
+                item["refinement_warnings"] = []
+            visible_fields = set(item) - {"record_id"}
         if visible_fields or include_empty_records:
             items.append(item)
 
     return {
-        "ok": not has_errors(diagnostics),
+        "ok": not has_errors(diagnostics) and not not_covered_ids,
         "scope_ids": scope_ids,
         "records": len(selected_records),
         "requirements": len(selected_ids),
         "covered_requirements": len(covered_ids),
+        "direct_covered_requirements": len(direct_covered_ids),
+        "derived_covered_requirements": len(derived_covered_ids),
         "not_covered_requirements": len(not_covered_ids),
+        "refinement_warning_requirements": len(warning_ids),
         "items": sorted(items, key=lambda item: item["record_id"]),
         "diagnostics": diagnostics,
     }
@@ -1008,6 +1204,17 @@ def build_parser() -> argparse.ArgumentParser:
         dest="include_not_covered",
         action="store_false",
     )
+    scope_coverage_parser.add_argument(
+        "--include-warnings",
+        dest="include_warnings",
+        action="store_true",
+        default=True,
+    )
+    scope_coverage_parser.add_argument(
+        "--no-include-warnings",
+        dest="include_warnings",
+        action="store_false",
+    )
     scope_coverage_parser.add_argument("--include-empty-records", action="store_true", default=False)
 
     return parser
@@ -1034,6 +1241,7 @@ def main(argv: list[str] | None = None) -> int:
                 repo_root=args.repo_root,
                 include_covered=args.include_covered,
                 include_not_covered=args.include_not_covered,
+                include_warnings=args.include_warnings,
                 include_empty_records=args.include_empty_records,
             )
         else:
