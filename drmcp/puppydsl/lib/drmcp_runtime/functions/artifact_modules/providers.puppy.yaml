@@ -1,0 +1,10 @@
+# responsibility: Defines runtime provider functions that expose the frozen artifact module catalog.
+# excludes: Artifact module declaration authoring, repository configuration, and operation-specific module consumption.
+
+functions:
+  drmcp_runtime.artifact_modules._get_catalog:
+    detail: Returns the frozen artifact module catalog activated during runtime bootstrap.
+    signature: >-
+      () -> ArtifactModuleCatalog
+    implementation:
+      stub: native

@@ -1,0 +1,10 @@
+# responsibility: Declares the native MCP server boundary used by the DRMCP process entry function.
+# excludes: Public tool registration data, operation implementation, and transport-specific logic exposed to PuppyDSL.
+
+functions:
+  drmcp_runtime.mcp.serve:
+    detail: Registers the configured public MCP tools and serves requests over the process transport.
+    signature: >-
+      () -> void
+    implementation:
+      native: mcp.serve

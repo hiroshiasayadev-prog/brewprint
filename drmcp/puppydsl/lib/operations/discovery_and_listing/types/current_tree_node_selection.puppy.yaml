@@ -1,0 +1,15 @@
+# responsibility: Defines the shared successful and not-found outcomes used when Discovery and Listing operations select one exact current tree node.
+# excludes: Tree-selector validation, current-record state construction, operation-specific success projection, runtime failures, and tree traversal behavior.
+
+types:
+  SelectedCurrentTreeNode:
+    detail: Carries one selected current tree index and its exact current node for operation-specific navigation or traversal.
+    record:
+      tree: TreeArtifactRecordIndex
+      node: CurrentTreeNode
+
+  CurrentTreeNodeSelectionOutcome:
+    detail: Carries either one selected current tree node or the shared node-not-found context for the exact supplied selector.
+    union:
+      - SelectedCurrentTreeNode
+      - TreeNodeNotFoundContext

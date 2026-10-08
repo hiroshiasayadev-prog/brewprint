@@ -1,0 +1,13 @@
+# responsibility: Defines dictionary lookup functions provided by the PuppyDSL standard library.
+# excludes: Dictionary construction, mutation, iteration, aggregation, and application-specific lookup outcomes.
+
+functions:
+  stdlib.dictionary.get<K, V>:
+    detail: Returns the value associated with one exact dictionary key or absence when that key is not present.
+    signature: >-
+      (
+        dictionary: dict<K, V>,
+        key: K
+      ) -> optional<V>
+    implementation:
+      stub: native

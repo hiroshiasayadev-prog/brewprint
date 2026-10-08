@@ -1,0 +1,37 @@
+# responsibility: Defines artifact-wide identity, namespace, discriminator, and sequential-segment name types shared across artifact kinds and operations.
+# excludes: Runtime configuration paths, module registration records, source content, and operation-specific request or result types.
+
+types:
+  AppNamespace:
+    detail: Identifies the application, subsystem, or cross-application scope that owns Design Records.
+    scalar: string
+
+  DomainNamespace:
+    detail: Identifies one concern area within an app namespace.
+    scalar: string
+
+  ArtifactKind:
+    detail: Identifies one semantic Design Record artifact kind used for module and operation routing independently of canonical-reference discriminator literals.
+    scalar: string
+
+  SequentialReferenceDiscriminator:
+    detail: Identifies the routing literal encoded in the artifact-kind position of one sequential canonical reference.
+    scalar: string
+
+  TreeReferenceDiscriminator:
+    detail: Identifies the routing literal encoded before the colon of one tree canonical reference.
+    scalar: string
+
+  SequentialSegmentName:
+    detail: Identifies one artifact-specific sequential reference segment declared by an artifact module.
+    scalar: string
+
+  RecordStructure:
+    detail: Identifies the physical and logical organization used by one artifact kind.
+    enum:
+      - sequential
+      - tree
+
+  CanonicalRecordReference:
+    detail: Identifies one canonical Design Record identity, including a current tree node that may have no corresponding addressable record.
+    scalar: string

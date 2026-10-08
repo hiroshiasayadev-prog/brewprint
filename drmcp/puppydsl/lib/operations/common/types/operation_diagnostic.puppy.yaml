@@ -1,0 +1,107 @@
+# responsibility: Defines shared expected operation diagnostic codes, code-specific context shapes, and the top-level error envelope returned by PuppyDSL operations.
+# excludes: Runtime failures reported by the MCP tool runner, selector-level batch diagnostics, warnings, and operation-specific success results.
+
+types:
+  OperationDiagnosticCode:
+    detail: Identifies one expected request or current-state error exposed by the completed Discovery and Listing operations.
+    enum:
+      - invalid_selector
+      - invalid_projection
+      - invalid_limit
+      - invalid_offset
+      - invalid_depth
+      - invalid_node_limit
+      - node_not_found
+
+  MissingSelectorFieldsContext:
+    detail: Carries required selector field names omitted from one schema-valid operation request in operation request-field order.
+    record:
+      missing_selector_fields: list<string>
+
+  AcceptedSelectorCombinationsContext:
+    detail: Carries every selector field-name combination accepted by one operation in selector-progression order.
+    record:
+      accepted_selector_combinations: list<list<string>>
+
+  UnavailableAppNamespaceContext:
+    detail: Carries one unavailable supplied app namespace and every currently available app namespace in canonical order.
+    record:
+      app_namespace: AppNamespace
+      available_app_namespaces: list<AppNamespace>
+
+  UnavailableArtifactKindContext:
+    detail: Carries one unavailable supplied artifact kind and every artifact kind available within the selected app in canonical order.
+    record:
+      artifact_kind: ArtifactKind
+      available_artifact_kinds: list<ArtifactKind>
+
+  UnavailableSequentialArtifactKindContext:
+    detail: Carries one unavailable or ineligible supplied artifact kind and every sequential artifact kind available within the selected app in canonical order.
+    record:
+      artifact_kind: ArtifactKind
+      available_sequential_artifact_kinds: list<ArtifactKind>
+
+  UnavailableDomainNamespaceContext:
+    detail: Carries one unavailable supplied sequential domain and every domain available within the selected app and artifact kind in canonical order.
+    record:
+      domain_namespace: DomainNamespace
+      available_domain_namespaces: list<DomainNamespace>
+
+  InvalidTreeNodeSelectorContext:
+    detail: Carries one supplied node reference rejected as a tree selector and every accepted tree record-kind discriminator in canonical order.
+    record:
+      node_ref: CanonicalRecordReference
+      accepted_tree_record_kinds: list<TreeReferenceDiscriminator>
+
+  InvalidProjectionContext:
+    detail: Carries unknown supplied projection values in request occurrence order and every accepted projection value in canonical order.
+    record:
+      invalid_projection_values: list<string>
+      available_projection_values: list<string>
+
+  BoundedIntegerContext:
+    detail: Carries the accepted inclusive integer bounds, default, and exact supplied value for one bounded request field.
+    record:
+      minimum: integer
+      maximum: integer
+      default: integer
+      actual: integer
+
+  MinimumIntegerContext:
+    detail: Carries the accepted integer minimum, default, and exact supplied value for one lower-bounded request field.
+    record:
+      minimum: integer
+      default: integer
+      actual: integer
+
+  TreeNodeNotFoundContext:
+    detail: Carries one syntactically valid tree node reference that identifies no available current tree node.
+    record:
+      node_ref: CanonicalRecordReference
+
+  OperationDiagnosticContext:
+    detail: Carries exactly one context shape permitted by an expected Discovery and Listing diagnostic code.
+    union:
+      - MissingSelectorFieldsContext
+      - AcceptedSelectorCombinationsContext
+      - UnavailableAppNamespaceContext
+      - UnavailableArtifactKindContext
+      - UnavailableSequentialArtifactKindContext
+      - UnavailableDomainNamespaceContext
+      - InvalidTreeNodeSelectorContext
+      - InvalidProjectionContext
+      - BoundedIntegerContext
+      - MinimumIntegerContext
+      - TreeNodeNotFoundContext
+
+  OperationDiagnostic:
+    detail: Carries one expected operation error code, human-readable message, and required code-specific context.
+    record:
+      code: OperationDiagnosticCode
+      message: string
+      context: OperationDiagnosticContext
+
+  OperationErrorResponse:
+    detail: Carries exactly one expected top-level operation diagnostic and no partial success result.
+    record:
+      error: OperationDiagnostic

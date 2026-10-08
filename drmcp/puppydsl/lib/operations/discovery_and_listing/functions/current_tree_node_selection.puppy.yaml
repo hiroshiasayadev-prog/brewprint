@@ -1,0 +1,55 @@
+# responsibility: Defines shared exact current-tree-node selection and the shared selector and not-found error responses used by tree navigation operations.
+# excludes: Tree-selector parsing and defaulting, current-record state construction, operation-specific traversal or projection, runtime failures, and transport serialization.
+
+functions:
+  operation.discovery_and_listing._select_current_tree_node:
+    detail: Selects one exact current tree index and node from validated app, artifact-kind, and canonical-reference selectors or returns the shared node-not-found context without exposing failed intermediate scope detail.
+    signature: >-
+      (
+        state: CurrentRecordState,
+        node_ref: CanonicalRecordReference,
+        app_namespace: AppNamespace,
+        artifact_kind: ArtifactKind
+      ) -> CurrentTreeNodeSelectionOutcome
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._form_invalid_tree_node_selector_error:
+    detail: Forms the shared top-level invalid-selector response for a malformed node reference or one that does not identify a registered tree artifact kind.
+    signature: >-
+      (
+        context: InvalidTreeNodeSelectorContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.invalid_selector,
+            message: "The supplied node reference is not a valid tree-node selector.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response
+
+  operation.discovery_and_listing._form_current_tree_node_not_found_error:
+    detail: Forms the shared top-level node-not-found response for one syntactically valid tree selector that identifies no available current tree node.
+    signature: >-
+      (
+        context: TreeNodeNotFoundContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.node_not_found,
+            message: "The requested current tree node was not found.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response

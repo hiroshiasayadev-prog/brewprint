@@ -1,0 +1,12 @@
+# responsibility: Defines the runtime context that owns validated repository configuration for configured current sources.
+# excludes: Launch argument ownership, artifact module catalog state, and operation-specific repository discovery inventories.
+
+contexts:
+  repository_configuration:
+    detail: Owns the repository configuration whose configured current source roots have been confirmed.
+    provides:
+      configuration:
+        provider: >-
+          drmcp_runtime.config._validate_and_get_repository_configuration(
+            repository_root: launch.repository_root
+          )

@@ -1,0 +1,15 @@
+# responsibility: Defines keyed construction entries used to assemble structure-specific current-record indexes.
+# excludes: Physical repository discovery, candidate formation, identity grouping, public operation results, and index traversal behavior.
+
+types:
+  CurrentArtifactRecordIndexEntry:
+    detail: Carries one available artifact-kind key together with its structure-specific current-record index.
+    record:
+      artifact_kind: ArtifactKind
+      index: CurrentArtifactRecordIndex
+
+  CurrentAppRecordIndexEntry:
+    detail: Carries one configured app-namespace key together with its complete current artifact index.
+    record:
+      app_namespace: AppNamespace
+      index: CurrentAppRecordIndex

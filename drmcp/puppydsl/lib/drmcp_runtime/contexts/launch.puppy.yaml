@@ -1,0 +1,9 @@
+# responsibility: Defines the runtime context that owns immutable DRMCP process launch values.
+# excludes: Repository configuration loading, artifact module catalog construction, and operation-scoped repository data.
+
+contexts:
+  launch:
+    detail: Owns immutable values obtained from the DRMCP process launch arguments.
+    provides:
+      repository_root:
+        provider: drmcp_runtime.launch._get_repository_root()

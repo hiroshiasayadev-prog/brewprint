@@ -1,0 +1,24 @@
+# responsibility: Defines artifact-module-confirmed sequential and tree reference representations shared by current-record construction and operations.
+# excludes: Shared routing evidence, malformed-reference outcomes, canonical formatting, and current-record resolution.
+
+types:
+  SequentialArtifactReference:
+    detail: Carries one confirmed sequential reference with its semantic artifact-specific segments named by the selected artifact module.
+    record:
+      app_namespace: AppNamespace
+      artifact_kind: ArtifactKind
+      domain_namespace: DomainNamespace
+      segments: dict<SequentialSegmentName, string>
+
+  TreeArtifactReference:
+    detail: Carries one confirmed tree reference as its record-kind discriminator, app namespace, and ordered canonical path segments.
+    record:
+      record_kind: TreeReferenceDiscriminator
+      app_namespace: AppNamespace
+      path_segments: list<TreeNodeSegment>
+
+  ArtifactReference:
+    detail: Carries one structure-specific artifact-module-confirmed canonical reference.
+    union:
+      - SequentialArtifactReference
+      - TreeArtifactReference

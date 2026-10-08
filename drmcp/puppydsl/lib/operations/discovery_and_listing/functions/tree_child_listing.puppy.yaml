@@ -1,0 +1,289 @@
+# responsibility: Defines tree child-listing request validation, current-node selection, terminal detection, bounded direct-child projection, and shared expected-error formation.
+# excludes: Current-record state construction, tree-index construction, runtime-failure reporting, transport serialization, recursive tree overview, and other discovery-and-listing operations.
+
+functions:
+  operation.discovery_and_listing._validate_tree_child_listing_request:
+    detail: Validates one exact node reference, tree-kind eligibility, projection values, limit bounds, and offset bounds in operation-defined order and applies every request default.
+    signature: >-
+      (
+        request: TreeChildListingRequest,
+        catalog: ArtifactModuleCatalog
+      ) -> TreeChildListingRequestValidationOutcome
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._has_direct_tree_children:
+    detail: Reports whether one selected current tree node has at least one direct current child before range application.
+    signature: >-
+      (
+        node: CurrentTreeNode
+      ) -> boolean
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._form_terminal_tree_node:
+    detail: Forms the normal terminal-node result for one selected current tree node with no direct current children.
+    signature: >-
+      (
+        node_ref: CanonicalRecordReference
+      ) -> TerminalTreeNode
+    implementation:
+      steps:
+        terminal: >-
+          TerminalTreeNode{
+            node_ref: node_ref
+          }
+      return: terminal
+
+  operation.discovery_and_listing._build_tree_child_listing_result:
+    detail: Orders direct children by canonical segment, applies offset and limit, resolves structural and record presence, projects requested title and status fields, and computes complete range indicators.
+    signature: >-
+      (
+        node_ref: CanonicalRecordReference,
+        selected: SelectedCurrentTreeNode,
+        records: dict<CanonicalRecordReference, CurrentRecord>,
+        offset: integer,
+        limit: integer,
+        projection: TreeChildProjectionSelection
+      ) -> TreeChildListingResult
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._form_invalid_tree_child_projection_error:
+    detail: Forms the shared top-level invalid-projection response for unknown tree child-listing projection values.
+    signature: >-
+      (
+        context: InvalidProjectionContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.invalid_projection,
+            message: "The tree child-listing projection contains unsupported values.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response
+
+  operation.discovery_and_listing._form_invalid_tree_child_limit_error:
+    detail: Forms the shared top-level invalid-limit response for a tree child-listing limit outside the accepted inclusive bounds.
+    signature: >-
+      (
+        context: BoundedIntegerContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.invalid_limit,
+            message: "The tree child-listing limit is outside the accepted range.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response
+
+  operation.discovery_and_listing._form_invalid_tree_child_offset_error:
+    detail: Forms the shared top-level invalid-offset response for a negative tree child-listing offset.
+    signature: >-
+      (
+        context: MinimumIntegerContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.invalid_offset,
+            message: "The tree child-listing offset must not be negative.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response
+
+  operation.discovery_and_listing._as_tree_child_listing_outcome:
+    detail: Preserves one complete child-listing result, normal terminal-node result, or shared top-level error response as the operation outcome union.
+    signature: >-
+      (
+        outcome: TreeChildListingOutcome
+      ) -> TreeChildListingOutcome
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._handle_selected_tree_child_listing_node:
+    detail: Produces the normal terminal-node outcome or the complete bounded direct-child listing for one selected current tree node.
+    requires:
+      - current_record.state
+    signature: >-
+      (
+        request: ValidatedTreeChildListingRequest,
+        selected: SelectedCurrentTreeNode
+      ) -> TreeChildListingOutcome
+    implementation:
+      steps:
+        has_children: >-
+          operation.discovery_and_listing._has_direct_tree_children(
+            node: selected.node
+          )
+
+        outcome:
+          if:
+            condition: has_children
+            then:
+              steps:
+                result: >-
+                  operation.discovery_and_listing._build_tree_child_listing_result(
+                    node_ref: request.node_ref,
+                    selected: selected,
+                    records: current_record.state.records,
+                    offset: request.offset,
+                    limit: request.limit,
+                    projection: request.projection
+                  )
+                listed: >-
+                  operation.discovery_and_listing._as_tree_child_listing_outcome(
+                    outcome: result
+                  )
+              return: listed
+            else:
+              steps:
+                terminal: >-
+                  operation.discovery_and_listing._form_terminal_tree_node(
+                    node_ref: request.node_ref
+                  )
+                selected_terminal: >-
+                  operation.discovery_and_listing._as_tree_child_listing_outcome(
+                    outcome: terminal
+                  )
+              return: selected_terminal
+      return: outcome
+
+  operation.discovery_and_listing._handle_validated_tree_child_listing:
+    detail: Selects one exact current tree node and produces its terminal or bounded direct-child result, or the shared node-not-found response.
+    requires:
+      - current_record.state
+    signature: >-
+      (
+        request: ValidatedTreeChildListingRequest
+      ) -> TreeChildListingOutcome
+    implementation:
+      steps:
+        node_selection: >-
+          operation.discovery_and_listing._select_current_tree_node(
+            state: current_record.state,
+            node_ref: request.node_ref,
+            app_namespace: request.app_namespace,
+            artifact_kind: request.artifact_kind
+          )
+
+        outcome:
+          switch: node_selection
+          cases:
+            SelectedCurrentTreeNode:
+              steps:
+                selected: >-
+                  operation.discovery_and_listing._handle_selected_tree_child_listing_node(
+                    request: request,
+                    selected: node_selection
+                  )
+              return: selected
+
+            TreeNodeNotFoundContext:
+              steps:
+                error: >-
+                  operation.discovery_and_listing._form_current_tree_node_not_found_error(
+                    context: node_selection
+                  )
+                unavailable: >-
+                  operation.discovery_and_listing._as_tree_child_listing_outcome(
+                    outcome: error
+                  )
+              return: unavailable
+      return: outcome
+
+  operation.discovery_and_listing.list_tree_children:
+    detail: Lists one bounded range of direct current tree children for an exact canonical tree-node selector or reports the normal terminal-node result.
+    requires:
+      - artifact_modules.catalog
+    opens:
+      - repository_discovery
+      - current_record
+    signature: >-
+      (
+        request: TreeChildListingRequest
+      ) -> TreeChildListingOutcome
+    implementation:
+      steps:
+        validation: >-
+          operation.discovery_and_listing._validate_tree_child_listing_request(
+            request: request,
+            catalog: artifact_modules.catalog
+          )
+
+        outcome:
+          switch: validation
+          cases:
+            ValidatedTreeChildListingRequest:
+              steps:
+                selected: >-
+                  operation.discovery_and_listing._handle_validated_tree_child_listing(
+                    request: validation
+                  )
+              return: selected
+
+            InvalidTreeNodeSelectorContext:
+              steps:
+                error: >-
+                  operation.discovery_and_listing._form_invalid_tree_node_selector_error(
+                    context: validation
+                  )
+                selected: >-
+                  operation.discovery_and_listing._as_tree_child_listing_outcome(
+                    outcome: error
+                  )
+              return: selected
+
+            InvalidProjectionContext:
+              steps:
+                error: >-
+                  operation.discovery_and_listing._form_invalid_tree_child_projection_error(
+                    context: validation
+                  )
+                selected: >-
+                  operation.discovery_and_listing._as_tree_child_listing_outcome(
+                    outcome: error
+                  )
+              return: selected
+
+            BoundedIntegerContext:
+              steps:
+                error: >-
+                  operation.discovery_and_listing._form_invalid_tree_child_limit_error(
+                    context: validation
+                  )
+                selected: >-
+                  operation.discovery_and_listing._as_tree_child_listing_outcome(
+                    outcome: error
+                  )
+              return: selected
+
+            MinimumIntegerContext:
+              steps:
+                error: >-
+                  operation.discovery_and_listing._form_invalid_tree_child_offset_error(
+                    context: validation
+                  )
+                selected: >-
+                  operation.discovery_and_listing._as_tree_child_listing_outcome(
+                    outcome: error
+                  )
+              return: selected
+      return: outcome

@@ -1,0 +1,7 @@
+# responsibility: Defines runtime repository-configuration path identifiers.
+# excludes: Shared app and domain namespaces, process launch paths, operation-resolved paths, and artifact module placement.
+
+types:
+  RecordsRoot:
+    detail: Identifies one normalized repository-relative Design Records root.
+    scalar: string

@@ -1,0 +1,16 @@
+# responsibility: Defines repository-wide current-record candidate claims grouped by canonical record identity before uniqueness selection.
+# excludes: Source traversal, candidate formation, canonical-reference formatting, conflict diagnostics, validation findings, and current-record indexes.
+
+types:
+  CurrentRecordCandidateClaim:
+    detail: Carries one artifact-module candidate together with canonical identity, repository-relative source provenance, and reusable lightweight source projections attached by current-record construction.
+    record:
+      reference: ArtifactReference
+      canonical_ref: CanonicalRecordReference
+      source_path: RepositoryRelativeSourcePath
+      source_header: CurrentRecordSourceHeader
+
+  CurrentRecordCandidateClaims:
+    detail: Groups every formed current-record candidate claim by canonical record identity for repository-wide uniqueness selection.
+    record:
+      by_canonical_ref: dict<CanonicalRecordReference, list<CurrentRecordCandidateClaim>>

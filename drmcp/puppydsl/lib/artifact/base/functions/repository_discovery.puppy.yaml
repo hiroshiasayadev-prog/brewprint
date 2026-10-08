@@ -1,0 +1,188 @@
+# responsibility: Defines the visible routing from configured current sources and artifact module declarations into shared physical repository discovery.
+# excludes: Runtime root validation, public operation projection, record parsing, current-record admission, and low-level filesystem traversal.
+
+functions:
+  artifact.base.discovery._discover_sequential_artifact_root:
+    detail: Derives one sequential artifact source root from its module declaration and captures its physical Markdown-source directory tree when available.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        records_root: RecordsRoot,
+        declaration: SequentialArtifactModuleDeclaration
+      ) -> SequentialArtifactSourceRootDiscovery
+    implementation:
+      stub: native
+
+  artifact.base.discovery._discover_tree_artifact_root:
+    detail: Derives one tree artifact source root from its module declaration and captures its physical Markdown-source directory tree when available.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        records_root: RecordsRoot,
+        declaration: TreeArtifactModuleDeclaration
+      ) -> TreeArtifactSourceRootDiscovery
+    implementation:
+      stub: native
+
+  artifact.base.discovery._is_artifact_source_root_available:
+    detail: Reports the retained availability state of one structure-specific artifact source-root discovery.
+    signature: >-
+      (
+        discovery: ArtifactSourceRootDiscovery
+      ) -> boolean
+    implementation:
+      steps:
+        available:
+          switch: discovery
+          cases:
+            SequentialArtifactSourceRootDiscovery:
+              steps:
+                retained: discovery.available
+              return: retained
+
+            TreeArtifactSourceRootDiscovery:
+              steps:
+                retained: discovery.available
+              return: retained
+      return: available
+
+  artifact.base.discovery._index_artifact_root_discoveries:
+    detail: Indexes one complete set of artifact-root discovery entries by artifact kind and rejects duplicate keys.
+    signature: >-
+      (
+        entries: list<ArtifactSourceRootDiscoveryEntry>
+      ) -> dict<ArtifactKind, ArtifactSourceRootDiscovery>
+    implementation:
+      stub: native
+
+  artifact.base.discovery._index_configured_app_discoveries:
+    detail: Indexes one complete set of configured app discovery entries by app namespace and rejects duplicate keys.
+    signature: >-
+      (
+        entries: list<ConfiguredAppDiscoveryEntry>
+      ) -> dict<AppNamespace, ConfiguredAppDiscovery>
+    implementation:
+      stub: native
+
+  artifact.base.discovery._discover_artifact_root_entry:
+    detail: Routes one activated artifact module declaration to its structure-specific physical source-root discovery and preserves the catalog key.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        records_root: RecordsRoot,
+        artifact_kind: ArtifactKind,
+        module: ArtifactModule
+      ) -> ArtifactSourceRootDiscoveryEntry
+    implementation:
+      steps:
+        entry:
+          switch: module
+          cases:
+            SequentialArtifactModule:
+              steps:
+                declaration: module.declaration
+                discovery: >-
+                  artifact.base.discovery._discover_sequential_artifact_root(
+                    repository_root: repository_root,
+                    records_root: records_root,
+                    declaration: declaration
+                  )
+                formed: >-
+                  ArtifactSourceRootDiscoveryEntry{
+                    artifact_kind: artifact_kind,
+                    discovery: discovery
+                  }
+              return: formed
+
+            TreeArtifactModule:
+              steps:
+                declaration: module.declaration
+                discovery: >-
+                  artifact.base.discovery._discover_tree_artifact_root(
+                    repository_root: repository_root,
+                    records_root: records_root,
+                    declaration: declaration
+                  )
+                formed: >-
+                  ArtifactSourceRootDiscoveryEntry{
+                    artifact_kind: artifact_kind,
+                    discovery: discovery
+                  }
+              return: formed
+      return: entry
+
+  artifact.base.discovery._discover_configured_app:
+    detail: Discovers every activated artifact module beneath one explicitly configured records root and indexes the results by artifact kind.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        current_source: ConfiguredCurrentSource,
+        catalog: ArtifactModuleCatalog
+      ) -> ConfiguredAppDiscovery
+    implementation:
+      steps:
+        records_root: current_source.records_root
+        modules: catalog.modules
+        entries:
+          for:
+            key: artifact_kind
+            value: module
+            in: modules
+            steps:
+              entry: >-
+                artifact.base.discovery._discover_artifact_root_entry(
+                  repository_root: repository_root,
+                  records_root: records_root,
+                  artifact_kind: artifact_kind,
+                  module: module
+                )
+            return: entry
+        artifact_roots: >-
+          artifact.base.discovery._index_artifact_root_discoveries(
+            entries: entries
+          )
+        discovery: >-
+          ConfiguredAppDiscovery{
+            records_root: records_root,
+            artifact_roots: artifact_roots
+          }
+      return: discovery
+
+  artifact.base.discovery._build_repository_discovery_inventory:
+    detail: Builds the keyed shared repository discovery inventory by applying every activated module declaration to every explicitly configured current source.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        configuration: RepositoryConfiguration,
+        catalog: ArtifactModuleCatalog
+      ) -> RepositoryDiscoveryInventory
+    implementation:
+      steps:
+        current_sources: configuration.current_sources
+        entries:
+          for:
+            item: current_source
+            in: current_sources
+            steps:
+              app_namespace: current_source.app_namespace
+              discovery: >-
+                artifact.base.discovery._discover_configured_app(
+                  repository_root: repository_root,
+                  current_source: current_source,
+                  catalog: catalog
+                )
+              entry: >-
+                ConfiguredAppDiscoveryEntry{
+                  app_namespace: app_namespace,
+                  discovery: discovery
+                }
+            return: entry
+        apps: >-
+          artifact.base.discovery._index_configured_app_discoveries(
+            entries: entries
+          )
+        inventory: >-
+          RepositoryDiscoveryInventory{
+            apps: apps
+          }
+      return: inventory

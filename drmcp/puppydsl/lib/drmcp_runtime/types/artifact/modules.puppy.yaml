@@ -1,0 +1,65 @@
+# responsibility: Defines structure-specific runtime artifact module declarations, resolved capability handles, registrations, and the activated catalog.
+# excludes: Raw artifact-module manifest documents, capability invocation, repository configuration, physical discovery inventory, and artifact-specific behavior implementations.
+
+types:
+  SequentialSegmentDeclaration:
+    detail: Declares one artifact-specific sequential reference segment in canonical order and whether it contributes to record ordering.
+    record:
+      name: SequentialSegmentName
+      sequence: boolean
+
+  SequentialFormCandidateFunction:
+    detail: References one resolved function satisfying the sequential current-record candidate-formation capability contract.
+    opaque: true
+
+  TreeFormCandidateFunction:
+    detail: References one resolved function satisfying the tree current-record candidate-formation capability contract.
+    opaque: true
+
+  SequentialArtifactModuleDeclaration:
+    detail: Carries the manifest-derived identity, source-placement, routing, and ordered segment declarations for one sequential artifact kind.
+    record:
+      artifact_kind: ArtifactKind
+      artifact_directory: ArtifactDirectory
+      reference_discriminator: SequentialReferenceDiscriminator
+      segments: list<SequentialSegmentDeclaration>
+
+  TreeArtifactModuleDeclaration:
+    detail: Carries the manifest-derived identity, source-placement, and routing declarations for one tree artifact kind.
+    record:
+      artifact_kind: ArtifactKind
+      artifact_directory: ArtifactDirectory
+      reference_discriminator: TreeReferenceDiscriminator
+
+  SequentialArtifactModuleCapabilities:
+    detail: Carries the bootstrap-resolved executable capabilities registered for one sequential artifact kind.
+    record:
+      form_candidate: SequentialFormCandidateFunction
+
+  TreeArtifactModuleCapabilities:
+    detail: Carries the bootstrap-resolved executable capabilities registered for one tree artifact kind.
+    record:
+      form_candidate: TreeFormCandidateFunction
+
+  SequentialArtifactModule:
+    detail: Joins the manifest-derived declaration and bootstrap-resolved capabilities for one sequential artifact kind.
+    record:
+      declaration: SequentialArtifactModuleDeclaration
+      capabilities: SequentialArtifactModuleCapabilities
+
+  TreeArtifactModule:
+    detail: Joins the manifest-derived declaration and bootstrap-resolved capabilities for one tree artifact kind.
+    record:
+      declaration: TreeArtifactModuleDeclaration
+      capabilities: TreeArtifactModuleCapabilities
+
+  ArtifactModule:
+    detail: Carries one structure-specific activated artifact module registration.
+    union:
+      - SequentialArtifactModule
+      - TreeArtifactModule
+
+  ArtifactModuleCatalog:
+    detail: Contains the activated artifact modules keyed by their unique semantic artifact kind.
+    record:
+      modules: dict<ArtifactKind, ArtifactModule>

@@ -1,0 +1,384 @@
+# responsibility: Defines sequential record-listing request validation, current-state scope selection, deterministic ordering selection, bounded projection, and shared expected-error formation.
+# excludes: Current-record state construction, sequential ordering-index construction, runtime-failure reporting, transport serialization, and other discovery-and-listing operations.
+
+functions:
+  operation.discovery_and_listing._validate_sequential_record_listing_request:
+    detail: Validates required selectors, projection values, limit bounds, and offset bounds in operation-defined order and applies every request default.
+    signature: >-
+      (
+        request: SequentialRecordListingRequest
+      ) -> SequentialRecordListingRequestValidationOutcome
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._select_sequential_listing_app:
+    detail: Selects one current app index or returns the shared unavailable-app context with every available app namespace in canonical order.
+    signature: >-
+      (
+        state: CurrentRecordState,
+        app_namespace: AppNamespace
+      ) -> SequentialListingAppSelectionOutcome
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._select_sequential_listing_artifact:
+    detail: Selects one available sequential artifact index or returns the shared unavailable-or-ineligible artifact context with every available sequential artifact kind in canonical order.
+    signature: >-
+      (
+        app: CurrentAppRecordIndex,
+        artifact_kind: ArtifactKind
+      ) -> SequentialListingArtifactSelectionOutcome
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._select_sequential_listing_domain:
+    detail: Selects one discovered sequential domain index or returns the shared unavailable-domain context with every available domain namespace in canonical order.
+    signature: >-
+      (
+        artifact: SequentialArtifactRecordIndex,
+        domain_namespace: DomainNamespace
+      ) -> SequentialListingDomainSelectionOutcome
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._select_ordered_sequential_record_refs:
+    detail: Selects the precomputed deterministic canonical-reference ordering requested for one sequential domain without recomputing ordering tuples.
+    signature: >-
+      (
+        domain: SequentialDomainRecordIndex,
+        order: SequentialRecordOrder
+      ) -> list<CanonicalRecordReference>
+    implementation:
+      steps:
+        ordered:
+          switch: order
+          cases:
+            SequentialRecordOrder.ascending:
+              steps:
+                selected: domain.ascending_record_refs
+              return: selected
+
+            SequentialRecordOrder.descending:
+              steps:
+                selected: domain.descending_record_refs
+              return: selected
+      return: ordered
+
+  operation.discovery_and_listing._build_sequential_record_listing_result:
+    detail: Applies offset and limit to one ordered domain reference list, resolves retained records, projects requested title and status fields, and computes the complete range indicators.
+    signature: >-
+      (
+        records: dict<CanonicalRecordReference, CurrentRecord>,
+        ordered_record_refs: list<CanonicalRecordReference>,
+        offset: integer,
+        limit: integer,
+        projection: SequentialRecordProjectionSelection
+      ) -> SequentialRecordListingResult
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._form_missing_sequential_listing_selector_error:
+    detail: Forms the shared top-level invalid-selector response for omitted required sequential-listing selectors.
+    signature: >-
+      (
+        context: MissingSelectorFieldsContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.invalid_selector,
+            message: "One or more required sequential listing selectors are missing.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response
+
+  operation.discovery_and_listing._form_invalid_sequential_listing_projection_error:
+    detail: Forms the shared top-level invalid-projection response for unknown sequential-listing projection values.
+    signature: >-
+      (
+        context: InvalidProjectionContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.invalid_projection,
+            message: "The sequential listing projection contains unsupported values.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response
+
+  operation.discovery_and_listing._form_invalid_sequential_listing_limit_error:
+    detail: Forms the shared top-level invalid-limit response for a sequential-listing limit outside the accepted inclusive bounds.
+    signature: >-
+      (
+        context: BoundedIntegerContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.invalid_limit,
+            message: "The sequential listing limit is outside the accepted range.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response
+
+  operation.discovery_and_listing._form_invalid_sequential_listing_offset_error:
+    detail: Forms the shared top-level invalid-offset response for a negative sequential-listing offset.
+    signature: >-
+      (
+        context: MinimumIntegerContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.invalid_offset,
+            message: "The sequential listing offset must not be negative.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response
+
+  operation.discovery_and_listing._form_unavailable_sequential_artifact_kind_error:
+    detail: Forms the shared top-level invalid-selector response for an unavailable or ineligible sequential artifact kind.
+    signature: >-
+      (
+        context: UnavailableSequentialArtifactKindContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.invalid_selector,
+            message: "The requested artifact kind is unavailable for sequential listing within the selected app.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response
+
+  operation.discovery_and_listing._form_unavailable_domain_namespace_error:
+    detail: Forms the shared top-level invalid-selector response for an unavailable sequential domain namespace.
+    signature: >-
+      (
+        context: UnavailableDomainNamespaceContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.invalid_selector,
+            message: "The requested domain namespace is unavailable within the selected sequential artifact.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response
+
+  operation.discovery_and_listing._as_sequential_record_listing_outcome:
+    detail: Preserves one complete sequential listing result or shared top-level error response as the operation outcome union.
+    signature: >-
+      (
+        outcome: SequentialRecordListingOutcome
+      ) -> SequentialRecordListingOutcome
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._handle_validated_sequential_record_listing:
+    detail: Selects one current sequential domain, chooses its precomputed ordering, and builds the complete bounded projected listing or the first current-state selector error.
+    requires:
+      - current_record.state
+    signature: >-
+      (
+        request: ValidatedSequentialRecordListingRequest
+      ) -> SequentialRecordListingOutcome
+    implementation:
+      steps:
+        app_selection: >-
+          operation.discovery_and_listing._select_sequential_listing_app(
+            state: current_record.state,
+            app_namespace: request.app_namespace
+          )
+
+        outcome:
+          switch: app_selection
+          cases:
+            CurrentAppRecordIndex:
+              steps:
+                artifact_selection: >-
+                  operation.discovery_and_listing._select_sequential_listing_artifact(
+                    app: app_selection,
+                    artifact_kind: request.artifact_kind
+                  )
+
+                artifact_outcome:
+                  switch: artifact_selection
+                  cases:
+                    SequentialArtifactRecordIndex:
+                      steps:
+                        domain_selection: >-
+                          operation.discovery_and_listing._select_sequential_listing_domain(
+                            artifact: artifact_selection,
+                            domain_namespace: request.domain_namespace
+                          )
+
+                        domain_outcome:
+                          switch: domain_selection
+                          cases:
+                            SequentialDomainRecordIndex:
+                              steps:
+                                ordered_record_refs: >-
+                                  operation.discovery_and_listing._select_ordered_sequential_record_refs(
+                                    domain: domain_selection,
+                                    order: request.order
+                                  )
+                                result: >-
+                                  operation.discovery_and_listing._build_sequential_record_listing_result(
+                                    records: current_record.state.records,
+                                    ordered_record_refs: ordered_record_refs,
+                                    offset: request.offset,
+                                    limit: request.limit,
+                                    projection: request.projection
+                                  )
+                                selected: >-
+                                  operation.discovery_and_listing._as_sequential_record_listing_outcome(
+                                    outcome: result
+                                  )
+                              return: selected
+
+                            UnavailableDomainNamespaceContext:
+                              steps:
+                                error: >-
+                                  operation.discovery_and_listing._form_unavailable_domain_namespace_error(
+                                    context: domain_selection
+                                  )
+                                unavailable: >-
+                                  operation.discovery_and_listing._as_sequential_record_listing_outcome(
+                                    outcome: error
+                                  )
+                              return: unavailable
+                      return: domain_outcome
+
+                    UnavailableSequentialArtifactKindContext:
+                      steps:
+                        error: >-
+                          operation.discovery_and_listing._form_unavailable_sequential_artifact_kind_error(
+                            context: artifact_selection
+                          )
+                        unavailable: >-
+                          operation.discovery_and_listing._as_sequential_record_listing_outcome(
+                            outcome: error
+                          )
+                      return: unavailable
+              return: artifact_outcome
+
+            UnavailableAppNamespaceContext:
+              steps:
+                error: >-
+                  operation.discovery_and_listing._form_unavailable_app_namespace_error(
+                    context: app_selection
+                  )
+                unavailable: >-
+                  operation.discovery_and_listing._as_sequential_record_listing_outcome(
+                    outcome: error
+                  )
+              return: unavailable
+      return: outcome
+
+  operation.discovery_and_listing.list_sequential_records:
+    detail: Lists one bounded ordered range of uniquely addressable current records within an exact sequential app, artifact-kind, and domain scope.
+    opens:
+      - repository_discovery
+      - current_record
+    signature: >-
+      (
+        request: SequentialRecordListingRequest
+      ) -> SequentialRecordListingOutcome
+    implementation:
+      steps:
+        validation: >-
+          operation.discovery_and_listing._validate_sequential_record_listing_request(
+            request: request
+          )
+
+        outcome:
+          switch: validation
+          cases:
+            ValidatedSequentialRecordListingRequest:
+              steps:
+                selected: >-
+                  operation.discovery_and_listing._handle_validated_sequential_record_listing(
+                    request: validation
+                  )
+              return: selected
+
+            MissingSelectorFieldsContext:
+              steps:
+                error: >-
+                  operation.discovery_and_listing._form_missing_sequential_listing_selector_error(
+                    context: validation
+                  )
+                selected: >-
+                  operation.discovery_and_listing._as_sequential_record_listing_outcome(
+                    outcome: error
+                  )
+              return: selected
+
+            InvalidProjectionContext:
+              steps:
+                error: >-
+                  operation.discovery_and_listing._form_invalid_sequential_listing_projection_error(
+                    context: validation
+                  )
+                selected: >-
+                  operation.discovery_and_listing._as_sequential_record_listing_outcome(
+                    outcome: error
+                  )
+              return: selected
+
+            BoundedIntegerContext:
+              steps:
+                error: >-
+                  operation.discovery_and_listing._form_invalid_sequential_listing_limit_error(
+                    context: validation
+                  )
+                selected: >-
+                  operation.discovery_and_listing._as_sequential_record_listing_outcome(
+                    outcome: error
+                  )
+              return: selected
+
+            MinimumIntegerContext:
+              steps:
+                error: >-
+                  operation.discovery_and_listing._form_invalid_sequential_listing_offset_error(
+                    context: validation
+                  )
+                selected: >-
+                  operation.discovery_and_listing._as_sequential_record_listing_outcome(
+                    outcome: error
+                  )
+              return: selected
+      return: outcome

@@ -1,0 +1,9 @@
+# responsibility: Defines the runtime context that owns the frozen artifact module catalog.
+# excludes: Artifact module declarations, repository configuration, operation inventories, and artifact-specific execution behavior.
+
+contexts:
+  artifact_modules:
+    detail: Owns the frozen artifact module catalog used by runtime operations.
+    provides:
+      catalog:
+        provider: drmcp_runtime.artifact_modules._get_catalog()

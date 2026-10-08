@@ -1,0 +1,29 @@
+# responsibility: Defines structure-specific listing candidate values and expected candidate-formation outcomes produced by artifact modules.
+# excludes: Source provenance, canonical-reference formatting, repository-wide identity grouping, conflict retention, validation findings, and current-record indexes.
+
+types:
+  SequentialArtifactCandidate:
+    detail: Carries one sequential artifact reference formed from one Markdown source under the selected artifact module contract.
+    record:
+      reference: SequentialArtifactReference
+
+  TreeArtifactCandidate:
+    detail: Carries one tree artifact reference formed from one Markdown source under the selected artifact module contract.
+    record:
+      reference: TreeArtifactReference
+
+  CandidateNotFormed:
+    detail: Indicates that one readable Markdown source did not form a listing candidate under the selected artifact module contract.
+    record: {}
+
+  SequentialFormCandidateOutcome:
+    detail: Carries either one formed sequential candidate or the expected absence of a candidate for the supplied source.
+    union:
+      - SequentialArtifactCandidate
+      - CandidateNotFormed
+
+  TreeFormCandidateOutcome:
+    detail: Carries either one formed tree candidate or the expected absence of a candidate for the supplied source.
+    union:
+      - TreeArtifactCandidate
+      - CandidateNotFormed

@@ -1,0 +1,14 @@
+# responsibility: Defines runtime repository configuration records for explicitly configured current sources.
+# excludes: Process launch values, artifact module catalog data, physical discovery results, and public operation selectors.
+
+types:
+  ConfiguredCurrentSource:
+    detail: Associates one app namespace with the repository-relative records root used as its current Design Records discovery boundary.
+    record:
+      app_namespace: AppNamespace
+      records_root: RecordsRoot
+
+  RepositoryConfiguration:
+    detail: Contains the complete configured current source set used by runtime operations.
+    record:
+      current_sources: list<ConfiguredCurrentSource>

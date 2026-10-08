@@ -1,0 +1,27 @@
+# responsibility: Defines the trusted runtime invocation boundary for artifact-module current-record candidate-formation capabilities.
+# excludes: Function-ID resolution, module catalog construction, Markdown parsing, source traversal, repository-wide identity grouping, and current-record index construction.
+
+functions:
+  artifact.base.module._invoke_sequential_form_candidate:
+    detail: Invokes one bootstrap-resolved sequential candidate-formation capability for a parsed Markdown source in its app and physical-domain scope.
+    signature: >-
+      (
+        function: SequentialFormCandidateFunction,
+        app_namespace: AppNamespace,
+        physical_domain: PhysicalDirectoryName,
+        document: MarkdownDocument
+      ) -> SequentialFormCandidateOutcome
+    implementation:
+      stub: native
+
+  artifact.base.module._invoke_tree_form_candidate:
+    detail: Invokes one bootstrap-resolved tree candidate-formation capability for a parsed Markdown source identified by its artifact-relative path.
+    signature: >-
+      (
+        function: TreeFormCandidateFunction,
+        app_namespace: AppNamespace,
+        markdown_path: ArtifactRelativeMarkdownPath,
+        document: MarkdownDocument
+      ) -> TreeFormCandidateOutcome
+    implementation:
+      stub: native

@@ -1,0 +1,17 @@
+# responsibility: Defines parsed structure-specific Markdown source inputs consumed by artifact module candidate-formation capabilities.
+# excludes: Physical traversal mechanics, artifact-specific candidate rules, canonical-reference formatting, claim grouping, and validation findings.
+
+types:
+  SequentialCandidateSource:
+    detail: Carries one parsed Markdown source together with its physical sequential domain and repository-relative provenance.
+    record:
+      physical_domain: PhysicalDirectoryName
+      source_path: RepositoryRelativeSourcePath
+      document: MarkdownDocument
+
+  TreeCandidateSource:
+    detail: Carries one parsed Markdown source together with its artifact-relative tree path and repository-relative provenance.
+    record:
+      markdown_path: ArtifactRelativeMarkdownPath
+      source_path: RepositoryRelativeSourcePath
+      document: MarkdownDocument

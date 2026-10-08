@@ -1,0 +1,23 @@
+# responsibility: Defines semantic native helpers that derive sequential ordering data and construct one ordered domain index.
+# excludes: Artifact-specific identity parsing, repository-wide candidate aggregation, tree indexing, and public listing projection.
+
+functions:
+  artifact.base.sequential_ordering._derive_tuple:
+    detail: Derives one ordering tuple by reading sequence-bearing segment values from a confirmed sequential reference in module declaration order.
+    signature: >-
+      (
+        declarations: list<SequentialSegmentDeclaration>,
+        reference: SequentialArtifactReference
+      ) -> SequentialRecordOrderingTuple
+    implementation:
+      stub: native
+
+  artifact.base.sequential_ordering._build_domain_record_index:
+    detail: Builds both deterministic ordering directions for uniquely addressable records within one sequential domain by tuple order and canonical-reference tie-break.
+    signature: >-
+      (
+        declarations: list<SequentialSegmentDeclaration>,
+        records: list<CurrentRecord>
+      ) -> SequentialDomainRecordIndex
+    implementation:
+      stub: native

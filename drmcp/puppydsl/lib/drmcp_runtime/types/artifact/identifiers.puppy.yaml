@@ -1,0 +1,7 @@
+# responsibility: Defines runtime artifact-module physical placement identifiers.
+# excludes: Shared artifact identity and namespace types, module catalog records, and operation-derived physical paths.
+
+types:
+  ArtifactDirectory:
+    detail: Identifies one artifact source directory segment relative to a configured records root.
+    scalar: string

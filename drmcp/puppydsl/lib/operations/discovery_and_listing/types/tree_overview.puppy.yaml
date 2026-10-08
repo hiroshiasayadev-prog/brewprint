@@ -1,0 +1,57 @@
+# responsibility: Defines tree-overview requests, normalized request values, validation-specific bounded-integer failures, recursive structural results, and the final operation outcome.
+# excludes: Request-validation functions, current-tree selection, breadth-first node selection, nested result construction, shared diagnostic envelopes and contexts, runtime failures, and direct-child listing contracts.
+
+types:
+  TreeOverviewRequest:
+    detail: Carries one exact tree-node selector and the schema-valid optional depth and node-limit controls accepted before semantic validation and default application.
+    record:
+      node_ref: CanonicalRecordReference
+      depth: optional<integer>
+      node_limit: optional<integer>
+
+  ValidatedTreeOverviewRequest:
+    detail: Carries one confirmed tree-node selector, its extracted current-scope selectors, and every defaulted traversal control needed to inspect one bounded subtree.
+    record:
+      node_ref: CanonicalRecordReference
+      app_namespace: AppNamespace
+      artifact_kind: ArtifactKind
+      depth: integer
+      node_limit: integer
+
+  InvalidTreeOverviewDepth:
+    detail: Distinguishes an invalid tree-overview depth from other request fields that use the shared bounded-integer diagnostic context shape.
+    record:
+      context: BoundedIntegerContext
+
+  InvalidTreeOverviewNodeLimit:
+    detail: Distinguishes an invalid tree-overview node limit from other request fields that use the shared bounded-integer diagnostic context shape.
+    record:
+      context: BoundedIntegerContext
+
+  TreeOverviewRequestValidationOutcome:
+    detail: Carries either one fully validated and defaulted request or the first expected request-wide diagnostic context established by validation order.
+    union:
+      - ValidatedTreeOverviewRequest
+      - InvalidTreeNodeSelectorContext
+      - InvalidTreeOverviewDepth
+      - InvalidTreeOverviewNodeLimit
+
+  TreeOverviewNode:
+    detail: Carries one structurally projected current tree node and every breadth-first-selected descendant rendered beneath it as a nested tree.
+    record:
+      segment: TreeNodeSegment
+      has_children: boolean
+      children: list<TreeOverviewNode>
+
+  TreeOverviewResult:
+    detail: Carries one bounded multi-level structural inspection rooted at the exact supplied current tree node and whether node-limit truncation occurred.
+    record:
+      node_ref: CanonicalRecordReference
+      tree: TreeOverviewNode
+      truncated: boolean
+
+  TreeOverviewOutcome:
+    detail: Carries either one complete bounded tree overview or one shared top-level operation error response.
+    union:
+      - TreeOverviewResult
+      - OperationErrorResponse

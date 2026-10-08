@@ -1,0 +1,91 @@
+# responsibility: Defines record-scope discovery requests, typed routes, public success results, and expected selector-selection outcomes.
+# excludes: Physical repository paths, shared artifact identifiers, shared diagnostic envelopes and contexts, transport failures, and other operation result contracts.
+
+types:
+  RecordScopeDiscoveryRequest:
+    detail: Carries the optional app and artifact-kind selectors accepted by record-scope discovery.
+    record:
+      app_namespace: optional<AppNamespace>
+      artifact_kind: optional<ArtifactKind>
+
+  AppScopesRoute:
+    detail: Selects discovery of every configured app scope when neither selector is supplied.
+    enum:
+      - selected
+
+  ArtifactKindScopesRoute:
+    detail: Selects available artifact kinds for one supplied app namespace.
+    record:
+      app_namespace: AppNamespace
+
+  ArtifactScopeRoute:
+    detail: Selects the structure-specific scope for one supplied app namespace and artifact kind.
+    record:
+      app_namespace: AppNamespace
+      artifact_kind: ArtifactKind
+
+  RecordScopeDiscoverySelectorRoute:
+    detail: Carries the typed route or shared accepted-selector-combinations context derived from one request before repository inventory selection.
+    union:
+      - AppScopesRoute
+      - ArtifactKindScopesRoute
+      - ArtifactScopeRoute
+      - AcceptedSelectorCombinationsContext
+
+  AppScope:
+    detail: Identifies one configured app scope exposed by record-scope discovery.
+    record:
+      app_namespace: AppNamespace
+
+  AppScopes:
+    detail: Contains every configured app scope in ascending app-namespace order.
+    record:
+      app_scopes: list<AppScope>
+
+  ArtifactKindScope:
+    detail: Identifies one available artifact kind and its declared record structure within a configured app.
+    record:
+      artifact_kind: ArtifactKind
+      record_structure: RecordStructure
+
+  ArtifactKindScopes:
+    detail: Contains every available artifact-kind scope for one configured app in ascending artifact-kind order.
+    record:
+      artifact_kind_scopes: list<ArtifactKindScope>
+
+  DomainScope:
+    detail: Identifies one discovered sequential domain scope.
+    record:
+      domain_namespace: DomainNamespace
+
+  DomainScopes:
+    detail: Contains every discovered domain scope for one sequential artifact kind in ascending domain-namespace order.
+    record:
+      domain_scopes: list<DomainScope>
+
+  TreeRoot:
+    detail: Carries the canonical root reference for one available tree artifact kind.
+    record:
+      tree_root: CanonicalRecordReference
+
+  ConfiguredAppSelectionOutcome:
+    detail: Carries either the selected configured app discovery or the shared unavailable-app context required to form an operation diagnostic.
+    union:
+      - ConfiguredAppDiscovery
+      - UnavailableAppNamespaceContext
+
+  ArtifactRootSelectionOutcome:
+    detail: Carries either the selected structure-specific artifact root or the shared unavailable-kind context required to form an operation diagnostic.
+    union:
+      - SequentialArtifactSourceRootDiscovery
+      - TreeArtifactSourceRootDiscovery
+      - UnavailableArtifactKindContext
+
+  RecordScopeDiscoveryOutcome:
+    detail: Carries one successful record-scope result or one shared top-level operation error response.
+    union:
+      - AppScopes
+      - ArtifactKindScopes
+      - DomainScopes
+      - TreeRoot
+      - OperationErrorResponse

@@ -1,0 +1,14 @@
+# responsibility: Defines the semantic tuple and deterministic tie-break key used to order uniquely addressable sequential records within one domain.
+# excludes: Tuple derivation, sorting implementation, domain-index construction, and operation result projection.
+
+types:
+  SequentialRecordOrderingTuple:
+    detail: Carries the ordered integer values derived from sequence-bearing artifact-specific segments for one sequential record.
+    record:
+      values: list<integer>
+
+  SequentialRecordOrderingKey:
+    detail: Combines one sequential ordering tuple with the canonical-reference tie-break used for deterministic record ordering.
+    record:
+      tuple: SequentialRecordOrderingTuple
+      canonical_ref: CanonicalRecordReference

@@ -1,0 +1,14 @@
+# responsibility: Defines the operation-scoped context that owns one lazily built shared repository discovery inventory.
+# excludes: Runtime root validation, public operation projection, and repository mutation or invalidation behavior.
+
+contexts:
+  repository_discovery:
+    detail: Owns one immutable keyed repository discovery inventory for the lifetime of an operation.
+    provides:
+      inventory:
+        provider: >-
+          artifact.base.discovery._build_repository_discovery_inventory(
+            repository_root: launch.repository_root,
+            configuration: repository_configuration.configuration,
+            catalog: artifact_modules.catalog
+          )

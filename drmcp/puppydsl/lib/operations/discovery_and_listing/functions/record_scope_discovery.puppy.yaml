@@ -1,0 +1,351 @@
+# responsibility: Defines request routing, inventory selection, shared invalid-selector error formation, and public result projection for record-scope discovery.
+# excludes: Physical repository inventory construction, runtime-failure reporting, transport serialization, and other discovery-and-listing operations.
+
+functions:
+  operation.discovery_and_listing._route_record_scope_selector:
+    detail: Derives one typed record-scope route or the accepted selector-field combinations required to diagnose an unsupported request combination.
+    signature: >-
+      (
+        request: RecordScopeDiscoveryRequest
+      ) -> RecordScopeDiscoverySelectorRoute
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._select_configured_app:
+    detail: Selects one configured app from the keyed repository inventory or returns the shared unavailable-app context.
+    signature: >-
+      (
+        inventory: RepositoryDiscoveryInventory,
+        app_namespace: AppNamespace
+      ) -> ConfiguredAppSelectionOutcome
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._select_artifact_root:
+    detail: Selects one available artifact source root from the configured app's keyed inventory or returns the shared unavailable-kind context.
+    signature: >-
+      (
+        app: ConfiguredAppDiscovery,
+        artifact_kind: ArtifactKind
+      ) -> ArtifactRootSelectionOutcome
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._discover_app_scopes:
+    detail: Projects every configured app in canonical app-namespace key order without exposing physical paths.
+    signature: >-
+      (
+        inventory: RepositoryDiscoveryInventory
+      ) -> AppScopes
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._discover_artifact_kind_scopes:
+    detail: Projects every available artifact kind and its declared structure in canonical artifact-kind key order.
+    signature: >-
+      (
+        app: ConfiguredAppDiscovery
+      ) -> ArtifactKindScopes
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._discover_domain_scopes:
+    detail: Projects direct physical domain directories containing at least one direct Markdown source into canonical domain-namespace order without exposing physical paths.
+    signature: >-
+      (
+        artifact_root: SequentialArtifactSourceRootDiscovery
+      ) -> DomainScopes
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._discover_tree_root:
+    detail: Produces the canonical root reference for one selected tree artifact kind and configured app namespace.
+    signature: >-
+      (
+        app_namespace: AppNamespace,
+        artifact_root: TreeArtifactSourceRootDiscovery
+      ) -> TreeRoot
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._form_invalid_selector_combination_error:
+    detail: Forms the shared top-level invalid-selector response for one unsupported record-scope selector combination.
+    signature: >-
+      (
+        context: AcceptedSelectorCombinationsContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.invalid_selector,
+            message: "The supplied selector combination is not accepted.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response
+
+  operation.discovery_and_listing._form_unavailable_app_namespace_error:
+    detail: Forms the shared top-level invalid-selector response for one unavailable app namespace.
+    signature: >-
+      (
+        context: UnavailableAppNamespaceContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.invalid_selector,
+            message: "The requested app namespace is unavailable.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response
+
+  operation.discovery_and_listing._form_unavailable_artifact_kind_error:
+    detail: Forms the shared top-level invalid-selector response for one artifact kind unavailable within the selected app.
+    signature: >-
+      (
+        context: UnavailableArtifactKindContext
+      ) -> OperationErrorResponse
+    implementation:
+      steps:
+        diagnostic: >-
+          OperationDiagnostic{
+            code: OperationDiagnosticCode.invalid_selector,
+            message: "The requested artifact kind is unavailable within the selected app.",
+            context: context
+          }
+        response: >-
+          OperationErrorResponse{
+            error: diagnostic
+          }
+      return: response
+
+  operation.discovery_and_listing._as_record_scope_discovery_outcome:
+    detail: Preserves one concrete record-scope success result or shared top-level error response as the operation outcome union.
+    signature: >-
+      (
+        outcome: RecordScopeDiscoveryOutcome
+      ) -> RecordScopeDiscoveryOutcome
+    implementation:
+      stub: native
+
+  operation.discovery_and_listing._handle_app_scopes_route:
+    detail: Produces the app-scope outcome selected when neither request selector is supplied.
+    requires:
+      - repository_discovery.inventory
+    signature: >-
+      () -> RecordScopeDiscoveryOutcome
+    implementation:
+      steps:
+        scopes: >-
+          operation.discovery_and_listing._discover_app_scopes(
+            inventory: repository_discovery.inventory
+          )
+
+        outcome: >-
+          operation.discovery_and_listing._as_record_scope_discovery_outcome(
+            outcome: scopes
+          )
+      return: outcome
+
+  operation.discovery_and_listing._handle_artifact_kind_scopes_route:
+    detail: Selects one configured app and produces either its available artifact-kind scopes or the shared unavailable-app error response.
+    requires:
+      - repository_discovery.inventory
+    signature: >-
+      (
+        route: ArtifactKindScopesRoute
+      ) -> RecordScopeDiscoveryOutcome
+    implementation:
+      steps:
+        app_selection: >-
+          operation.discovery_and_listing._select_configured_app(
+            inventory: repository_discovery.inventory,
+            app_namespace: route.app_namespace
+          )
+
+        outcome:
+          switch: app_selection
+          cases:
+            ConfiguredAppDiscovery:
+              steps:
+                scopes: >-
+                  operation.discovery_and_listing._discover_artifact_kind_scopes(
+                    app: app_selection
+                  )
+
+                selected: >-
+                  operation.discovery_and_listing._as_record_scope_discovery_outcome(
+                    outcome: scopes
+                  )
+              return: selected
+
+            UnavailableAppNamespaceContext:
+              steps:
+                error: >-
+                  operation.discovery_and_listing._form_unavailable_app_namespace_error(
+                    context: app_selection
+                  )
+                unavailable: >-
+                  operation.discovery_and_listing._as_record_scope_discovery_outcome(
+                    outcome: error
+                  )
+              return: unavailable
+      return: outcome
+
+  operation.discovery_and_listing._handle_artifact_scope_route:
+    detail: Selects one configured app and artifact kind, then produces sequential domain scopes, a tree root, or the corresponding shared invalid-selector error response.
+    requires:
+      - repository_discovery.inventory
+    signature: >-
+      (
+        route: ArtifactScopeRoute
+      ) -> RecordScopeDiscoveryOutcome
+    implementation:
+      steps:
+        app_selection: >-
+          operation.discovery_and_listing._select_configured_app(
+            inventory: repository_discovery.inventory,
+            app_namespace: route.app_namespace
+          )
+
+        outcome:
+          switch: app_selection
+          cases:
+            ConfiguredAppDiscovery:
+              steps:
+                artifact_root_selection: >-
+                  operation.discovery_and_listing._select_artifact_root(
+                    app: app_selection,
+                    artifact_kind: route.artifact_kind
+                  )
+
+                selected_outcome:
+                  switch: artifact_root_selection
+                  cases:
+                    SequentialArtifactSourceRootDiscovery:
+                      steps:
+                        scopes: >-
+                          operation.discovery_and_listing._discover_domain_scopes(
+                            artifact_root: artifact_root_selection
+                          )
+
+                        selected: >-
+                          operation.discovery_and_listing._as_record_scope_discovery_outcome(
+                            outcome: scopes
+                          )
+                      return: selected
+
+                    TreeArtifactSourceRootDiscovery:
+                      steps:
+                        root: >-
+                          operation.discovery_and_listing._discover_tree_root(
+                            app_namespace: route.app_namespace,
+                            artifact_root: artifact_root_selection
+                          )
+
+                        selected: >-
+                          operation.discovery_and_listing._as_record_scope_discovery_outcome(
+                            outcome: root
+                          )
+                      return: selected
+
+                    UnavailableArtifactKindContext:
+                      steps:
+                        error: >-
+                          operation.discovery_and_listing._form_unavailable_artifact_kind_error(
+                            context: artifact_root_selection
+                          )
+                        unavailable: >-
+                          operation.discovery_and_listing._as_record_scope_discovery_outcome(
+                            outcome: error
+                          )
+                      return: unavailable
+              return: selected_outcome
+
+            UnavailableAppNamespaceContext:
+              steps:
+                error: >-
+                  operation.discovery_and_listing._form_unavailable_app_namespace_error(
+                    context: app_selection
+                  )
+                unavailable: >-
+                  operation.discovery_and_listing._as_record_scope_discovery_outcome(
+                    outcome: error
+                  )
+              return: unavailable
+      return: outcome
+
+  operation.discovery_and_listing._handle_invalid_selector_combination:
+    detail: Converts the accepted-selector-combinations context selected by request routing into the shared top-level invalid-selector response.
+    signature: >-
+      (
+        context: AcceptedSelectorCombinationsContext
+      ) -> RecordScopeDiscoveryOutcome
+    implementation:
+      steps:
+        error: >-
+          operation.discovery_and_listing._form_invalid_selector_combination_error(
+            context: context
+          )
+        outcome: >-
+          operation.discovery_and_listing._as_record_scope_discovery_outcome(
+            outcome: error
+          )
+      return: outcome
+
+  operation.discovery_and_listing.discover_record_scopes:
+    detail: Discovers configured app, artifact-kind, sequential-domain, or tree-root scopes according to one exact selector combination.
+    opens:
+      - repository_discovery
+    signature: >-
+      (
+        request: RecordScopeDiscoveryRequest
+      ) -> RecordScopeDiscoveryOutcome
+    implementation:
+      steps:
+        route: >-
+          operation.discovery_and_listing._route_record_scope_selector(
+            request: request
+          )
+
+        outcome:
+          switch: route
+          cases:
+            AppScopesRoute:
+              steps:
+                selected: operation.discovery_and_listing._handle_app_scopes_route()
+              return: selected
+
+            ArtifactKindScopesRoute:
+              steps:
+                selected: >-
+                  operation.discovery_and_listing._handle_artifact_kind_scopes_route(
+                    route: route
+                  )
+              return: selected
+
+            ArtifactScopeRoute:
+              steps:
+                selected: >-
+                  operation.discovery_and_listing._handle_artifact_scope_route(
+                    route: route
+                  )
+              return: selected
+
+            AcceptedSelectorCombinationsContext:
+              steps:
+                selected: >-
+                  operation.discovery_and_listing._handle_invalid_selector_combination(
+                    context: route
+                  )
+              return: selected
+      return: outcome

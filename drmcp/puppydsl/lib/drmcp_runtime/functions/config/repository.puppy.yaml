@@ -1,0 +1,20 @@
+# responsibility: Defines native repository-configuration loading and configured current-source root validation functions.
+# excludes: Launch argument extraction, artifact module catalog construction, and operation-specific repository discovery.
+
+functions:
+  drmcp_runtime.config._load_repository_configuration:
+    detail: Loads the repository configuration file from the supplied repository root.
+    signature: >-
+      (repository_root: RepositoryRoot) -> RepositoryConfiguration
+    implementation:
+      stub: native
+
+  drmcp_runtime.config._require_current_source_roots:
+    detail: Confirms that every configured current source records root exists as a directory under the supplied repository root.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        configuration: RepositoryConfiguration
+      ) -> void
+    implementation:
+      stub: native

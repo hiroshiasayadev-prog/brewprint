@@ -1,0 +1,66 @@
+# responsibility: Defines tree child-listing requests, normalized request values, public child and terminal results, and the final operation outcome.
+# excludes: Shared current-tree selection outcomes, request-validation functions, current-tree selection algorithms, child ordering and range application, shared diagnostic envelopes and contexts, runtime failures, and tree overview contracts.
+
+types:
+  TreeChildListingRequest:
+    detail: Carries one exact tree-node selector and the schema-valid optional controls and projection values accepted before semantic validation and default application.
+    record:
+      node_ref: CanonicalRecordReference
+      limit: optional<integer>
+      offset: optional<integer>
+      projection: optional<list<string>>
+
+  TreeChildProjectionSelection:
+    detail: Carries the normalized set of optional child-record fields requested by one validated tree child-listing request.
+    record:
+      include_title: boolean
+      include_status: boolean
+
+  ValidatedTreeChildListingRequest:
+    detail: Carries one confirmed tree-node selector, its extracted current-scope selectors, and every defaulted control needed to execute direct-child listing.
+    record:
+      node_ref: CanonicalRecordReference
+      app_namespace: AppNamespace
+      artifact_kind: ArtifactKind
+      limit: integer
+      offset: integer
+      projection: TreeChildProjectionSelection
+
+  TreeChildListingRequestValidationOutcome:
+    detail: Carries either one fully validated and defaulted request or the first expected request-wide diagnostic context established by validation order.
+    union:
+      - ValidatedTreeChildListingRequest
+      - InvalidTreeNodeSelectorContext
+      - InvalidProjectionContext
+      - BoundedIntegerContext
+      - MinimumIntegerContext
+
+  TreeChildListingItem:
+    detail: Carries one direct child segment, its current structural and record presence, and three-state title and status projections.
+    record:
+      segment: TreeNodeSegment
+      has_children: boolean
+      has_record: boolean
+      title: optional<optional<string>>
+      status: optional<optional<string>>
+
+  TreeChildListingResult:
+    detail: Carries one complete bounded direct-child listing after canonical sibling ordering, offset application, limit application, and requested field projection.
+    record:
+      node_ref: CanonicalRecordReference
+      children: list<TreeChildListingItem>
+      applied_offset: integer
+      applied_limit: integer
+      has_more: boolean
+
+  TerminalTreeNode:
+    detail: Indicates that one selected current tree node has no direct current child nodes.
+    record:
+      node_ref: CanonicalRecordReference
+
+  TreeChildListingOutcome:
+    detail: Carries one complete direct-child listing, one normal terminal-node result, or one shared top-level operation error response.
+    union:
+      - TreeChildListingResult
+      - TerminalTreeNode
+      - OperationErrorResponse

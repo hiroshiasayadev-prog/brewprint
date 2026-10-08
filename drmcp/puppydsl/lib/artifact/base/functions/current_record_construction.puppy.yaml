@@ -1,0 +1,541 @@
+# responsibility: Defines visible routing from physical repository discovery through artifact capability invocation, identity grouping, and immutable listing-MVP current-record indexes.
+# excludes: Artifact-specific candidate rules, retained conflict diagnostics, validation evaluation, context lifecycle ownership, and low-level filesystem or collection algorithms.
+
+functions:
+  artifact.base.current_record._load_sequential_candidate_sources:
+    detail: Returns every readable parsed Markdown source beneath one available sequential artifact root while preserving physical-domain and repository-relative provenance.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        source_root: ArtifactSourceRootPath,
+        physical_tree: PhysicalDirectoryTree
+      ) -> list<SequentialCandidateSource>
+    implementation:
+      stub: native
+
+  artifact.base.current_record._load_tree_candidate_sources:
+    detail: Returns every readable parsed Markdown source beneath one available tree artifact root while preserving artifact-relative and repository-relative provenance.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        source_root: ArtifactSourceRootPath,
+        physical_tree: PhysicalDirectoryTree
+      ) -> list<TreeCandidateSource>
+    implementation:
+      stub: native
+
+  artifact.base.current_record._extract_current_record_source_header:
+    detail: Projects reusable title, H1-adjacent metadata, and real H2 heading values from one parsed Markdown document without applying artifact-specific validation.
+    signature: >-
+      (
+        document: MarkdownDocument
+      ) -> CurrentRecordSourceHeader
+    implementation:
+      stub: native
+
+  artifact.base.current_record._form_candidate_claim:
+    detail: Attaches canonical identity, retained source provenance, and reusable lightweight source projections to one structure-specific artifact candidate.
+    signature: >-
+      (
+        reference: ArtifactReference,
+        source_path: RepositoryRelativeSourcePath,
+        source_header: CurrentRecordSourceHeader
+      ) -> CurrentRecordCandidateClaim
+    implementation:
+      stub: native
+
+  artifact.base.current_record._group_candidate_claims:
+    detail: Groups one flat claim collection by canonical record identity without selecting a winner.
+    signature: >-
+      (
+        claims: list<CurrentRecordCandidateClaim>
+      ) -> CurrentRecordCandidateClaims
+    implementation:
+      stub: native
+
+  artifact.base.current_record._merge_candidate_claim_collections:
+    detail: Merges independently grouped claim collections while preserving every claim under its canonical record identity.
+    signature: >-
+      (
+        collections: list<CurrentRecordCandidateClaims>
+      ) -> CurrentRecordCandidateClaims
+    implementation:
+      stub: native
+
+  artifact.base.current_record._reject_artifact_module_discovery_mismatch:
+    detail: Terminates current-record construction when an artifact module and its retained physical discovery use different structure variants.
+    signature: >-
+      (
+        artifact_kind: ArtifactKind
+      ) -> never
+    implementation:
+      stub: native
+
+  artifact.base.current_record._collect_sequential_artifact_candidate_claims:
+    detail: Loads one sequential artifact root, invokes its resolved candidate capability for every source, skips expected non-candidates, and groups the formed claims.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        app_namespace: AppNamespace,
+        artifact_root: SequentialArtifactSourceRootDiscovery,
+        function: SequentialFormCandidateFunction
+      ) -> CurrentRecordCandidateClaims
+    implementation:
+      steps:
+        source_root: artifact_root.source_root
+        physical_tree: artifact_root.physical_tree
+        sources: >-
+          artifact.base.current_record._load_sequential_candidate_sources(
+            repository_root: repository_root,
+            source_root: source_root,
+            physical_tree: physical_tree
+          )
+        claims:
+          for:
+            item: source
+            in: sources
+            steps:
+              outcome: >-
+                artifact.base.module._invoke_sequential_form_candidate(
+                  function: function,
+                  app_namespace: app_namespace,
+                  physical_domain: source.physical_domain,
+                  document: source.document
+                )
+              claim:
+                switch: outcome
+                cases:
+                  SequentialArtifactCandidate:
+                    steps:
+                      source_header: >-
+                        artifact.base.current_record._extract_current_record_source_header(
+                          document: source.document
+                        )
+                      formed: >-
+                        artifact.base.current_record._form_candidate_claim(
+                          reference: outcome.reference,
+                          source_path: source.source_path,
+                          source_header: source_header
+                        )
+                    return: formed
+
+                  CandidateNotFormed:
+                    continue: true
+            return: claim
+        grouped: >-
+          artifact.base.current_record._group_candidate_claims(
+            claims: claims
+          )
+      return: grouped
+
+  artifact.base.current_record._collect_tree_artifact_candidate_claims:
+    detail: Loads one tree artifact root, invokes its resolved candidate capability for every source, skips expected non-candidates, and groups the formed claims.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        app_namespace: AppNamespace,
+        artifact_root: TreeArtifactSourceRootDiscovery,
+        function: TreeFormCandidateFunction
+      ) -> CurrentRecordCandidateClaims
+    implementation:
+      steps:
+        source_root: artifact_root.source_root
+        physical_tree: artifact_root.physical_tree
+        sources: >-
+          artifact.base.current_record._load_tree_candidate_sources(
+            repository_root: repository_root,
+            source_root: source_root,
+            physical_tree: physical_tree
+          )
+        claims:
+          for:
+            item: source
+            in: sources
+            steps:
+              outcome: >-
+                artifact.base.module._invoke_tree_form_candidate(
+                  function: function,
+                  app_namespace: app_namespace,
+                  markdown_path: source.markdown_path,
+                  document: source.document
+                )
+              claim:
+                switch: outcome
+                cases:
+                  TreeArtifactCandidate:
+                    steps:
+                      source_header: >-
+                        artifact.base.current_record._extract_current_record_source_header(
+                          document: source.document
+                        )
+                      formed: >-
+                        artifact.base.current_record._form_candidate_claim(
+                          reference: outcome.reference,
+                          source_path: source.source_path,
+                          source_header: source_header
+                        )
+                    return: formed
+
+                  CandidateNotFormed:
+                    continue: true
+            return: claim
+        grouped: >-
+          artifact.base.current_record._group_candidate_claims(
+            claims: claims
+          )
+      return: grouped
+
+  artifact.base.current_record._collect_artifact_candidate_claims:
+    detail: Routes one available physical artifact root to the matching module capability and rejects any catalog-to-inventory structure disagreement.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        app_namespace: AppNamespace,
+        artifact_kind: ArtifactKind,
+        artifact_root: ArtifactSourceRootDiscovery,
+        module: ArtifactModule
+      ) -> CurrentRecordCandidateClaims
+    implementation:
+      steps:
+        claims:
+          switch: module
+          cases:
+            SequentialArtifactModule:
+              steps:
+                selected:
+                  switch: artifact_root
+                  cases:
+                    SequentialArtifactSourceRootDiscovery:
+                      steps:
+                        function: module.capabilities.form_candidate
+                        collected: >-
+                          artifact.base.current_record._collect_sequential_artifact_candidate_claims(
+                            repository_root: repository_root,
+                            app_namespace: app_namespace,
+                            artifact_root: artifact_root,
+                            function: function
+                          )
+                      return: collected
+
+                    TreeArtifactSourceRootDiscovery:
+                      steps:
+                        _failed: >-
+                          artifact.base.current_record._reject_artifact_module_discovery_mismatch(
+                            artifact_kind: artifact_kind
+                          )
+              return: selected
+
+            TreeArtifactModule:
+              steps:
+                selected:
+                  switch: artifact_root
+                  cases:
+                    SequentialArtifactSourceRootDiscovery:
+                      steps:
+                        _failed: >-
+                          artifact.base.current_record._reject_artifact_module_discovery_mismatch(
+                            artifact_kind: artifact_kind
+                          )
+
+                    TreeArtifactSourceRootDiscovery:
+                      steps:
+                        function: module.capabilities.form_candidate
+                        collected: >-
+                          artifact.base.current_record._collect_tree_artifact_candidate_claims(
+                            repository_root: repository_root,
+                            app_namespace: app_namespace,
+                            artifact_root: artifact_root,
+                            function: function
+                          )
+                      return: collected
+              return: selected
+      return: claims
+
+  artifact.base.current_record._collect_app_candidate_claims:
+    detail: Collects and merges claims from every available physical artifact root in one configured app using the catalog module with the same artifact-kind key.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        app_namespace: AppNamespace,
+        app: ConfiguredAppDiscovery,
+        catalog: ArtifactModuleCatalog
+      ) -> CurrentRecordCandidateClaims
+    implementation:
+      steps:
+        artifact_roots: app.artifact_roots
+        modules: catalog.modules
+        collections:
+          for:
+            key: artifact_kind
+            value: artifact_root
+            in: artifact_roots
+            steps:
+              available: >-
+                artifact.base.discovery._is_artifact_source_root_available(
+                  discovery: artifact_root
+                )
+              collection:
+                if:
+                  condition: available
+                  then:
+                    steps:
+                      module: modules[artifact_kind]
+                      selected: >-
+                        artifact.base.current_record._collect_artifact_candidate_claims(
+                          repository_root: repository_root,
+                          app_namespace: app_namespace,
+                          artifact_kind: artifact_kind,
+                          artifact_root: artifact_root,
+                          module: module
+                        )
+                    return: selected
+            return: collection
+        claims: >-
+          artifact.base.current_record._merge_candidate_claim_collections(
+            collections: collections
+          )
+      return: claims
+
+  artifact.base.current_record._collect_candidate_claims:
+    detail: Collects every configured app's candidate claims and merges them into one repository-wide canonical-identity grouping.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        inventory: RepositoryDiscoveryInventory,
+        catalog: ArtifactModuleCatalog
+      ) -> CurrentRecordCandidateClaims
+    implementation:
+      steps:
+        apps: inventory.apps
+        collections:
+          for:
+            key: app_namespace
+            value: app
+            in: apps
+            steps:
+              collection: >-
+                artifact.base.current_record._collect_app_candidate_claims(
+                  repository_root: repository_root,
+                  app_namespace: app_namespace,
+                  app: app,
+                  catalog: catalog
+                )
+            return: collection
+        claims: >-
+          artifact.base.current_record._merge_candidate_claim_collections(
+            collections: collections
+          )
+      return: claims
+
+  artifact.base.current_record._select_unique_records:
+    detail: Constructs addressable current records only for canonical identities having exactly one candidate claim and omits every conflicted identity without retaining conflict members.
+    signature: >-
+      (
+        claims: CurrentRecordCandidateClaims
+      ) -> dict<CanonicalRecordReference, CurrentRecord>
+    implementation:
+      stub: native
+
+  artifact.base.current_record._build_sequential_artifact_record_index:
+    detail: Builds discovered sequential domain indexes from the retained physical tree, module segment declarations, and uniquely addressable records, including domains with no addressable record.
+    signature: >-
+      (
+        app_namespace: AppNamespace,
+        declaration: SequentialArtifactModuleDeclaration,
+        physical_tree: PhysicalDirectoryTree,
+        records: dict<CanonicalRecordReference, CurrentRecord>
+      ) -> SequentialArtifactRecordIndex
+    implementation:
+      stub: native
+
+  artifact.base.current_record._build_tree_artifact_record_index:
+    detail: Builds one physical tree-node index independently of record admission and joins addressable records only through shared canonical references.
+    signature: >-
+      (
+        app_namespace: AppNamespace,
+        declaration: TreeArtifactModuleDeclaration,
+        physical_tree: PhysicalDirectoryTree,
+        records: dict<CanonicalRecordReference, CurrentRecord>
+      ) -> TreeArtifactRecordIndex
+    implementation:
+      stub: native
+
+  artifact.base.current_record._index_current_artifact_record_indexes:
+    detail: Indexes one configured app's available structure-specific artifact index entries by artifact kind and rejects duplicate keys.
+    signature: >-
+      (
+        entries: list<CurrentArtifactRecordIndexEntry>
+      ) -> dict<ArtifactKind, CurrentArtifactRecordIndex>
+    implementation:
+      stub: native
+
+  artifact.base.current_record._index_current_app_record_indexes:
+    detail: Indexes the complete configured app record-index entries by app namespace and rejects duplicate keys.
+    signature: >-
+      (
+        entries: list<CurrentAppRecordIndexEntry>
+      ) -> dict<AppNamespace, CurrentAppRecordIndex>
+    implementation:
+      stub: native
+
+  artifact.base.current_record._build_artifact_record_index_entry:
+    detail: Routes one available structure-specific physical discovery to the corresponding current-record index builder and preserves its artifact-kind key.
+    signature: >-
+      (
+        app_namespace: AppNamespace,
+        artifact_kind: ArtifactKind,
+        discovery: ArtifactSourceRootDiscovery,
+        records: dict<CanonicalRecordReference, CurrentRecord>
+      ) -> CurrentArtifactRecordIndexEntry
+    implementation:
+      steps:
+        entry:
+          switch: discovery
+          cases:
+            SequentialArtifactSourceRootDiscovery:
+              steps:
+                declaration: discovery.declaration
+                physical_tree: discovery.physical_tree
+                index: >-
+                  artifact.base.current_record._build_sequential_artifact_record_index(
+                    app_namespace: app_namespace,
+                    declaration: declaration,
+                    physical_tree: physical_tree,
+                    records: records
+                  )
+                formed: >-
+                  CurrentArtifactRecordIndexEntry{
+                    artifact_kind: artifact_kind,
+                    index: index
+                  }
+              return: formed
+
+            TreeArtifactSourceRootDiscovery:
+              steps:
+                declaration: discovery.declaration
+                physical_tree: discovery.physical_tree
+                index: >-
+                  artifact.base.current_record._build_tree_artifact_record_index(
+                    app_namespace: app_namespace,
+                    declaration: declaration,
+                    physical_tree: physical_tree,
+                    records: records
+                  )
+                formed: >-
+                  CurrentArtifactRecordIndexEntry{
+                    artifact_kind: artifact_kind,
+                    index: index
+                  }
+              return: formed
+      return: entry
+
+  artifact.base.current_record._build_current_app_record_index:
+    detail: Builds one configured app index from every available physical artifact root and omits unavailable roots without treating them as empty artifact scopes.
+    signature: >-
+      (
+        app_namespace: AppNamespace,
+        app: ConfiguredAppDiscovery,
+        records: dict<CanonicalRecordReference, CurrentRecord>
+      ) -> CurrentAppRecordIndex
+    implementation:
+      steps:
+        artifact_roots: app.artifact_roots
+        entries:
+          for:
+            key: artifact_kind
+            value: artifact_root
+            in: artifact_roots
+            steps:
+              available: >-
+                artifact.base.discovery._is_artifact_source_root_available(
+                  discovery: artifact_root
+                )
+              entry:
+                if:
+                  condition: available
+                  then:
+                    steps:
+                      formed: >-
+                        artifact.base.current_record._build_artifact_record_index_entry(
+                          app_namespace: app_namespace,
+                          artifact_kind: artifact_kind,
+                          discovery: artifact_root,
+                          records: records
+                        )
+                    return: formed
+            return: entry
+        artifacts: >-
+          artifact.base.current_record._index_current_artifact_record_indexes(
+            entries: entries
+          )
+        index: >-
+          CurrentAppRecordIndex{
+            artifacts: artifacts
+          }
+      return: index
+
+  artifact.base.current_record._build_current_app_indexes:
+    detail: Builds every configured app's available structure-specific indexes from shared physical discovery and uniquely addressable records.
+    signature: >-
+      (
+        inventory: RepositoryDiscoveryInventory,
+        records: dict<CanonicalRecordReference, CurrentRecord>
+      ) -> dict<AppNamespace, CurrentAppRecordIndex>
+    implementation:
+      steps:
+        apps: inventory.apps
+        entries:
+          for:
+            key: app_namespace
+            value: app
+            in: apps
+            steps:
+              index: >-
+                artifact.base.current_record._build_current_app_record_index(
+                  app_namespace: app_namespace,
+                  app: app,
+                  records: records
+                )
+              entry: >-
+                CurrentAppRecordIndexEntry{
+                  app_namespace: app_namespace,
+                  index: index
+                }
+            return: entry
+        indexes: >-
+          artifact.base.current_record._index_current_app_record_indexes(
+            entries: entries
+          )
+      return: indexes
+
+  artifact.base.current_record._build_current_record_state:
+    detail: Composes capability-driven candidate collection, repository-wide uniqueness selection, and physical app-index construction into one immutable listing-MVP current-record state.
+    signature: >-
+      (
+        repository_root: RepositoryRoot,
+        inventory: RepositoryDiscoveryInventory,
+        catalog: ArtifactModuleCatalog
+      ) -> CurrentRecordState
+    implementation:
+      steps:
+        claims: >-
+          artifact.base.current_record._collect_candidate_claims(
+            repository_root: repository_root,
+            inventory: inventory,
+            catalog: catalog
+          )
+        records: >-
+          artifact.base.current_record._select_unique_records(
+            claims: claims
+          )
+        apps: >-
+          artifact.base.current_record._build_current_app_indexes(
+            inventory: inventory,
+            records: records
+          )
+        state: >-
+          CurrentRecordState{
+            records: records,
+            apps: apps
+          }
+      return: state

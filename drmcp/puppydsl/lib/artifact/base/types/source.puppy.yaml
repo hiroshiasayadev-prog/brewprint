@@ -1,0 +1,28 @@
+# responsibility: Defines parsed Markdown content, reusable lightweight source projections, and normalized source-path identities consumed by current-record construction.
+# excludes: Physical directory trees, artifact-specific source interpretation or validation, complete source content, and operation results.
+
+types:
+  RepositoryRelativeSourcePath:
+    detail: Identifies one current source path relative to the configured repository root for retained provenance and source access.
+    scalar: string
+
+  ArtifactRelativeMarkdownPath:
+    detail: Identifies one normalized Markdown source path relative to its artifact source root.
+    scalar: string
+
+  CurrentRecordMetadata:
+    detail: Carries successfully projected H1-adjacent metadata fields separated by source value form without applying artifact-specific validation.
+    record:
+      scalar_fields: dict<string, string>
+      list_fields: dict<string, list<string>>
+
+  CurrentRecordSourceHeader:
+    detail: Carries reusable lightweight Markdown projections retained for current-record operations without complete source content or artifact-specific validation.
+    record:
+      title: optional<string>
+      metadata: optional<CurrentRecordMetadata>
+      h2_headings: optional<list<string>>
+
+  MarkdownDocument:
+    detail: Represents one parsed Markdown document whose internal syntax-tree representation remains hidden from design-facing YAML.
+    opaque: true

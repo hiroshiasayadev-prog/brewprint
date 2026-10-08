@@ -1,0 +1,55 @@
+# responsibility: Defines addressable current records and the structure-specific indexes consumed by current-record operations.
+# excludes: Physical repository discovery, current-record construction, identity-conflict members, unadmitted sources, and public operation results.
+
+types:
+  TreeNodeSegment:
+    detail: Identifies one canonical tree identity segment relative to its parent current tree node.
+    scalar: string
+
+  CurrentRecord:
+    detail: Carries one uniquely addressable admitted current record and the data required to identify, locate, and project it.
+    record:
+      reference: ArtifactReference
+      canonical_ref: CanonicalRecordReference
+      source_path: RepositoryRelativeSourcePath
+      source_header: CurrentRecordSourceHeader
+
+  SequentialDomainRecordIndex:
+    detail: Contains one sequential domain's uniquely addressable current-record references in both operation-defined ordering directions.
+    record:
+      ascending_record_refs: list<CanonicalRecordReference>
+      descending_record_refs: list<CanonicalRecordReference>
+
+  SequentialArtifactRecordIndex:
+    detail: Contains every discovered sequential domain for one available artifact kind, including domains with no addressable current record.
+    record:
+      domains: dict<DomainNamespace, SequentialDomainRecordIndex>
+
+  CurrentTreeNode:
+    detail: Carries one available current tree node and its direct canonical child relations independently of corresponding record admission.
+    record:
+      segment: TreeNodeSegment
+      children: dict<TreeNodeSegment, CanonicalRecordReference>
+
+  TreeArtifactRecordIndex:
+    detail: Contains one available tree artifact root and every current tree node addressable within that tree.
+    record:
+      root_ref: CanonicalRecordReference
+      nodes: dict<CanonicalRecordReference, CurrentTreeNode>
+
+  CurrentArtifactRecordIndex:
+    detail: Carries one structure-specific current-record index for an available artifact kind.
+    union:
+      - SequentialArtifactRecordIndex
+      - TreeArtifactRecordIndex
+
+  CurrentAppRecordIndex:
+    detail: Contains every available artifact-kind current-record index within one configured app scope.
+    record:
+      artifacts: dict<ArtifactKind, CurrentArtifactRecordIndex>
+
+  CurrentRecordState:
+    detail: Contains every uniquely addressable current record and the configured app indexes used to select sequential scopes and current tree nodes.
+    record:
+      records: dict<CanonicalRecordReference, CurrentRecord>
+      apps: dict<AppNamespace, CurrentAppRecordIndex>

@@ -1,0 +1,21 @@
+# responsibility: Defines runtime composition that loads repository configuration and enforces configured source-root prerequisites.
+# excludes: Low-level configuration decoding, launch argument extraction, artifact module loading, and operation discovery.
+
+functions:
+  drmcp_runtime.config._validate_and_get_repository_configuration:
+    detail: Loads the repository configuration and confirms that every configured current source root exists as a directory.
+    signature: >-
+      (repository_root: RepositoryRoot) -> RepositoryConfiguration
+    implementation:
+      steps:
+        configuration: >-
+          drmcp_runtime.config._load_repository_configuration(
+            repository_root: repository_root
+          )
+
+        _current_source_roots_confirmed: >-
+          drmcp_runtime.config._require_current_source_roots(
+            repository_root: repository_root,
+            configuration: configuration
+          )
+      return: configuration

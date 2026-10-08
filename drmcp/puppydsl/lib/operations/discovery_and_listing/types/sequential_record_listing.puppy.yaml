@@ -1,0 +1,85 @@
+# responsibility: Defines sequential record-listing requests, normalized request values, current-state selection outcomes, public success results, and the final operation outcome.
+# excludes: Request-validation functions, current-state selection algorithms, projection extraction, shared diagnostic envelopes and contexts, runtime failures, and other operation contracts.
+
+types:
+  SequentialRecordOrder:
+    detail: Identifies the closed ordering direction applied to one complete sequential ordering tuple.
+    enum:
+      - ascending
+      - descending
+
+  SequentialRecordListingRequest:
+    detail: Carries the schema-valid optional selectors, controls, and projection values accepted by sequential record listing before semantic validation and default application.
+    record:
+      app_namespace: optional<AppNamespace>
+      artifact_kind: optional<ArtifactKind>
+      domain_namespace: optional<DomainNamespace>
+      order: optional<SequentialRecordOrder>
+      limit: optional<integer>
+      offset: optional<integer>
+      projection: optional<list<string>>
+
+  SequentialRecordProjectionSelection:
+    detail: Carries the normalized set of optional record fields requested by one validated sequential listing request.
+    record:
+      include_title: boolean
+      include_status: boolean
+
+  ValidatedSequentialRecordListingRequest:
+    detail: Carries every required selector and every defaulted control needed to select and execute one sequential domain listing.
+    record:
+      app_namespace: AppNamespace
+      artifact_kind: ArtifactKind
+      domain_namespace: DomainNamespace
+      order: SequentialRecordOrder
+      limit: integer
+      offset: integer
+      projection: SequentialRecordProjectionSelection
+
+  SequentialRecordListingRequestValidationOutcome:
+    detail: Carries either one fully validated and defaulted request or the first expected request-wide diagnostic context established by validation order.
+    union:
+      - ValidatedSequentialRecordListingRequest
+      - MissingSelectorFieldsContext
+      - InvalidProjectionContext
+      - BoundedIntegerContext
+      - MinimumIntegerContext
+
+  SequentialListingAppSelectionOutcome:
+    detail: Carries either the selected current app index or the shared unavailable-app context required to form an invalid-selector response.
+    union:
+      - CurrentAppRecordIndex
+      - UnavailableAppNamespaceContext
+
+  SequentialListingArtifactSelectionOutcome:
+    detail: Carries either the selected sequential artifact index or the shared unavailable-or-ineligible artifact context required to form an invalid-selector response.
+    union:
+      - SequentialArtifactRecordIndex
+      - UnavailableSequentialArtifactKindContext
+
+  SequentialListingDomainSelectionOutcome:
+    detail: Carries either the selected sequential domain index or the shared unavailable-domain context required to form an invalid-selector response.
+    union:
+      - SequentialDomainRecordIndex
+      - UnavailableDomainNamespaceContext
+
+  SequentialRecordListingItem:
+    detail: Carries one listed canonical record reference and the three-state title and status projections required to distinguish omission, a projected value, and projected unavailability.
+    record:
+      canonical_ref: CanonicalRecordReference
+      title: optional<optional<string>>
+      status: optional<optional<string>>
+
+  SequentialRecordListingResult:
+    detail: Carries one complete bounded sequential listing result after ordering, offset application, limit application, and requested field projection.
+    record:
+      records: list<SequentialRecordListingItem>
+      applied_offset: integer
+      applied_limit: integer
+      has_more: boolean
+
+  SequentialRecordListingOutcome:
+    detail: Carries either one complete sequential record-listing result or one shared top-level operation error response.
+    union:
+      - SequentialRecordListingResult
+      - OperationErrorResponse

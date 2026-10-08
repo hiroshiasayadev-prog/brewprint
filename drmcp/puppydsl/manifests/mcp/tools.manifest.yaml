@@ -1,0 +1,27 @@
+#bind: mcp_tools
+# Registers declared PuppyDSL functions as public MCP tools.
+#
+# To add a tool:
+# 1. Declare its implementation as an ordinary PuppyDSL function.
+# 2. Add the public MCP tool name below.
+# 3. Provide a client-facing detail.
+# 4. Reference the fully qualified PuppyDSL function ID.
+#
+# The MCP input schema is derived from the referenced function signature.
+
+tools:
+  discover_record_scopes:
+    detail: Discovers configured app, artifact-kind, sequential-domain, or tree-root scopes according to one exact selector combination.
+    function: operation.discovery_and_listing.discover_record_scopes
+
+  list_sequential_records:
+    detail: Lists one bounded ordered range of uniquely addressable current records within an exact sequential app, artifact-kind, and domain scope.
+    function: operation.discovery_and_listing.list_sequential_records
+
+  list_tree_children:
+    detail: Lists one bounded range of direct current tree children for an exact canonical tree-node selector or reports the normal terminal-node result.
+    function: operation.discovery_and_listing.list_tree_children
+
+  inspect_tree:
+    detail: Inspects one exact current tree subtree through bounded breadth-first selection and returns a nested structural overview.
+    function: operation.discovery_and_listing.inspect_tree

@@ -1,0 +1,7 @@
+# responsibility: Defines runtime identifiers obtained directly from DRMCP process launch arguments.
+# excludes: Repository-relative configuration paths, artifact module placement, and operation-resolved source paths.
+
+types:
+  RepositoryRoot:
+    detail: Identifies the normalized filesystem root supplied when the DRMCP process starts.
+    scalar: string

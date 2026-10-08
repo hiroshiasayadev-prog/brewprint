@@ -1,0 +1,14 @@
+# responsibility: Defines the operation-scoped context that owns one immutable listing-MVP current-record state built from shared physical discovery.
+# excludes: Repository configuration, artifact module activation, physical discovery construction, validation state, and repository mutation or invalidation behavior.
+
+contexts:
+  current_record:
+    detail: Owns one immutable current-record state for the lifetime of an operation.
+    provides:
+      state:
+        provider: >-
+          artifact.base.current_record._build_current_record_state(
+            repository_root: launch.repository_root,
+            inventory: repository_discovery.inventory,
+            catalog: artifact_modules.catalog
+          )

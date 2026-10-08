@@ -1,0 +1,15 @@
+# responsibility: Defines the DRMCP process entry function and its process-lifetime runtime contexts.
+# excludes: MCP transport implementation, public tool registration data, and operation-specific processing.
+
+functions:
+  main:
+    detail: Opens the process-lifetime runtime contexts and serves the configured public MCP tools.
+    opens:
+      - launch
+      - repository_configuration
+      - artifact_modules
+    signature: >-
+      () -> void
+    implementation:
+      steps:
+        _served: drmcp_runtime.mcp.serve()

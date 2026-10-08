@@ -1,0 +1,21 @@
+# responsibility: Defines physical paths, directory names, and Markdown-source trees shared by artifact repository discovery.
+# excludes: Configured application inventory, artifact-kind availability, source parsing, and current-record admission.
+
+types:
+  ArtifactSourceRootPath:
+    detail: Identifies one artifact source root path derived from a configured records root and artifact directory.
+    scalar: string
+
+  PhysicalDirectoryName:
+    detail: Identifies one directory name relative to its physical parent directory.
+    scalar: string
+
+  MarkdownSourceFileName:
+    detail: Identifies one Markdown source file name relative to its physical parent directory.
+    scalar: string
+
+  PhysicalDirectoryTree:
+    detail: Preserves the nested physical directory and Markdown-source structure beneath one externally identified root directory.
+    record:
+      directories: dict<PhysicalDirectoryName, PhysicalDirectoryTree>
+      markdown_sources: list<MarkdownSourceFileName>

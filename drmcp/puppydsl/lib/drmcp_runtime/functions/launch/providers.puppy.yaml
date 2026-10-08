@@ -1,0 +1,10 @@
+# responsibility: Defines native runtime provider functions for immutable DRMCP process launch values.
+# excludes: Repository configuration loading, artifact module activation, and operation-scoped repository access.
+
+functions:
+  drmcp_runtime.launch._get_repository_root:
+    detail: Returns the normalized repository root supplied as the required DRMCP process launch argument.
+    signature: >-
+      () -> RepositoryRoot
+    implementation:
+      stub: native

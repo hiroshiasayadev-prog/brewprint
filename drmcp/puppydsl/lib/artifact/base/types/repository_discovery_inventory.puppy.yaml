@@ -1,0 +1,48 @@
+# responsibility: Defines keyed physical repository discovery values and construction entries shared by artifact consumers.
+# excludes: Physical path-segment types, public operation results, parsed records, and current-record admission state.
+
+types:
+  SequentialArtifactSourceRootDiscovery:
+    detail: Carries one sequential artifact kind's source-root availability and physical tree together with the manifest-derived module declaration used to discover it.
+    record:
+      declaration: SequentialArtifactModuleDeclaration
+      source_root: ArtifactSourceRootPath
+      available: boolean
+      physical_tree: PhysicalDirectoryTree
+
+  TreeArtifactSourceRootDiscovery:
+    detail: Carries one tree artifact kind's source-root availability and physical tree together with the manifest-derived module declaration used to discover it.
+    record:
+      declaration: TreeArtifactModuleDeclaration
+      source_root: ArtifactSourceRootPath
+      available: boolean
+      physical_tree: PhysicalDirectoryTree
+
+  ArtifactSourceRootDiscovery:
+    detail: Carries one structure-specific artifact source-root discovery result.
+    union:
+      - SequentialArtifactSourceRootDiscovery
+      - TreeArtifactSourceRootDiscovery
+
+  ArtifactSourceRootDiscoveryEntry:
+    detail: Carries one artifact-kind key together with the structure-specific source-root discovery constructed for that module.
+    record:
+      artifact_kind: ArtifactKind
+      discovery: ArtifactSourceRootDiscovery
+
+  ConfiguredAppDiscovery:
+    detail: Groups the keyed artifact source-root discoveries derived for one explicitly configured current source.
+    record:
+      records_root: RecordsRoot
+      artifact_roots: dict<ArtifactKind, ArtifactSourceRootDiscovery>
+
+  ConfiguredAppDiscoveryEntry:
+    detail: Carries one configured app-namespace key together with its complete physical artifact-root discovery.
+    record:
+      app_namespace: AppNamespace
+      discovery: ConfiguredAppDiscovery
+
+  RepositoryDiscoveryInventory:
+    detail: Contains the keyed physical artifact source-root inventory for every explicitly configured app namespace.
+    record:
+      apps: dict<AppNamespace, ConfiguredAppDiscovery>
