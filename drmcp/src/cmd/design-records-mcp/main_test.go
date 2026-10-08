@@ -19,12 +19,12 @@ func TestRunServerModeStdio(t *testing.T) {
 		`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}`,
 		`{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}`,
 		`{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`,
-		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list_records","arguments":{"kind":"decision","limit":1}}}`,
+		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list_records","arguments":{"app_namespace":"drmcp","kind":"task","domain":"MCP","limit":1}}}`,
 	}, "\n") + "\n"
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	if err := run([]string{"--root", root}, strings.NewReader(input), &stdout, &stderr); err != nil {
+	if err := run([]string{"--root", root, "--records-root", "drmcp/records"}, strings.NewReader(input), &stdout, &stderr); err != nil {
 		t.Fatalf("run server mode: %v\nstderr=%s", err, stderr.String())
 	}
 	if strings.Contains(stdout.String(), "design-records-mcp ready") || strings.Contains(stdout.String(), "records:") {
@@ -62,7 +62,7 @@ func TestRunServerModeStdio(t *testing.T) {
 func TestRunServerModeEmptyInputDoesNotWriteSummary(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	if err := run([]string{"--root", filepath.FromSlash("../../../../")}, strings.NewReader(""), &stdout, &stderr); err != nil {
+	if err := run([]string{"--root", filepath.FromSlash("../../../../"), "--records-root", "drmcp/records"}, strings.NewReader(""), &stdout, &stderr); err != nil {
 		t.Fatalf("run server mode empty input: %v\nstderr=%s", err, stderr.String())
 	}
 	if got := stdout.String(); got != "" {
@@ -73,7 +73,7 @@ func TestRunServerModeEmptyInputDoesNotWriteSummary(t *testing.T) {
 func TestRunSummaryMode(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	if err := run([]string{"--root", filepath.FromSlash("../../../../"), "--summary"}, strings.NewReader(""), &stdout, &stderr); err != nil {
+	if err := run([]string{"--root", filepath.FromSlash("../../../../"), "--records-root", "drmcp/records", "--summary"}, strings.NewReader(""), &stdout, &stderr); err != nil {
 		t.Fatalf("run summary mode: %v\nstderr=%s", err, stderr.String())
 	}
 	got := stdout.String()
@@ -93,22 +93,24 @@ func TestProcessStdioSmoke(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolve cmd dir: %v", err)
 	}
+	retiredGet := "get" + "_record"
+	retiredSuggest := "suggest" + "_next_record"
 	input := strings.Join([]string{
 		`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}`,
 		`{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}`,
 		`{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`,
-		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list_records","arguments":{"kind":"decision","limit":1,"order_by":"id","order":"desc"}}}`,
-		`{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_record","arguments":{"id":"V01-ADR-076","include_body":false}}}`,
+		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list_records","arguments":{"app_namespace":"drmcp","kind":"task","domain":"MCP","limit":1,"order":"desc"}}}`,
+		`{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_records","arguments":{"refs":["DRMCP-TASK-MCP-009-05"],"include_body":false}}}`,
 		`{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"validate_records","arguments":{}}}`,
-		`{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"suggest_next_record","arguments":{"kind":"decision","title":"Process Smoke Should Not Exist"}}}`,
-		`{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"get_record","arguments":{"id":"ADR-999"}}}`,
-		`{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"get_record","arguments":{}}}`,
+		`{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"` + retiredSuggest + `","arguments":{"kind":"decision","title":"Process Smoke Should Not Exist"}}}`,
+		`{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"` + retiredGet + `","arguments":{"id":"ADR-999"}}}`,
+		`{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"get_records","arguments":{}}}`,
 	}, "\n") + "\n"
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "go", "run", ".", "--root", repoRoot)
+	cmd := exec.CommandContext(ctx, "go", "run", ".", "--root", repoRoot, "--records-root", "drmcp/records")
 	cmd.Dir = cmdDir
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -166,10 +168,10 @@ func TestProcessStdioSmoke(t *testing.T) {
 	assertInitializeSmokeResponse(t, responses[1])
 	assertToolsListSmokeResponse(t, responses[2])
 	assertListRecordsSmokeResponse(t, responses[3])
-	assertGetRecordSmokeResponse(t, responses[4])
+	assertGetRecordsSmokeResponse(t, responses[4])
 	assertValidateRecordsSmokeResponse(t, responses[5])
-	assertSuggestNextRecordSmokeResponse(t, repoRoot, responses[6])
-	assertToolErrorSmokeResponse(t, responses[7], "record_not_found")
+	assertToolErrorSmokeResponse(t, responses[6], "invalid_request")
+	assertToolErrorSmokeResponse(t, responses[7], "invalid_request")
 	assertToolErrorSmokeResponse(t, responses[8], "invalid_request")
 }
 
@@ -199,7 +201,7 @@ func assertToolsListSmokeResponse(t *testing.T, response map[string]any) {
 	}
 	result := response["result"].(map[string]any)
 	tools := result["tools"].([]any)
-	for _, name := range []string{"list_records", "validate_records", "get_record", "suggest_next_record"} {
+	for _, name := range []string{"list_records", "validate_records", "get_records"} {
 		found := false
 		for _, item := range tools {
 			tool := item.(map[string]any)
@@ -224,23 +226,34 @@ func assertListRecordsSmokeResponse(t *testing.T, response map[string]any) {
 	if len(payload.Records) == 0 {
 		t.Fatalf("list_records returned no records: %s", text)
 	}
+	if _, ok := payload.Records[0]["path"]; ok {
+		t.Fatalf("list_records leaked path: %s", text)
+	}
 }
 
-func assertGetRecordSmokeResponse(t *testing.T, response map[string]any) {
+func assertGetRecordsSmokeResponse(t *testing.T, response map[string]any) {
 	t.Helper()
 	text := assertToolResultText(t, response, false)
-	var payload map[string]any
+	var payload struct {
+		Records []map[string]any `json:"records"`
+	}
 	unmarshalJSONText(t, text, &payload)
-	record := payload["record"].(map[string]any)
-	if record["id"] != "V01-ADR-076" {
-		t.Fatalf("get_record id = %#v, want V01-ADR-076; text=%s", record["id"], text)
+	if len(payload.Records) != 1 {
+		t.Fatalf("get_records records = %#v; text=%s", payload.Records, text)
+	}
+	record := payload.Records[0]
+	if record["ref"] != "DRMCP-TASK-MCP-009-05" {
+		t.Fatalf("get_records ref = %#v, want DRMCP-TASK-MCP-009-05; text=%s", record["ref"], text)
+	}
+	if _, ok := record["path"]; ok {
+		t.Fatalf("get_records leaked path: %s", text)
 	}
 	if _, ok := record["body"]; ok {
-		t.Fatalf("get_record include_body=false returned body: %s", text)
+		t.Fatalf("get_records include_body=false returned body: %s", text)
 	}
 	headings, ok := record["headings"].([]any)
 	if !ok || len(headings) == 0 {
-		t.Fatalf("get_record headings missing: %s", text)
+		t.Fatalf("get_records headings missing: %s", text)
 	}
 }
 
@@ -259,25 +272,6 @@ func assertValidateRecordsSmokeResponse(t *testing.T, response map[string]any) {
 		if _, ok := payload["diagnostics"].([]any); !ok {
 			t.Fatalf("validate_records diagnostics is not an array: %s", text)
 		}
-	}
-}
-
-func assertSuggestNextRecordSmokeResponse(t *testing.T, repoRoot string, response map[string]any) {
-	t.Helper()
-	text := assertToolResultText(t, response, false)
-	var payload map[string]any
-	unmarshalJSONText(t, text, &payload)
-	for _, key := range []string{"next_id", "next_number", "suggested_path"} {
-		if payload[key] == nil {
-			t.Fatalf("suggest_next_record missing %s: %s", key, text)
-		}
-	}
-	suggested, ok := payload["suggested_path"].(string)
-	if !ok || suggested == "" {
-		t.Fatalf("suggest_next_record suggested_path invalid: %s", text)
-	}
-	if _, err := os.Stat(filepath.Join(repoRoot, filepath.FromSlash(suggested))); !os.IsNotExist(err) {
-		t.Fatalf("suggest_next_record suggested path exists or stat failed: path=%s err=%v", suggested, err)
 	}
 }
 

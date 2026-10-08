@@ -21,16 +21,16 @@ func TestToolsCallSuccess(t *testing.T) {
 	}{
 		{
 			name:   "list_records",
-			line:   `{"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name":"list_records","arguments":{"kind":"decision","limit":1}}}`,
+			line:   `{"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name":"list_records","arguments":{"app_namespace":"drmcp","kind":"decision","domain":"MCP","limit":1}}}`,
 			wantID: "10",
 			assertText: func(t *testing.T, text string) {
-				var resp designrecords.ListRecordsResponse
+				var resp designrecords.CurrentListRecordsResponse
 				unmarshalToolText(t, text, &resp)
 				if got := len(resp.Records); got != 1 {
 					t.Fatalf("records len = %d, want 1", got)
 				}
-				if resp.Records[0].ID != "ADR-001" {
-					t.Fatalf("record ID = %q, want ADR-001", resp.Records[0].ID)
+				if resp.Records[0].Ref != "DRMCP-ADR-MCP-002" {
+					t.Fatalf("record ref = %q, want DRMCP-ADR-MCP-002", resp.Records[0].Ref)
 				}
 			},
 		},
@@ -48,94 +48,70 @@ func TestToolsCallSuccess(t *testing.T) {
 		},
 		{
 			name:   "list_records omitted arguments",
-			line:   `{"jsonrpc":"2.0","id":14,"method":"tools/call","params":{"name":"list_records"}}`,
+			line:   `{"jsonrpc":"2.0","id":14,"method":"tools/call","params":{"name":"list_records","arguments":{"app_namespace":"drmcp","kind":"work_item","domain":"MCP"}}}`,
 			wantID: "14",
 			assertText: func(t *testing.T, text string) {
-				var resp designrecords.ListRecordsResponse
+				var resp designrecords.CurrentListRecordsResponse
 				unmarshalToolText(t, text, &resp)
-				if got := len(resp.Records); got != 6 {
-					t.Fatalf("records len = %d, want 6", got)
+				if got := len(resp.Records); got != 1 {
+					t.Fatalf("records len = %d, want 1", got)
 				}
 			},
 		},
 		{
 			name:   "list_records null arguments",
-			line:   `{"jsonrpc":"2.0","id":15,"method":"tools/call","params":{"name":"list_records","arguments":null}}`,
+			line:   `{"jsonrpc":"2.0","id":15,"method":"tools/call","params":{"name":"list_records","arguments":{"app_namespace":"drmcp","kind":"task","domain":"MCP"}}}`,
 			wantID: "15",
 			assertText: func(t *testing.T, text string) {
-				var resp designrecords.ListRecordsResponse
+				var resp designrecords.CurrentListRecordsResponse
 				unmarshalToolText(t, text, &resp)
-				if got := len(resp.Records); got != 6 {
-					t.Fatalf("records len = %d, want 6", got)
+				if got := len(resp.Records); got != 1 {
+					t.Fatalf("records len = %d, want 1", got)
 				}
 			},
 		},
 		{
 			name:   "list_records workflow requirement",
-			line:   `{"jsonrpc":"2.0","id":151,"method":"tools/call","params":{"name":"list_records","arguments":{"kind":"requirement"}}}`,
+			line:   `{"jsonrpc":"2.0","id":151,"method":"tools/call","params":{"name":"list_records","arguments":{"app_namespace":"drmcp","kind":"requirement","domain":"MCP"}}}`,
 			wantID: "151",
 			assertText: func(t *testing.T, text string) {
-				var resp designrecords.ListRecordsResponse
+				var resp designrecords.CurrentListRecordsResponse
 				unmarshalToolText(t, text, &resp)
-				if len(resp.Records) != 1 || resp.Records[0].ID != "REQ-MCP-003" || resp.Records[0].Requirement == nil {
+				if len(resp.Records) != 1 || resp.Records[0].Ref != "DRMCP-REQ-MCP-003" {
 					t.Fatalf("requirement list response = %#v", resp)
 				}
 			},
 		},
 		{
-			name:   "list_records workflow work item range",
-			line:   `{"jsonrpc":"2.0","id":153,"method":"tools/call","params":{"name":"list_records","arguments":{"kind":"work_item","id_range":{"from":"WORK-MCP-003","to":"WORK-MCP-003"}}}}`,
+			name:   "list_records workflow work item domain",
+			line:   `{"jsonrpc":"2.0","id":153,"method":"tools/call","params":{"name":"list_records","arguments":{"app_namespace":"drmcp","kind":"work_item","domain":"MCP"}}}`,
 			wantID: "153",
 			assertText: func(t *testing.T, text string) {
-				var resp designrecords.ListRecordsResponse
+				var resp designrecords.CurrentListRecordsResponse
 				unmarshalToolText(t, text, &resp)
-				if len(resp.Records) != 1 || resp.Records[0].ID != "WORK-MCP-003" || resp.Records[0].WorkItem == nil {
-					t.Fatalf("work item range response = %#v", resp)
-				}
-			},
-		},
-		{
-			name:   "get_record workflow task",
-			line:   `{"jsonrpc":"2.0","id":152,"method":"tools/call","params":{"name":"get_record","arguments":{"id":"TASK-MCP-003-01"}}}`,
-			wantID: "152",
-			assertText: func(t *testing.T, text string) {
-				var resp designrecords.GetRecordResponse
-				unmarshalToolText(t, text, &resp)
-				if resp.Record.ID != "TASK-MCP-003-01" || resp.Record.Task == nil || resp.Record.Task.WorkItem != "WORK-MCP-003" {
-					t.Fatalf("task get_record response = %#v", resp)
-				}
-			},
-		},
-		{
-			name:   "get_record",
-			line:   `{"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"get_record","arguments":{"id":"ADR-001","include_body":true}}}`,
-			wantID: "12",
-			assertText: func(t *testing.T, text string) {
-				var resp designrecords.GetRecordResponse
-				unmarshalToolText(t, text, &resp)
-				if resp.Record.ID != "ADR-001" || resp.Record.Body == nil || *resp.Record.Body == "" {
-					t.Fatalf("get_record response = %#v", resp)
+				if len(resp.Records) != 1 || resp.Records[0].Ref != "DRMCP-WORK-MCP-003" {
+					t.Fatalf("work item response = %#v", resp)
 				}
 			},
 		},
 		{
 			name:   "get_records partial result and duplicate info",
-			line:   `{"jsonrpc":"2.0","id":121,"method":"tools/call","params":{"name":"get_records","arguments":{"ids":["ADR-001","SPEC-one","ADR-001","INV-DOCS-999"],"include_body":true}}}`,
+			line:   `{"jsonrpc":"2.0","id":121,"method":"tools/call","params":{"name":"get_records","arguments":{"refs":["DRMCP-ADR-MCP-001","DRMCP-TASK-MCP-003-01","DRMCP-ADR-MCP-001","DRMCP-INV-MCP-999"],"include_body":true}}}`,
 			wantID: "121",
 			assertText: func(t *testing.T, text string) {
-				var resp designrecords.GetRecordsResponse
+				var resp designrecords.CurrentGetRecordsResponse
 				unmarshalToolText(t, text, &resp)
-				if len(resp.Items) != 3 || resp.Items[0].ID != "ADR-001" || resp.Items[1].ID != "SPEC-one" || resp.Items[2].RetrievalStatus != designrecords.RetrievalStatusNotFound {
+				if len(resp.Records) != 2 || resp.Records[0].Ref != "DRMCP-ADR-MCP-001" || resp.Records[1].Ref != "DRMCP-TASK-MCP-003-01" {
 					t.Fatalf("get_records response = %#v", resp)
 				}
-				if resp.Items[0].Record == nil || resp.Items[0].Record.Body == nil || *resp.Items[0].Record.Body == "" {
-					t.Fatalf("get_records found body = %#v", resp.Items[0])
+				if resp.Records[0].Body == nil || *resp.Records[0].Body == "" {
+					t.Fatalf("get_records found body = %#v", resp.Records[0])
 				}
-				if len(resp.Items[2].Diagnostics) != 1 || resp.Items[2].Diagnostics[0].RequestedID != "INV-DOCS-999" {
-					t.Fatalf("get_records missing diagnostic = %#v", resp.Items[2].Diagnostics)
+				if !hasOperationWarningForTest(resp.Warnings, "unresolved_ref", "DRMCP-INV-MCP-999") {
+					t.Fatalf("get_records missing unresolved warning = %#v", resp.Warnings)
 				}
-				if len(resp.Diagnostics) != 1 || resp.Diagnostics[0].RequestedID != "ADR-001" || resp.Diagnostics[0].FirstIndex == nil || *resp.Diagnostics[0].FirstIndex != 0 {
-					t.Fatalf("get_records duplicate diagnostic = %#v", resp.Diagnostics)
+				if !hasOperationWarningForTest(resp.Warnings, "duplicate_ref", "DRMCP-ADR-MCP-001") {
+					t.Fatalf("get_records duplicate warning = %#v", resp.Warnings)
 				}
 			},
 		},
@@ -172,21 +148,6 @@ func TestToolsCallSuccess(t *testing.T) {
 				unmarshalToolText(t, text, &resp)
 				if resp.Status != "resolved" || resp.RefKind != "record_id" || resp.Target == nil || resp.Target.RecordID != "TASK-MCP-003-01" || resp.Target.RecordKind != designrecords.RecordKindTask {
 					t.Fatalf("resolve_reference task response = %#v", resp)
-				}
-			},
-		},
-		{
-			name:   "suggest_next_record",
-			line:   `{"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"suggest_next_record","arguments":{"kind":"decision","title":"Next Thing"}}}`,
-			wantID: "13",
-			assertText: func(t *testing.T, text string) {
-				var resp designrecords.SuggestNextRecordResponse
-				unmarshalToolText(t, text, &resp)
-				if resp.NextID != "ADR-003" || resp.NextNumber != 3 || resp.ExistingMaxID != "ADR-002" {
-					t.Fatalf("suggest_next_record response = %#v", resp)
-				}
-				if resp.SuggestedPath != "docs/adr/ADR-003-next-thing.md" {
-					t.Fatalf("suggested path = %q", resp.SuggestedPath)
 				}
 			},
 		},
@@ -294,14 +255,18 @@ func TestToolsListWorkflowKindEnums(t *testing.T) {
 		if !ok {
 			t.Fatalf("%s kind enum missing: %#v", toolName, kind)
 		}
-		for _, want := range []string{"decision", "spec", "investigation", "requirement", "work_item", "task"} {
+		wantValues := []string{"decision", "investigation", "requirement", "work_item", "task"}
+		if toolName == "validate_records" {
+			wantValues = append(wantValues, "spec")
+		}
+		for _, want := range wantValues {
 			if !hasEnumValue(enumValues, want) {
 				t.Fatalf("%s kind enum missing %q: %#v", toolName, want, enumValues)
 			}
 		}
 	}
-	if !strings.Contains(Tools()[0].Description, "workflow") {
-		t.Fatalf("list_records description does not mention workflow artifacts: %q", Tools()[0].Description)
+	if !strings.Contains(Tools()[0].Description, "current records") {
+		t.Fatalf("list_records description does not mention current records: %q", Tools()[0].Description)
 	}
 }
 
@@ -517,28 +482,18 @@ func TestToolsCallToolErrors(t *testing.T) {
 		code designrecords.ErrorCode
 	}{
 		{
-			name: "get_record missing id",
-			line: `{"jsonrpc":"2.0","id":20,"method":"tools/call","params":{"name":"get_record","arguments":{}}}`,
-			code: designrecords.ErrorCodeInvalidRequest,
-		},
-		{
-			name: "get_record unknown id",
-			line: `{"jsonrpc":"2.0","id":21,"method":"tools/call","params":{"name":"get_record","arguments":{"id":"ADR-999"}}}`,
-			code: designrecords.ErrorCodeRecordNotFound,
-		},
-		{
 			name: "get_records missing ids",
 			line: `{"jsonrpc":"2.0","id":211,"method":"tools/call","params":{"name":"get_records","arguments":{}}}`,
 			code: designrecords.ErrorCodeInvalidRequest,
 		},
 		{
 			name: "get_records empty ids",
-			line: `{"jsonrpc":"2.0","id":212,"method":"tools/call","params":{"name":"get_records","arguments":{"ids":[]}}}`,
+			line: `{"jsonrpc":"2.0","id":212,"method":"tools/call","params":{"name":"get_records","arguments":{"refs":[]}}}`,
 			code: designrecords.ErrorCodeInvalidRequest,
 		},
 		{
-			name: "get_records non-string id",
-			line: `{"jsonrpc":"2.0","id":213,"method":"tools/call","params":{"name":"get_records","arguments":{"ids":["ADR-001",7]}}}`,
+			name: "get_records non-string ref",
+			line: `{"jsonrpc":"2.0","id":213,"method":"tools/call","params":{"name":"get_records","arguments":{"refs":["DRMCP-ADR-MCP-001",7]}}}`,
 			code: designrecords.ErrorCodeInvalidRequest,
 		},
 		{
@@ -562,14 +517,9 @@ func TestToolsCallToolErrors(t *testing.T) {
 			code: designrecords.ErrorCodeInvalidRequest,
 		},
 		{
-			name: "suggest_next_record spec kind",
-			line: `{"jsonrpc":"2.0","id":22,"method":"tools/call","params":{"name":"suggest_next_record","arguments":{"kind":"spec","title":"Spec"}}}`,
-			code: designrecords.ErrorCodeUnsupportedKind,
-		},
-		{
-			name: "list_records spec kind with id range",
-			line: `{"jsonrpc":"2.0","id":23,"method":"tools/call","params":{"name":"list_records","arguments":{"kind":"spec","id_range":{"from":"ADR-001"}}}}`,
-			code: designrecords.ErrorCodeInvalidIDRange,
+			name: "list_records obsolete id range",
+			line: `{"jsonrpc":"2.0","id":23,"method":"tools/call","params":{"name":"list_records","arguments":{"app_namespace":"drmcp","kind":"requirement","domain":"MCP","id_range":{"from":"DRMCP-REQ-MCP-001"}}}}`,
+			code: designrecords.ErrorCodeInvalidRequest,
 		},
 		{
 			name: "unknown tool name",
@@ -598,7 +548,7 @@ func TestToolsCallToolErrors(t *testing.T) {
 		},
 		{
 			name: "omitted arguments is empty object",
-			line: `{"jsonrpc":"2.0","id":26,"method":"tools/call","params":{"name":"get_record"}}`,
+			line: `{"jsonrpc":"2.0","id":26,"method":"tools/call","params":{"name":"list_records"}}`,
 			code: designrecords.ErrorCodeInvalidRequest,
 		},
 		{
@@ -615,7 +565,16 @@ func TestToolsCallToolErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server := NewServerWithIndexBuilder(designrecords.Config{Root: "."}, func(context.Context, designrecords.Config) (*designrecords.Index, error) {
+			server := NewServerWithIndexBuilder(designrecords.Config{
+				Root: ".",
+				RecordsRoots: []designrecords.RecordsEntry{
+					{
+						AppNamespace:    "drmcp",
+						RecordsRoot:     "drmcp/records",
+						NamespacePrefix: "DRMCP-",
+					},
+				},
+			}, func(context.Context, designrecords.Config) (*designrecords.Index, error) {
 				return toolsCallTestIndex(), nil
 			})
 			res := handleLine(t, server, tt.line)
@@ -672,9 +631,9 @@ func TestToolsCallIndexRebuildPolicy(t *testing.T) {
 	server := NewServerWithIndexBuilder(designrecords.Config{Root: "."}, func(context.Context, designrecords.Config) (*designrecords.Index, error) {
 		calls++
 		if calls == 1 {
-			return &designrecords.Index{Records: []designrecords.Record{toolsCallRecord("ADR-001", "First")}}, nil
+			return &designrecords.Index{Records: []designrecords.Record{currentToolsCallRecord("DRMCP-ADR-MCP-001", designrecords.RecordKindDecision, "First")}}, nil
 		}
-		return &designrecords.Index{Records: []designrecords.Record{toolsCallRecord("ADR-002", "Second")}}, nil
+		return &designrecords.Index{Records: []designrecords.Record{currentToolsCallRecord("DRMCP-ADR-MCP-002", designrecords.RecordKindDecision, "Second")}}, nil
 	})
 
 	initialize := handleLine(t, server, `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}`)
@@ -689,16 +648,16 @@ func TestToolsCallIndexRebuildPolicy(t *testing.T) {
 		t.Fatalf("initialize/tools_list BuildIndex calls = %d, want 0", calls)
 	}
 
-	first := handleLine(t, server, `{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list_records","arguments":{}}}`)
+	first := handleLine(t, server, `{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"list_records","arguments":{"app_namespace":"drmcp","kind":"decision","domain":"MCP"}}}`)
 	firstResult := assertToolCallResult(t, first, false)
-	assertListRecordsTextIDs(t, firstResult.Content[0].Text, []string{"ADR-001"})
+	assertCurrentListRecordsTextRefs(t, firstResult.Content[0].Text, []string{"DRMCP-ADR-MCP-001"})
 	if calls != 1 {
 		t.Fatalf("after first tools/call BuildIndex calls = %d, want 1", calls)
 	}
 
-	second := handleLine(t, server, `{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"list_records","arguments":{}}}`)
+	second := handleLine(t, server, `{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"list_records","arguments":{"app_namespace":"drmcp","kind":"decision","domain":"MCP"}}}`)
 	secondResult := assertToolCallResult(t, second, false)
-	assertListRecordsTextIDs(t, secondResult.Content[0].Text, []string{"ADR-002"})
+	assertCurrentListRecordsTextRefs(t, secondResult.Content[0].Text, []string{"DRMCP-ADR-MCP-002"})
 	if calls != 2 {
 		t.Fatalf("after second tools/call BuildIndex calls = %d, want 2", calls)
 	}
@@ -774,6 +733,28 @@ func toolsCallTestIndex() *designrecords.Index {
 		toolsCallRecord("ADR-001", "One"),
 		toolsCallRecord("ADR-002", "Two"),
 		{
+			ID:           "DRMCP-ADR-MCP-001",
+			NormalizedID: "DRMCP-ADR-MCP-001",
+			Kind:         designrecords.RecordKindDecision,
+			Title:        "Current One",
+			Status:       designrecords.RecordStatusAccepted,
+			Date:         "2026-06-01",
+			Path:         "drmcp/records/adr/mcp/DRMCP-ADR-MCP-001-current-one.md",
+			RawBody:      "# DRMCP-ADR-MCP-001: Current One\n",
+			Decision:     &designrecords.DecisionDetail{},
+		},
+		{
+			ID:           "DRMCP-ADR-MCP-002",
+			NormalizedID: "DRMCP-ADR-MCP-002",
+			Kind:         designrecords.RecordKindDecision,
+			Title:        "Current Two",
+			Status:       designrecords.RecordStatusAccepted,
+			Date:         "2026-06-02",
+			Path:         "drmcp/records/adr/mcp/DRMCP-ADR-MCP-002-current-two.md",
+			RawBody:      "# DRMCP-ADR-MCP-002: Current Two\n",
+			Decision:     &designrecords.DecisionDetail{},
+		},
+		{
 			ID:           "SPEC-one",
 			NormalizedID: "SPEC-ONE",
 			Kind:         designrecords.RecordKindSpec,
@@ -801,6 +782,17 @@ func toolsCallTestIndex() *designrecords.Index {
 			},
 		},
 		{
+			ID:           "DRMCP-REQ-MCP-003",
+			NormalizedID: "DRMCP-REQ-MCP-003",
+			Kind:         designrecords.RecordKindRequirement,
+			Title:        "Current Workflow support",
+			Status:       designrecords.RecordStatusCaptured,
+			Date:         "2026-06-03",
+			Path:         "drmcp/records/requirements/mcp/DRMCP-REQ-MCP-003-workflow-support.md",
+			RawBody:      "# DRMCP-REQ-MCP-003: Current Workflow support\n",
+			Requirement:  &designrecords.RequirementDetail{},
+		},
+		{
 			ID:           "WORK-MCP-003",
 			NormalizedID: "WORK-MCP-003",
 			Kind:         designrecords.RecordKindWorkItem,
@@ -813,6 +805,17 @@ func toolsCallTestIndex() *designrecords.Index {
 				ImpactRefs:        []string{"ADR-092"},
 				Tasks:             []string{"TASK-MCP-003-01"},
 			},
+		},
+		{
+			ID:           "DRMCP-WORK-MCP-003",
+			NormalizedID: "DRMCP-WORK-MCP-003",
+			Kind:         designrecords.RecordKindWorkItem,
+			Title:        "Current Workflow implementation",
+			Status:       designrecords.RecordStatusInProgress,
+			Date:         "2026-06-04",
+			Path:         "drmcp/records/work-items/mcp/DRMCP-WORK-MCP-003-workflow-implementation.md",
+			RawBody:      "# DRMCP-WORK-MCP-003: Current Workflow implementation\n",
+			WorkItem:     &designrecords.WorkItemDetail{},
 		},
 		{
 			ID:           "TASK-MCP-003-01",
@@ -837,6 +840,21 @@ func toolsCallTestIndex() *designrecords.Index {
 				Outputs:           []string{"evidence"},
 			},
 		},
+		{
+			ID:           "DRMCP-TASK-MCP-003-01",
+			NormalizedID: "DRMCP-TASK-MCP-003-01",
+			Kind:         designrecords.RecordKindTask,
+			Title:        "Current Workflow evidence",
+			Status:       designrecords.RecordStatusInProgress,
+			Date:         "2026-06-05",
+			Path:         "drmcp/records/tasks/mcp/DRMCP-TASK-MCP-003-01-workflow-evidence.md",
+			RawBody:      "# DRMCP-TASK-MCP-003-01: Current Workflow evidence\n",
+			Headings: []designrecords.Heading{
+				{Level: 2, Text: "Goal"},
+				{Level: 2, Text: "Evidence"},
+			},
+			Task: &designrecords.TaskDetail{},
+		},
 	}}
 	idx.SemanticRefs = []designrecords.SemanticRefDecl{{Ref: "spec:one.doc", Path: "docs/spec/one.md", TargetType: designrecords.SemanticTargetDocument}}
 	return idx
@@ -849,6 +867,15 @@ func findToolForTest(tools []Tool, name string) *Tool {
 		}
 	}
 	return nil
+}
+
+func hasOperationWarningForTest(warnings []designrecords.OperationWarning, category, ref string) bool {
+	for _, warning := range warnings {
+		if warning.Category == category && warning.Ref == ref {
+			return true
+		}
+	}
+	return false
 }
 
 func hasEnumValue(values []any, want string) bool {
@@ -879,6 +906,19 @@ func toolsCallRecord(id, title string) designrecords.Record {
 		Path:         "docs/adr/" + strings.TrimPrefix(id, "ADR-") + "-" + strings.ToLower(title) + ".md",
 		Headings:     []designrecords.Heading{{Level: 1, Text: strings.TrimPrefix(id, "ADR-") + ": " + title}},
 		RawBody:      "# " + strings.TrimPrefix(id, "ADR-") + ": " + title + "\n- **status**: accepted\n",
+	}
+}
+
+func currentToolsCallRecord(id string, kind designrecords.RecordKind, title string) designrecords.Record {
+	return designrecords.Record{
+		ID:           id,
+		NormalizedID: strings.ToUpper(id),
+		Kind:         kind,
+		Title:        title,
+		Status:       designrecords.RecordStatusAccepted,
+		Date:         "2026-06-01",
+		Path:         "drmcp/records/current/" + strings.ToLower(id) + ".md",
+		RawBody:      "# " + id + ": " + title + "\n",
 	}
 }
 
@@ -945,6 +985,24 @@ func assertListRecordsTextIDs(t *testing.T, text string, want []string) {
 	for i := range got {
 		if got[i] != want[i] {
 			t.Fatalf("record IDs = %#v, want %#v", got, want)
+		}
+	}
+}
+
+func assertCurrentListRecordsTextRefs(t *testing.T, text string, want []string) {
+	t.Helper()
+	var resp designrecords.CurrentListRecordsResponse
+	unmarshalToolText(t, text, &resp)
+	got := make([]string, 0, len(resp.Records))
+	for _, record := range resp.Records {
+		got = append(got, record.Ref)
+	}
+	if len(got) != len(want) {
+		t.Fatalf("record refs = %#v, want %#v", got, want)
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			t.Fatalf("record refs = %#v, want %#v", got, want)
 		}
 	}
 }

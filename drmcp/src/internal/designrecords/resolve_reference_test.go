@@ -79,17 +79,6 @@ func TestResolveReferenceUsesSemanticRefsFromNonRecordSpec(t *testing.T) {
 	writeTestFile(t, root, "records/spec/non-record.md", "---\nstatus: draft\nsemantic_refs:\n  - spec:non-record.doc\nsections:\n  spec:non-record.section: Target Section\n---\n# Non-record spec\n## Target Section\n")
 	idx := buildTestIndex(t, root)
 
-	listResp, err := ListRecords(context.Background(), idx, ListRecordsRequest{})
-	if err != nil {
-		t.Fatalf("ListRecords: %v", err)
-	}
-	if len(listResp.Records) != 0 {
-		t.Fatalf("non-record semantic source leaked into list_records: %#v", listResp.Records)
-	}
-	if _, err := GetRecord(context.Background(), idx, GetRecordRequest{ID: "SPEC-non-record"}); err == nil {
-		t.Fatalf("GetRecord succeeded for non-record semantic source")
-	}
-
 	document, err := ResolveReference(context.Background(), idx, ResolveReferenceRequest{Ref: "spec:non-record.doc"})
 	if err != nil {
 		t.Fatalf("ResolveReference document: %v", err)

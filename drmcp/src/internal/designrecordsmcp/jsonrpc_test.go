@@ -48,10 +48,10 @@ func TestHandleJSONRPC(t *testing.T) {
 		}
 		result := resultMapAny(t, res.Result)
 		tools := result["tools"].([]any)
-		if len(tools) != 13 {
-			t.Fatalf("tools len = %d, want 13: %#v", len(tools), tools)
+		if len(tools) != 11 {
+			t.Fatalf("tools len = %d, want 11: %#v", len(tools), tools)
 		}
-		for _, name := range []string{"list_records", "validate_records", "get_record", "get_records", "list_authoring_guides", "get_authoring_guidance", "resolve_reference", "suggest_next_record", "propose_record_create", "propose_record_update", "get_proposed_write", "accept_proposed_write", "discard_proposed_write"} {
+		for _, name := range []string{"list_records", "validate_records", "get_records", "list_authoring_guides", "get_authoring_guidance", "resolve_reference", "propose_record_create", "propose_record_update", "get_proposed_write", "accept_proposed_write", "discard_proposed_write"} {
 			if !hasToolName(tools, name) {
 				t.Fatalf("%s missing from tools/list: %#v", name, tools)
 			}
@@ -94,7 +94,7 @@ func TestHandleJSONRPCErrors(t *testing.T) {
 	})
 
 	t.Run("tools_call", func(t *testing.T) {
-		res := handleLine(t, server, `{"jsonrpc":"2.0","id":"call","method":"tools/call","params":{"name":"list_records","arguments":{}}}`)
+		res := handleLine(t, server, `{"jsonrpc":"2.0","id":"call","method":"tools/call","params":{"name":"list_records","arguments":{"app_namespace":"drmcp","kind":"decision","domain":"MCP"}}}`)
 		if res.Error != nil {
 			t.Fatalf("tools/call response = %#v", res)
 		}
@@ -102,7 +102,7 @@ func TestHandleJSONRPCErrors(t *testing.T) {
 			t.Fatalf("tools/call response id = %s, want \"call\"", string(res.ID))
 		}
 		result := assertToolCallResult(t, res, false)
-		var text designrecords.ListRecordsResponse
+		var text designrecords.CurrentListRecordsResponse
 		unmarshalToolText(t, result.Content[0].Text, &text)
 	})
 }
@@ -129,7 +129,7 @@ func TestServeJSONRPCLinesToolsCall(t *testing.T) {
 	server, _ := newCountingServer()
 
 	var out bytes.Buffer
-	if err := server.ServeJSONRPCLines(strings.NewReader(`{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"list_records","arguments":{}}}`+"\n"), &out); err != nil {
+	if err := server.ServeJSONRPCLines(strings.NewReader(`{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"list_records","arguments":{"app_namespace":"drmcp","kind":"decision","domain":"MCP"}}}`+"\n"), &out); err != nil {
 		t.Fatalf("serve lines: %v", err)
 	}
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
