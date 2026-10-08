@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-001-16: Track parser-aware spec validation implementation
 
 - **id**: DRMCP-TASK-MCP-001-16
-- **status**: not_started
+- **status**: blocked
 - **date**: 2026-06-30
 - **work_item**: DRMCP-WORK-MCP-001
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -47,3 +47,6 @@ This Task does not implement production code, tests, or fixtures.
 Pending W012 reviewed completion and W-SPEC-001 graph authoring.
 
 The stale T15 release path is not a predecessor.
+
+Blocked on 2026-07-03 because direct prerequisite `DRMCP-TASK-MCP-001-09` is `cancelled`.
+The retained validation route requires a future graph decision after the replacement architecture and implementation baseline exist.

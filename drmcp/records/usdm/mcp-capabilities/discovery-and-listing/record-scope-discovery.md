@@ -2,7 +2,7 @@
 
 - **id**: `usdm:drmcp.mcp_capabilities.discovery_and_listing.record_scope_discovery`
 - **status**: draft
-- **date**: 2026-07-11
+- **date**: 2026-07-13
 - **kind**: requirement
 - **parent**: `usdm:drmcp.mcp_capabilities.discovery_and_listing`
 
@@ -16,7 +16,7 @@ Product requirements for discovering selectable current-record scopes before lis
 | id | requirement | notes |
 |---|---|---|
 | R001 | DRMCP must make each app namespace associated with a configured current source discoverable. | An app remains discoverable even when its configured source contains no discovered record source. |
-| R002 | DRMCP must make the artifact kinds available within a selected app namespace discoverable. | Availability may depend on the configured current-source form. |
+| R002 | DRMCP must make the artifact kinds available within a selected app namespace discoverable. | An artifact kind is available when its declared artifact source root exists beneath the configured records root. |
 | R003 | DRMCP must expose whether each available artifact kind uses a sequential or tree record structure. | The concrete representation is defined by downstream Specifications. |
 | R004 | DRMCP must make the domain namespaces of a selected app namespace and sequential artifact kind discoverable. |  |
 | R005 | DRMCP must include a domain namespace when at least one record source has been discovered in that domain, even when no record in the domain is addressable. | Discovery of the scope must not depend on successful record addressability. |

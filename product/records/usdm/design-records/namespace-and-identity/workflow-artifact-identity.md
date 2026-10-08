@@ -2,7 +2,7 @@
 
 - **id**: `usdm:product.design_records.namespace_and_identity.workflow_artifact_identity`
 - **status**: draft
-- **date**: 2026-07-10
+- **date**: 2026-07-13
 - **kind**: requirement
 - **parent**: `usdm:product.design_records.namespace_and_identity`
 
@@ -25,7 +25,7 @@ This record does not include spec IDs, legacy ID compatibility, physical paths, 
 | R005 | Implementations MUST use 2-digit zero-padded sequence numbers for TASK `TASK_SEQUENCE`. |  |
 | R006 | Implementations MUST scope REQ, WORK, INV, and ADR sequence allocation by app namespace, artifact kind, and domain namespace. |  |
 | R007 | Implementations MUST scope TASK sequence allocation by parent Work Item. |  |
-| R008 | Implementations MUST use the complete public ID as the canonical reference form for REQ, WORK, INV, ADR, and TASK records. |  |
+| R008 | Implementations MUST use the complete public ID parsed from the `# <PUBLIC-ID>: <Title>` H1 prefix as the canonical reference form and sole source-internal identity authority for REQ, WORK, INV, ADR, and TASK records. |  |
 | R009 | Implementations MUST NOT treat bare forms such as `REQ-*`, `WORK-*`, or `TASK-*` as canonical external references. |  |
 | R010 | Implementations MUST NOT include subdomain segments in artifact IDs. |  |
 
@@ -38,3 +38,12 @@ This record does not include spec IDs, legacy ID compatibility, physical paths, 
 | R012 | Implementations MUST treat new and migrated specs as path-derived `spec:` refs, not `SPEC-*` public IDs. |  |
 | R013 | Resolvers MUST support Task public IDs as direct resolver inputs. | Field-specific metadata contracts decide whether Task public IDs are allowed in persisted relation fields. |
 | R014 | Investigation canonical-reference fields MUST NOT accept Task public IDs. |  |
+
+## Requirements: Sequential identity context and conformance
+> source: spec:product.design_records.namespace_model.artifact_id_grammar
+
+| id | requirement | notes |
+|---|---|---|
+| R015 | A sequential record H1 public ID MUST agree with the configured app namespace, the artifact kind selected by the source corpus, and the physical domain directory. | A disagreement prevents canonical identity determination for that source. |
+| R016 | Implementations MUST NOT repair, complete, normalize, infer, or replace a sequential record identity from H1-adjacent metadata or the file name. | A metadata `id` is prohibited for sequential records. |
+| R017 | A sequential record file-name public-ID prefix MUST be validated as a nonidentity conformance projection of the H1 public ID. | A mismatch does not change the H1-derived canonical identity or by itself prevent current-record addressability. |

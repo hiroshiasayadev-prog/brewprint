@@ -62,7 +62,7 @@ Product requirements for scoped lexical search across current Design Records, se
 | R027 | DRMCP must allow the caller to specify the maximum number of search matches to return. | The numeric limit and request shape are defined by downstream Specifications. |
 | R028 | DRMCP must apply a default search-result limit when the caller does not specify one. |  |
 | R029 | DRMCP must enforce a server-side maximum for caller-specified search-result limits. |  |
-| R030 | DRMCP must impose an upper bound on the number of matches returned from one record. | One record must not consume the complete result set. |
+| R030 | DRMCP must impose an upper bound on the number of matches returned from one record so that a highly repetitive record cannot dominate normal search output. | The concrete bound and application order are defined by downstream Specifications. |
 | R031 | DRMCP must allow the caller to control the maximum snippet size within a server-side maximum. | The measurement unit and numeric limits are defined by downstream Specifications. |
 | R032 | DRMCP must make it identifiable when additional matches may exist beyond an applied result limit. |  |
 | R033 | DRMCP must either return one complete search-result entry or omit that entry. | An aggregate output limit must not partially truncate a result entry. |

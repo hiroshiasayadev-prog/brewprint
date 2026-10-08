@@ -2,9 +2,44 @@
 
 - **id**: `spec:drmcp.design_records_mcp.tools.validate_records`
 - **status**: draft
-- **date**: 2026-06-30
+- **date**: 2026-07-10
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
+- **usdm_covers**:
+  - usdm:product.design_records.spec_document_format.document_shape#R005
+  - usdm:product.design_records.spec_document_format.document_shape#R006
+  - usdm:product.design_records.spec_document_format.document_shape#R007
+  - usdm:product.design_records.spec_document_format.document_shape#R008
+  - usdm:product.design_records.spec_document_format.document_shape#R009
+  - usdm:product.design_records.spec_document_format.document_shape#R010
+  - usdm:product.design_records.spec_document_format.document_shape#R011
+  - usdm:product.design_records.spec_document_format.topics_table#R001
+  - usdm:product.design_records.spec_document_format.topics_table#R002
+  - usdm:product.design_records.spec_document_format.topics_table#R003
+  - usdm:product.design_records.spec_document_format.topics_table#R004
+  - usdm:product.design_records.spec_document_format.topics_table#R005
+  - usdm:product.design_records.spec_document_format.topics_table#R006
+  - usdm:product.design_records.spec_document_format.topics_table#R007
+  - usdm:product.design_records.spec_document_format.topics_table#R008
+  - usdm:product.design_records.spec_document_format.topics_table#R010
+  - usdm:product.design_records.spec_document_format.topics_table#R011
+  - usdm:product.design_records.spec_document_format.validation_policy#R001
+  - usdm:product.design_records.spec_document_format.validation_policy#R002
+  - usdm:product.design_records.spec_document_format.validation_policy#R003
+  - usdm:product.design_records.spec_document_format.validation_policy#R004
+  - usdm:product.design_records.spec_document_format.validation_policy#R005
+  - usdm:product.design_records.spec_document_format.validation_policy#R006
+  - usdm:product.design_records.spec_document_format.validation_policy#R007
+  - usdm:product.design_records.traceability_and_relations.artifact_ref_classes#R006
+  - usdm:product.design_records.traceability_and_relations.metadata_relation_schema#R003
+  - usdm:product.design_records.traceability_and_relations.metadata_relation_schema#R004
+  - usdm:product.design_records.traceability_and_relations.resolve_and_validation#R008
+  - usdm:product.design_records.namespace_and_identity.canonical_reference_boundary#R001
+  - usdm:product.design_records.namespace_and_identity.canonical_reference_boundary#R002
+  - usdm:product.design_records.namespace_and_identity.canonical_reference_boundary#R012
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R011
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R016
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R013
 
 ## What this is
 
@@ -113,6 +148,10 @@ Validation pass order:
 4. Topics graph validation after per-source state and complete index state are available.
 5. Finding aggregation, semantic duplicate suppression, deterministic ordering, and response projection.
 
+Topics graph validation treats `Index` Specifications and `Overview` Specifications with `## Topics` tables as child-declaration inputs.
+For each `## Topics` row, validation checks PRODUCT-owned Topics table semantics, including required columns, accepted Specification `kind` values, canonical `spec:` refs, path-derived canonical mapping, child `id` consistency, matching child `parent` metadata, and duplicate parent declarations.
+An `Overview` `## Topics` child declaration is invalid when the child file's directory placement, H1-adjacent `id`, and row `ref` do not identify the same Specification through the path-derived canonical mapping.
+
 Individual validators perform no filesystem I/O. Validators do not rescan roots, call public MCP tools, or format the MCP response.
 
 Validators return transport-neutral findings. The application use case owns aggregation and the normal validation output. The MCP adapter owns protocol encoding only.
@@ -166,6 +205,7 @@ Disabled fallback, unresolved target, duplicate conflict, and unreadable source 
 | `spec:product.design_records.traceability.resolve_and_validation` | Canonical lookup sources, duplicate identity, and declared relation invalidity. |
 | `spec:product.design_records.traceability.metadata_schema` | Current investigation and workflow relation fields. |
 | `spec:product.design_records.spec_format.document_shape` | Visible spec document shape. |
+| `spec:product.design_records.spec_format.topics_table` | Topics table columns, child declarations, row kind validation, ref resolution, parent consistency, and duplicate parent invalidity. |
 | `spec:product.design_records.spec_format.spec_id_as_ref` | Path-derived current spec identity and parent-ref grammar. |
 | `spec:product.design_records.spec_format.validation_policy` | Spec-format validation policy and migration-sensitive severity inputs. |
 | `spec:product.design_records.namespace_model.artifact_id_grammar` | Current sequential artifact ID and canonical record-ref grammar. |

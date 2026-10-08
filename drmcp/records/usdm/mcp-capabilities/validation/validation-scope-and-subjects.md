@@ -2,7 +2,7 @@
 
 - **id**: `usdm:drmcp.mcp_capabilities.validation.validation_scope_and_subjects`
 - **status**: draft
-- **date**: 2026-07-12
+- **date**: 2026-07-14
 - **kind**: requirement
 - **parent**: `usdm:drmcp.mcp_capabilities.validation`
 
@@ -20,12 +20,13 @@ Product requirements for selecting current-record validation scopes, admitting u
 | R003 | DRMCP must support validation within one selected app namespace and artifact kind. |  |
 | R004 | DRMCP must support validation within one selected app namespace, sequential artifact kind, and domain namespace. | Domain selection does not apply to tree artifact kinds. |
 | R005 | DRMCP must support selecting one or more exact current canonical refs for validation in one request. |  |
-| R006 | One validation request must select either one repository, app, kind, or domain scope, or a collection of exact current canonical refs. | Broad scopes and exact-ref selections are not mixed in one request. |
+| R006 | One validation request must select either one broad scope or a collection of exact current canonical refs. | Broad scopes include repository, app, artifact-kind, sequential-domain, and tree-subtree scopes. Broad scopes and exact-ref selections are not mixed in one request. |
 | R007 | DRMCP must validate every uniquely selectable current record included in the selected scope. |  |
 | R008 | DRMCP must not broaden a validation scope when a required selector is omitted or invalid. |  |
-| R009 | Selectable app, artifact-kind, and domain scopes must remain consistent with the current scopes exposed by DRMCP discovery capabilities. | Validation does not redefine scope discovery. |
+| R009 | Selectable validation scopes must remain consistent with current scopes exposed by DRMCP discovery and tree-navigation capabilities. | Validation does not redefine scope or tree-node availability. |
 | R010 | A valid broad scope containing no uniquely selectable current record and no record-admission failure must produce a successful empty validation result. |  |
 | R011 | An exact current canonical ref that identifies no uniquely selectable current record must be identifiable as an unsuccessful selector and must not be treated as a successful empty validation result. | Exact outcome representation is defined by downstream Specifications. |
+| R023 | DRMCP must support validation within one selected current tree subtree rooted at any available current tree node. | The root may be a directory or leaf node. A corresponding current record is not required. |
 
 ## Requirements: Current record admission
 > source: literal
@@ -39,3 +40,7 @@ Product requirements for selecting current-record validation scopes, admitting u
 | R016 | DRMCP must not admit legacy archive sources as current records for validation. | DRMCP read MVP does not provide legacy lookup. |
 | R017 | DRMCP must identify each unadmitted source and each identity-conflict member by a path relative to the repository root. | Absolute physical paths are not required. |
 | R018 | DRMCP must not support detailed validation selection by repository-relative or absolute source path. | Sources must first be corrected until they can be admitted and selected by canonical ref. |
+| R019 | DRMCP must determine a sequential source's current canonical identity only from the complete public ID in its H1 prefix. | H1-adjacent metadata and the file name are not identity-bearing surfaces. |
+| R020 | DRMCP must leave a sequential source unadmitted when its H1 public ID is missing, malformed for the corpus-selected artifact kind, or inconsistent with the configured app namespace, corpus-selected artifact kind, or physical domain directory. | These conditions prevent canonical identity determination. |
+| R021 | A file-name public-ID prefix mismatch must not prevent a sequential source with a valid context-agreeing H1 public ID from becoming a candidate or admitted current record. | The mismatch is validated as a nonidentity artifact-contract violation. |
+| R022 | A prohibited H1-adjacent metadata `id` must not prevent a sequential source with a valid context-agreeing H1 public ID from becoming a candidate or admitted current record. | The field is ignored for identity and validated as a nonidentity metadata-contract violation. |

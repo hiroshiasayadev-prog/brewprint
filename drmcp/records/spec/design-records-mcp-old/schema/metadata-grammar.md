@@ -2,8 +2,25 @@
 
 - **id**: `spec:drmcp.design_records_mcp.schema.metadata_grammar`
 - **status**: draft
-- **date**: 2026-06-27
+- **date**: 2026-07-10
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
+- **usdm_covers**:
+  - usdm:product.design_records.spec_document_format.metadata_shape#R001
+  - usdm:product.design_records.spec_document_format.metadata_shape#R002
+  - usdm:product.design_records.spec_document_format.metadata_shape#R003
+  - usdm:product.design_records.spec_document_format.metadata_shape#R004
+  - usdm:product.design_records.spec_document_format.metadata_shape#R005
+  - usdm:product.design_records.traceability_and_relations.metadata_relation_schema#R001
+  - usdm:product.design_records.namespace_and_identity.canonical_reference_boundary#R014
+  - usdm:product.design_records.namespace_and_identity.canonical_reference_boundary#R015
+  - usdm:product.design_records.namespace_and_identity.canonical_reference_boundary#R016
+  - usdm:product.design_records.namespace_and_identity.canonical_reference_boundary#R017
+  - usdm:product.design_records.namespace_and_identity.compatibility_identity_boundary#R009
+  - usdm:product.design_records.namespace_and_identity.namespace_model#R009
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R013
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R014
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R011
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R014
 
 ## What this is
 
@@ -180,10 +197,12 @@ The task ID domain and work-sequence segments must agree with the parent Work It
 
 ### Current spec metadata
 
-Current spec metadata is a contiguous scalar-only marker block after H1.
+Current spec metadata is a contiguous H1-adjacent marker block after H1.
 
+- Recognized current spec semantic metadata fields are scalar-only.
+- Optional `usdm_covers` is a list-valued coverage marker governed by `spec:product.design_records.usdm.coverage_format` and is not normalized into current record fields.
 - The first blank or non-marker line after the block starts ends the block.
-- Indented child-list items are not accepted.
+- Indented child-list items are accepted only for `usdm_covers`.
 - DRMCP does not resume metadata parsing later in the file.
 - YAML front matter is invalid and is never used as fallback metadata.
 
@@ -196,6 +215,7 @@ Recognized fields:
 | `date` | yes | Scalar date under PRODUCT spec-format authority. |
 | `parent` | yes | `root`, `-`, or active canonical parent `spec:` ref. |
 | `contract_class` | only for `Contract` | `interface` or `format`; prohibited on non-`Contract` specs. |
+| `usdm_covers` | no | Optional list of full USDM requirement IDs under coverage-format authority; not a current record semantic field. |
 
 The path-derived canonical spec ref is authoritative. A mismatched metadata `id` is invalid but does not replace the path-derived identity or become an alias.
 
@@ -229,6 +249,7 @@ Shared behavior is defined by:
 | `spec:product.design_records.namespace_model.artifact_id_grammar` | Current sequential artifact ID grammar. |
 | `spec:product.design_records.spec_format.document_shape` | Current spec H1 and metadata requiredness. |
 | `spec:product.design_records.spec_format.spec_id_as_ref` | Current spec identity and parent grammar. |
+| `spec:product.design_records.usdm.coverage_format` | Optional `usdm_covers` coverage marker format. |
 | `spec:drmcp.design_records_mcp.schema.fields` | Parsed common and kind-specific field vocabulary. |
 | `spec:drmcp.design_records_mcp.schema.id_normalization` | Canonical identity mapping. |
 | `spec:drmcp.design_records_mcp.schema.record_model` | Invalid-source retention and active-index behavior. |

@@ -2,7 +2,7 @@
 
 - **id**: `usdm:drmcp.mcp_capabilities.validation.reference_and_structure_validation`
 - **status**: draft
-- **date**: 2026-07-12
+- **date**: 2026-07-13
 - **kind**: requirement
 - **parent**: `usdm:drmcp.mcp_capabilities.validation`
 
@@ -28,3 +28,4 @@ Product requirements for validating declared artifact references and relationshi
 | R007 | DRMCP must validate relationships between current records that are declared or derived by the applicable artifact record structure. |  |
 | R008 | DRMCP must validate tree-record parent, child, placement, identity, and child-declaration consistency as required by the applicable artifact Specifications. |  |
 | R009 | DRMCP must make structural conflicts such as inconsistent parentage, duplicate child declarations, or prohibited cycles identifiable when the applicable artifact Specifications prohibit them. |  |
+| R010 | Broad-scope validation must report an advisory for every current tree directory node whose corresponding `index.md` record source is absent. | Applies to the artifact source root, non-empty directories, and empty directories. The advisory does not remove the node or prevent navigation. |

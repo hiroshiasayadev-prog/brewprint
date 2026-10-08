@@ -17,7 +17,7 @@ This record defines requirements for traceability lookup sources and invalid tra
 |---|---|---|
 | R001 | A Specification canonical ref must be treated as a valid spec identity only when the H1-adjacent `id` matches the path-derived ref. |  |
 | R002 | A new or migrated Specification record must be treated as invalid when its H1-adjacent `id` differs from the path-derived ref. |  |
-| R003 | ADR, investigation, requirement, work item, and task identities must be registered from each record's complete public ID. |  |
+| R003 | ADR, investigation, requirement, work item, and task identities must be registered only from each record's complete public ID in the H1 prefix. | H1-adjacent metadata and file names are not target-registration sources. |
 | R004 | Legacy issued IDs must be registered only as compatibility inputs from mappings preserved by Brewprint compatibility records. |  |
 | R005 | A Work Item must be treated as invalid when `source_refs` is missing or empty. |  |
 | R006 | A Work Item `source_refs` entry must be treated as invalid when the entry is unresolved, unrecognized, noncanonical, or not permitted by the `source_refs` field contract. |  |
@@ -29,4 +29,4 @@ This record defines requirements for traceability lookup sources and invalid tra
 | R012 | Multiple new or migrated Specification paths with the same canonical `spec:` ref must be treated as duplicate spec identity. |  |
 | R013 | Multiple records with the same complete public ID must be treated as duplicate record identity. |  |
 | R014 | A legacy issued ID that maps to multiple targets through compatibility records must be treated as an ambiguous compatibility ID. |  |
-| R015 | ADR, investigation, requirement, work item, and task records must be treated as invalid when the resolved public ID does not match the grammar for the record kind. | Validates persisted record identity after read. |
+| R015 | ADR, investigation, requirement, work item, and task sources must not register a current identity when the H1 public ID is missing, malformed for the corpus-selected record kind, or inconsistent with the configured app namespace or physical domain directory. | These are identity-determination failures. File-name mismatch and prohibited metadata `id` remain artifact-conformance violations after H1 identity succeeds. |

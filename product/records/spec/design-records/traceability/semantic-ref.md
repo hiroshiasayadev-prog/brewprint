@@ -2,7 +2,7 @@
 
 - **id**: `spec:product.design_records.traceability.semantic_ref`
 - **status**: draft
-- **date**: 2026-06-24
+- **date**: 2026-07-10
 - **parent**: `spec:product.design_records.traceability`
 
 ## What this is
@@ -22,15 +22,15 @@ Defines the current `spec:` canonical ref class for Design Records traceability.
 
 Physical paths are repository locations. They are not canonical relation values.
 
-## Ref classes
+## Reference forms
 
-| class | identity rule |
+| reference form | identity rule |
 |---|---|
 | Spec ref | Path-derived document-level `spec:` ref. |
-| Record ID-as-ref | Complete public record ID for ADR, investigation, requirement, work item, or task. |
-| Legacy issued ID | Complete legacy public ID preserved through Brewprint compatibility. |
+| Public ID ref | Complete public ID for decision, investigation, requirement, work item, or task records. |
+| Compatibility input | Complete legacy public ID preserved through Brewprint compatibility. |
 
-Spec refs and record ID-as-refs are distinct. A record ID-as-ref is not a semantic prefix and not a bare kind grammar fragment.
+Spec refs and public ID refs are distinct. A public ID ref is not a semantic prefix and not a bare kind grammar fragment.
 
 ## Obsolete assumptions
 
@@ -58,5 +58,5 @@ Spec refs and record ID-as-refs are distinct. A record ID-as-ref is not a semant
 | ref | relation |
 |---|---|
 | `spec:product.design_records.spec_format.spec_id_as_ref` | Authoritative path-derived spec identity contract. |
-| `spec:product.design_records.traceability.artifact_refs` | Supported active reference classes. |
+| `spec:product.design_records.traceability.artifact_refs` | Canonical record kinds and reference forms. |
 | `spec:product.design_records.traceability.metadata_schema` | Visible metadata and relation boundary. |

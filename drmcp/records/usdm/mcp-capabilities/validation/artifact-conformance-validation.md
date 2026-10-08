@@ -2,7 +2,7 @@
 
 - **id**: `usdm:drmcp.mcp_capabilities.validation.artifact_conformance_validation`
 - **status**: draft
-- **date**: 2026-07-12
+- **date**: 2026-07-13
 - **kind**: requirement
 - **parent**: `usdm:drmcp.mcp_capabilities.validation`
 
@@ -28,3 +28,5 @@ Product requirements for validating uniquely selectable current records against 
 | R006 | DRMCP must validate H2 heading presence, multiplicity, conditional applicability, unlisted-heading policy, and referenced section-body formats as declared by the applicable artifact Specifications. |  |
 | R007 | DRMCP must not repair, complete, normalize, or infer nonconforming source content when determining artifact conformance. |  |
 | R008 | DRMCP must not treat absence of a recommended artifact element as a violation of a required artifact rule. | Exact finding classification belongs to downstream Specifications. |
+| R009 | DRMCP must validate the file-name public-ID prefix of every admitted sequential record against its H1 public ID and report a mismatch as an artifact-contract violation. | The mismatch is attached to the admitted record and is not an identity-conflict or admission-failure result. |
+| R010 | DRMCP must report an `id` field in admitted sequential-record H1-adjacent metadata as a prohibited-field artifact-contract violation. | The field value is not compared, resolved, or used as identity. |

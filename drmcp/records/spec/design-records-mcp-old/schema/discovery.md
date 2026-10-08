@@ -4,6 +4,20 @@
 - **status**: draft
 - **date**: 2026-07-04
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
+- **usdm_covers**:
+  - usdm:product.design_records.repository_layout_and_discovery.domain_scoped_placement#R001
+  - usdm:product.design_records.spec_document_format.document_shape#R001
+  - usdm:product.design_records.spec_document_format.document_shape#R002
+  - usdm:product.design_records.spec_document_format.document_shape#R003
+  - usdm:product.design_records.spec_document_format.document_shape#R004
+  - usdm:product.design_records.spec_document_format.metadata_shape#R006
+  - usdm:product.design_records.repository_layout_and_discovery.domain_scoped_placement#R002
+  - usdm:product.design_records.repository_layout_and_discovery.kind_directory_layout#R001
+  - usdm:product.design_records.repository_layout_and_discovery.record_discovery_paths#R001
+  - usdm:product.design_records.repository_layout_and_discovery.record_discovery_paths#R002
+  - usdm:product.design_records.repository_layout_and_discovery.spec_topic_tree_placement#R001
+  - usdm:product.design_records.traceability_and_relations.resolve_and_validation#R012
+  - usdm:product.design_records.traceability_and_relations.resolve_and_validation#R013
 
 ## What this is
 

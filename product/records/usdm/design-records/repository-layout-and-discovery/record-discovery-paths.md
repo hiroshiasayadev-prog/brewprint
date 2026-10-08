@@ -2,7 +2,7 @@
 
 - **id**: `usdm:product.design_records.repository_layout_and_discovery.record_discovery_paths`
 - **status**: draft
-- **date**: 2026-07-09
+- **date**: 2026-07-13
 - **kind**: requirement
 - **parent**: `usdm:product.design_records.repository_layout_and_discovery`
 
@@ -16,5 +16,5 @@ Requirements for kind-specific discovery path patterns for Design Records.
 | id | requirement | notes |
 |---|---|---|
 | R001 | The implementation must treat `records/spec/**/*.md` as the discovery path pattern for Specification records. | Specification records use topic tree placement, so discovery is recursive. |
-| R002 | The implementation must discover sequential Design Records artifacts with discovery path patterns based on kind directories and domain subdirectories. | The scope includes `adr/*/<record_prefix>ADR-*-*.md`, `investigations/*/<record_prefix>INV-*-*.md`, `requirements/*/<record_prefix>REQ-*-*.md`, `work-items/*/<record_prefix>WORK-*-*.md`, and `tasks/*/<record_prefix>TASK-*-*.md`. `<record_prefix>` is a filename-pattern placeholder. This row does not define ID grammar or prefix derivation rules. |
-| R003 | The implementation must be able to discover existing flat ADR records through the compatibility discovery path pattern. | The compatibility pattern is `adr/<record_prefix>ADR-*.md`. The standard placement for new ADRs is the domain subdirectory pattern. |
+| R002 | The implementation must discover sequential Design Record sources by artifact-kind directory, one physical domain subdirectory, and Markdown extension without filtering by file-name public-ID text. | The scope includes `adr/*/*.md`, `investigations/*/*.md`, `requirements/*/*.md`, `work-items/*/*.md`, and `tasks/*/*.md`. Identity and file-name conformance are evaluated after physical discovery. |
+| R004 | A sequential source whose file-name public-ID prefix differs from its H1 public ID must remain in the discovered current-source corpus. | The mismatch is a nonidentity repository-conformance violation, not a discovery exclusion. |

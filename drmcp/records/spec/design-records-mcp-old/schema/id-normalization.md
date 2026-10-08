@@ -4,6 +4,54 @@
 - **status**: draft
 - **date**: 2026-07-04
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
+- **usdm_covers**:
+  - usdm:product.design_records.repository_layout_and_discovery.physical_path_boundary#R001
+  - usdm:product.design_records.repository_layout_and_discovery.physical_path_boundary#R002
+  - usdm:product.design_records.repository_layout_and_discovery.physical_path_boundary#R003
+  - usdm:product.design_records.repository_layout_and_discovery.spec_topic_tree_placement#R002
+  - usdm:product.design_records.traceability_and_relations.artifact_ref_classes#R003
+  - usdm:product.design_records.traceability_and_relations.artifact_ref_classes#R007
+  - usdm:product.design_records.traceability_and_relations.artifact_ref_classes#R008
+  - usdm:product.design_records.traceability_and_relations.resolve_and_validation#R001
+  - usdm:product.design_records.traceability_and_relations.resolve_and_validation#R002
+  - usdm:product.design_records.traceability_and_relations.resolve_and_validation#R003
+  - usdm:product.design_records.traceability_and_relations.resolve_and_validation#R015
+  - usdm:product.design_records.traceability_and_relations.semantic_ref_boundary#R001
+  - usdm:product.design_records.traceability_and_relations.semantic_ref_boundary#R002
+  - usdm:product.design_records.traceability_and_relations.semantic_ref_boundary#R003
+  - usdm:product.design_records.traceability_and_relations.semantic_ref_boundary#R004
+  - usdm:product.design_records.namespace_and_identity.compatibility_identity_boundary#R007
+  - usdm:product.design_records.namespace_and_identity.namespace_model#R001
+  - usdm:product.design_records.namespace_and_identity.namespace_model#R002
+  - usdm:product.design_records.namespace_and_identity.namespace_model#R005
+  - usdm:product.design_records.namespace_and_identity.namespace_model#R006
+  - usdm:product.design_records.namespace_and_identity.namespace_model#R007
+  - usdm:product.design_records.namespace_and_identity.ownership_selection#R008
+  - usdm:product.design_records.namespace_and_identity.ownership_selection#R009
+  - usdm:product.design_records.namespace_and_identity.ownership_selection#R010
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R001
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R002
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R003
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R004
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R005
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R006
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R007
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R008
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R009
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R010
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R012
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R015
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R018
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R019
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R001
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R002
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R003
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R004
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R005
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R008
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R009
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R010
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R012
 
 ## What this is
 

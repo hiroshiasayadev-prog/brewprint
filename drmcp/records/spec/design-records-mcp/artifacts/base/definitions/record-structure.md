@@ -2,7 +2,7 @@
 
 - **id**: `spec:drmcp.design_records_mcp.artifacts.base.definitions.record_structure`
 - **status**: draft
-- **date**: 2026-07-12
+- **date**: 2026-07-13
 - **parent**: `spec:drmcp.design_records_mcp.artifacts.base`
 
 ## What this is
@@ -56,12 +56,17 @@ An artifact kind that selects `sequential` must declare:
 
 | declaration | requirement |
 |---|---|
-| sequence segment | Identify every public ID segment that receives a sequential value. |
+| sequence segment | Identify every public ID segment that receives a sequential value, including an inherited sequence value that this artifact does not allocate independently. |
 | allocation scope | Identify the boundary within which each declared sequence segment is allocated. |
 
 Use `domain` when a sequence is allocated within the current app namespace, artifact kind, and domain namespace.
 When an artifact uses a different allocation scope, the artifact-specific Specification declares that scope explicitly.
-Use `-` for a segment that is not independently allocated.
+Use `-` for a sequence-bearing segment that this artifact does not allocate independently.
+
+For sequential listing, DRMCP constructs the ordering tuple from every artifact-specific segment declared with `sequence: yes`.
+The tuple follows the row order of the artifact's `Artifact-specific segments` table.
+An artifact Specification must place sequence-bearing rows in the priority order used by sequential listing.
+Each tuple value uses the format declared for its segment.
 
 The artifact-specific declaration does not define relation-dependent segment agreement or inherited-segment rules.
 Those rules belong to the artifact-specific relation or identity-validation Specification.
@@ -91,6 +96,8 @@ Root identity and path-to-identity mapping follow the shared tree identity rules
 | Exact public ID grammar and canonical-reference semantics | Product authority. |
 | Artifact-specific identity mapping | The artifact-specific identity Specification. |
 | Relation-dependent segment agreement | The artifact-specific relation or identity-validation Specification. |
+| Sequential-listing ordering tuple declaration | This Specification and the artifact-specific identity-and-structure Specification. |
+| Ordering direction, tie-break, limit, and result projection | Sequential-listing operation Specifications. |
 | Parser, discovery, indexing, and validation orchestration | Other DRMCP Specifications. |
 
 ## Related specs
@@ -101,3 +108,4 @@ Root identity and path-to-identity mapping follow the shared tree identity rules
 | `spec:product.design_records.namespace_model.artifact_id_grammar` | Product authority for sequential artifact ID grammar and allocation scopes. |
 | `spec:product.design_records.spec_format.spec_id_as_ref` | Product authority for path-derived Specification identity. |
 | `spec:product.design_records.traceability.artifact_refs` | Product authority for record kinds and canonical reference forms. |
+| `spec:drmcp.design_records_mcp.operations.discovery_and_listing.sequential_record_listing` | Consumes declared sequence segments as the listing ordering tuple. |

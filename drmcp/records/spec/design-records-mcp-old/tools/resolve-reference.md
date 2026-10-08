@@ -5,6 +5,13 @@
 - **date**: 2026-06-28
 - **parent**: `spec:drmcp.design_records_mcp.tools.overview`
 - **contract_class**: `interface`
+- **usdm_covers**:
+  - usdm:product.design_records.namespace_and_identity.canonical_reference_boundary#R004
+  - usdm:product.design_records.namespace_and_identity.canonical_reference_boundary#R006
+  - usdm:product.design_records.namespace_and_identity.canonical_reference_boundary#R019
+  - usdm:product.design_records.namespace_and_identity.compatibility_identity_boundary#R014
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R017
+  - usdm:product.design_records.namespace_and_identity.workflow_artifact_identity#R013
 
 ## What this is
 

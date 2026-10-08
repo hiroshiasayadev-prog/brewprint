@@ -4,6 +4,11 @@
 - **status**: draft
 - **date**: 2026-06-27
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
+- **usdm_covers**:
+  - usdm:product.design_records.traceability_and_relations.workflow_relations#R006
+  - usdm:product.design_records.traceability_and_relations.workflow_relations#R007
+  - usdm:product.design_records.traceability_and_relations.workflow_relations#R008
+  - usdm:product.design_records.traceability_and_relations.workflow_relations#R010
 
 ## What this is
 

@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-001-10: Track configured legacy-fallback implementation
 
 - **id**: DRMCP-TASK-MCP-001-10
-- **status**: not_started
+- **status**: blocked
 - **date**: 2026-06-30
 - **work_item**: DRMCP-WORK-MCP-001
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -56,5 +56,7 @@ Selected child Work Item: `DRMCP-WORK-MCP-010`.
 - W010 remains `blocked` pending W012 completion and execution-graph rebaseline.
 - Existing Task Candidates are not released implementation contracts.
 - No W010 production Task may start before rebaseline.
-- T10 remains `not_started` until T09 completes and the rebaselined W010 workflow begins.
+- T10 remains `blocked`; the cancelled T09 prerequisite cannot satisfy `depends_on`.
 - The stale T15 release path is not a predecessor.
+- Blocked on 2026-07-03 because direct prerequisite `DRMCP-TASK-MCP-001-09` is `cancelled`.
+- The configured legacy-fallback route requires a future graph decision after the replacement architecture, contract, and detailed-specification baselines exist.

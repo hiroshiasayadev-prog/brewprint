@@ -4,6 +4,9 @@
 - **status**: draft
 - **date**: 2026-07-04
 - **parent**: `spec:drmcp.design_records_mcp.schema.overview`
+- **usdm_covers**:
+  - usdm:product.design_records.namespace_and_identity.compatibility_identity_boundary#R010
+  - usdm:product.design_records.namespace_and_identity.spec_identity#R020
 
 ## What this is
 

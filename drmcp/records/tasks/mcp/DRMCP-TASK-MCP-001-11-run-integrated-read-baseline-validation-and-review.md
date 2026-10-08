@@ -1,7 +1,7 @@
 # DRMCP-TASK-MCP-001-11: Run integrated read-baseline validation and review
 
 - **id**: DRMCP-TASK-MCP-001-11
-- **status**: not_started
+- **status**: blocked
 - **date**: 2026-06-30
 - **work_item**: DRMCP-WORK-MCP-001
 - **source_requirement**: DRMCP-REQ-MCP-001
@@ -67,3 +67,6 @@ This Task must not repair implementation failures.
 Pending T09, T10, T16, and T17 completion.
 
 T11 remains the sole integrated read-baseline verification owner.
+
+Blocked on 2026-07-03 because direct prerequisite `DRMCP-TASK-MCP-001-09` is `cancelled`.
+The integrated gate cannot proceed until a future graph replaces the cancelled current-read implementation route.

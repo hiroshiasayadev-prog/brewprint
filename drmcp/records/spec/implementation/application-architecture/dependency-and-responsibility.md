@@ -4,6 +4,9 @@
 - **status**: draft
 - **date**: 2026-07-04
 - **parent**: `spec:drmcp.implementation.application_architecture`
+- **usdm_covers**:
+  - usdm:product.design_records.namespace_and_identity.canonical_reference_boundary#R003
+  - usdm:product.design_records.namespace_and_identity.ownership_selection#R004
 
 ## What this is
 

@@ -4,6 +4,18 @@
 - **status**: draft
 - **date**: 2026-07-05
 - **parent**: `spec:drmcp.design_records_mcp.overview`
+- **usdm_covers**:
+  - usdm:product.design_records.repository_layout_and_discovery.records_root#R001
+  - usdm:product.design_records.repository_layout_and_discovery.records_root#R002
+  - usdm:product.design_records.repository_layout_and_discovery.records_root#R003
+  - usdm:product.design_records.traceability_and_relations.artifact_ref_classes#R004
+  - usdm:product.design_records.traceability_and_relations.resolve_and_validation#R004
+  - usdm:product.design_records.traceability_and_relations.resolve_and_validation#R014
+  - usdm:product.design_records.namespace_and_identity.compatibility_identity_boundary#R003
+  - usdm:product.design_records.namespace_and_identity.compatibility_identity_boundary#R015
+  - usdm:product.design_records.namespace_and_identity.compatibility_identity_boundary#R016
+  - usdm:product.design_records.namespace_and_identity.namespace_model#R003
+  - usdm:product.design_records.namespace_and_identity.namespace_model#R004
 
 ## What this is
 

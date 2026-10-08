@@ -2,7 +2,7 @@
 
 - **id**: `usdm:drmcp.mcp_capabilities.retrieval.record_content_retrieval`
 - **status**: draft
-- **date**: 2026-07-12
+- **date**: 2026-07-14
 - **kind**: requirement
 - **parent**: `usdm:drmcp.mcp_capabilities.retrieval`
 
@@ -33,6 +33,7 @@ Product requirements for exact retrieval of current Design Records, selectable r
 | R010 | DRMCP must make the parsed metadata available for a successfully retrieved current record when the metadata projection is selected. | Artifact Specifications define the metadata fields and value formats. |
 | R011 | DRMCP must return real H2 headings in source order when the H2 heading-list projection is selected. | H1 and H3-or-deeper headings are not part of this projection. |
 | R012 | DRMCP must return complete source content without summarization, normalization, reformatting, or truncation when the complete-content projection is selected and the content fits within the applied output limit. |  |
+| R030 | DRMCP must allow the H1 title text to be selected as a record-content projection. | The projection excludes the H1 marker and identity prefix. |
 
 ## Requirements: H2 section retrieval
 > source: literal

@@ -1,0 +1,247 @@
+# Reference: Operation diagnostic catalog
+
+- **id**: `spec:drmcp.design_records_mcp.diagnostics.operation_diagnostic_catalog`
+- **status**: draft
+- **date**: 2026-07-14
+- **parent**: `spec:drmcp.design_records_mcp.diagnostics`
+
+## What this is
+
+Defines canonical external diagnostic codes and code-specific context contracts used by completed DRMCP operations.
+
+## Non-goals
+
+- Defining operation trigger conditions or result fields.
+- Defining validation findings, validation severity, or validation result projection.
+- Exposing physical paths, repair guidance, internal exceptions, or debug information.
+
+## Catalog rules
+
+| rule | contract |
+|---|---|
+| Code spelling | Lowercase snake_case. |
+| Code identity | The operation classification name and external diagnostic `code` are identical. |
+| Class | Each code is fixed as either `error` or `warning`. |
+| Placement | Each code may appear only at cataloged placements. |
+| Context | Each matching variant permits exactly its cataloged fields. |
+| Unknown codes | Prohibited. |
+| Unknown context fields | Prohibited. |
+| Message | Required by the shared envelope but exact wording is not cataloged. |
+| Expansion | A new operation outcome requires an operation Specification update and a catalog entry before external use. |
+
+## Error codes
+
+| code | placement | context | trigger owner |
+|---|---|---|---|
+| `invalid_selector` | Top-level error. | Required variant. | Discovery, listing, search, and scope-validation operation Specifications. |
+| `invalid_projection` | Top-level error. | Required. | Sequential record listing and tree child listing. |
+| `invalid_limit` | Top-level error. | Required. | Sequential record listing, tree child listing, and validation output limits. |
+| `invalid_offset` | Top-level error. | Required. | Sequential record listing and tree child listing. |
+| `invalid_depth` | Top-level error. | Required. | Tree overview. |
+| `invalid_node_limit` | Top-level error. | Required. | Tree overview. |
+| `invalid_selector_count` | Top-level error. | Required. | Batch retrieval results and exact record validation. |
+| `invalid_source_content_limit` | Top-level error. | Required. | Retrieval output limits. |
+| `invalid_match_limit` | Top-level error. | Required. | Search results and limits. |
+| `invalid_snippet_limit` | Top-level error. | Required. | Search results and limits. |
+| `empty_query` | Top-level error. | Prohibited. | Lexical record search. |
+| `invalid_pattern` | Top-level error. | Prohibited. | Lexical match model. |
+| `configuration_failure` | Top-level error. | Prohibited. | Every completed operation. |
+| `execution_failure` | Top-level error. | Prohibited. | Every completed operation. |
+| `malformed_selector` | Selector-level error. | Prohibited. | Exact record retrieval, H2 section retrieval, and exact record validation. |
+| `unresolved_record` | Selector-level error. | Prohibited. | Exact record retrieval, H2 section retrieval, and exact record validation. |
+| `conflicted_record` | Selector-level error. | Prohibited. | Exact record retrieval, H2 section retrieval, and exact record validation. |
+| `node_not_found` | Top-level error. | Required variant. | Tree child listing, tree overview, lexical record search, and scope validation. |
+| `section_not_found` | Selector-level error. | Required. | H2 section retrieval. |
+| `section_data_unavailable` | Selector-level error. | Prohibited. | H2 section retrieval. |
+
+### `invalid_selector`
+
+`invalid_selector` uses exactly one matching context variant.
+
+| condition | required context fields | field order and value rules |
+|---|---|---|
+| Required scope selectors are absent | `missing_selector_fields` | List of missing field names in operation request-field order. |
+| A supplied selector combination is not accepted | `accepted_selector_combinations` | List of field-name lists in operation selector-progression order. Each inner list uses request-field order. An empty inner list represents no selectors. |
+| App namespace is unavailable | `app_namespace`, `available_app_namespaces` | Supplied string and available strings in ascending simple string order. |
+| Artifact kind is unavailable without a structure restriction | `artifact_kind`, `available_artifact_kinds` | Supplied string and available strings in ascending simple string order. |
+| Artifact kind is unavailable or ineligible for a sequential operation | `artifact_kind`, `available_sequential_artifact_kinds` | Supplied string and available strings in ascending simple string order. |
+| Sequential domain is unavailable | `domain_namespace`, `available_domain_namespaces` | Supplied string and available strings in ascending simple string order. |
+| `node_ref` is malformed or does not identify a tree record kind | `node_ref`, `accepted_tree_record_kinds` | Supplied string and accepted tree record-kind strings in ascending simple string order. |
+| `subtree_root_ref` is malformed or does not identify a tree record kind | `subtree_root_ref`, `accepted_tree_record_kinds` | Supplied string and accepted tree record-kind strings in ascending simple string order. |
+
+No `invalid_selector` variant permits another context field.
+The trigger-owning operation determines which variant applies.
+
+### `invalid_projection`
+
+| field | requirement | value |
+|---|---|---|
+| `invalid_projection_values` | required | Unknown supplied values in request occurrence order with duplicate occurrences preserved. |
+| `available_projection_values` | required | Accepted values in ascending simple string order. |
+
+No other context field is permitted.
+
+### Numeric request errors
+
+| code | required context fields | prohibited common fields |
+|---|---|---|
+| `invalid_limit` | `minimum`, `maximum`, `default`, `actual` | Byte-suffixed fields. |
+| `invalid_offset` | `minimum`, `default`, `actual` | `maximum` and byte-suffixed fields. |
+| `invalid_depth` | `minimum`, `maximum`, `default`, `actual` | Byte-suffixed fields. |
+| `invalid_node_limit` | `minimum`, `maximum`, `default`, `actual` | Byte-suffixed fields. |
+| `invalid_selector_count` | `minimum`, `maximum`, `actual` | `default` and byte-suffixed fields. |
+| `invalid_source_content_limit` | `minimum_bytes`, `maximum_bytes`, `actual_bytes` | Unsuffixed numeric-bound fields and `default`. |
+| `invalid_match_limit` | `minimum`, `maximum`, `default`, `actual` | Byte-suffixed fields. |
+| `invalid_snippet_limit` | `minimum`, `maximum`, `default`, `actual` | Byte-suffixed fields. |
+
+Each context value is an integer.
+`actual` or `actual_bytes` is the exact schema-valid supplied value.
+A wrong input type is an MCP input-schema violation rather than an operation diagnostic.
+No numeric request error permits another context field.
+
+### `node_not_found`
+
+`node_not_found` uses exactly one matching context variant.
+
+| consuming selector | required context field | value |
+|---|---|---|
+| Tree navigation `node_ref` | `node_ref` | Exact supplied node ref. |
+| Search or scope-validation `subtree_root_ref` | `subtree_root_ref` | Exact supplied subtree root ref. |
+
+No variant permits another context field.
+The diagnostic does not include available nodes, suggestions, or physical paths.
+
+### `section_not_found`
+
+| field | requirement | value |
+|---|---|---|
+| `available_h2_headings` | required | Real H2 title strings in source order with duplicate occurrences preserved. |
+
+The list may be empty.
+The list excludes H1 and H3-or-deeper headings.
+The list preserves exact title text without the leading `## ` marker.
+The parent result already contains the requested `h2_title`.
+No other context field is permitted.
+
+### Context-prohibited errors
+
+The following codes omit `context`:
+
+- `configuration_failure`;
+- `execution_failure`;
+- `malformed_selector`;
+- `unresolved_record`;
+- `conflicted_record`;
+- `section_data_unavailable`;
+- `empty_query`;
+- `invalid_pattern`.
+
+A selector-level parent result retains every field established before the error.
+Conflict members, source defects, and physical paths belong to Validation Specifications.
+
+## Warning codes
+
+| code | placement | required context | trigger owner |
+|---|---|---|---|
+| `source_content_limit_ignored` | Top-level warning. | `source_content_limit_bytes` | Exact record retrieval. |
+| `source_content_omitted_by_limit` | Selector-level warning. | `content_size_bytes` | Exact record retrieval and retrieval output limits. |
+| `duplicate_h2` | Selector-level warning. | None. | H2 section retrieval. |
+| `section_content_omitted_by_limit` | Selector-level warning. | `content_size_bytes` | H2 section retrieval and retrieval output limits. |
+| `search_target_unavailable` | Top-level warning. | `canonical_ref`, `target` | Lexical match model. |
+| `duplicate_requested_ref` | Top-level warning. | `ref`, `first_index`, `duplicate_indexes` | Exact record validation. |
+
+### `duplicate_requested_ref`
+
+| field | requirement | value |
+|---|---|---|
+| `ref` | required | Exact supplied selector string. |
+| `first_index` | required | Zero-based index of the effective first occurrence. |
+| `duplicate_indexes` | required | Later zero-based occurrence indexes in ascending order. |
+
+The warning appears once for each exact duplicate selector string.
+`duplicate_indexes` contains at least one integer.
+No other context field is permitted.
+The trigger-owning operation defines warning collection order.
+
+### `search_target_unavailable`
+
+| field | requirement | value |
+|---|---|---|
+| `canonical_ref` | required | Canonical ref of the uniquely addressable current record. |
+| `target` | required | `title`, `metadata_source`, `h2_heading`, or `h2_section_content`. |
+
+No other context field is permitted.
+The diagnostic does not include defect details, source positions, or physical paths.
+The lexical match model defines warning aggregation and order.
+
+### `source_content_limit_ignored`
+
+| field | requirement | value |
+|---|---|---|
+| `source_content_limit_bytes` | required | Exact supplied integer that was ignored. |
+
+This warning applies when `get_records` receives the field while `projection.source_content` is `false`.
+The ignored value is not range-validated.
+No other context field is permitted.
+
+### Content omission warnings
+
+| code | field | requirement | value |
+|---|---|---|---|
+| `source_content_omitted_by_limit` | `content_size_bytes` | required | Complete record source-content size as UTF-8 bytes. |
+| `section_content_omitted_by_limit` | `content_size_bytes` | required | Complete H2 section-content size as UTF-8 bytes. |
+
+No other context field is permitted.
+The warnings preserve successful selector results.
+
+### `duplicate_h2`
+
+`duplicate_h2` prohibits `context`.
+The parent result contains the requested `h2_title`.
+Duplicate counts and source positions are not operation diagnostic fields.
+
+## List ordering
+
+| context field | normative order |
+|---|---|
+| `available_app_namespaces` | Ascending simple string order. |
+| `available_artifact_kinds` | Ascending simple string order. |
+| `available_sequential_artifact_kinds` | Ascending simple string order. |
+| `available_domain_namespaces` | Ascending simple string order. |
+| `available_projection_values` | Ascending simple string order. |
+| `accepted_tree_record_kinds` | Ascending simple string order. |
+| `missing_selector_fields` | Operation request-field order. |
+| `accepted_selector_combinations` | Operation selector-progression order; each combination uses request-field order. |
+| `invalid_projection_values` | Request occurrence order with duplicate occurrences preserved. |
+| `available_h2_headings` | Source order with duplicate occurrences preserved. |
+| `duplicate_indexes` | Ascending numeric order. |
+
+## Boundary
+
+| concern | owner |
+|---|---|
+| Canonical code spelling, class, placement eligibility, and context fields | This Specification. |
+| Shared diagnostic object and response-state rules | `spec:drmcp.design_records_mcp.diagnostics.operation_diagnostic_envelope`. |
+| Trigger conditions, result fields established before failure, and warning order | The consuming operation Specification. |
+| Current record, identity, node, and scope semantics | `spec:drmcp.design_records_mcp.current_record_model`. |
+| Validation findings, conflict-member details, source locations, and repair guidance | Validation Specifications. |
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:drmcp.design_records_mcp.diagnostics.operation_diagnostic_envelope` | Defines the object and placement contract used by every catalog entry. |
+| `spec:drmcp.design_records_mcp.operations.discovery_and_listing.record_scope_discovery` | Owns scope-discovery diagnostic triggers. |
+| `spec:drmcp.design_records_mcp.operations.discovery_and_listing.sequential_record_listing` | Owns sequential-listing diagnostic triggers. |
+| `spec:drmcp.design_records_mcp.operations.discovery_and_listing.tree_child_listing` | Owns tree-child diagnostic triggers. |
+| `spec:drmcp.design_records_mcp.operations.discovery_and_listing.tree_overview` | Owns tree-overview diagnostic triggers. |
+| `spec:drmcp.design_records_mcp.operations.retrieval.batch_retrieval_results` | Owns selector-count and batch-result boundaries. |
+| `spec:drmcp.design_records_mcp.operations.retrieval.exact_record_retrieval` | Owns exact-record diagnostic triggers. |
+| `spec:drmcp.design_records_mcp.operations.retrieval.h2_section_retrieval` | Owns H2-section diagnostic triggers and warning order. |
+| `spec:drmcp.design_records_mcp.operations.retrieval.retrieval_output_limits` | Owns source-content limit bounds and omission behavior. |
+| `spec:drmcp.design_records_mcp.operations.search.lexical_record_search` | Owns search request-wide diagnostic triggers. |
+| `spec:drmcp.design_records_mcp.operations.search.lexical_match_model` | Owns pattern and target-extraction diagnostic triggers. |
+| `spec:drmcp.design_records_mcp.operations.search.search_results_and_limits` | Owns search limit diagnostic triggers. |
+| `spec:drmcp.design_records_mcp.operations.validation.scope_validation` | Owns broad validation selector and scope diagnostic triggers. |
+| `spec:drmcp.design_records_mcp.operations.validation.exact_record_validation` | Owns exact validation selector outcomes and duplicate-selector warnings. |
+| `spec:drmcp.design_records_mcp.operations.validation.validation_output_limits` | Owns validation output-limit diagnostic triggers. |
