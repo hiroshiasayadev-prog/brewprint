@@ -1,16 +1,25 @@
 # PRODUCT-WORK-SPEC-028: Reduce and review design-governance term identities
 
 - **id**: PRODUCT-WORK-SPEC-028
-- **status**: not_started
+- **status**: in_progress
 - **date**: 2026-07-08
 - **source_refs**:
   - PRODUCT-REQ-SPEC-014
   - PRODUCT-INV-SPEC-011
 - **impact_refs**:
   - PRODUCT-REQ-SPEC-012
+  - product/records/investigations/spec/data/PRODUCT-INV-SPEC-011/leaf-analysis/
+  - product/records/investigations/spec/data/PRODUCT-INV-SPEC-011/trigger-reduction/
   - product/records/investigations/spec/data/PRODUCT-INV-SPEC-011/cross-trigger-review/
+  - product/records/investigations/spec/data/PRODUCT-INV-SPEC-011/semantic-analysis/
 - **tasks**:
   - PRODUCT-TASK-SPEC-028-01
+  - PRODUCT-TASK-SPEC-028-02
+  - PRODUCT-TASK-SPEC-028-03
+  - PRODUCT-TASK-SPEC-028-04
+  - PRODUCT-TASK-SPEC-028-05
+  - PRODUCT-TASK-SPEC-028-06
+  - PRODUCT-TASK-SPEC-028-07
 
 ## Goal
 
@@ -45,6 +54,7 @@ This Work Item does not own:
 | target | impact |
 |---|---|
 | `product/records/investigations/spec/data/PRODUCT-INV-SPEC-011/` | Add product-owned semantic-analysis evidence derived from the raw corpus. |
+| `product/records/investigations/spec/data/PRODUCT-INV-SPEC-011/semantic-analysis/index.md` | Index product-side capture status and accepted retrospective source stages. |
 | `tools/term-inventory-analysis/` | Treated as ignored working output unless specific summaries are captured under product records. |
 | PRODUCT-REQ-SPEC-012 | May receive restart evidence after foundational term boundaries are classified. |
 
@@ -52,21 +62,36 @@ This Work Item does not own:
 
 ```text
 PRODUCT-TASK-SPEC-028-01 decide retrospective analysis scope and route
-  -> later tasks materialized only after T01 fixes exact owners and outputs
+  -> PRODUCT-TASK-SPEC-028-02 capture leaf-analysis evidence
+  -> PRODUCT-TASK-SPEC-028-05 coordinate follow-up routes
+  -> PRODUCT-TASK-SPEC-028-06 review retrospective evidence route
+  -> PRODUCT-TASK-SPEC-028-07 synchronize retrospective evidence closure
+
+PRODUCT-TASK-SPEC-028-01 decide retrospective analysis scope and route
+  -> PRODUCT-TASK-SPEC-028-03 capture trigger-reduction evidence
+  -> PRODUCT-TASK-SPEC-028-05 coordinate follow-up routes
+
+PRODUCT-TASK-SPEC-028-01 decide retrospective analysis scope and route
+  -> PRODUCT-TASK-SPEC-028-04 synchronize cross-trigger review evidence
+  -> PRODUCT-TASK-SPEC-028-05 coordinate follow-up routes
 ```
 
-T01 is the only initial Task.
-No aggregation, review, correction, synchronization, or canonical authoring Task is materialized before T01 decides its exact responsibility boundary.
+T02, T03, and T04 may run after T01.
+T05 waits for all product-side evidence capture and synchronization Tasks.
+T06 reviews the captured evidence and routing.
+T07 runs only after the review route is satisfied.
 
 ## Task Candidates
 
 | task | task type | responsibility | dependency |
 |---|---|---|---|
 | PRODUCT-TASK-SPEC-028-01 | decision | Decide the retrospective evidence policy, accepted analysis scope, exact product-side outputs, and next Task graph. | none |
-| candidate | investigation | Record trigger-level reduction evidence if T01 confirms that the existing tool output is admissible retrospective evidence. | T01 |
-| candidate | investigation | Record cross-trigger identity candidate generation and routing evidence. | T01 |
-| candidate | review | Review or audit product-side identity evidence when T01 requires an independent gate. | T01 and relevant evidence Task |
-| candidate | coordination | Create follow-up Work Items for canonical vocabulary, conflicting meanings, qualified terms, deprecation, or PRODUCT-REQ-SPEC-012 restart. | T01 and accepted evidence Tasks |
+| PRODUCT-TASK-SPEC-028-02 | investigation | Capture completed leaf semantic analysis into product-side evidence. | T01 |
+| PRODUCT-TASK-SPEC-028-03 | investigation | Capture completed trigger-level reduction into product-side evidence. | T01 |
+| PRODUCT-TASK-SPEC-028-04 | synchronization | Connect existing Tier A cross-trigger review evidence to this Work Item's evidence policy. | T01 |
+| PRODUCT-TASK-SPEC-028-05 | coordination | Coordinate follow-up routes for canonical vocabulary, conflicting meanings, qualified terms, deprecation, and PRODUCT-REQ-SPEC-012 restart. | T02, T03, T04 |
+| PRODUCT-TASK-SPEC-028-06 | review | Independently review captured evidence and follow-up routing. | T02, T03, T04, T05 |
+| PRODUCT-TASK-SPEC-028-07 | synchronization | Synchronize lifecycle, Evidence, relations, and closure after review passes. | T06 |
 
 ## Completion Condition
 
@@ -84,3 +109,5 @@ No aggregation, review, correction, synchronization, or canonical authoring Task
 - PRODUCT-WORK-SPEC-027 completed raw inventory and excluded semantic aggregation.
 - Commit-safe Tier A cross-trigger review evidence already exists under `product/records/investigations/spec/data/PRODUCT-INV-SPEC-011/cross-trigger-review/`.
 - Raw per-job analysis output remains under ignored `tools/term-inventory-analysis/` output and is not product history by itself.
+- PRODUCT-TASK-SPEC-028-01 decided the retrospective evidence policy, accepted completed analysis stages, required product-side evidence artifacts, review route, follow-up Task graph, and PRODUCT-REQ-SPEC-012 partial-restart boundary.
+- PRODUCT-TASK-SPEC-028-02 through PRODUCT-TASK-SPEC-028-07 were materialized from PRODUCT-TASK-SPEC-028-01 D-005.
