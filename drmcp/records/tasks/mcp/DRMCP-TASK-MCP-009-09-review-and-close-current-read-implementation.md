@@ -21,9 +21,13 @@ Confirm contract traceability, fixture coverage, changed-file boundaries, test e
 ## Work
 
 - Review T02 through T08 evidence and final merged implementation.
+- Review the accepted T10 through T17 correction graph, execution, aggregate verification, finding closure, and T05 synchronization evidence.
+- Confirm T05 was not closed before T15 PASS and T16 independent acceptance.
 - Compare behavior with W003 through W008 and accepted current specifications.
 - Verify every implementation file belongs to an accepted Task boundary.
 - Verify public retirement of `get_record` and `suggest_next_record`.
+- Verify B-01, M-01, and M-04 remain closed in the final merged implementation.
+- Verify T13 and T14 respected their disjoint writer boundaries and protected `types.go` and `id_range.go`.
 - Verify current-only configuration, parsing, indexing, list, exact retrieval, resolver, validation, diagnostics, and path hiding.
 - Verify complete current fixture integration and authoring non-regression.
 - Verify every W009-owned contract and major production symbol has a provisional implementation mapping.
@@ -50,7 +54,8 @@ Confirm contract traceability, fixture coverage, changed-file boundaries, test e
 
 ## Done condition
 
-- T01 through T08 are `done`.
+- T01 through T08 and T10 through T17 are `done`.
+- T05 correction findings B-01, M-01, and M-04 are independently closed.
 - All accepted W009 behavior is implemented and tested.
 - All W009-owned current fixture cases are covered.
 - Full affected-package tests pass.
@@ -108,6 +113,7 @@ git grep -n -E '"get_record"|GetRecord|"suggest_next_record"|SuggestNextRecord' 
 
 Run the full test command for every additional package in the accepted T05 catalog boundary.
 Verify every T02 through T08 `implementation_mapping` path, symbol, and test function against the accepted files.
+Verify T10 through T17 dependencies, writer boundaries, accepted command evidence, and finding dispositions.
 Verify each `contract_refs` entry names an accepted record and each `fixture_cases` entry remains inside that Task's ownership.
 Treat `pending` future refs as valid only while the formal canonical foundation is unavailable.
 Deleted files are excluded from `$files` and verified through scoped Git evidence.
@@ -137,3 +143,6 @@ Required final review output:
 17. W009 and hub T09 closure readiness
 
 Final evidence is pending Task execution.
+
+The final review must consume, not replace, the T16 limited finding-closure verdict.
+T09 remains the sole final W009 and hub closure owner after T08 acceptance.

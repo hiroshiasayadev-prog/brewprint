@@ -30,8 +30,11 @@ Migrate only protected authoring test setup and fixture identities to the final 
 - Exercise configuration, parsing, active indexing, listing, exact retrieval, current resolution, current validation, diagnostics, and path hiding.
 - Run without configured legacy roots.
 - Treat the complete W008 fixture tree as read-only.
-- Confirm T05, T06, and T07 are merged and their owned tests pass before starting fixture integration.
-- Migrate `authoring_test.go` and `authoring_guidance_test.go` from auto-discovered or shape-invalid roots, non-app identities, and YAML-front-matter spec setup to the final current-only test shape.
+- Confirm T05, T06, and T07 are merged and their owned focused tests pass before starting fixture integration.
+- Use T15 `diagnostic_full_package_routing.t08_owned_test_allowlist` as the canonical migration owner map.
+- Accept a T15 diagnostic result `DEFERRED_TO_T08` only when every failing test name is an exact member of that frozen allowlist.
+- Do not expand ownership by test prefix, regex, category, source-file membership, or failure-message interpretation.
+- Migrate only the allowlisted tests in `authoring_test.go` and `authoring_guidance_test.go` from auto-discovered or shape-invalid roots, non-app identities, and YAML-front-matter spec setup to the final current-only test shape.
 - Preserve the tested authoring behavior, proposal assertions, diagnostics, and write semantics; change only setup, fixture paths/content, and canonical identities required by the final read contracts.
 - Run complete affected-package tests after the three P3 branches merge and the test-only migration is complete.
 - Verify authoring tests pass without authoring production changes.
@@ -58,7 +61,10 @@ All L cases and other legacy-owned R cases remain W010-owned.
 - Normal list, retrieval, and resolver outputs contain no physical path.
 - Current-only operation succeeds with legacy roots omitted.
 - Fixture bytes remain unchanged.
+- Every migrated authoring test is an exact member of the T15 frozen allowlist.
+- No test outside the frozen allowlist is claimed through diagnostic failure routing.
 - `authoring_test.go` and `authoring_guidance_test.go` use explicit current roots, app-aware canonical identities, and current spec fixtures without weakening authoring behavior assertions.
+- This Task records the first accepted full `designrecords` package PASS after allowlisted authoring-test migration.
 - Full `designrecords` tests pass, including authoring tests.
 - Every package added by the T05 catalog boundary passes its full test command.
 - Only `current_read_fixture_test.go`, `authoring_test.go`, and `authoring_guidance_test.go` change in T08.
@@ -88,7 +94,9 @@ A missing race-detector prerequisite is an accurately recorded limitation, not a
 
 Record:
 
-- the exact T05/T06/T07 owned-test evidence used as the P3 start gate;
+- the exact T05/T06/T07 focused-test evidence used as the P3 start gate;
+- T15 diagnostic result and every exact failing test name compared with the canonical frozen allowlist;
+- migration disposition for each allowlisted failing test;
 - the exact W008 case-to-test matrix;
 - fixture root and configuration used by each integration group;
 - proof that `legacy_roots` is omitted;
