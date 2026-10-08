@@ -14,44 +14,35 @@ func Tools() []Tool {
 	return []Tool{
 		{
 			Name:        "list_records",
-			Description: "List design records and workflow artifact records with optional metadata filters.",
+			Description: "List compact active current records by app namespace, kind, domain, optional status, order, and limit.",
 			InputSchema: objectSchema(map[string]any{
-				"kind":     enumStringSchema("decision", "spec", "investigation", "requirement", "work_item", "task"),
-				"status":   map[string]any{"type": "string"},
-				"id":       map[string]any{"type": "string"},
-				"id_range": idRangeSchema(),
-				"order_by": enumStringSchema("id"),
-				"order":    enumStringSchema("asc", "desc"),
-				"limit":    map[string]any{"type": "integer", "minimum": 1},
-			}, nil),
+				"app_namespace": map[string]any{"type": "string"},
+				"kind":          enumStringSchema("decision", "investigation", "requirement", "work_item", "task"),
+				"domain":        map[string]any{"type": "string"},
+				"status":        map[string]any{"type": "string"},
+				"order":         enumStringSchema("asc", "desc"),
+				"limit":         map[string]any{"type": "integer", "minimum": 1, "maximum": 100},
+			}, []string{"app_namespace", "kind", "domain"}),
 		},
 		{
 			Name:        "validate_records",
 			Description: "Validate indexed design record and workflow artifact metadata.",
 			InputSchema: objectSchema(map[string]any{
-				"kind":     enumStringSchema("decision", "spec", "investigation", "requirement", "work_item", "task"),
-				"id_range": idRangeSchema(),
+				"kind": enumStringSchema("decision", "spec", "investigation", "requirement", "work_item", "task"),
 			}, nil),
 		},
 		{
-			Name:        "get_record",
-			Description: "Get one design record by ID, optionally including raw Markdown body.",
-			InputSchema: objectSchema(map[string]any{
-				"id":           map[string]any{"type": "string"},
-				"include_body": map[string]any{"type": "boolean"},
-			}, []string{"id"}),
-		},
-		{
 			Name:        "get_records",
-			Description: "Get multiple explicitly requested design records by exact ID, with item-level partial results.",
+			Description: "Get active current records by exact canonical refs with ordered deduplication and warnings.",
 			InputSchema: objectSchema(map[string]any{
-				"ids": map[string]any{
+				"refs": map[string]any{
 					"type":     "array",
 					"minItems": 1,
+					"maxItems": 20,
 					"items":    map[string]any{"type": "string"},
 				},
 				"include_body": map[string]any{"type": "boolean"},
-			}, []string{"ids"}),
+			}, []string{"refs"}),
 		},
 		{
 			Name:        "list_authoring_guides",
@@ -71,14 +62,6 @@ func Tools() []Tool {
 			InputSchema: objectSchema(map[string]any{
 				"ref": map[string]any{"type": "string"},
 			}, []string{"ref"}),
-		},
-		{
-			Name:        "suggest_next_record",
-			Description: "Suggest the next ADR ID and path for a new decision record.",
-			InputSchema: objectSchema(map[string]any{
-				"kind":  enumStringSchema("decision"),
-				"title": map[string]any{"type": "string"},
-			}, []string{"kind", "title"}),
 		},
 		{
 			Name:        "propose_record_create",
@@ -143,13 +126,6 @@ func objectSchema(properties map[string]any, required []string) map[string]any {
 		schema["required"] = required
 	}
 	return schema
-}
-
-func idRangeSchema() map[string]any {
-	return objectSchema(map[string]any{
-		"from": map[string]any{"type": "string"},
-		"to":   map[string]any{"type": "string"},
-	}, nil)
 }
 
 func enumStringSchema(values ...string) map[string]any {

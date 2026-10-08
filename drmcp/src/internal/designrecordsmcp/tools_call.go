@@ -45,14 +45,14 @@ func (s *Server) HandleToolsCall(params json.RawMessage) ToolsCallResult {
 
 	switch call.Name {
 	case "list_records":
-		var req designrecords.ListRecordsRequest
+		var req designrecords.CurrentListRecordsRequest
 		if err := decodeToolArguments(call.Arguments, &req); err != nil {
 			return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("invalid list_records arguments: %v", err))
 		}
 		if buildErr != nil {
 			return toolBuildIndexErrorResult(buildErr)
 		}
-		return toolHandlerResult(designrecords.ListRecords(ctx, idx, req))
+		return toolHandlerResult(designrecords.ListCurrentRecords(ctx, idx, req))
 	case "validate_records":
 		var req designrecords.ValidateRecordsRequest
 		if err := decodeToolArguments(call.Arguments, &req); err != nil {
@@ -62,24 +62,15 @@ func (s *Server) HandleToolsCall(params json.RawMessage) ToolsCallResult {
 			return toolBuildIndexErrorResult(buildErr)
 		}
 		return toolHandlerResult(designrecords.ValidateRecords(ctx, idx, req))
-	case "get_record":
-		var req designrecords.GetRecordRequest
-		if err := decodeToolArguments(call.Arguments, &req); err != nil {
-			return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("invalid get_record arguments: %v", err))
-		}
-		if buildErr != nil {
-			return toolBuildIndexErrorResult(buildErr)
-		}
-		return toolHandlerResult(designrecords.GetRecord(ctx, idx, req))
 	case "get_records":
-		var req designrecords.GetRecordsRequest
+		var req designrecords.CurrentGetRecordsRequest
 		if err := decodeToolArguments(call.Arguments, &req); err != nil {
 			return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("invalid get_records arguments: %v", err))
 		}
 		if buildErr != nil {
 			return toolBuildIndexErrorResult(buildErr)
 		}
-		return toolHandlerResult(designrecords.GetRecords(ctx, idx, req))
+		return toolHandlerResult(designrecords.GetCurrentRecords(ctx, idx, req))
 	case "list_authoring_guides":
 		var req designrecords.ListAuthoringGuidesRequest
 		if err := decodeToolArguments(call.Arguments, &req); err != nil {
@@ -101,15 +92,6 @@ func (s *Server) HandleToolsCall(params json.RawMessage) ToolsCallResult {
 			return toolBuildIndexErrorResult(buildErr)
 		}
 		return toolHandlerResult(designrecords.ResolveReference(ctx, idx, req))
-	case "suggest_next_record":
-		var req designrecords.SuggestNextRecordRequest
-		if err := decodeToolArguments(call.Arguments, &req); err != nil {
-			return toolErrorResult(designrecords.ErrorCodeInvalidRequest, fmt.Sprintf("invalid suggest_next_record arguments: %v", err))
-		}
-		if buildErr != nil {
-			return toolBuildIndexErrorResult(buildErr)
-		}
-		return toolHandlerResult(designrecords.SuggestNextRecord(ctx, idx, req))
 	case "propose_record_create":
 		var req designrecords.ProposeRecordCreateRequest
 		if err := decodeToolArguments(call.Arguments, &req); err != nil {

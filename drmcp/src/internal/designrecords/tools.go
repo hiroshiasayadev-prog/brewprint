@@ -3,34 +3,28 @@ package designrecords
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"sort"
 	"strings"
 )
 
-type listRecordsScope struct {
-	kind     RecordKind
-	hasKind  bool
-	status   RecordStatus
-	id       string
-	idRange  *recordIDRange
-	order    string
-	limit    int
-	hasLimit bool
-}
+const (
+	defaultCurrentListLimit = 20
+	maxCurrentListLimit     = 100
+	maxCurrentGetRefs       = 20
+)
 
-// ListRecords returns normalized design record metadata with MVP filters,
-// deterministic ID ordering, and optional limit handling.
-func ListRecords(ctx context.Context, idx *Index, req ListRecordsRequest) (ListRecordsResponse, error) {
+// ListCurrentRecords returns the accepted compact current-list projection for
+// the MCP list_records tool.
+func ListCurrentRecords(ctx context.Context, idx *Index, req CurrentListRecordsRequest) (CurrentListRecordsResponse, error) {
 	if err := ctx.Err(); err != nil {
-		return ListRecordsResponse{}, err
+		return CurrentListRecordsResponse{}, err
 	}
 	if idx == nil {
-		return ListRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
+		return CurrentListRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
 	}
-	scope, err := newListRecordsScope(req)
+	scope, err := newCurrentListScope(req)
 	if err != nil {
-		return ListRecordsResponse{}, err
+		return CurrentListRecordsResponse{}, err
 	}
 
 	records := make([]Record, 0, len(idx.Records))
@@ -39,212 +33,126 @@ func ListRecords(ctx context.Context, idx *Index, req ListRecordsRequest) (ListR
 			records = append(records, record)
 		}
 	}
-	sortRecordsByID(records, scope.order)
-	if scope.hasLimit && len(records) > scope.limit {
+	sort.SliceStable(records, func(i, j int) bool {
+		if scope.order == "asc" {
+			return records[i].ID < records[j].ID
+		}
+		return records[i].ID > records[j].ID
+	})
+
+	hasMore := len(records) > scope.limit
+	if hasMore {
 		records = records[:scope.limit]
 	}
 
-	out := make([]ListedRecord, 0, len(records))
+	out := make([]CurrentListedRecord, 0, len(records))
 	for _, record := range records {
-		out = append(out, listedRecord(record))
+		out = append(out, currentListedRecord(record))
 	}
-	return ListRecordsResponse{Records: out}, nil
+	return CurrentListRecordsResponse{Records: out, HasMore: hasMore, Warnings: []OperationWarning{}}, nil
 }
 
-// GetRecord returns one exact ID match from the already-populated index.
-// Duplicate IDs are reported by validate_records; this lookup deterministically
-// returns the first record in index order and does not introduce another error.
-func GetRecord(ctx context.Context, idx *Index, req GetRecordRequest) (GetRecordResponse, error) {
+// GetCurrentRecords returns successful exact current-record lookups only.
+// Per-ref misses and request duplicates are reported as top-level warnings.
+func GetCurrentRecords(ctx context.Context, idx *Index, req CurrentGetRecordsRequest) (CurrentGetRecordsResponse, error) {
 	if err := ctx.Err(); err != nil {
-		return GetRecordResponse{}, err
+		return CurrentGetRecordsResponse{}, err
 	}
 	if idx == nil {
-		return GetRecordResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
+		return CurrentGetRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
 	}
-	if strings.TrimSpace(req.ID) == "" {
-		return GetRecordResponse{}, newToolError(ErrorCodeInvalidRequest, "id is required")
+	if len(req.Refs) == 0 {
+		return CurrentGetRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, "refs must be a non-empty array")
 	}
-	for _, record := range idx.Records {
-		if record.ID == req.ID {
-			return GetRecordResponse{Record: getRecordResponseRecord(record, req.IncludeBody)}, nil
-		}
-	}
-	return GetRecordResponse{}, newToolError(ErrorCodeRecordNotFound, fmt.Sprintf("record %s was not found", req.ID))
-}
-
-// GetRecords returns first-occurrence ordered results for explicitly requested
-// record IDs. Missing IDs are item-level results; duplicate requested IDs are
-// ignored after their first occurrence and reported as informational diagnostics.
-func GetRecords(ctx context.Context, idx *Index, req GetRecordsRequest) (GetRecordsResponse, error) {
-	if err := ctx.Err(); err != nil {
-		return GetRecordsResponse{}, err
-	}
-	if idx == nil {
-		return GetRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
-	}
-	if len(req.IDs) == 0 {
-		return GetRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, "ids must be a non-empty array")
+	if len(req.Refs) > maxCurrentGetRefs {
+		return CurrentGetRecordsResponse{}, newToolError(ErrorCodeInvalidRequest, "refs must contain at most 20 entries")
 	}
 
-	items := make([]GetRecordsItem, 0, len(req.IDs))
-	firstIndexes := make(map[string]int, len(req.IDs))
-	duplicateIndexes := make(map[string][]int)
-	duplicateOrder := make([]string, 0)
-
-	for index, id := range req.IDs {
-		if _, seen := firstIndexes[id]; seen {
-			if len(duplicateIndexes[id]) == 0 {
-				duplicateOrder = append(duplicateOrder, id)
-			}
-			duplicateIndexes[id] = append(duplicateIndexes[id], index)
+	records := make([]CurrentGetRecordsRecord, 0, len(req.Refs))
+	warnings := make([]OperationWarning, 0)
+	seen := map[string]bool{}
+	for _, ref := range req.Refs {
+		if seen[ref] {
+			warnings = append(warnings, operationWarning("duplicate_ref", ref, "duplicate requested ref was ignored after its first occurrence"))
 			continue
 		}
-		firstIndexes[id] = index
+		seen[ref] = true
 
-		item := GetRecordsItem{
-			ID:          id,
-			Diagnostics: []Diagnostic{},
-		}
-		for _, record := range idx.Records {
-			if record.ID == id {
-				recordResponse := getRecordResponseRecord(record, req.IncludeBody)
-				item.RetrievalStatus = RetrievalStatusFound
-				item.Record = &recordResponse
-				break
-			}
-		}
-		if item.Record == nil {
-			item.RetrievalStatus = RetrievalStatusNotFound
-			item.Diagnostics = []Diagnostic{{
-				Category:    DiagnosticRecordNotFound,
-				Severity:    DiagnosticSeverityError,
-				RequestedID: id,
-				Message:     fmt.Sprintf("record %s was not found", id),
-			}}
-		}
-		items = append(items, item)
-	}
-
-	diagnostics := make([]Diagnostic, 0, len(duplicateOrder))
-	for _, id := range duplicateOrder {
-		firstIndex := firstIndexes[id]
-		diagnostics = append(diagnostics, Diagnostic{
-			Category:         DiagnosticDuplicateRequestedIDIgnored,
-			Severity:         DiagnosticSeverityInfo,
-			RequestedID:      id,
-			FirstIndex:       &firstIndex,
-			DuplicateIndexes: append([]int{}, duplicateIndexes[id]...),
-			Message:          "duplicate requested record ID was ignored after its first occurrence",
-		})
-	}
-	return GetRecordsResponse{Items: items, Diagnostics: diagnostics}, nil
-}
-
-// SuggestNextRecord suggests the next decision ADR ID and path from the
-// already-populated index. It is read-only and does not create files.
-func SuggestNextRecord(ctx context.Context, idx *Index, req SuggestNextRecordRequest) (SuggestNextRecordResponse, error) {
-	if err := ctx.Err(); err != nil {
-		return SuggestNextRecordResponse{}, err
-	}
-	if idx == nil {
-		return SuggestNextRecordResponse{}, newToolError(ErrorCodeInvalidRequest, "index is nil")
-	}
-	kind := RecordKind(strings.TrimSpace(string(req.Kind)))
-	if kind == "" {
-		return SuggestNextRecordResponse{}, newToolError(ErrorCodeInvalidRequest, "kind is required")
-	}
-	if kind != RecordKindDecision {
-		return SuggestNextRecordResponse{}, newToolError(ErrorCodeUnsupportedKind, fmt.Sprintf("suggest_next_record does not support kind %q", req.Kind))
-	}
-	title := strings.TrimSpace(req.Title)
-	if title == "" {
-		return SuggestNextRecordResponse{}, newToolError(ErrorCodeInvalidRequest, "title is required")
-	}
-
-	ns := idx.NamespacePrefix
-	maxNum := 0
-	existingMaxID := ""
-	for _, record := range idx.Records {
-		if record.Kind != RecordKindDecision {
+		if category, ok := invalidCurrentRefCategory(ref); ok {
+			warnings = append(warnings, operationWarning(category, ref, fmt.Sprintf("requested ref %q is %s", ref, strings.TrimSuffix(category, "_ref"))))
 			continue
 		}
-		bareID := strings.TrimPrefix(record.ID, ns)
-		num, ok := decisionRecordNumber(bareID)
-		if !ok {
-			continue
-		}
-		if num > maxNum {
-			maxNum = num
-			existingMaxID = ns + fmt.Sprintf("ADR-%03d", num)
+
+		matches := matchingCurrentRecords(idx, ref)
+		switch len(matches) {
+		case 0:
+			warnings = append(warnings, operationWarning("unresolved_ref", ref, fmt.Sprintf("requested ref %q was not found", ref)))
+		case 1:
+			records = append(records, currentGetRecord(matches[0], req.IncludeBody))
+		default:
+			warnings = append(warnings, operationWarning("duplicate_ref", ref, fmt.Sprintf("requested ref %q matched multiple current records", ref)))
 		}
 	}
-
-	nextNumber := maxNum + 1
-	nextID := ns + fmt.Sprintf("ADR-%03d", nextNumber)
-	suggestedPath := suggestedDecisionRecordPath(idx.RecordsRoot, ns, nextNumber, title)
-	return SuggestNextRecordResponse{
-		Kind:          RecordKindDecision,
-		Title:         title,
-		NextID:        nextID,
-		NextNumber:    nextNumber,
-		SuggestedPath: suggestedPath,
-		ExistingMaxID: existingMaxID,
-	}, nil
+	return CurrentGetRecordsResponse{Records: records, Warnings: warnings}, nil
 }
 
-func newListRecordsScope(req ListRecordsRequest) (listRecordsScope, error) {
-	scope := listRecordsScope{order: "asc"}
-	if req.Kind != "" {
-		if !isListableRecordKind(req.Kind) {
-			return scope, newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unsupported kind %q", req.Kind))
-		}
-		scope.kind = req.Kind
-		scope.hasKind = true
+type currentListScope struct {
+	appNamespace string
+	prefix       string
+	kind         RecordKind
+	domain       string
+	status       RecordStatus
+	order        string
+	limit        int
+}
+
+func newCurrentListScope(req CurrentListRecordsRequest) (currentListScope, error) {
+	scope := currentListScope{order: "desc", limit: defaultCurrentListLimit}
+	appNamespace := strings.TrimSpace(req.AppNamespace)
+	if appNamespace == "" {
+		return scope, newToolError(ErrorCodeInvalidRequest, "app_namespace is required")
 	}
-	if req.IDRange != nil {
-		parsed, err := parseRecordIDRange(*req.IDRange, req.Kind)
-		if err != nil {
-			return scope, err
-		}
-		scope.kind = parsed.kind
-		scope.hasKind = true
-		scope.idRange = parsed
+	if !isCurrentListKind(req.Kind) {
+		return scope, newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unsupported kind %q", req.Kind))
 	}
-	if req.OrderBy != "" && req.OrderBy != "id" {
-		return scope, newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unsupported order_by %q", req.OrderBy))
+	domain := strings.TrimSpace(req.Domain)
+	if domain == "" {
+		return scope, newToolError(ErrorCodeInvalidRequest, "domain is required")
 	}
-	if req.Order != "" {
-		if req.Order != "asc" && req.Order != "desc" {
-			return scope, newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unsupported order %q", req.Order))
-		}
-		scope.order = req.Order
-	}
-	if req.Limit != nil && *req.Limit <= 0 {
-		return scope, newToolError(ErrorCodeInvalidRequest, "limit must be greater than zero")
+	if req.Order != "" && req.Order != "asc" && req.Order != "desc" {
+		return scope, newToolError(ErrorCodeInvalidRequest, fmt.Sprintf("unsupported order %q", req.Order))
 	}
 	if req.Limit != nil {
+		if *req.Limit < 1 || *req.Limit > maxCurrentListLimit {
+			return scope, newToolError(ErrorCodeInvalidRequest, "limit must be between 1 and 100")
+		}
 		scope.limit = *req.Limit
-		scope.hasLimit = true
 	}
+	if req.Order != "" {
+		scope.order = req.Order
+	}
+	scope.appNamespace = appNamespace
+	scope.prefix = strings.ToUpper(appNamespace) + "-"
+	scope.kind = req.Kind
+	scope.domain = strings.ToUpper(domain)
 	scope.status = req.Status
-	scope.id = req.ID
 	return scope, nil
 }
 
-func (s listRecordsScope) selectRecord(record Record) bool {
-	if s.hasKind && record.Kind != s.kind {
+func (s currentListScope) selectRecord(record Record) bool {
+	if record.Kind != s.kind || record.Kind == RecordKindSpec {
+		return false
+	}
+	if !strings.HasPrefix(record.ID, s.prefix) {
+		return false
+	}
+	if currentRecordDomain(record.ID, s.prefix, record.Kind) != s.domain {
 		return false
 	}
 	if s.status != "" && record.Status != s.status {
 		return false
 	}
-	if s.id != "" && record.ID != s.id {
-		return false
-	}
-	if s.idRange == nil {
-		return true
-	}
-	return s.idRange.containsRecord(record)
+	return true
 }
 
 func sortRecordsByID(records []Record, order string) {
@@ -290,6 +198,31 @@ func listedRecord(record Record) ListedRecord {
 		WorkItem:      responseWorkItemDetail(record),
 		Task:          responseTaskDetail(record),
 	}
+}
+
+func currentListedRecord(record Record) CurrentListedRecord {
+	return CurrentListedRecord{
+		Ref:    record.ID,
+		Title:  nullableString(record.Title),
+		Status: nullableStatus(record.Status),
+		Date:   nullableString(record.Date),
+	}
+}
+
+func currentGetRecord(record Record, includeBody bool) CurrentGetRecordsRecord {
+	out := CurrentGetRecordsRecord{
+		Ref:      record.ID,
+		Kind:     record.Kind,
+		Title:    record.Title,
+		Status:   record.Status,
+		Date:     record.Date,
+		Headings: append([]Heading{}, record.Headings...),
+	}
+	if includeBody {
+		body := record.RawBody
+		out.Body = &body
+	}
+	return out
 }
 
 func getRecordResponseRecord(record Record, includeBody bool) GetRecordRecord {
@@ -456,17 +389,125 @@ func isListableRecordKind(kind RecordKind) bool {
 	}
 }
 
-func suggestedDecisionRecordPath(recordsRoot, ns string, num int, title string) string {
-	root := filepath.ToSlash(recordsRoot)
-	if root == "" {
-		root = "records"
+func isCurrentListKind(kind RecordKind) bool {
+	switch kind {
+	case RecordKindDecision, RecordKindInvestigation, RecordKindRequirement, RecordKindWorkItem, RecordKindTask:
+		return true
+	default:
+		return false
 	}
-	prefix := root + "/adr/" + ns + fmt.Sprintf("ADR-%03d", num)
-	slug := slugifyRecordTitle(title)
-	if slug == "" {
-		return prefix + ".md"
+}
+
+func nullableString(value string) *string {
+	if value == "" {
+		return nil
 	}
-	return prefix + "-" + slug + ".md"
+	return &value
+}
+
+func nullableStatus(value RecordStatus) *RecordStatus {
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+func operationWarning(category, ref, message string) OperationWarning {
+	return OperationWarning{Category: category, Ref: ref, Message: message}
+}
+
+func invalidCurrentRefCategory(ref string) (string, bool) {
+	if ref == "" || strings.TrimSpace(ref) != ref {
+		return "malformed_ref", true
+	}
+	if strings.HasPrefix(ref, "spec:") {
+		return "unsupported_ref", true
+	}
+	parts := strings.Split(ref, "-")
+	if len(parts) < 2 {
+		return "malformed_ref", true
+	}
+	if parts[1] == "SPEC" || strings.HasPrefix(ref, "V01-") {
+		return "unsupported_ref", true
+	}
+	if ref != strings.ToUpper(ref) {
+		return "malformed_ref", true
+	}
+	if !isCurrentRecordRefParts(parts) {
+		return "malformed_ref", true
+	}
+	return "", false
+}
+
+func isCurrentRecordRefParts(parts []string) bool {
+	switch parts[1] {
+	case "ADR", "INV", "REQ", "WORK":
+		return len(parts) == 4 && isThreeDigitSeq(parts[3])
+	case "TASK":
+		return len(parts) == 5 && isThreeDigitSeq(parts[3]) && isTwoDigitSeq(parts[4])
+	default:
+		return false
+	}
+}
+
+func matchingCurrentRecords(idx *Index, ref string) []Record {
+	matches := []Record{}
+	for _, record := range idx.Records {
+		if record.ID == ref && record.Kind != RecordKindSpec {
+			matches = append(matches, record)
+		}
+	}
+	return matches
+}
+
+func currentRecordDomain(ref, prefix string, kind RecordKind) string {
+	if !strings.HasPrefix(ref, prefix) {
+		return ""
+	}
+	parts := strings.Split(strings.TrimPrefix(ref, prefix), "-")
+	if len(parts) < 3 {
+		return ""
+	}
+	switch kind {
+	case RecordKindDecision:
+		if parts[0] == "ADR" && len(parts) == 3 && isThreeDigitSeq(parts[2]) {
+			return parts[1]
+		}
+	case RecordKindInvestigation:
+		if parts[0] == "INV" && len(parts) == 3 && isThreeDigitSeq(parts[2]) {
+			return parts[1]
+		}
+	case RecordKindRequirement:
+		if parts[0] == "REQ" && len(parts) == 3 && isThreeDigitSeq(parts[2]) {
+			return parts[1]
+		}
+	case RecordKindWorkItem:
+		if parts[0] == "WORK" && len(parts) == 3 && isThreeDigitSeq(parts[2]) {
+			return parts[1]
+		}
+	case RecordKindTask:
+		if parts[0] == "TASK" && len(parts) == 4 && isThreeDigitSeq(parts[2]) && isTwoDigitSeq(parts[3]) {
+			return parts[1]
+		}
+	}
+	return ""
+}
+
+func isThreeDigitSeq(value string) bool {
+	return len(value) == 3 && isAllDigits(value)
+}
+
+func isTwoDigitSeq(value string) bool {
+	return len(value) == 2 && isAllDigits(value)
+}
+
+func isAllDigits(value string) bool {
+	for _, r := range value {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return value != ""
 }
 
 func slugifyRecordTitle(title string) string {
