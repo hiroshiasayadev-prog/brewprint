@@ -1,0 +1,111 @@
+# Reference: Record structure
+
+- **id**: `spec:drcli.design_records_cli.artifacts.base.definitions.record_structure`
+- **status**: draft
+- **date**: 2026-10-08
+- **parent**: `spec:drcli.design_records_cli.artifacts.base.definitions`
+
+## What this is
+
+Defines the record-structure and source-placement rules used by DRCLI artifact Specifications.
+
+This Specification defines shared structure vocabulary, source-root derivation, and the declarations required from each artifact kind.
+It does not redefine Product-owned identity, relation, or canonical-reference semantics.
+
+## Current contract
+
+Each artifact kind must select exactly one supported record structure.
+Each artifact Specification must declare exactly one artifact directory.
+
+| structure | meaning |
+|---|---|
+| `sequential` | Records are placed by domain and use one or more sequence segments in their public IDs. |
+| `tree` | The directory and file hierarchy represents the logical record tree. |
+
+## Source placement
+
+Each artifact Specification must declare its artifact directory.
+
+| declaration | requirement |
+|---|---|
+| artifact directory | Declare one literal directory name relative to `<RESOLVED_RECORDS_ROOT>/`. |
+
+The artifact directory declaration represents one path segment.
+The declaration does not contain a path separator, `.` segment, or `..` segment.
+
+The artifact source root is derived as:
+
+```text
+<RESOLVED_RECORDS_ROOT>/<ARTIFACT_DIRECTORY>/
+```
+
+The derived artifact source root is the standard source root for that artifact kind.
+A record outside the derived artifact source root does not conform to the artifact source placement.
+Discovery, indexing, and validation orchestration consume this declaration but remain outside this Specification.
+
+## Sequential structure
+
+A sequential structure follows these rules:
+
+- The artifact source root contains one domain-directory level.
+- Record files are placed directly under the domain directory.
+- Directories below the domain directory are not part of the standard sequential structure.
+- Directories below the domain directory do not add public ID segments.
+
+An artifact kind that selects `sequential` must declare:
+
+| declaration | requirement |
+|---|---|
+| sequence segment | Identify every public ID segment that receives a sequential value, including an inherited sequence value that this artifact does not allocate independently. |
+| allocation scope | Identify the boundary within which each declared sequence segment is allocated. |
+
+Use `domain` when a sequence is allocated within the current app namespace, artifact kind, and domain namespace.
+When an artifact uses a different allocation scope, the artifact-specific Specification declares that scope explicitly.
+Use `-` for a sequence-bearing segment that this artifact does not allocate independently.
+
+For sequential listing, DRCLI constructs the ordering tuple from every artifact-specific segment declared with `sequence: yes`.
+The tuple follows the row order of the artifact's `Artifact-specific segments` table.
+An artifact Specification must place sequence-bearing rows in the priority order used by sequential listing.
+Each tuple value uses the format declared for its segment.
+
+The artifact-specific declaration does not define relation-dependent segment agreement or inherited-segment rules.
+Those rules belong to the artifact-specific relation or identity-validation Specification.
+
+This base definition does not prescribe sequence names, segment count, width, or artifact-specific exception scopes.
+The artifact-specific Specification consumes the applicable Product authority for those values.
+
+## Tree structure
+
+A tree structure follows these rules:
+
+- The directory and file hierarchy below the artifact source root represents the logical record tree.
+- An `index.md` file represents its containing directory node.
+- A non-index Markdown file represents a leaf node.
+
+An artifact kind that selects `tree` has no additional structure-specific declaration beyond the common artifact-directory declaration.
+Root identity and path-to-identity mapping follow the shared tree identity rules and are not redeclared by each artifact Specification.
+
+## Boundary
+
+| concern | owner |
+|---|---|
+| Record-structure vocabulary | This Specification. |
+| Artifact-directory declaration and source-root derivation | This Specification. |
+| Artifact-specific artifact-directory literal | The artifact-specific identity and structure Specification. |
+| Required heading and table shape for artifact declarations | Base template Specifications. |
+| Exact public ID grammar and canonical-reference semantics | Product authority. |
+| Artifact-specific identity mapping | The artifact-specific identity Specification. |
+| Relation-dependent segment agreement | The artifact-specific relation or identity-validation Specification. |
+| Sequential-listing ordering tuple declaration | This Specification and the artifact-specific identity-and-structure Specification. |
+| Ordering direction, tie-break, limit, and result projection | Sequential-listing operation Specifications. |
+| Parser, discovery, indexing, and validation orchestration | Other DRCLI Specifications. |
+
+## Related specs
+
+| ref | relation |
+|---|---|
+| `spec:product.design_records.repository_layout.record_discovery_paths` | Product authority for kind-specific placement patterns. |
+| `spec:product.design_records.namespace_model.artifact_id_grammar` | Product authority for sequential artifact ID grammar and allocation scopes. |
+| `spec:product.design_records.spec_format.spec_id_as_ref` | Product authority for path-derived Specification identity. |
+| `spec:product.design_records.traceability.artifact_refs` | Product authority for record kinds and canonical reference forms. |
+| `spec:drcli.design_records_cli.operations.discovery_and_listing.sequential_record_listing` | Consumes declared sequence segments as the listing ordering tuple. |
